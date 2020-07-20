@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaRebalanceList;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.Kafka;
@@ -93,23 +91,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private final String version = KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION;
     private final String ccImage = "my-cruise-control-image";
 
-    private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
-            .withImage(ccImage)
-            .build();
-
     private final Kafka kafka =
             new KafkaBuilder(ResourceUtils.createKafkaCluster(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                         .editKafka()
                             .withVersion(version)
                         .endKafka()
-                        .withCruiseControl(cruiseControlSpec)
+                        .editOrNewCruiseControl()
+                            .withImage(ccImage)
+                        .endCruiseControl()
                     .endSpec()
                     .build();
 
     @BeforeAll
-    public static void beforeAll() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.getCCServer(CruiseControl.REST_API_PORT);
+    public static void beforeAll() throws IOException {
+        ccServer = MockCruiseControl.server(CruiseControl.REST_API_PORT);
     }
 
     @AfterAll
@@ -122,12 +118,14 @@ public class KafkaRebalanceAssemblyOperatorTest {
         ccServer.reset();
 
         kubernetesClient = new MockKube()
-                .withCustomResourceDefinition(Crds.kafkaRebalance(), KafkaRebalance.class, KafkaRebalanceList.class, DoneableKafkaRebalance.class)
+                    .withCustomResourceDefinition(Crds.kafkaRebalance(), KafkaRebalance.class, KafkaRebalanceList.class, DoneableKafkaRebalance.class)
                 .end()
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
+
+        // Override for mocking purposes so real cruise control not required
         kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
@@ -882,8 +880,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 kr).onComplete(context.succeeding(v -> {
 
                     try {
-                        ccServer = MockCruiseControl.getCCServer(CruiseControl.REST_API_PORT);
-                    } catch (IOException | URISyntaxException e) {
+                        ccServer = MockCruiseControl.server(CruiseControl.REST_API_PORT);
+                    } catch (IOException e) {
                         context.failNow(e);
                     }
 

@@ -69,7 +69,7 @@ public class KafkaRebalanceStateMachineTest {
 
     @BeforeAll
     public static void before() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.getCCServer(CruiseControl.REST_API_PORT);
+        ccServer = MockCruiseControl.server(CruiseControl.REST_API_PORT);
     }
 
     @AfterAll
@@ -260,7 +260,7 @@ public class KafkaRebalanceStateMachineTest {
 
         // Test the case where the user asks for a rebalance but there is not enough data, the returned status should
         // not contain an optimisation result
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
+        MockCruiseControl.setupCCRebalanceInsufficientDataError(ccServer);
         checkTransition(vertx, context,
                 KafkaRebalanceState.New, KafkaRebalanceState.PendingProposal,
                 KafkaRebalanceAnnotation.none, null, null)
@@ -383,7 +383,7 @@ public class KafkaRebalanceStateMachineTest {
     @Test
     public void testProposalReadyToRebalancingWithNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
+        MockCruiseControl.setupCCRebalanceInsufficientDataError(ccServer);
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.PendingProposal,
                 KafkaRebalanceAnnotation.approve, null, null)
@@ -438,7 +438,7 @@ public class KafkaRebalanceStateMachineTest {
     @Test
     public void testProposalReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
+        MockCruiseControl.setupCCRebalanceInsufficientDataError(ccServer);
         checkTransition(vertx, context,
                 KafkaRebalanceState.ProposalReady, KafkaRebalanceState.PendingProposal,
                 KafkaRebalanceAnnotation.refresh, null, null)
@@ -525,7 +525,7 @@ public class KafkaRebalanceStateMachineTest {
     @Test
     public void testStoppedRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
+        MockCruiseControl.setupCCRebalanceInsufficientDataError(ccServer);
         checkTransition(vertx, context,
                 KafkaRebalanceState.Stopped, KafkaRebalanceState.PendingProposal,
                 KafkaRebalanceAnnotation.refresh, null, null)

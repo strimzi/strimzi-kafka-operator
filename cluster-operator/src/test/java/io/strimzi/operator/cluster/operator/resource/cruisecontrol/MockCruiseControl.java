@@ -33,12 +33,12 @@ public class MockCruiseControl {
 
     private static final int RESPONSE_DELAY_SEC = 0;
 
-    private static final String SEP =  "-";
-    private static final String REBALANCE =  "rebalance";
-    private static final String STATE =  "state";
-    private static final String NO_GOALS =  "no-goals";
-    private static final String VERBOSE =  "verbose";
-    private static final String USER_TASK =  "user-task";
+    private static final String SEP = "-";
+    private static final String REBALANCE = "rebalance";
+    private static final String STATE = "state";
+    private static final String NO_GOALS = "no-goals";
+    private static final String VERBOSE = "verbose";
+    private static final String USER_TASK = "user-task";
     private static final String RESPONSE = "response";
 
     public static final String REBALANCE_NO_GOALS_RESPONSE_UTID = REBALANCE + SEP + NO_GOALS + SEP + RESPONSE;
@@ -53,13 +53,13 @@ public class MockCruiseControl {
     public static final String STATE_PROPOSAL_NOT_READY_RESPONSE = STATE_PROPOSAL_NOT_READY + SEP + RESPONSE;
 
     /**
-     * Sets up and returns the Cruise Control MockSever
+     * Sets up and returns the Cruise Control MockSever.
+     *
      * @param port The port number the MockServer instance should listen on
-     * @return The configured ClientAndServer instance.
-     * @throws IOException If there are issues connecting to the network port.
-     * @throws URISyntaxException If any of the configured end points are invalid.
+     * @return The configured ClientAndServer instance
+     * @throws IOException If there are issues connecting to the network port
      */
-    public static ClientAndServer getCCServer(int port) throws IOException, URISyntaxException {
+    public static ClientAndServer server(int port) throws IOException {
         ConfigurationProperties.logLevel("WARN");
         String loggingConfiguration = "" +
                 "handlers=org.mockserver.logging.StandardOutConsoleHandler\n" +
@@ -70,24 +70,28 @@ public class MockCruiseControl {
                 "io.netty.handler.ssl.SslHandler.level=WARNING";
         LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(loggingConfiguration.getBytes(UTF_8)));
 
-        ClientAndServer ccServer = new ClientAndServer(port);
-        return ccServer;
+        ClientAndServer server = new ClientAndServer(port);
+        return server;
     }
 
     private static JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {
 
-        URI jsonURI = Objects.requireNonNull(MockCruiseControl.class.getClassLoader().getResource(CC_JSON_ROOT + resource)).toURI();
+        URI jsonURI = Objects.requireNonNull(MockCruiseControl.class.getClassLoader().getResource(CC_JSON_ROOT + resource))
+                .toURI();
 
-        Optional<String> json = Files.lines(Paths.get(jsonURI), UTF_8).reduce((x, y) -> x + y);
+        Optional<String> json = Files.lines(Paths.get(jsonURI), UTF_8)
+                .reduce((x, y) -> x + y);
 
-        if (json.isPresent()) {
-            return new JsonBody(json.get());
-        } else {
+        if (!json.isPresent()) {
             throw new IOException("File " + resource + " from resources was empty");
         }
 
+        return new JsonBody(json.get());
     }
 
+    /**
+     * Setup state responses in mock server.
+     */
     public static void setupCCStateResponse(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         // Non-verbose response
@@ -142,7 +146,10 @@ public class MockCruiseControl {
 
     }
 
-    public static void setupCCRebalanceNotEnoughDataError(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    /**
+     * Setup NotEnoughValidWindows error rebalance response.
+     */
+    public static void setupCCRebalanceInsufficientDataError(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         // Rebalance response with no goal that returns an error
         JsonBody jsonError = getJsonFromResource("CC-Rebalance-NotEnoughValidWindows-error.json");
@@ -164,10 +171,16 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
     }
 
+    /**
+     * Setup rebalance response with no response delay (for quicker tests).
+     */
     public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls) throws IOException, URISyntaxException {
         setupCCRebalanceResponse(ccServer, pendingCalls, RESPONSE_DELAY_SEC);
     }
 
+    /**
+     * Setup rebalance response.
+     */
     public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls, int responseDelay) throws IOException, URISyntaxException {
 
         // Rebalance in progress response with no goals set - non-verbose
@@ -225,6 +238,9 @@ public class MockCruiseControl {
     }
 
 
+    /**
+     * Setup responses for various bad goal configurations possible on a rebalance request.
+     */
     public static void setupCCRebalanceBadGoalsError(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         // Response if the user has set custom goals which do not include all configured hard.goals
@@ -272,6 +288,7 @@ public class MockCruiseControl {
     /**
      * Sets up the User Tasks endpoint. These endpoints expect the query to contain the user-task-id returned in the header of the response from
      * the rebalance endpoints.
+     *
      * @param ccServer The ClientAndServer instance that this endpoint will be added too.
      * @param activeCalls The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
      * @param inExecutionCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
@@ -317,7 +334,7 @@ public class MockCruiseControl {
                                 .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
-        // On the N+1 call respond with a completed rebalance task.
+        // On the N+1 call, respond with a completed rebalance task.
         ccServer
                 .when(
                         request()
@@ -370,6 +387,9 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
     }
 
+    /**
+     * Setup response of task completed with error.
+     */
     public static void setupCCUserTasksCompletedWithError(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
@@ -390,6 +410,9 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
     }
 
+    /**
+     * Setup response of task being stopped.
+     */
     public static void setupCCStopResponse(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         JsonBody jsonStop = getJsonFromResource("CC-Stop.json");
