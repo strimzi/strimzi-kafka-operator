@@ -118,11 +118,6 @@ class KafkaRollerST extends AbstractST {
         assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
     }
 
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
-    }
-
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();

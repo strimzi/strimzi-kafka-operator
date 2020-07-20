@@ -528,10 +528,4 @@ public class StrimziUpgradeST extends AbstractST {
     @Override
     protected void tearDownEnvironmentAfterAll() {
     }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        cluster.deleteNamespaces();
-        cluster.createNamespace(NAMESPACE);
-    }
 }

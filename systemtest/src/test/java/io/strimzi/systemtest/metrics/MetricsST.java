@@ -355,10 +355,6 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).count(), notNullValue());
     }
 
-    // No need to recreate environment after failed test. Only values from collected metrics are checked
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
-
     @BeforeAll
     void setupEnvironment() throws Exception {
         ResourceManager.setClassResources();

@@ -1008,12 +1008,6 @@ class ConnectST extends AbstractST {
         }
     }
 
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
-        deployKafkaClients();
-    }
-
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
