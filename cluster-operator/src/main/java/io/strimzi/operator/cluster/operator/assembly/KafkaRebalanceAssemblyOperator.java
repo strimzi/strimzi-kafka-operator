@@ -285,6 +285,9 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalanceSpec.isSkipHardGoalCheck()) {
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
         }
+        if (kafkaRebalanceSpec.getExcludedTopics() != null) {
+            rebalanceOptionsBuilder.withExcludedTopics(kafkaRebalanceSpec.getExcludedTopics());
+        }
         if (kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker() > 0) {
             rebalanceOptionsBuilder.withConcurrentPartitionMovementsPerBroker(kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker());
         }
