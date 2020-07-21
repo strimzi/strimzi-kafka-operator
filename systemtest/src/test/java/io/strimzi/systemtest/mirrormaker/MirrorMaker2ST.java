@@ -133,7 +133,15 @@ class MirrorMaker2ST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
         
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                .editSpec()
+                    .editFirstMirror()
+                        .editSourceConnector()
+                            .addToConfig("refresh.topics.interval.seconds", "60")
+                        .endSourceConnector()
+                    .endMirror()
+                .endSpec()
+                .done();
         LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
 
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
