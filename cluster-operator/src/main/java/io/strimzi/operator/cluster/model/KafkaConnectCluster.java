@@ -676,4 +676,13 @@ public class KafkaConnectCluster extends AbstractModel {
             return null;
         }
     }
+
+    /**
+     * Returns the Tracing object with tracing configuration or null if tracing was not enabled.
+     *
+     * @return  Tracing object with tracing configuration
+     */
+    public Tracing getTracing() {
+        return tracing;
+    }
 }
