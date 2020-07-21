@@ -23,6 +23,7 @@ public class KafkaTopicUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     private static final String TOPIC_NAME_PREFIX = "my-topic-";
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
 
     private KafkaTopicUtils() {}
 
@@ -77,7 +78,7 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicDeletion(String topicName) {
         LOGGER.info("Waiting for KafkaTopic {} deletion", topicName);
-        TestUtils.waitFor("KafkaTopic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaTopic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null,
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
         );

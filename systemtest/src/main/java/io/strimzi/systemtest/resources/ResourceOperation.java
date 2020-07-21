@@ -64,10 +64,18 @@ public class ResourceOperation {
     }
 
     /**
-     * timeoutForPodsOperation returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update,
+     * getTimeoutForPodsOperation returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update,
      *  scale up or create
      */
-    public static long timeoutForPodsOperation(int numberOfPods) {
+    public static long getTimeoutForPodsOperation(int numberOfPods) {
         return Duration.ofMinutes(5).toMillis() * Math.max(1, numberOfPods);
+    }
+
+    public static long getTimeoutForResourceDeletion(boolean hasPods) {
+        if (hasPods) {
+            return Duration.ofMinutes(5).toMillis();
+        } else {
+            return Duration.ofMinutes(2).toMillis();
+        }
     }
 }

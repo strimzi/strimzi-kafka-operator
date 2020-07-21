@@ -23,6 +23,7 @@ public class DeploymentConfigUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentConfigUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.DEPLOYMENT_CONFIG);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
 
     /**
      * Returns a map of pod name to resource version for the pods currently in the given DeploymentConfig.
@@ -65,7 +66,7 @@ public class DeploymentConfigUtils {
     public static Map<String, String> waitTillDepConfigHasRolled(String depConfigName, Map<String, String> snapshot) {
         LOGGER.info("Waiting for DeploymentConfig {} rolling update", depConfigName);
         TestUtils.waitFor("DeploymentConfig roll of " + depConfigName,
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> depConfigHasRolled(depConfigName, snapshot));
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.getTimeoutForPodsOperation(snapshot.size()), () -> depConfigHasRolled(depConfigName, snapshot));
         waitForDeploymentConfigReady(depConfigName);
         LOGGER.info("DeploymentConfig {} rolling update finished", depConfigName);
         return depConfigSnapshot(depConfigName);
@@ -77,7 +78,7 @@ public class DeploymentConfigUtils {
      */
     public static void waitForDeploymentConfigDeletion(String name) {
         LOGGER.debug("Waiting for DeploymentConfig {} deletion", name);
-        TestUtils.waitFor("DeploymentConfig " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+        TestUtils.waitFor("DeploymentConfig " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 if (kubeClient().getDeploymentConfig(name) == null) {
                     return true;
