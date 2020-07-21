@@ -19,7 +19,7 @@ The port used to connect is always 9094.
 
 .Procedure
 
-. Configure a `Kafka` resource with an external listener enabled and configured to the `loadbalancer` type.
+. Configure a `Kafka` resource with an external listener set to the `loadbalancer` type.
 +
 For example:
 +

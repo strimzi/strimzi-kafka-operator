@@ -17,7 +17,7 @@ as well as the certificate used for authentication.
 
 .Procedure
 
-. Configure a `Kafka` resource with an external listener enabled and configured to the `nodeport` type.
+. Configure a `Kafka` resource with an external listener set to the `nodeport` type.
 +
 For example:
 +

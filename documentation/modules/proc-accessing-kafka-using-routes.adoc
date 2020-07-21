@@ -19,7 +19,7 @@ Routes are used for HTTP access, so the port used to connect is always 443.
 
 .Procedure
 
-. Configure a `Kafka` resource with an external listener enabled and configured to the `route` type.
+. Configure a `Kafka` resource with an external listener set to the `route` type.
 +
 For example:
 +
