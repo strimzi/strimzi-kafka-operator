@@ -139,7 +139,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     private static Collection<AlterConfigOp> diff(int brokerId, String desired,
                                                   Config brokerConfigs,
                                                   Map<String, ConfigModel> configModel) {
-        if (brokerConfigs == null) {
+        if (brokerConfigs == null || desired == null) {
             return Collections.emptyList();
         }
         Map<String, String> currentMap;
