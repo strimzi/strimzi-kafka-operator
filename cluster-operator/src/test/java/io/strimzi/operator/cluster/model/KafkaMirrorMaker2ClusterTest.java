@@ -89,7 +89,8 @@ public class KafkaMirrorMaker2ClusterTest {
             .addPair("offset.storage.topic", "mirrormaker2-cluster-offsets")
             .addPair("config.providers", "file")
             .addPair("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
-            .addPair("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
+            .addPair("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
+            .addPair("header.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
             .addMapPairs(defaultConfiguration.asMap())
             .addPair("foo", "bar");
