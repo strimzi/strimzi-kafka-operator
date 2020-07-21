@@ -286,6 +286,14 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         for (String pod : bridgePods) {
             assertThat(pod.contains(bridgeGenName), is(true));
         }
+
+        LOGGER.info("Deleting created pods, should be recreated back to {}", scaleTo);
+        for (String pod : bridgePods) {
+            kubeClient().deletePod(kubeClient().getPod(pod));
+        }
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaBridgeResources.deploymentName(bridgeName), scaleTo);
+        assertThat(kubeClient().listPodNames("type", "kafka-bridge").size(), is(scaleTo));
+        assertThat(kubeClient().listPodNames("type", "kafka-bridge"), is(not(bridgePods)));
     }
 
     @BeforeAll

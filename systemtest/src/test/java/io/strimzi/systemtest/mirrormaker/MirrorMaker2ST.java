@@ -48,6 +48,7 @@ import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -598,6 +599,14 @@ class MirrorMaker2ST extends AbstractST {
         for (String pod : mm2Pods) {
             assertThat(pod.contains(mm2GenName), is(true));
         }
+
+        LOGGER.info("Deleting created pods, should be recreated back to {}", scaleTo);
+        for (String pod : mm2Pods) {
+            kubeClient().deletePod(kubeClient().getPod(pod));
+        }
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME), scaleTo);
+        assertThat(kubeClient().listPodNames("type", "kafka-mirror-maker-2").size(), is(scaleTo));
+        assertThat(kubeClient().listPodNames("type", "kafka-mirror-maker-2"), is(not(mm2Pods)));
     }
 
 

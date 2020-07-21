@@ -723,6 +723,14 @@ class ConnectS2IST extends AbstractST {
         for (String pod : connectS2IPods) {
             assertThat(pod.contains(connectS2IGenName), is(true));
         }
+
+        LOGGER.info("Deleting created pods, should be recreated back to {}", scaleTo);
+        for (String pod : connectS2IPods) {
+            kubeClient().deletePod(kubeClient().getPod(pod));
+        }
+        DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(KafkaConnectS2IResources.deploymentName(CLUSTER_NAME), scaleTo);
+        assertThat(kubeClient().listPodNames("type", "kafka-connect-s2i").size(), is(scaleTo));
+        assertThat(kubeClient().listPodNames("type", "kafka-connect-s2i"), is(not(connectS2IPods)));
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {

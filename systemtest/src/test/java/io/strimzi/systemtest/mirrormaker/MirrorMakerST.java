@@ -662,6 +662,14 @@ public class MirrorMakerST extends AbstractST {
         for (String pod : mmPods) {
             assertThat(pod.contains(mmGenName), is(true));
         }
+
+        LOGGER.info("Deleting created pods, should be recreated back to {}", scaleTo);
+        for (String pod : mmPods) {
+            kubeClient().deletePod(kubeClient().getPod(pod));
+        }
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME), scaleTo);
+        assertThat(kubeClient().listPodNames("type", "kafka-mirror-maker").size(), is(scaleTo));
+        assertThat(kubeClient().listPodNames("type", "kafka-mirror-maker"), is(not(mmPods)));
     }
     
     @BeforeAll

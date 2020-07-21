@@ -992,9 +992,34 @@ class ConnectST extends AbstractST {
             assertThat(pod.contains(connectGenName), is(true));
         }
 
+        LOGGER.info("Deleting created pods, should be recreated back to {}", scaleTo);
+        for (String pod : connectPods) {
+            kubeClient().deletePod(kubeClient().getPod(pod));
+        }
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), scaleTo);
+        assertThat(kubeClient().listPodNames("type", "kafka-connect").size(), is(scaleTo));
+        assertThat(kubeClient().listPodNames("type", "kafka-connect"), is(not(connectPods)));
+
+        connectPods = kubeClient().listPodNames("type", "kafka-connect");
+
         LOGGER.info("-------> Scaling KafkaConnector subresource <-------");
         LOGGER.info("Scaling subresource task max to {}", scaleTo);
         cmdKubeClient().scaleByName(KafkaConnector.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
+        KafkaConnectorUtils.waitForConnectorsTaskMaxChange(CLUSTER_NAME, scaleTo);
+
+        LOGGER.info("Check if taskMax is set to {}", scaleTo);
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getTasksMax(), is(scaleTo));
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getTasksMax(), is(scaleTo));
+
+        LOGGER.info("Check taskMax on Connect pods API");
+        for (String pod : connectPods) {
+            JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(pod, CLUSTER_NAME));
+            assertThat(Integer.parseInt(json.getJsonObject("config").getString("tasks.max")), is(scaleTo));
+        }
+
+        LOGGER.info("Decreasing taskMax on Connector, should get back to {}", scaleTo);
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().setTasksMax(0);
+        KafkaConnectorUtils.waitForConnectorReady(CLUSTER_NAME);
         KafkaConnectorUtils.waitForConnectorsTaskMaxChange(CLUSTER_NAME, scaleTo);
 
         LOGGER.info("Check if taskMax is set to {}", scaleTo);
