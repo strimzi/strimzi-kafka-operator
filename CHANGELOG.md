@@ -25,6 +25,15 @@
 
 ### Deprecations and removals
 
+#### Deprecation of Helm v2 chart
+
+The Helm v2 support will end soon. 
+Bug fixing should stop on August 13th 2020 and security fixes on November 13th.
+See https://helm.sh/blog/covid-19-extending-helm-v2-bug-fixes/ for more details.
+
+In sync with that, the Helm v2 chart of Strimzi Cluster Operator is now deprecated and will be removed in the future as Helm v2 support ends.
+Since Strimzi 0.19.0, we have a new chart for Helm v3 which can be used instead.
+
 #### Removal of v1alpha1 versions of several custom resources
 
 In Strimzi 0.12.0, the `v1alpha1` versions of the following resources have been deprecated and replaced by `v1beta1`:
