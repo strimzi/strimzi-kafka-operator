@@ -1,6 +1,6 @@
 # Strimzi: Kafka as a Service
 
-_**Warning:** This chart is now deprecated. Use the Helm v3 chart instead._
+_**Warning:** This chart is now deprecated and will be removed in the future as Helm v2 support ends. Use the Helm v3 chart instead._
 
 Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
