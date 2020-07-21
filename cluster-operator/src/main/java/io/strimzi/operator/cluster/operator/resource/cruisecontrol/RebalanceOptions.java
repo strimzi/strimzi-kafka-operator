@@ -18,6 +18,8 @@ public class RebalanceOptions {
     private boolean skipHardGoalCheck;
     /** Sets whether the response should be JSON formatted or formated for readibility on the command line */
     private boolean json = true;
+    /** A regular expression to specify topics that should not be considered for replica movement */
+    private String excludedTopics;
     /** The upper bound of ongoing replica movements going into/out of each broker */
     private int concurrentPartitionMovementsPerBroker;
     /** The upper bound of ongoing replica movements between disks within each broker */
@@ -47,6 +49,10 @@ public class RebalanceOptions {
         return json;
     }
 
+    public String getExcludedTopics() {
+        return excludedTopics;
+    }
+
     public int getConcurrentPartitionMovementsPerBroker() {
         return concurrentPartitionMovementsPerBroker;
     }
@@ -69,6 +75,7 @@ public class RebalanceOptions {
         this.skipHardGoalCheck = builder.skipHardGoalCheck;
         this.goals = builder.goals;
         this.verbose = builder.verbose;
+        this.excludedTopics = builder.excludedTopics;
         this.concurrentPartitionMovementsPerBroker = builder.concurrentPartitionMovementsPerBroker;
         this.concurrentIntraBrokerPartitionMovements = builder.concurrentIntraPartitionMovements;
         this.concurrentLeaderMovements = builder.concurrentLeaderMovements;
@@ -81,6 +88,7 @@ public class RebalanceOptions {
         private boolean verbose;
         private boolean skipHardGoalCheck;
         private List<String> goals;
+        private String excludedTopics;
         private int concurrentPartitionMovementsPerBroker;
         private int concurrentIntraPartitionMovements;
         private int concurrentLeaderMovements;
@@ -91,6 +99,7 @@ public class RebalanceOptions {
             verbose = false;
             skipHardGoalCheck = false;
             goals = null;
+            excludedTopics = null;
             concurrentPartitionMovementsPerBroker = 0;
             concurrentIntraPartitionMovements = 0;
             concurrentLeaderMovements = 0;
@@ -114,6 +123,11 @@ public class RebalanceOptions {
 
         public RebalanceOptionsBuilder withGoals(List<String> goals) {
             this.goals = goals;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withExcludedTopics(String excludedTopics) {
+            this.excludedTopics = excludedTopics;
             return this;
         }
 
