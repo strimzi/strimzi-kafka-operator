@@ -5,6 +5,13 @@
 [id='proc-accessing-kafka-using-routes-{context}']
 = Accessing Kafka using OpenShift routes
 
+This procedure describes how to access a Strimzi Kafka cluster from an external client outside of OpenShift using routes.
+
+To connect to a broker, you need a hostname (advertised address) for the route _bootstrap address_,
+as well as the certificate used for authentication.
+
+Routes are used for HTTP access, so the port used to connect is always 443.
+
 .Prerequisites
 
 * An OpenShift cluster
@@ -12,9 +19,9 @@
 
 .Procedure
 
-. Deploy a Kafka cluster with an external listener enabled and configured to the type `route`.
+. Configure a `Kafka` resource with an external listener enabled and configured to the `route` type.
 +
-An example configuration with an external listener configured to use `Routes`:
+For example:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -36,13 +43,20 @@ spec:
 +
 [source,shell,subs=+quotes]
 oc apply -f _KAFKA-CONFIG-FILE_
++
+`ClusterIP` type services are created for each Kafka broker, as well as an external _bootstrap service_.
+The bootstrap service routes external traffic to the Kafka brokers.
+An OpenShift `Route` resource is also created for each service to expose them using the HAProxy load balancer.
+DNS addresses used for connection are propagated to the `status` of each service.
 
-. Find the address of the bootstrap `Route`.
+. Retrieve the address of the bootstrap service to access the Kafka cluster.
 +
 [source,shell,subs=+quotes]
 oc get routes _KAFKA-CLUSTER-NAME_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
 +
-Use the address together with port 443 in your Kafka client as the _bootstrap_ address.
+You need the address of the `Route` bootstrap service (`_KAFKA-CLUSTER-NAME_-kafka-bootstrap`).
++
+Use the route service address and port 443 (_ROUTE-ADDRESS:443_) in your Kafka client as the _bootstrap address_ to connect to the Kafka cluster.
 
 . Extract the public certificate of the broker certification authority
 +
