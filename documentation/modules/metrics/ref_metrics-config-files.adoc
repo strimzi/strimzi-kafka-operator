@@ -33,7 +33,6 @@ metrics
     ├── prometheus-rules.yaml <9>
     ├── prometheus.yaml <10>
     ├── strimzi-pod-monitor.yaml <11>
-    └── strimzi-service-monitor.yaml <12>
 --
 <1> Installation file for the Grafana image
 <2> Grafana dashboards
@@ -46,4 +45,3 @@ metrics
 <9> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
 <10> Installation file for the Prometheus image
 <11> Prometheus job definitions to scrape metrics data from pods
-<12> Prometheus job definitions to scrape metrics data from services
