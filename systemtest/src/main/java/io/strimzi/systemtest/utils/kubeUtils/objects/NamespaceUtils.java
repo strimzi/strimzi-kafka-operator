@@ -15,7 +15,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class NamespaceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(NamespaceUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private NamespaceUtils() { }
 

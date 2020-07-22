@@ -29,7 +29,7 @@ public class DeploymentUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.DEPLOYMENT);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private DeploymentUtils() { }
 

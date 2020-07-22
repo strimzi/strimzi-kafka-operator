@@ -23,7 +23,7 @@ public class KafkaTopicUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     private static final String TOPIC_NAME_PREFIX = "my-topic-";
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private KafkaTopicUtils() {}
 

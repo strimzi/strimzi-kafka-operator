@@ -30,7 +30,7 @@ public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private SecretUtils() { }
 

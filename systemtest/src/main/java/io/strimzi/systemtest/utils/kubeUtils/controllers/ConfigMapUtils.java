@@ -23,7 +23,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ConfigMapUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigMapUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ConfigMapUtils() { }
 

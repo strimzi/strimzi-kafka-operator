@@ -16,7 +16,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ReplicaSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ReplicaSetUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ReplicaSetUtils() { }
 

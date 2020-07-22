@@ -22,7 +22,7 @@ public class KafkaUserUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserUtils.class);
     private static final String KAFKA_USER_NAME_PREFIX = "my-user-";
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private KafkaUserUtils() {}
 

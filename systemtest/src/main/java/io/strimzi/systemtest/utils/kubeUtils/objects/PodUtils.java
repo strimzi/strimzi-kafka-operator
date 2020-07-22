@@ -26,7 +26,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class PodUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(true);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(Constants.POD);
 
     private PodUtils() { }
 

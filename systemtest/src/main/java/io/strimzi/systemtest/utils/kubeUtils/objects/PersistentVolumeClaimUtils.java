@@ -24,7 +24,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class PersistentVolumeClaimUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PersistentVolumeClaimUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private PersistentVolumeClaimUtils() { }
 

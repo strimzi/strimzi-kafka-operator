@@ -23,7 +23,7 @@ public class DeploymentConfigUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentConfigUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.DEPLOYMENT_CONFIG);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(false);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     /**
      * Returns a map of pod name to resource version for the pods currently in the given DeploymentConfig.
