@@ -1,7 +1,7 @@
 # Testing Strimzi
 
 This document gives a detailed breakdown of the testing processes and testing options for Strimzi within system tests. 
-For more information about build process see [Hacking document](HACKING.md).
+For more information about build process see [Dev guide document](DEV_GUIDE.md).
 
 <!-- TOC depthFrom:2 -->
 
