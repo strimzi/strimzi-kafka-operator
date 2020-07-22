@@ -63,7 +63,7 @@ spec:
         values: ["Kafka", "KafkaConnect"]
   namespaceSelector:
     matchNames:
-      - default
+      - myproject
   podMetricsEndpoints:
   - path: /metrics
     port: tcp-prometheus
