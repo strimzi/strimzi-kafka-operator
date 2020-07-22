@@ -14,6 +14,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -61,6 +62,7 @@ import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
@@ -86,6 +88,7 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
     private static final String JAEGER_KAFKA_STREAMS_SERVICE = "hello-world-streams";
     private static final String JAEGER_MIRROR_MAKER_SERVICE = "my-mirror-maker";
+    private static final String JAEGER_MIRROR_MAKER2_SERVICE = "my-mirror-maker2";
     private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-connect";
     private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
     private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
@@ -95,6 +98,7 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_SAMPLER_TYPE = "const";
     private static final String JAEGER_SAMPLER_PARAM = "1";
 
+    private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
 
     private Stack<String> jaegerConfigs = new Stack<>();
@@ -393,6 +397,118 @@ public class TracingST extends AbstractST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER2)
+    void testProducerConsumerMirrorMaker2Service() {
+        Map<String, Object> configOfKafka = new HashMap<>();
+        configOfKafka.put("offsets.topic.replication.factor", "1");
+        configOfKafka.put("transaction.state.log.replication.factor", "1");
+        configOfKafka.put("transaction.state.log.min.isr", "1");
+
+        final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
+        final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
+
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .withConfig(configOfKafka)
+                        .withNewPersistentClaimStorage()
+                            .withNewSize("10")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endKafka()
+                    .editZookeeper()
+                        .withNewPersistentClaimStorage()
+                            .withNewSize("10")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endZookeeper()
+                .endSpec()
+                .done();
+
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .withConfig(configOfKafka)
+                        .withNewPersistentClaimStorage()
+                            .withNewSize("10")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endKafka()
+                    .editZookeeper()
+                        .withNewPersistentClaimStorage()
+                            .withNewSize("10")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endZookeeper()
+                .endSpec()
+                .done();
+
+        // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
+        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
+                .editSpec()
+                    .withReplicas(3)
+                    .withPartitions(12)
+                .endSpec()
+                .done();
+
+        KafkaTopicResource.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + TOPIC_NAME)
+                .editSpec()
+                    .withReplicas(3)
+                    .withPartitions(12)
+                .endSpec()
+                .done();
+
+        LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+
+        LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), kafkaClusterSourceName + "." + TOPIC_NAME).done();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                .editMetadata()
+                    .withName("my-mirror-maker2")
+                .endMetadata()
+                .editSpec()
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                    .withNewTemplate()
+                        .withNewConnectContainer()
+                            .addNewEnv()
+                                .withNewName("JAEGER_SERVICE_NAME")
+                                .withValue(JAEGER_MIRROR_MAKER2_SERVICE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withNewName("JAEGER_AGENT_HOST")
+                                .withValue(JAEGER_AGENT_NAME)
+                            .endEnv()
+                            .addNewEnv()
+                                .withNewName("JAEGER_SAMPLER_TYPE")
+                                .withValue(JAEGER_SAMPLER_TYPE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withNewName("JAEGER_SAMPLER_PARAM")
+                                .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                        .endConnectContainer()
+                    .endTemplate()
+                .endSpec()
+                .done();
+
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, "From_" + kafkaClusterSourceName + "." + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "To_" + kafkaClusterSourceName + "." + TOPIC_NAME);
+
+        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
+
+        LOGGER.info("Deleting topic {} from CR", kafkaClusterSourceName + "." + TOPIC_NAME);
+        cmdKubeClient().deleteByName("kafkatopic", kafkaClusterSourceName + "." + TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(kafkaClusterSourceName + "." + TOPIC_NAME);
+    }
+
+    @Test
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
         Map<String, Object> configOfKafka = new HashMap<>();
@@ -439,6 +555,28 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
+        // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
+        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
+                .editSpec()
+                    .withReplicas(3)
+                    .withPartitions(12)
+                .endSpec()
+                .done();
+
+        KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_NAME + "-target")
+                .editSpec()
+                    .withReplicas(3)
+                    .withPartitions(12)
+                    .withTopicName(TOPIC_NAME)
+                .endSpec()
+                .done();
+
+        LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+
+        LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
+
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
                 "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
                 .editMetadata()
@@ -462,7 +600,7 @@ public class TracingST extends AbstractST {
                                 .withValue(JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
-                                .withNewName("AEGER_SAMPLER_PARAM")
+                                .withNewName("JAEGER_SAMPLER_PARAM")
                                 .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endMirrorMakerContainer()
@@ -470,39 +608,18 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
-                .editSpec()
-                    .withReplicas(3)
-                    .withPartitions(12)
-                .endSpec()
-                .done();
-
-        KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_TARGET_NAME)
-                .editSpec()
-                    .withReplicas(3)
-                    .withPartitions(12)
-                .endSpec()
-                .done();
-
-        LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
-
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
-
-        LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
-
-        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
-
-        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
-        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
-        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_NAME);
 
         LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
         KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
 
-        LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
+        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME + "-target");
+        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME + "-target");
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME + "-target");
     }
 
     @Test
@@ -522,37 +639,7 @@ public class TracingST extends AbstractST {
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).done();
         KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).done();
 
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
-                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
-                .editMetadata()
-                    .withName("my-mirror-maker")
-                .endMetadata()
-                .editSpec()
-                    .withNewJaegerTracing()
-                    .endJaegerTracing()
-                    .withNewTemplate()
-                        .withNewMirrorMakerContainer()
-                            .addNewEnv()
-                                .withNewName("JAEGER_SERVICE_NAME")
-                                .withValue("my-mirror-maker")
-                            .endEnv()
-                            .addNewEnv()
-                                .withNewName("JAEGER_AGENT_HOST")
-                                .withValue(JAEGER_AGENT_NAME)
-                            .endEnv()
-                            .addNewEnv()
-                                .withNewName("JAEGER_SAMPLER_TYPE")
-                                .withValue(JAEGER_SAMPLER_TYPE)
-                            .endEnv()
-                            .addNewEnv()
-                                .withNewName("JAEGER_SAMPLER_PARAM")
-                                .withValue(JAEGER_SAMPLER_PARAM)
-                            .endEnv()
-                        .endMirrorMakerContainer()
-                    .endTemplate()
-                .endSpec()
-                .done();
-
+        // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
         KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
@@ -560,10 +647,26 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_TARGET_NAME)
+        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
+                .endSpec()
+                .done();
+
+        KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_NAME + "-target")
+                .editSpec()
+                    .withReplicas(3)
+                    .withPartitions(12)
+                    .withTopicName(TOPIC_NAME)
+                .endSpec()
+                .done();
+
+        KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_TARGET_NAME + "-target")
+                .editSpec()
+                    .withReplicas(3)
+                    .withPartitions(12)
+                    .withTopicName(TOPIC_TARGET_NAME)
                 .endSpec()
                 .done();
 
@@ -610,6 +713,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
+
         String kafkaConnectPodName = kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(CLUSTER_NAME + "-connect")).findFirst().get().getMetadata().getName();
         String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
         String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
@@ -617,6 +721,37 @@ public class TracingST extends AbstractST {
         LOGGER.info("Creating file sink in {}", pathToConnectorSinkConfig);
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
+
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
+                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
+                .editMetadata()
+                    .withName("my-mirror-maker")
+                .endMetadata()
+                .editSpec()
+                    .withNewJaegerTracing()
+                    .endJaegerTracing()
+                    .withNewTemplate()
+                        .withNewMirrorMakerContainer()
+                            .addNewEnv()
+                                .withNewName("JAEGER_SERVICE_NAME")
+                                .withValue("my-mirror-maker")
+                            .endEnv()
+                            .addNewEnv()
+                                .withNewName("JAEGER_AGENT_HOST")
+                                .withValue(JAEGER_AGENT_NAME)
+                            .endEnv()
+                            .addNewEnv()
+                                .withNewName("JAEGER_SAMPLER_TYPE")
+                                .withValue(JAEGER_SAMPLER_TYPE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withNewName("JAEGER_SAMPLER_PARAM")
+                                .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                        .endMirrorMakerContainer()
+                    .endTemplate()
+                .endSpec()
+                .done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -631,11 +766,15 @@ public class TracingST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
-        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
-        TracingUtils.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaClientsPodName);
-        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
-        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName, "To_" + TOPIC_TARGET_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_TARGET_NAME);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_TARGET_NAME);
 
         LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
@@ -648,6 +787,14 @@ public class TracingST extends AbstractST {
         LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME);
         cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME);
         KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
+
+        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME + "-target");
+        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME + "-target");
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME + "-target");
+
+        LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME + "-target");
+        cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME + "-target");
+        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME + "-target");
     }
 
     @Test
