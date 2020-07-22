@@ -1,6 +1,6 @@
 # Development Guide for Strimzi
 
-This document gives a detailed breakdown of the various build processes and options for building Strimzi from source. For a quick start guide see the [Getting Started](DEV_QUICK_START.md) document.
+This document gives a detailed breakdown of the various build processes and options for building Strimzi from source.
 
 <!-- TOC depthFrom:2 -->
 
@@ -20,17 +20,8 @@ This document gives a detailed breakdown of the various build processes and opti
 
 To build Strimzi from source you need an Kubernetes or OpenShift cluster available. You can install either [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) or [minishift](https://www.okd.io/minishift/) to have access to a cluster on your local machine.
 
-You will also need access to several command line utilities. See the [pre-requisites section](#build-pre-requisites) for more details.
+You will also need access to several command line utilities. See the [pre-requisites section](#build-pre-requisites) for more details. Make sure your minishift user has `cluster-admin` role - see [minishift](#Minishift) setup details.
 
-### Minishift Setup
-
-In order to perform the operations necessary for the integration tests, your user must have the cluster administrator role assigned. For example, if your username is `developer`, you can add the `cluster-admin` role using the commands below:
-
-    oc login -u system:admin
-
-    oc adm policy add-cluster-role-to-user cluster-admin developer
-    
-    oc login -u developer -p <password>
 
 ## Build from source
 
@@ -98,7 +89,7 @@ To build this project you must first install several command line utilities and 
 - [`mvn`](https://maven.apache.org/index.html) (version 3.5 and above) - Maven CLI
 - [`helm`](https://helm.sh/) - Helm Package Management System for Kubernetes
     - Both Helm 2 and Helm 3 are supported. In order to use either two, you need to download both versions. A convenient way to do so is to download the [get_helm.sh](https://helm.sh/docs/intro/install/#from-script) script and specify the version you want to download either for Helm 2 or Helm 3.
-    - After you download one binary, you can , for convenience, rename it to `helm2` and `helm3` accordingly.
+    - After you download one binary, you can, for convenience, rename it to `helm2` and `helm3` accordingly.
     - Note that if you are using the Helm version 2 charts, after installing the Helm CLI, ensure you run `helm2 init` to configure to your cluster.
 - [`asciidoctor`](https://asciidoctor.org/) - Documentation generation. 
     - Use `gem` to install latest version for your platform.
@@ -239,7 +230,7 @@ By default the `docker_push` target will build the images under the strimzi orga
 
     export DOCKER_ORG=docker_hub_username
 
-When the Docker images are build then will now be labeled in the form: `docker_hub_username/operator:latest` in your local repository and pushed to your Docker Hub account under the same label.
+When the Docker images are build, they will be labeled in the form: `docker_hub_username/operator:latest` in your local repository and pushed to your Docker Hub account under the same label.
 
 In order to use these newly built images, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images. That can be done using the following command and replacing `docker_hub_username` with the relevant value:
 
@@ -276,13 +267,13 @@ Assuming your OpenShift login is `developer` (a user with the `cluster-admin` ro
 
         oc get services -n default 
         
-   `172.30.1.1:5000` is the typical default IP and port of the Docker registry running in the cluster, however the command may above may return a different value.
+   `172.30.1.1:5000` is the typical default IP and port of the Docker registry running in the cluster, however the command above may return a different value.
 
 3. Log in to the Docker repo running in the local cluster:
 
         docker login -u developer -p $(oc whoami -t) 172.30.1.1:5000
         
-   Note that we are using the `developer` OpenShift user and the token for the current  (`developer`) login as the password. 
+   Note that we are using the `developer` OpenShift user and the token for the current (`developer`) login as the password.
         
 4. Now run the `docker_push` target to push the development images to that Docker repo. If you need to build/rebuild the Docker images as well, then run the `all` target instead:
 
@@ -360,7 +351,7 @@ You can add a commit-msg hook to warn you if the commit you just made locally ha
 
 ## Checkstyle pre-commit hook
 
-The Checkstyle plugin in run on all pull requests to the Strimzi repository. If you haven't compiled the code via maven, before you submit the PR, then formatting bugs can slip through and this can lead to annoying extra pushes to fix things. In the first instance you should see if your IDE has a Checkstyle plugin that can highlight errors in-line, such as [this one](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea) for IntelliJ. 
+The Checkstyle plugin runs on all pull requests to the Strimzi repository. If you haven't compiled the code via maven, before you submit the PR, then formatting bugs can slip through and this can lead to annoying extra pushes to fix things. In the first instance you should see if your IDE has a Checkstyle plugin that can highlight errors in-line, such as [this one](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea) for IntelliJ.
 
 You can also run the Checkstyle plugin for every commit you make by adding a pre-commit hook to your local Strimzi git repository. To do this, add the following line to your `.git/hooks/pre-commit` script, to execute the checks and fail the commit if errors are detected:
 
@@ -370,4 +361,4 @@ You can also run the Checkstyle plugin for every commit you make by adding a pre
 
 ## IDE build problems
 
-The build also uses a Java annotation processor. Some IDEs (such as IntelliJ) don't, by default, run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as part of the `maven` build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor directly.
+The build also uses a Java annotation processor. Some IDEs (such as IntelliJ's IDEA) by default don't run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as part of the `maven` build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor directly.
