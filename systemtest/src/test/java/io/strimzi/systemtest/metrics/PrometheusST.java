@@ -80,7 +80,6 @@ public class PrometheusST extends AbstractST {
 
         DeploymentUtils.waitForDeploymentAndPodsReady("prometheus-operator", 1);
 
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-service-monitor.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-pod-monitor.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus-rules.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/alert-manager.yaml", NAMESPACE));

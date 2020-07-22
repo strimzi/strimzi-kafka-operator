@@ -48,3 +48,52 @@ spec:
   podMetricsEndpoints:
   - path: /metrics
     port: rest-api
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-metrics
+  labels:
+    app: strimzi
+spec:
+  selector:
+    matchExpressions:
+      - key: "strimzi.io/kind"
+        operator: In
+        values: ["Kafka", "KafkaConnect"]
+  namespaceSelector:
+    matchNames:
+      - default
+  podMetricsEndpoints:
+  - path: /metrics
+    port: tcp-prometheus
+    relabelings:
+    - separator: ;
+      regex: __meta_kubernetes_pod_label_(.+)
+      replacement: $1
+      action: labelmap
+    - sourceLabels: [__meta_kubernetes_namespace]
+      separator: ;
+      regex: (.*)
+      targetLabel: namespace
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      separator: ;
+      regex: (.*)
+      targetLabel: kubernetes_pod_name
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      separator: ;
+      regex: (.*)
+      targetLabel: node_name
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_pod_host_ip]
+      separator: ;
+      regex: (.*)
+      targetLabel: node_ip
+      replacement: $1
+      action: replace
+    

@@ -45,6 +45,12 @@ We removed the old ones from the Prometheus scraping configuration/alerts and on
 It means that the charts related to memory and CPU usage are not going to work on Kuvbernetes version previous 1.14.
 For more information on what is changed: https://github.com/strimzi/strimzi-kafka-operator/pull/3312
 
+#### Deprecation of monitoring port on Kafka and ZooKeeper related services
+
+The `PodMonitor` resource is now used instead of the `ServiceMonitor` for scraping metrics from Kafka, ZooKeeper, Kafka Connect and so on.
+For this reason, we are deprecating the monitoring port `tcp-prometheus` (9404) on all the services where it is declared (Kafka bootstrap, ZooKeeper client and so on).
+This port will be removed in the next release.
+
 ## 0.18.0
 
 * Add possibility to set Java System Properties for User Operator and Topic Operator via `Kafka` CR.
