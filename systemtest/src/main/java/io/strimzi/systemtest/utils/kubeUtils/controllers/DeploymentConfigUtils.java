@@ -66,7 +66,7 @@ public class DeploymentConfigUtils {
     public static Map<String, String> waitTillDepConfigHasRolled(String depConfigName, Map<String, String> snapshot) {
         LOGGER.info("Waiting for DeploymentConfig {} rolling update", depConfigName);
         TestUtils.waitFor("DeploymentConfig roll of " + depConfigName,
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.getTimeoutForPodsOperation(snapshot.size()), () -> depConfigHasRolled(depConfigName, snapshot));
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> depConfigHasRolled(depConfigName, snapshot));
         waitForDeploymentConfigReady(depConfigName);
         LOGGER.info("DeploymentConfig {} rolling update finished", depConfigName);
         return depConfigSnapshot(depConfigName);

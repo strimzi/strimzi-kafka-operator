@@ -64,10 +64,10 @@ public class ResourceOperation {
     }
 
     /**
-     * getTimeoutForPodsOperation returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update,
+     * timeoutForPodsOperation returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update,
      *  scale up or create
      */
-    public static long getTimeoutForPodsOperation(int numberOfPods) {
+    public static long timeoutForPodsOperation(int numberOfPods) {
         return Duration.ofMinutes(5).toMillis() * Math.max(1, numberOfPods);
     }
 
@@ -90,7 +90,7 @@ public class ResourceOperation {
                 timeout = Duration.ofMinutes(5).toMillis();
                 break;
             default:
-                timeout = Duration.ofMinutes(2).toMillis();
+                timeout = Duration.ofMinutes(3).toMillis();
         }
 
         return timeout;
