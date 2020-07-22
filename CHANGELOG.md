@@ -50,6 +50,7 @@ For more information on what is changed: https://github.com/strimzi/strimzi-kafk
 The `PodMonitor` resource is now used instead of the `ServiceMonitor` for scraping metrics from Kafka, ZooKeeper, Kafka Connect and so on.
 For this reason, we are deprecating the monitoring port `tcp-prometheus` (9404) on all the services where it is declared (Kafka bootstrap, ZooKeeper client and so on).
 This port will be removed in the next release.
+Together with it we will also remove the Prometheus annotation from the service.
 
 ## 0.18.0
 
