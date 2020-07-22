@@ -65,16 +65,16 @@ spec:
 Cruise Control uses _capacity limits_ to determine if certain resource-based optimization goals are being broken. 
 
 You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
-Capacity limits can be set for the following broker resources in the described units:
+Capacity limits can be set for the following broker resources using the standard Kubernetes byte units K, M, G and T or their bibyte (power of two) equivalents Ki, Mi, Gi and Ti:
 
-* `disk`            - Disk storage in bytes
-* `cpuUtilization`  - CPU utilization as a percent (0-100)
-* `inboundNetwork`  - Inbound network throughput in bytes per second
-* `outboundNetwork` - Outbound network throughput in bytes per second
+* `disk`            - Disk storage per broker (Default: 100000Mi)
+* `cpuUtilization`  - CPU utilization as a percentage (Default: 100)
+* `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
+* `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
 
 Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
 
-.An example Cruise Control brokerCapacity configuration
+.An example Cruise Control brokerCapacity configuration using bibyte units
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -86,10 +86,10 @@ spec:
   cruiseControl:
     # ...
     brokerCapacity:
-      disk: 100G
+      disk: 100Gi
       cpuUtilization: 100
-      inboundNetwork: 10000KB/s
-      outboundNetwork: 10000KB/s
+      inboundNetwork: 10000KiB/s
+      outboundNetwork: 10000KiB/s
     # ...
 ----
 
