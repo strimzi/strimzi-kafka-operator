@@ -26,6 +26,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class PodUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(Constants.POD);
 
     private PodUtils() { }
 
@@ -148,7 +149,7 @@ public class PodUtils {
     public static void deletePodWithWait(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
                 if (pods.size() != 0) {
@@ -247,7 +248,7 @@ public class PodUtils {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for Pod label {} change to {}", labelKey, null);
             TestUtils.waitFor("Pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                DELETION_TIMEOUT, () ->
                     kubeClient().getPod(podName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("Pod label {} changed to {}", labelKey, null);

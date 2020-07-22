@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +23,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ConfigMapUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigMapUtils.class);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ConfigMapUtils() { }
 
@@ -55,7 +57,7 @@ public class ConfigMapUtils {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for ConfigMap {} label {} change to {}", configMapName, labelKey, null);
             TestUtils.waitFor("Kafka configMap label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                DELETION_TIMEOUT, () ->
                     kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("ConfigMap {} label {} change to {}", configMapName, labelKey, null);
@@ -64,7 +66,7 @@ public class ConfigMapUtils {
 
     public static void waitUntilConfigMapDeletion(String clusterName) {
         LOGGER.info("Waiting for all ConfigMaps of cluster {} deletion", clusterName);
-        TestUtils.waitFor("ConfigMaps will be deleted {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+        TestUtils.waitFor("ConfigMaps will be deleted {}", Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> {
                 List<ConfigMap> cmList = kubeClient().listConfigMaps().stream().filter(cm -> cm.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
                 if (cmList.isEmpty()) {

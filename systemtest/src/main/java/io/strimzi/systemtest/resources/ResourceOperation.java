@@ -70,4 +70,29 @@ public class ResourceOperation {
     public static long timeoutForPodsOperation(int numberOfPods) {
         return Duration.ofMinutes(5).toMillis() * Math.max(1, numberOfPods);
     }
+
+    public static long getTimeoutForResourceDeletion() {
+        return getTimeoutForResourceDeletion("default");
+    }
+
+    public static long getTimeoutForResourceDeletion(String kind) {
+        long timeout;
+
+        switch (kind) {
+            case Kafka.RESOURCE_KIND:
+            case KafkaConnect.RESOURCE_KIND:
+            case KafkaConnectS2I.RESOURCE_KIND:
+            case KafkaMirrorMaker2.RESOURCE_KIND:
+            case KafkaMirrorMaker.RESOURCE_KIND:
+            case KafkaBridge.RESOURCE_KIND:
+            case Constants.STATEFUL_SET:
+            case Constants.POD:
+                timeout = Duration.ofMinutes(5).toMillis();
+                break;
+            default:
+                timeout = Duration.ofMinutes(3).toMillis();
+        }
+
+        return timeout;
+    }
 }
