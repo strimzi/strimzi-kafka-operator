@@ -48,11 +48,12 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
         return "bridge-crd-it-namespace";
     }
 
-    protected KafkaBridge getResource() {
+    @Override
+    protected KafkaBridge getResource(String resourceName) {
         return new KafkaBridgeBuilder()
                 .withApiVersion(KafkaBridge.RESOURCE_GROUP + "/" + KafkaBridge.V1ALPHA1)
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
+                .withName(resourceName)
                 .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

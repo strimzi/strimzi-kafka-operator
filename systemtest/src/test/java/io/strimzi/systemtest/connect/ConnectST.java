@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.connect;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
@@ -249,7 +250,7 @@ class ConnectST extends AbstractST {
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
 
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).cascading(true).delete();
+        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         LOGGER.info("Topic {} deleted", CONNECT_TOPIC_NAME);
         KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }

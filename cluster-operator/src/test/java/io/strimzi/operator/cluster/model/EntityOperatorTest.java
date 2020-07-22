@@ -358,7 +358,7 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test

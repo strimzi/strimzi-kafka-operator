@@ -95,7 +95,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) {
-            EventBuilder evtb = new EventBuilder().withApiVersion("v1");
+            EventBuilder evtb = new EventBuilder();
             final String eventTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd'T'HH:mm:ss'Z'"));
             
             if (involvedObject != null) {
@@ -424,10 +424,6 @@ class TopicOperator {
 
     public Counter getPeriodicReconciliationsCounter() {
         return this.periodicReconciliationsCounter;
-    }
-
-    public void setTopicCount(int topics) {
-        this.topicCounter.set(topics);
     }
 
     /**

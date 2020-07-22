@@ -27,10 +27,12 @@ import java.util.stream.Collectors;
 
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
@@ -212,7 +214,7 @@ public abstract class TopicOperatorBaseIT {
                 // Wait for the operator to delete all the existing topics in Kafka
                 for (KafkaTopic item : items) {
                     LOGGER.info("Deleting {} from Kube", item.getMetadata().getName());
-                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).cascading(true).delete();
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                     LOGGER.info("Awaiting deletion of {} in Kafka", item.getMetadata().getName());
                     waitForTopicInKafka(new TopicName(item).toString(), false);
                     waitForTopicInKube(item.getMetadata().getName(), false);
@@ -227,7 +229,7 @@ public abstract class TopicOperatorBaseIT {
 
                 // Wait for the operator to delete all the existing topics in Kafka
                 for (KafkaTopic item : items) {
-                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).cascading(true).delete();
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                     waitForTopicInKube(item.getMetadata().getName(), false);
                 }
             }
@@ -581,7 +583,7 @@ public abstract class TopicOperatorBaseIT {
     }
 
     protected MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
-        return kubeClient.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        return kubeClient.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     protected void waitForTopicInKafka(String topicName) throws InterruptedException, ExecutionException, TimeoutException {
@@ -629,7 +631,7 @@ public abstract class TopicOperatorBaseIT {
 
     protected void deleteInKube(String resourceName) throws InterruptedException, ExecutionException, TimeoutException {
         // can now delete the topicResource
-        operation().inNamespace(NAMESPACE).withName(resourceName).cascading(true).delete();
+        operation().inNamespace(NAMESPACE).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         waitFor(() -> {
             return operation().inNamespace(NAMESPACE).withName(resourceName).get() == null;
         }, "verified deletion of KafkaTopic " + resourceName);

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -145,7 +146,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
         try {
-            operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
+            operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
             log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.deleted());
         } catch (Exception e) {
@@ -164,7 +165,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
     protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired, boolean cascading) {
         try {
-            T result = operation().inNamespace(namespace).withName(name).cascading(cascading).patch(desired);
+            T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
             log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
             return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
         } catch (Exception e) {

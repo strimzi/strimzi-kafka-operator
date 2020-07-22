@@ -281,7 +281,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(bc.getSpec().getSuccessfulBuildsHistoryLimit(), is(new Integer(5)));
         assertThat(bc.getSpec().getFailedBuildsHistoryLimit(), is(new Integer(5)));
         assertThat(bc.getSpec().getResources().getLimits().get("cpu").getAmount(), is("42"));
-        assertThat(bc.getSpec().getResources().getRequests().get("mem").getAmount(), is("4Gi"));
+        assertThat(bc.getSpec().getResources().getRequests().get("mem"), is(new Quantity("4", "Gi")));
         checkOwnerReference(kc.createOwnerReference(), bc);
     }
 
@@ -869,7 +869,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -1274,7 +1274,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector(), is(nullValue()));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
-        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(emptyMap()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(nullValue()));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
     }

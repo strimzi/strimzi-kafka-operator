@@ -558,7 +558,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -930,7 +930,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount(), is(sizeLimit));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
     @Test

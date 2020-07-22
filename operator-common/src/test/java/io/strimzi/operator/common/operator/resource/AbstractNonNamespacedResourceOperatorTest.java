@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -92,7 +93,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.cascading(cascade)).thenReturn(mockResource);
+        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
         when(mockResource.patch(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);

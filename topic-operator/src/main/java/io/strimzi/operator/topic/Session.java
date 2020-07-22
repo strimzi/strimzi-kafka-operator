@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
@@ -193,7 +194,7 @@ public class Session extends AbstractVerticle {
                     try {
                         LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
 
-                        Session.this.topicWatch = kubeClient.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
+                        Session.this.topicWatch = kubeClient.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
                                 .inNamespace(namespace).withLabels(labels.labels()).watch(watcher);
                         LOGGER.debug("Watching setup");
 

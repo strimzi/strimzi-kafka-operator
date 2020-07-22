@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.mockkube;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
@@ -35,9 +36,9 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -154,7 +155,7 @@ class MockBuilder<T extends HasMetadata,
             LOGGER.debug("Watcher {} installed on {}", watcher, mixed);
             return addWatcher(PredicatedWatcher.watcher(resourceTypeClass.getName(), watcher));
         });
-        when(mixed.create(any())).thenAnswer(i -> {
+        when(mixed.create((T) any())).thenAnswer(i -> {
             T resource = i.getArgument(0);
             String resourceName = resource.getMetadata().getName();
             return doCreate(resourceName, resource);
@@ -233,7 +234,7 @@ class MockBuilder<T extends HasMetadata,
 
     MixedOperation<T, L, D, R> mockWithLabels(Map<String, String> labels) {
         return mockWithLabelPredicate(p -> {
-            Map<String, String> m = new HashMap<>(p.getMetadata().getLabels());
+            Map<String, String> m = new HashMap<>(p.getMetadata().getLabels() == null ? emptyMap() : p.getMetadata().getLabels());
             m.keySet().retainAll(labels.keySet());
             return labels.equals(m);
         });
@@ -297,7 +298,7 @@ class MockBuilder<T extends HasMetadata,
             return doneable(t, resource::createOrReplace);
         });
         when(resource.withGracePeriod(anyLong())).thenReturn(resource);
-        mockCascading(resource);
+        mockWithPropagationPolicy(resource);
         mockPatch(resourceName, resource);
         when(resource.edit()).thenAnswer(i -> {
             T t = resource.get();
@@ -343,7 +344,7 @@ class MockBuilder<T extends HasMetadata,
     }
 
     protected void mockDelete(String resourceName, R resource) {
-        when(resource.cascading(true).delete()).thenAnswer(i -> {
+        when(resource.withPropagationPolicy(DeletionPropagation.FOREGROUND).delete()).thenAnswer(i -> {
             return doDelete(resourceName);
         });
     }
@@ -394,8 +395,8 @@ class MockBuilder<T extends HasMetadata,
         return copyResource(argument);
     }
 
-    protected void mockCascading(R resource) {
-        when(resource.cascading(anyBoolean())).thenReturn(resource);
+    protected void mockWithPropagationPolicy(R resource) {
+        when(resource.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(resource);
     }
 
     protected void mockWatch(String resourceName, R resource) {
@@ -418,8 +419,9 @@ class MockBuilder<T extends HasMetadata,
         };
     }
 
+    @SuppressWarnings("unchecked")
     protected void mockCreate(String resourceName, R resource) {
-        when(resource.create(any())).thenAnswer(i -> {
+        when(resource.create((T) any())).thenAnswer(i -> {
             T argument = i.getArgument(0);
             return doCreate(resourceName, argument);
         });

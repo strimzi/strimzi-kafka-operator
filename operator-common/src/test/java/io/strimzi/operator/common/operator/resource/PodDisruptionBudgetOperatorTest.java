@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.policy.DoneablePodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
@@ -74,12 +75,12 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
         PodDisruptionBudget resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.create(any())).thenReturn(resource);
+        when(mockResource.create(any(PodDisruptionBudget.class))).thenReturn(resource);
 
         Deletable mockDeletable = mock(Deletable.class);
-        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
-        when(mockResource.cascading(cascade)).thenReturn(mockERPD);
+        EditReplacePatchDeletable mockGrace = mock(EditReplacePatchDeletable.class);
+        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockGrace);
+        when(mockGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -101,7 +102,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
             assertThat(ar.succeeded(), is(true));
             verify(mockResource).get();
             verify(mockDeletable).delete();
-            verify(mockResource).create(any());
+            verify(mockResource).create(any(PodDisruptionBudget.class));
             verify(mockResource, never()).patch(any());
             verify(mockResource, never()).createNew();
             verify(mockResource, never()).createOrReplace(any());

@@ -1576,6 +1576,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -1612,6 +1614,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -2167,6 +2171,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Kafka broker container.
                     tlsSidecarContainer:
@@ -2231,6 +2237,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Kafka broker TLS sidecar container.
                     initContainer:
@@ -2294,6 +2302,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Kafka init container.
@@ -2791,6 +2801,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -2827,6 +2839,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -3223,6 +3237,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the ZooKeeper container.
                     tlsSidecarContainer:
@@ -3286,6 +3302,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Zookeeper server TLS sidecar container.
@@ -4440,6 +4458,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -4476,6 +4496,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -4790,6 +4812,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Entity Operator TLS sidecar container.
                     topicOperatorContainer:
@@ -4854,6 +4878,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Entity Topic Operator container.
                     userOperatorContainer:
@@ -4917,6 +4943,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Entity User Operator container.
@@ -5246,6 +5274,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -5282,6 +5312,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -5642,6 +5674,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Cruise Control container.
                     tlsSidecarContainer:
@@ -5705,6 +5739,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Cruise Control TLS sidecar container.
@@ -5899,6 +5935,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -5935,6 +5973,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -6249,6 +6289,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for JmxTrans container.
                   description: Template for JmxTrans resources.
@@ -6347,6 +6389,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -6383,6 +6427,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -6714,6 +6760,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Kafka Exporter container.
