@@ -103,7 +103,7 @@ public class PodUtils {
     }
 
     public static void waitForPodUpdate(String podName, Date startTime) {
-        TestUtils.waitFor(podName + " update", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+        TestUtils.waitFor(podName + " update", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT, () ->
             startTime.before(kubeClient().getCreationTimestampForPod(podName))
         );
     }

@@ -43,10 +43,11 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubernetesResource {
     private static final Logger LOGGER = LogManager.getLogger(KubernetesResource.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     public static DoneableDeployment deployNewDeployment(Deployment deployment) {
         return new DoneableDeployment(deployment, co -> {
-            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, READINESS_TIMEOUT,
                 () -> {
                     try {
                         ResourceManager.kubeClient().createOrReplaceDeployment(co);
@@ -66,7 +67,7 @@ public class KubernetesResource {
 
     public static DoneableJob deployNewJob(Job job) {
         return new DoneableJob(job, kubernetesJob -> {
-            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, READINESS_TIMEOUT,
                 () -> {
                     try {
                         ResourceManager.kubeClient().getClient().batch().jobs().inNamespace(kubeClient().getNamespace()).createOrReplace(kubernetesJob);

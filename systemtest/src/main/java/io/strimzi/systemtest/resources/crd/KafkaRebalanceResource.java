@@ -14,12 +14,14 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 
 import java.util.function.Consumer;
 
 public class KafkaRebalanceResource {
     public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = "../examples/cruise-control/kafka-rebalance.yaml";
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>> kafkaRebalanceClient() {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
@@ -41,7 +43,7 @@ public class KafkaRebalanceResource {
 
     private static DoneableKafkaRebalance deployKafkaRebalance(KafkaRebalance kafkaRebalance) {
         return new DoneableKafkaRebalance(kafkaRebalance, kB -> {
-            TestUtils.waitFor("KafkaRebalance creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaRebalance creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, READINESS_TIMEOUT,
                 () -> {
                     try {
                         kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kB);

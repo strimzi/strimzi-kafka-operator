@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -21,6 +22,7 @@ import java.util.function.Consumer;
 
 public class KafkaConnectorResource {
     public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = "../examples/connect/source-connector.yaml";
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, DoneableKafkaConnector, Resource<KafkaConnector, DoneableKafkaConnector>> kafkaConnectorClient() {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
@@ -67,7 +69,7 @@ public class KafkaConnectorResource {
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {
         return new DoneableKafkaConnector(kafkaConnector, kC -> {
-            TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, READINESS_TIMEOUT,
                 () -> {
                     try {
                         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);

@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -24,6 +25,7 @@ import java.util.function.Consumer;
 
 public class KafkaMirrorMakerResource {
     public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = "../examples/mirror-maker/kafka-mirror-maker.yaml";
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMakerClient() {
         return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());
@@ -77,7 +79,7 @@ public class KafkaMirrorMakerResource {
 
     private static DoneableKafkaMirrorMaker deployKafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
         return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, kB -> {
-            TestUtils.waitFor("KafkaMirrorMaker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaMirrorMaker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, READINESS_TIMEOUT,
                 () -> {
                     try {
                         kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kB);

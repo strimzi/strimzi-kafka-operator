@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -25,6 +26,7 @@ import java.util.function.Consumer;
 
 public class KafkaConnectS2IResource {
     public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = "../examples/connect/kafka-connect-s2i.yaml";
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
         return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());
@@ -68,7 +70,7 @@ public class KafkaConnectS2IResource {
             KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
         }
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, READINESS_TIMEOUT,
                 () -> {
                     try {
                         kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);

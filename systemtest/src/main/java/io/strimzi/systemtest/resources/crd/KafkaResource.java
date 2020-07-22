@@ -29,18 +29,15 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.function.Consumer;
 
 public class KafkaResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
-
     private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
     private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/cruise-control/kafka-cruise-control.yaml";
     private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
     private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaClient() {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
@@ -166,7 +163,7 @@ public class KafkaResource {
 
     static DoneableKafka deployKafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, READINESS_TIMEOUT,
                 () -> {
                     try {
                         kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(k);

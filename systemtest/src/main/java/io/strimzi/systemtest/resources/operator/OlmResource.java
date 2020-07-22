@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.operator;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -58,7 +59,7 @@ public class OlmResource {
 
         ResourceManager.cmdKubeClient().apply(subscriptionFile);
         // Make sure that operator will be deleted
-        TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+        TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, ResourceOperation.getTimeoutForResourceReadiness(Constants.DEPLOYMENT),
             () -> ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_NAME) != null);
         String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);

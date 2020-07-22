@@ -186,7 +186,7 @@ public class StatefulSetUtils {
             if (!(isStrimziTag || isK8sTag)) {
                 LOGGER.info("Waiting for Stateful set label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Waits for StatefulSet label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                    Constants.GLOBAL_TIMEOUT, () ->
                         kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
