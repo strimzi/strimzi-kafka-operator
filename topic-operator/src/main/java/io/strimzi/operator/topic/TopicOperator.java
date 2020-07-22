@@ -426,6 +426,10 @@ class TopicOperator {
         return this.periodicReconciliationsCounter;
     }
 
+    public void setTopicCount(int topics) {
+        this.topicCounter.set(topics);
+    }
+
     /**
      * Run the given {@code action} on the context thread,
      * immediately if there are currently no other actions with the given {@code key},

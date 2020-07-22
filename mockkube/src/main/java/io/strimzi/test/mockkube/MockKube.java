@@ -361,7 +361,7 @@ public class MockKube {
         return crdc.getGroup() + "##" + crdc.getVersion() + "##" + crdc.getKind();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "deprecation"})
     public void mockCrs(KubernetesClient mockClient) {
         when(mockClient.customResources(any(CustomResourceDefinitionContext.class),
                 any(Class.class),
@@ -369,6 +369,19 @@ public class MockKube {
                 any(Class.class))).thenAnswer(invocation -> {
                     CustomResourceDefinitionContext crdArg = invocation.getArgument(0);
                     String key = crdKey(crdArg);
+                    CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
+                    if (createOrReplaceable == null) {
+                        throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));
+                    }
+                    return createOrReplaceable;
+                });
+
+        when(mockClient.customResources(any(CustomResourceDefinition.class),
+                any(Class.class),
+                any(Class.class),
+                any(Class.class))).thenAnswer(invocation -> {
+                    CustomResourceDefinition crdArg = invocation.getArgument(0);
+                    String key = crdKey(CustomResourceDefinitionContext.fromCrd(crdArg));
                     CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
                     if (createOrReplaceable == null) {
                         throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));

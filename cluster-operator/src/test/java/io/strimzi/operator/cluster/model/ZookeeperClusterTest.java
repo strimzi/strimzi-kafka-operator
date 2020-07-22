@@ -139,7 +139,7 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(headful.getMetadata().getAnnotations().size(), is(0));
+        assertThat(headful.getMetadata().getAnnotations(), is(nullValue()));
 
         checkOwnerReference(zc.createOwnerReference(), headful);
     }
@@ -163,9 +163,7 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
-        assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"), is(false));
-        assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"), is(false));
-        assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
+        assertThat(headful.getMetadata().getAnnotations(), is(nullValue()));
 
         checkOwnerReference(zc.createOwnerReference(), headful);
     }
