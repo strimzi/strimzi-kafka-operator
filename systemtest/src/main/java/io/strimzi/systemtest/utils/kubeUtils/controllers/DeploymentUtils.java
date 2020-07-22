@@ -29,6 +29,7 @@ public class DeploymentUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.DEPLOYMENT);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private DeploymentUtils() { }
 
@@ -177,7 +178,7 @@ public class DeploymentUtils {
      */
     public static void waitForDeploymentDeletion(String name) {
         LOGGER.debug("Waiting for Deployment {} deletion", name);
-        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 if (kubeClient().getDeployment(name) == null) {
                     return true;

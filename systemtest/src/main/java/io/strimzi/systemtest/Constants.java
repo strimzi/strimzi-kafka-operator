@@ -14,8 +14,6 @@ public interface Constants {
     long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     long TIMEOUT_FOR_SECRET_CREATION = Duration.ofMinutes(2).toMillis();
     long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(14).toMillis();
-    long TIMEOUT_FOR_RESOURCE_DELETION = Duration.ofMinutes(1).toMillis();
-    long TIMEOUT_FOR_POD_DELETION = Duration.ofMinutes(5).toMillis();
     long TIMEOUT_FOR_CR_CREATION = Duration.ofMinutes(3).toMillis();
     long TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS = Duration.ofMinutes(7).toMillis();
     long TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP = Duration.ofMinutes(2).toMillis();
@@ -106,6 +104,7 @@ public interface Constants {
     String KAFKA_EXPORTER_DEPLOYMENT = "KafkaWithExporter";
     String KAFKA_CRUISE_CONTROL_DEPLOYMENT = "KafkaWithCruiseControl";
     String STATEFUL_SET = "StatefulSet";
+    String POD = "Pod";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format

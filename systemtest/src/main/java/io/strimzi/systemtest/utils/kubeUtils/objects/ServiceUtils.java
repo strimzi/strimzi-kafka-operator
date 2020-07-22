@@ -21,6 +21,7 @@ public class ServiceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ServiceUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SERVICE);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ServiceUtils() { }
 
@@ -43,7 +44,7 @@ public class ServiceUtils {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Service label {} change to {}", labelKey, null);
             TestUtils.waitFor("Service label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                DELETION_TIMEOUT, () ->
                     kubeClient().getService(serviceName).getMetadata().getLabels().get(labelKey) == null
             );
         }
@@ -74,7 +75,7 @@ public class ServiceUtils {
     public static void waitForServiceDeletion(String serviceName) {
         LOGGER.info("Waiting for Service {} deletion in namespace {}", serviceName, kubeClient().getNamespace());
 
-        TestUtils.waitFor("Service " + serviceName + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Service " + serviceName + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> kubeClient().getService(serviceName) == null);
         LOGGER.info("Service {} in namespace {} was deleted", serviceName, kubeClient().getNamespace());
     }

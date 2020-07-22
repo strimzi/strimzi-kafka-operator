@@ -26,6 +26,7 @@ public class StatefulSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(Constants.STATEFUL_SET);
 
     private StatefulSetUtils() { }
 
@@ -153,7 +154,7 @@ public class StatefulSetUtils {
      */
     public static void waitForStatefulSetDeletion(String name) {
         LOGGER.debug("Waiting for StatefulSet {} deletion", name);
-        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 if (kubeClient().getStatefulSet(name) == null) {
                     return true;
@@ -196,7 +197,7 @@ public class StatefulSetUtils {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for StatefulSet label {} change to {}", labelKey, null);
             TestUtils.waitFor("Waiting for StatefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                DELETION_TIMEOUT, () ->
                     kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("StatefulSet label {} change to {}", labelKey, null);
