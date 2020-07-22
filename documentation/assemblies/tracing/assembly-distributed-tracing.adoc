@@ -16,6 +16,7 @@ Support for tracing is built in to the following components:
 
 * Kafka Connect (including Kafka Connect with Source2Image support)
 * MirrorMaker
+* MirrorMaker 2.0
 * Strimzi Kafka Bridge
 
 You enable and configure tracing for these components using template configuration properties in their custom resources.
