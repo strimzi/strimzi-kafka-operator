@@ -23,13 +23,14 @@ public class KafkaMirrorMaker2Configuration extends AbstractConfiguration {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIXES);
         FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaMirrorMaker2ClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
-        DEFAULTS = new HashMap<>(8);
+        DEFAULTS = new HashMap<>(9);
         DEFAULTS.put("group.id", "mirrormaker2-cluster");
         DEFAULTS.put("offset.storage.topic", "mirrormaker2-cluster-offsets");
         DEFAULTS.put("config.storage.topic", "mirrormaker2-cluster-configs");
         DEFAULTS.put("status.storage.topic", "mirrormaker2-cluster-status");
         DEFAULTS.put("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
         DEFAULTS.put("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
+        DEFAULTS.put("header.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
         DEFAULTS.put("config.providers", "file");
         DEFAULTS.put("config.providers.file.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
     }

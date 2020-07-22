@@ -1,5 +1,7 @@
 # Strimzi: Kafka as a Service
 
+_**Warning:** This chart is now deprecated and will be removed in the future as Helm v2 support ends. Use the Helm v3 chart instead._
+
 Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
 See our [website](https://strimzi.io) for more details about the project.
@@ -131,7 +133,7 @@ the documentation for more details.
 | `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `latest`                                       |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
-| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.17.0`                                             |
+| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.18.0`                                             |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |

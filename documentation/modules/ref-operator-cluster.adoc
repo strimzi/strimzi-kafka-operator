@@ -178,7 +178,7 @@ include::install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml[l
       # ...
 ----
 
-Note line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
+Note line 12, where the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
 
 == `ClusterRoles`
 

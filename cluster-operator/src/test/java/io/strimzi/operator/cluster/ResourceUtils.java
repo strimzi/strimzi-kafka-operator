@@ -694,7 +694,7 @@ public class ResourceUtils {
                 mock(IngressOperator.class), mock(ImageStreamOperator.class), mock(BuildConfigOperator.class),
                 mock(DeploymentConfigOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
                 mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
-                mock(StorageClassOperator.class), mock(NodeOperator.class), zookeeperScalerProvider(), metricsProvider());
+                mock(StorageClassOperator.class), mock(NodeOperator.class), zookeeperScalerProvider(), metricsProvider(), adminClientProvider());
         when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());

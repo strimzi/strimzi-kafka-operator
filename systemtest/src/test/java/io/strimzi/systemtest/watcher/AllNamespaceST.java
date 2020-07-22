@@ -21,6 +21,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.operator.BundleResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -202,7 +203,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         clusterRoleBindingList.forEach(clusterRoleBinding ->
                 KubernetesResource.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
         // 050-Deployment
-        KubernetesResource.clusterOperator("*").done();
+        BundleResource.clusterOperator("*").done();
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
@@ -229,13 +230,5 @@ class AllNamespaceST extends AbstractNamespaceST {
     @BeforeAll
     void setupEnvironment() {
         deployTestSpecificResources();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        teardownEnvForOperator();
-        ResourceManager.setClassResources();
-        deployTestSpecificResources();
-        ResourceManager.setMethodResources();
     }
 }

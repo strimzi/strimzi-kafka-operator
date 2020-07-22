@@ -81,7 +81,7 @@ public class BridgeUtils {
                             String kafkaTopic = jsonResponse.getString("topic");
                             int kafkaPartition = jsonResponse.getInteger("partition");
                             String key = jsonResponse.getString("key");
-                            String value = jsonResponse.getString("value");
+                            Object value = jsonResponse.getValue("value");
                             long offset = jsonResponse.getLong("offset");
                             LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
                         }
@@ -170,5 +170,23 @@ public class BridgeUtils {
     public static JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
                                                   WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
         return createBridgeConsumer(config, bridgeHost, bridgePort, groupId, webClient, Collections.emptyMap());
+    }
+
+    public static boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.info("Deleting consumer");
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        client.delete(bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + name)
+            .putHeader("Content-Type", Constants.KAFKA_BRIDGE_JSON)
+            .as(BodyCodec.jsonObject())
+            .send(ar -> {
+                if (ar.succeeded()) {
+                    LOGGER.info("Consumer deleted");
+                    future.complete(ar.succeeded());
+                } else {
+                    LOGGER.error("Cannot delete consumer", ar.cause());
+                    future.completeExceptionally(ar.cause());
+                }
+            });
+        return future.get(1, TimeUnit.MINUTES);
     }
 }

@@ -168,7 +168,7 @@ public abstract class AbstractConfiguration {
      * in value returned by subsequent calls to getConfiguration()
      * @return A map of keys to values.
      */
-    OrderedProperties asOrderedProperties() {
+    public OrderedProperties asOrderedProperties() {
         return options;
     }
 

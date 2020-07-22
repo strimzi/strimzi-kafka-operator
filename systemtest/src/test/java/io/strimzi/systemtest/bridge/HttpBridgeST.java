@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -29,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -116,7 +116,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, name, client), is(true));
     }
 
     @Test
@@ -178,7 +178,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .endLivenessProbe()
             .endSpec().done();
 
-        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
+        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
@@ -208,7 +208,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             kb.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
-        DeploymentUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, connectSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, bridgeSnapshot);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,

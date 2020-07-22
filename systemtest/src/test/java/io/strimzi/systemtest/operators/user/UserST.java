@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators.user;
 
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -25,7 +26,6 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -148,6 +148,29 @@ class UserST extends AbstractST {
         testUserWithQuotas(KafkaUserResource.scramShaUser(CLUSTER_NAME, "scramed-arnost").done());
     }
 
+    @Test
+    void testUserTemplate() {
+        String labelKey = "test-label-key";
+        String labelValue = "test-label-value";
+        String annotationKey = "test-annotation-key";
+        String annotationValue = "test-annotation-value";
+        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME)
+            .editSpec()
+                .editOrNewTemplate()
+                    .editOrNewSecret()
+                        .editOrNewMetadata()
+                            .addToLabels(labelKey, labelValue)
+                            .addToAnnotations(annotationKey, annotationValue)
+                        .endMetadata()
+                    .endSecret()
+                .endTemplate()
+            .endSpec().done();
+
+        Secret userSecret = kubeClient().getSecret(USER_NAME);
+        assertThat(userSecret.getMetadata().getLabels().get(labelKey), is(labelValue));
+        assertThat(userSecret.getMetadata().getAnnotations().get(annotationKey), is(annotationValue));
+    }
+
     void testUserWithQuotas(KafkaUser user) {
         String userName = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
@@ -227,12 +250,6 @@ class UserST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        deployTestSpecificResources();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
         deployTestSpecificResources();
     }
 }

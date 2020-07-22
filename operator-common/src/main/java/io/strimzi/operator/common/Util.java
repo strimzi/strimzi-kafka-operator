@@ -12,6 +12,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -339,5 +341,32 @@ public class Util {
         }
 
         return merged;
+    }
+
+    public static <T> Future<T> kafkaFutureToVertxFuture(Vertx vertx, KafkaFuture<T> kf) {
+        Promise<T> promise = Promise.promise();
+        if (kf != null) {
+            kf.whenComplete((result, error) -> {
+                vertx.runOnContext(ignored -> {
+                    if (error != null) {
+                        promise.fail(error);
+                    } else {
+                        promise.complete(result);
+                    }
+                });
+            });
+            return promise.future();
+        } else {
+            LOGGER.trace("KafkaFuture is null");
+            return Future.succeededFuture();
+        }
+    }
+
+    public static ConfigResource getBrokersConfig(int podId) {
+        return Util.getBrokersConfig(Integer.toString(podId));
+    }
+
+    public static ConfigResource getBrokersConfig(String podId) {
+        return new ConfigResource(ConfigResource.Type.BROKER, podId);
     }
 }

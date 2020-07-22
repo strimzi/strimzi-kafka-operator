@@ -122,7 +122,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, USER_NAME), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, USER_NAME, client), is(true));
     }
 
     @Test
@@ -178,7 +178,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
     }
 
     @BeforeAll

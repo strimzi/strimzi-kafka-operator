@@ -248,7 +248,7 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
+                        .withNewListeners()
                             .editOrNewTls()
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                                 .endKafkaListenerAuthenticationScramSha512Auth()
@@ -688,7 +688,7 @@ public class ListenersST extends AbstractST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-// Deploy client pod with custom certificates and collect messages from internal TLS listener
+        // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -1131,13 +1131,14 @@ public class ListenersST extends AbstractST {
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
-            .editKafka()
-            .editListeners()
-            .withNewKafkaListenerExternalNodePort()
-            .endKafkaListenerExternalNodePort()
-            .endListeners()
-            .endKafka()
-            .endSpec().done();
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 

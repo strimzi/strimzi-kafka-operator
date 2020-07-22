@@ -23,7 +23,6 @@ import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -36,8 +35,7 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
 
 /**
  * <p>Assembly operator for a "Kafka Bridge" assembly, which manages:</p>
@@ -89,9 +87,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
                 null);
 
-        Map<String, String> annotations = new HashMap<>(1);
-        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(bridge.getAncillaryConfigMapKeyLogConfig()));
-
         boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation);
         kafkaBridgeServiceAccount(namespace, bridge)
@@ -99,7 +94,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
             .compose(i -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), logAndMetricsConfigMap))
             .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
-            .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+            .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(Collections.emptyMap(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(i -> deploymentOperations.waitForObserved(namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))

@@ -502,4 +502,17 @@ public class KafkaBridgeCluster extends AbstractModel {
     public KafkaBridgeHttpConfig getHttp() {
         return this.http;
     }
+
+    /**
+     * Transforms properties to log4j2 properties file format and adds property for reloading the config
+     * @param properties map with properties
+     * @return modified string with monitorInterval
+     */
+    @Override
+    public String createLog4jProperties(OrderedProperties properties) {
+        if (!properties.asMap().keySet().contains("monitorInterval")) {
+            properties.addPair("monitorInterval", "30");
+        }
+        return super.createLog4jProperties(properties);
+    }
 }

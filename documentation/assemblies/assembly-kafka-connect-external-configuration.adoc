@@ -11,7 +11,8 @@
 
 = Using external configuration and secrets
 
-Connectors are created, reconfigured, and deleted using the Kafka Connect HTTP REST interface, or by using `KafkaConnectors`. For more information on these methods, see xref:con-creating-managing-connectors-str[]. The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
+Connectors are created, reconfigured, and deleted using the Kafka Connect HTTP REST interface, or by using `KafkaConnectors`. For more information on these methods, see link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^] in the _Deploying Strimzi_ guide.
+The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
 
 ConfigMaps and Secrets are standard Kubernetes resources used for storing configurations and confidential data.
 Whichever method you use to manage connectors, you can use ConfigMaps and Secrets to configure certain elements of a connector.

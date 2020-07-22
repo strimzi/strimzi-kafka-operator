@@ -28,7 +28,6 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
@@ -176,14 +175,6 @@ public class OauthAbstractST extends AbstractST {
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
         SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
         SecretUtils.createSecret(BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
-
-        createSecretsForDeployments();
-        deployTestSpecificResources();
     }
 }
 

@@ -11,12 +11,14 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -28,7 +30,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
@@ -134,7 +136,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
 
-        KubernetesResource.clusterOperator(NAMESPACE)
+        BundleResource.clusterOperator(NAMESPACE)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -349,15 +351,115 @@ class LoggingChangeST extends AbstractST {
         assertThat("EO pod should not roll", DeploymentUtils.depSnapshot(eoDeploymentName), equalTo(eoPods));
     }
 
+    @Test
+    void testDynamicallySetBridgeLoggingLevels() throws InterruptedException {
+        InlineLogging ilOff = new InlineLogging();
+        Map<String, String> loggers = new HashMap<>();
+        loggers.put("rootLogger.level", "OFF");
+        loggers.put("logger.bridge.level", "OFF");
+        loggers.put("logger.healthy.level", "OFF");
+        loggers.put("logger.ready.level", "OFF");
+        ilOff.setLoggers(loggers);
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1).done();
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
+                .editSpec()
+                    .withInlineLogging(ilOff)
+                .endSpec()
+                .done();
+
+        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(CLUSTER_NAME));
+
+        LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+        InlineLogging ilDebug = new InlineLogging();
+        loggers.put("rootLogger.level", "DEBUG");
+        loggers.put("logger.bridge.level", "OFF");
+        loggers.put("logger.healthy.level", "OFF");
+        loggers.put("logger.ready.level", "OFF");
+        ilDebug.setLoggers(loggers);
+
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, bridz -> {
+            bridz.getSpec().setLogging(ilDebug);
+        });
+
+        final String bridgePodName = bridgeSnapshot.keySet().iterator().next();
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                && cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+        );
+
+        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
+        // wait some time and check whether logs after this time contain anything
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log will contain some records");
+        assertThat(StUtils.getLogFromPodByTime(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "30s"), is(not(emptyString())));
+
+        ConfigMap configMapBridge = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap-bridge")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j2.properties",
+                        "name = BridgeConfig\n" +
+                                "\n" +
+                                "appender.console.type = Console\n" +
+                                "appender.console.name = STDOUT\n" +
+                                "appender.console.layout.type = PatternLayout\n" +
+                                "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                                "\n" +
+                                "rootLogger.level = OFF\n" +
+                                "rootLogger.appenderRefs = console\n" +
+                                "rootLogger.appenderRef.console.ref = STDOUT\n" +
+                                "rootLogger.additivity = false\n" +
+                                "\n" +
+                                "logger.bridge.name = io.strimzi.kafka.bridge\n" +
+                                "logger.bridge.level = OFF\n" +
+                                "logger.bridge.appenderRefs = console\n" +
+                                "logger.bridge.appenderRef.console.ref = STDOUT\n" +
+                                "logger.bridge.additivity = false\n" +
+                                "\n" +
+                                "# HTTP OpenAPI specific logging levels (default is INFO)\n" +
+                                "# Logging healthy and ready endpoints is very verbose because of Kubernetes health checking.\n" +
+                                "logger.healthy.name = http.openapi.operation.healthy\n" +
+                                "logger.healthy.level = OFF\n" +
+                                "logger.ready.name = http.openapi.operation.ready\n" +
+                                "logger.ready.level = OFF"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapBridge);
+
+        ExternalLogging bridgeXternalLogging = new ExternalLoggingBuilder()
+                .withName("external-configmap-bridge")
+                .build();
+
+        LOGGER.info("Setting log level of Bridge to OFF - records should not appear in the log");
+        // change to the external logging
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, bridz -> {
+            bridz.getSpec().setLogging(bridgeXternalLogging);
+        });
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level = OFF")
+                && cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+        );
+
+        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL * 2);
+        // wait some time and check whether logs after this time are empty
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log will contain no records");
+        assertThat(StUtils.getLogFromPodByTime(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "30s"), is(emptyString()));
+
+        assertThat("Bridge pod should not roll", DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(CLUSTER_NAME)), equalTo(bridgeSnapshot));
+    }
+
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skip env recreation after failed tests!");
     }
 
     @Override

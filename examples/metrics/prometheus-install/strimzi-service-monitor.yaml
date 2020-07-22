@@ -6,8 +6,10 @@ metadata:
     app: strimzi
 spec:
   selector:
-    matchLabels:
-      strimzi.io/kind: Kafka
+    matchExpressions:
+      - key: "strimzi.io/kind"
+        operator: In
+        values: ["Kafka", "KafkaConnect"]
   namespaceSelector:
     matchNames:
       - myproject

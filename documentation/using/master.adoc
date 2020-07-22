@@ -7,8 +7,6 @@ include::shared/attributes.adoc[]
 
 include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
-include::assemblies/assembly-getting-started.adoc[leveloffset=+1]
-
 include::assemblies/assembly-deployment-configuration.adoc[leveloffset=+1]
 
 include::assemblies/assembly-operators.adoc[leveloffset=+1]

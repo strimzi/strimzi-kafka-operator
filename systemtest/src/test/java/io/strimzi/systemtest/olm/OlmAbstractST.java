@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.OlmResource;
+import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -27,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -102,9 +101,5 @@ public class OlmAbstractST extends AbstractST {
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaTopic.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaUser.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(Kafka.RESOURCE_KIND).toString());
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
     }
 }

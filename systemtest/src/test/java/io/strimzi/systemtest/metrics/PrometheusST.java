@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.List;
 
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.PROMETHEUS;
@@ -65,10 +64,6 @@ public class PrometheusST extends AbstractST {
         assertThat("alertmanager-alertmanager secret", kubeClient().getSecret("alertmanager-alertmanager") != null);
         assertThat("alertmanager-alertmanager secret does not contain key alertmanager.yaml", kubeClient().getSecret("alertmanager-alertmanager").getData().get("alertmanager.yaml") != null);
     }
-
-    // No need to recreate environment after failed test. Only values from collected metrics are checked
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
 
     @BeforeAll
     void setup() throws IOException {

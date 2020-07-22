@@ -234,6 +234,7 @@ public class KafkaCluster extends AbstractModel {
     private boolean isJmxAuthenticated;
     private CertAndKeySecretSource secretSourceExternal = null;
     private CertAndKeySecretSource secretSourceTls = null;
+    private String brokersConfiguration;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -478,6 +479,11 @@ public class KafkaCluster extends AbstractModel {
             addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
         }
 
+        if (kafkaSpec.getCruiseControl() != null && kafkaClusterSpec.getReplicas() < 2) {
+            throw new InvalidResourceException("Kafka " +
+                    kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
+                    " has invalid configuration. Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes.");
+        }
         result.cruiseControlSpec  = kafkaSpec.getCruiseControl();
         if (result.cruiseControlSpec != null) {
             metricReporterList.add(CRUISE_CONTROL_METRIC_REPORTER);
@@ -2504,7 +2510,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     private String generateBrokerConfiguration()   {
-        return new KafkaBrokerConfigurationBuilder()
+        String result = new KafkaBrokerConfigurationBuilder()
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper()
@@ -2514,11 +2520,17 @@ public class KafkaCluster extends AbstractModel {
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor)
                 .withUserConfiguration(configuration)
                 .build().trim();
+        return result;
+    }
+
+    public String getBrokersConfiguration() {
+        return this.brokersConfiguration;
     }
 
     public ConfigMap generateAncillaryConfigMap(ConfigMap externalLoggingCm, Set<String> advertisedHostnames, Set<String> advertisedPorts)   {
         ConfigMap cm = generateMetricsAndLogConfigMap(externalLoggingCm);
-        cm.getData().put(BROKER_CONFIGURATION_FILENAME, generateBrokerConfiguration());
+        this.brokersConfiguration = generateBrokerConfiguration();
+        cm.getData().put(BROKER_CONFIGURATION_FILENAME, this.brokersConfiguration);
 
         if (!advertisedHostnames.isEmpty()) {
             cm.getData().put(BROKER_ADVERTISED_HOSTNAMES_FILENAME, String.join(" ", advertisedHostnames));
@@ -2529,5 +2541,9 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return cm;
+    }
+
+    public KafkaVersion getKafkaVersion() {
+        return this.kafkaVersion;
     }
 }

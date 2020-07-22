@@ -43,7 +43,7 @@ For example:
 |===
 |NAME     |TYPE      |CLUSTER-IP    |PORT(S)
 
-|grafana  |ClusterIP |172.30.123.40 |80/TCP
+|grafana  |ClusterIP |172.30.123.40 |3000/TCP
 |===
 +
 Note the port number for port forwarding.
@@ -52,7 +52,7 @@ Note the port number for port forwarding.
 +
 [source,shell]
 ----
-kubectl port-forward svc/grafana 3000:80
+kubectl port-forward svc/grafana 3000:3000
 ----
 
 . Point a web browser to `http://localhost:3000`.

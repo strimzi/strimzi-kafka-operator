@@ -15,8 +15,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 
 @Tag(SCALABILITY)
@@ -54,12 +52,6 @@ public class TopicScalabilityST extends AbstractST {
     void deployTestSpecificResources() {
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
-        deployTestSpecificResources();
     }
 
     @BeforeAll

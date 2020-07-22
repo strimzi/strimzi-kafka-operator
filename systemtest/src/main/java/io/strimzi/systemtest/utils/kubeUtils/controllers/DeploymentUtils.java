@@ -128,7 +128,7 @@ public class DeploymentUtils {
     public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
         LOGGER.info("Waiting for Deployment {} rolling update", name);
         TestUtils.waitFor("Deployment " + name + " rolling update",
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.rollingUpdateTimeout(expectedPods), () -> depHasRolled(name, snapshot));
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(expectedPods), () -> depHasRolled(name, snapshot));
         waitForDeploymentReady(name);
         PodUtils.waitForPodsReady(kubeClient().getDeployment(name).getSpec().getSelector(), expectedPods, true);
         LOGGER.info("Deployment {} rolling update finished", name);
@@ -141,7 +141,7 @@ public class DeploymentUtils {
      */
     public static void waitForDeploymentRecovery(String name, String deploymentUid) {
         LOGGER.info("Waiting for Deployment {}-{} recovery in namespace {}", name, deploymentUid, kubeClient().getNamespace());
-        TestUtils.waitFor("deployment " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("deployment " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getDeploymentUid(name).equals(deploymentUid));
         LOGGER.info("Deployment {} was recovered", name);
     }

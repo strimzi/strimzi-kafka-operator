@@ -27,7 +27,6 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -409,12 +408,6 @@ class CustomResourceStatusST extends AbstractST {
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
-        deployTestSpecificResources();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
         deployTestSpecificResources();
     }
 
