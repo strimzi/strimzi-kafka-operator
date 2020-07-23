@@ -70,6 +70,7 @@ public class ResourceManager {
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     private static Stack<Runnable> classResources = new Stack<>();
     private static Stack<Runnable> methodResources = new Stack<>();
