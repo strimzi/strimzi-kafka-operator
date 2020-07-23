@@ -21,7 +21,7 @@ For more information about build process see [Dev guide document](DEV_GUIDE.md).
 ## Pre-requisites
 
 To run any system tests you need a Kubernetes or Openshift cluster available in your active kubernetes context.
-You can use [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/), [minishift](https://www.okd.io/minishift/), [oc cluster up](https://github.com/openshift/origin) or [CodeReady Contaners](https://github.com/code-ready/crc) to have access to a cluster on your local machine.
+You can use [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/), [minishift](https://www.okd.io/minishift/), [oc cluster up](https://github.com/openshift/origin) or [CodeReady Containers](https://github.com/code-ready/crc) to have access to a cluster on your local machine.
 You can also access a remote cluster on any machine you want, but make sure your active kubernetes context points to it.
 For more information about a remote cluster see the [remote cluster](#use-remote-cluster) section.
 
@@ -46,8 +46,7 @@ Notable modules:
 * **clients** — client implementations used in tests.
 * **matchers** — contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
 * **utils** — a lot of actions are the same for most of the tests, and we share them through utils class and static methods. You can find here most of the useful methods.
-* **resources** — heart of the systemtest package. You can find here all methods needed for deploying Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and other resources.
-The current lifecycle mechanism will ensure that all resources created within these classes will be deleted after finished tests.
+* **resources** — heart of the systemtest package. You can find here all methods needed for deploying and managing lifecycle of Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and other resources.
 
 Notable classes:
 
@@ -93,7 +92,6 @@ Cluster Operator setup example:
 
 ### Exercise
 In this phase you specify all steps which you need to execute to cover some specific functionality.
-If you didn't create the Kafka cluster you should do so at the beginning of the test using a test method resources instance of `Resources` inherited from `AbstractST`.
 
 ### Test
 
@@ -247,7 +245,7 @@ Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
 
 Use the `verify` build goal and provide `-Dit.test=TestClassName[#testMethodName]` system property.
 
-    mvn verify -pl systemtest -Dit.test=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
+    mvn verify -pl systemtest -Dit.test=KafkaST#testCustomAndUpdatedValues
 
 ## Skip Teardown
 
