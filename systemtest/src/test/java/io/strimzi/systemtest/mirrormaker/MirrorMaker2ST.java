@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
-import io.fabric8.kubernetes.client.Client;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -95,7 +94,6 @@ class MirrorMaker2ST extends AbstractST {
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + availabilityTopicSourceName;
 
-        String sourceConsumerName = "source-consumer";
         String sourceProducerName = "source-producer";
         String targetConsumerName = "target-consumer";
         String sourceExampleTopic = "source-example-topic";
@@ -144,9 +142,20 @@ class MirrorMaker2ST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                .editSpec()
+                    .editFirstMirror()
+                        .editSourceConnector()
+                            .addToConfig("refresh.topics.interval.seconds", "60")
+                        .endSourceConnector()
+                    .endMirror()
+                .endSpec()
+                .done();
+        LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
+
         //deploying example clients for checking if mm2 will mirror messages with headers
-        KafkaClientsResource.consumerStrimzi(sourceConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, 100).done();
-        KafkaClientsResource.producerStrimzi(sourceProducerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, 100)
+        KafkaClientsResource.consumerStrimzi(targetConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, MESSAGE_COUNT).done();
+        KafkaClientsResource.producerStrimzi(sourceProducerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, MESSAGE_COUNT)
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -161,18 +170,7 @@ class MirrorMaker2ST extends AbstractST {
             .endSpec()
             .done();
 
-        ClientUtils.waitTillContinuousClientsFinish(sourceProducerName, sourceConsumerName, NAMESPACE, 100);
-
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-                .editSpec()
-                    .editFirstMirror()
-                        .editSourceConnector()
-                            .addToConfig("refresh.topics.interval.seconds", "60")
-                        .endSourceConnector()
-                    .endMirror()
-                .endSpec()
-                .done();
-        LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
+        ClientUtils.waitTillProducerOrConsumerFinish(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
 
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
@@ -217,8 +215,7 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Checking if messages with headers are correctly mirrored");
-        KafkaClientsResource.consumerStrimzi(targetConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, 100).done();
-        ClientUtils.waitTillProducerOrConsumerFinish(targetConsumerName, NAMESPACE);
+        ClientUtils.waitTillProducerOrConsumerFinish(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
 
         LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
         String headerFoo = "key: foo, value: bar";
