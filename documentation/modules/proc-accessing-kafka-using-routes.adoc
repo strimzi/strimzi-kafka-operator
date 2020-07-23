@@ -49,14 +49,10 @@ The bootstrap service routes external traffic to the Kafka brokers.
 An OpenShift `Route` resource is also created for each service to expose them using the HAProxy load balancer.
 DNS addresses used for connection are propagated to the `status` of each service.
 
-. Retrieve the address of the bootstrap service to access the Kafka cluster.
+. Retrieve the address of the bootstrap service you can use to access the Kafka cluster.
 +
 [source,shell,subs=+quotes]
-oc get routes _KAFKA-CLUSTER-NAME_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
-+
-You need the address of the `Route` bootstrap service (`_KAFKA-CLUSTER-NAME_-kafka-bootstrap`).
-+
-Use the route service address and port 443 (_ROUTE-ADDRESS:443_) in your Kafka client as the _bootstrap address_ to connect to the Kafka cluster.
+kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
 
 . Extract the public certificate of the broker certification authority
 +

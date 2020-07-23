@@ -34,18 +34,11 @@ spec:
         tls: true
         authentication:
           type: tls
-        configuration:
-          brokerCertChainAndKey: <2>
-            secretName: my-secret
-            certificate: my-certificate.crt
-            key: my-key.key
-          preferredAddressType: InternalDNS <3>
+        # ...
     # ...
   zookeeper:
     # ...
 ----
-<2> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a private key. Kafka listener certificates can also be configured for TLS listeners.
-<3> Optional configuration to xref:con-kafka-broker-external-listeners-nodeports-{context}[specify a preference for the first address type used by Strimzi as the node address].
 
 . Create or update the resource.
 +
@@ -56,27 +49,10 @@ kubectl apply -f _KAFKA-CONFIG-FILE_
 The bootstrap service routes external traffic to the Kafka brokers.
 Node addresses used for connection are propagated to the `status` of each service.
 
-. Retrieve the connection details to access the Kafka cluster.
+. Retrieve the bootstrap address you can use to access the Kafka cluster.
 +
 [source,shell,subs=+quotes]
 kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
-+
-You need:
-+
-* The port number of the `NodePort` bootstrap service (`_KAFKA-CLUSTER-NAME_-kafka-external-bootstrap`)
-* The address of one of the kafka broker nodes
-+
-If different node addresses are returned, select the address type you want based on the following order:
-+
---
-. ExternalDNS
-. ExternalIP
-. Hostname
-. InternalDNS
-. InternalIP
---
-+
-Use the node address and port number (_NODE-ADDRESS:NODE-PORT_) in your Kafka client as the _bootstrap address_ to connect to the Kafka cluster.
 
 . If TLS encryption is enabled, extract the public certificate of the broker certification authority.
 +
