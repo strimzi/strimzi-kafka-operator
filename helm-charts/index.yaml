@@ -2,6 +2,60 @@ apiVersion: v1
 entries:
   strimzi-kafka-operator:
   - apiVersion: v1
+    appVersion: 0.19.0-rc1
+    created: "2020-07-23T23:14:18.713158+02:00"
+    description: 'Strimzi: Apache Kafka running on Kubernetes'
+    digest: 279a8ac8ab7fcfbed5e37280707e307ad57e14dabfb2058aca57b2747f93ea3b
+    home: https://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: Frawless
+    - name: ppatierno
+    - name: samuel-hawker
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0-rc1/strimzi-kafka-operator-helm-2-chart-0.19.0-rc1.tgz
+    version: 0.19.0-rc1
+  - apiVersion: v2
+    appVersion: 0.19.0-rc1
+    created: "2020-07-23T23:14:18.718392+02:00"
+    description: 'Strimzi: Apache Kafka running on Kubernetes'
+    digest: 54c98af63a400a281517e041287f0c91438ac363e358eda8441c3b982818fc5e
+    home: https://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: Frawless
+    - name: ppatierno
+    - name: samuel-hawker
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0-rc1/strimzi-kafka-operator-helm-3-chart-0.19.0-rc1.tgz
+    version: 0.19.0-rc1
+  - apiVersion: v1
     appVersion: 0.18.0
     created: "2020-05-20T19:37:53.265811+02:00"
     description: 'Strimzi: Apache Kafka running on Kubernetes'
@@ -578,4 +632,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: "2020-05-20T19:37:53.256729+02:00"
+generated: "2020-07-23T23:14:18.707523+02:00"

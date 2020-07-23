@@ -8,7 +8,7 @@ watchAnyNamespace: false
 image:
   repository: strimzi
   name: operator
-  tag: latest
+  tag: 0.19.0-rc1
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
@@ -25,52 +25,52 @@ zookeeper:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 kafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 kafkaConnect:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 kafkaConnects2i:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 topicOperator:
   image:
     repository: strimzi
     name: operator
-    tag: latest
+    tag: 0.19.0-rc1
 userOperator:
   image:
     repository: strimzi
     name: operator
-    tag: latest
+    tag: 0.19.0-rc1
 kafkaInit:
   image:
     repository: strimzi
     name: operator
-    tag: latest
+    tag: 0.19.0-rc1
 tlsSidecarKafka:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 kafkaMirrorMaker:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 kafkaBridge:
   image:
     repository: strimzi
@@ -80,27 +80,27 @@ kafkaExporter:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 jmxTrans:
   image:
     repository: strimzi
     name: jmxtrans
-    tag: latest
+    tag: 0.19.0-rc1
 kafkaMirrorMaker2:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 cruiseControl:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 tlsSidecarCruiseControl:
   image:
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.19.0-rc1
 resources:
   limits:
     memory: 384Mi

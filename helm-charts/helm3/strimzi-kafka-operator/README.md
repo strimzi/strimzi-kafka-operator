@@ -83,7 +83,7 @@ the documentation for more details.
 | `watchNamespaces`                    | Comma separated list of additional namespaces for the strimzi-operator to watch | []             |
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
-| `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
+| `image.tag`                          | Cluster Operator image tag                | `0.19.0-rc1`                                             |
 | `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`                                       |
 | `image.imagePullSecrets`              | Docker registry pull secret              | `nil`                                                 |
 | `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
@@ -91,43 +91,43 @@ the documentation for more details.
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
 | `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
-| `zookeeper.image.tag`                | ZooKeeper image tag prefix                | `latest`                                             |
+| `zookeeper.image.tag`                | ZooKeeper image tag prefix                | `0.19.0-rc1`                                             |
 | `jmxtrans.image.repository`          | JmxTrans image repository                 | `strimzi`                                            |
 | `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
-| `jmxtrans.image.tag`                 | JmxTrans image tag prefix                 | `latest`                                             |
+| `jmxtrans.image.tag`                 | JmxTrans image tag prefix                 | `0.19.0-rc1`                                             |
 | `kafka.image.repository`             | Kafka image repository                    | `strimzi`                                            |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
-| `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `latest`                                             |
+| `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `0.19.0-rc1`                                             |
 | `kafkaConnect.image.repository`      | Kafka Connect image repository            | `strimzi`                                            |
 | `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka`                                              |
-| `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `latest`                                             |
+| `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `0.19.0-rc1`                                             |
 | `kafkaConnects2i.image.repository`   | Kafka Connect s2i image repository        | `strimzi`                                            |
 | `kafkaConnects2i.image.name`         | Kafka Connect s2i image name              | `kafka`                                              |
-| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `latest`                                             |
+| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `0.19.0-rc1`                                             |
 | `kafkaMirrorMaker.image.repository`  | Kafka Mirror Maker image repository       | `strimzi`                                            |
 | `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |
-| `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `latest`                                             |
+| `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `0.19.0-rc1`                                             |
 | `cruiseControl.image.repository`     | Cruise Control image repository           | `strimzi`                                            |
 | `cruiseControl.image.name`           | Cruise Control image name                 | `kafka`                                              |
-| `cruiseControl.image.tag`            | Cruise Control image tag prefix           | `latest`                                             |
+| `cruiseControl.image.tag`            | Cruise Control image tag prefix           | `0.19.0-rc1`                                             |
 | `topicOperator.image.repository`     | Topic Operator image repository           | `strimzi`                                            |
 | `topicOperator.image.name`           | Topic Operator image name                 | `operator`                                           |
-| `topicOperator.image.tag`            | Topic Operator image tag                  | `latest`                                             |
+| `topicOperator.image.tag`            | Topic Operator image tag                  | `0.19.0-rc1`                                             |
 | `userOperator.image.repository`      | User Operator image repository            | `strimzi`                                            |
 | `userOperator.image.name`            | User Operator image name                  | `operator`                                           |
-| `userOperator.image.tag`             | User Operator image tag                   | `latest`                                             |
+| `userOperator.image.tag`             | User Operator image tag                   | `0.19.0-rc1`                                             |
 | `kafkaInit.image.repository`         | Init Kafka image repository               | `strimzi`                                            |
 | `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
-| `kafkaInit.image.tag`                | Init Kafka image tag                      | `latest`                                             |
+| `kafkaInit.image.tag`                | Init Kafka image tag                      | `0.19.0-rc1`                                             |
 | `tlsSidecarKafka.image.repository`   | TLS Sidecar for Kafka image repository    | `strimzi`                                            |
 | `tlsSidecarKafka.image.name`         | TLS Sidecar for Kafka image name          | `kafka`                                              |
-| `tlsSidecarKafka.image.tag`          | TLS Sidecar for Kafka image tag prefix    | `latest`                                             |
+| `tlsSidecarKafka.image.tag`          | TLS Sidecar for Kafka image tag prefix    | `0.19.0-rc1`                                             |
 | `tlsSidecarCruiseControl.image.repository` | TLS Sidecar for Cruise Control image repository | `strimzi`                                         |
 | `tlsSidecarCruiseControl.image.name`     | TLS Sidecar for Cruise Control image name      | `kafka`                                              |
-| `tlsSidecarCruiseControl.image.tag`      | TLS Sidecar for Cruise Control image tag prefix | `latest`                                            |
+| `tlsSidecarCruiseControl.image.tag`      | TLS Sidecar for Cruise Control image tag prefix | `0.19.0-rc1`                                            |
 | `tlsSidecarTopicOperator.image.repository` | TLS Sidecar for Topic Operator image repository | `strimzi`                                |
 | `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |
-| `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `latest`                                       |
+| `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `0.19.0-rc1`                                       |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
 | `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.18.0`                                             |
