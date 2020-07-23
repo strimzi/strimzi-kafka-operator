@@ -23,6 +23,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
+
 public class KafkaConnectS2IResource {
     public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = "../examples/connect/kafka-connect-s2i.yaml";
 
@@ -68,7 +70,7 @@ public class KafkaConnectS2IResource {
             KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
         }
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
                         kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);

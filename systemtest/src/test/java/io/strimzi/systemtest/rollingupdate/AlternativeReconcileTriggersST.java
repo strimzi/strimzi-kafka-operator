@@ -108,7 +108,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
 
         // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
                 || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
@@ -133,7 +133,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
 
         // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                 || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 

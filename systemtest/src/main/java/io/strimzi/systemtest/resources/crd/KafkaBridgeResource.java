@@ -18,6 +18,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
+
 public class KafkaBridgeResource {
 
     public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = "../examples/bridge/kafka-bridge.yaml";
@@ -92,7 +94,7 @@ public class KafkaBridgeResource {
 
     private static DoneableKafkaBridge deployKafkaBridge(KafkaBridge kafkaBridge) {
         return new DoneableKafkaBridge(kafkaBridge, kB -> {
-            TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
                         kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kB);

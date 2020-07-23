@@ -19,6 +19,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
+
 public class KafkaConnectorResource {
     public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = "../examples/connect/source-connector.yaml";
 
@@ -67,7 +69,7 @@ public class KafkaConnectorResource {
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {
         return new DoneableKafkaConnector(kafkaConnector, kC -> {
-            TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
                         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
