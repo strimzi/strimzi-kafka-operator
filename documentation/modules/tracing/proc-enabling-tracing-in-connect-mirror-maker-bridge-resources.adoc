@@ -76,7 +76,7 @@ metadata:
 spec:
   #...
   template:
-    mirrorMakerContainer:
+    connectContainer:
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
