@@ -222,6 +222,10 @@ public class KafkaClientsResource {
     }
 
     public static DoneableDeployment consumerWithTracing(String bootstrapServer) {
+        return consumerWithTracing(bootstrapServer, "my-topic");
+    }
+
+    public static DoneableDeployment consumerWithTracing(String bootstrapServer, String topic) {
         String consumerName = "hello-world-consumer";
 
         Map<String, String> consumerLabels = new HashMap<>();
@@ -253,7 +257,7 @@ public class KafkaClientsResource {
                                       .endEnv()
                                     .addNewEnv()
                                         .withName("TOPIC")
-                                        .withValue("my-topic")
+                                        .withValue(topic)
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("GROUP_ID")
