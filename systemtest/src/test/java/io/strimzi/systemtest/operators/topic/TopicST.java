@@ -12,7 +12,6 @@ import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -54,7 +53,6 @@ public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     static final String NAMESPACE = "topic-cluster-test";
-    private static final long CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
 
     @Test
     void testMoreReplicasThanAvailableBrokers() {
