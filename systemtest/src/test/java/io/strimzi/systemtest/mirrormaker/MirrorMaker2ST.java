@@ -169,7 +169,7 @@ class MirrorMaker2ST extends AbstractST {
             .endSpec()
             .done();
 
-        ClientUtils.waitTillProducerOrConsumerFinish(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitTillClientFinish(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
 
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
@@ -214,7 +214,7 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Checking if messages with headers are correctly mirrored");
-        ClientUtils.waitTillProducerOrConsumerFinish(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitTillClientFinish(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
 
         LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
         String headerFoo = "key: foo, value: bar";
