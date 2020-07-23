@@ -23,9 +23,6 @@ env:
 
 [[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default is 120000 ms. The interval between periodic reconciliations, in milliseconds.
 
-`STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
-The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
-
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
 The timeout for internal operations, in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
@@ -120,6 +117,31 @@ _<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers._<namespace>_.svc._clust
 The DNS domain name is added to the Kafka broker certificates used for hostname verification.
 +
 If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
+
+== Logging configuration
+
+Together with Cluster Operator, `ConfigMap` containing its logging configuration is created.
+This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator-logging.yaml`.
+Cluster Operator logging is then configured by changing this `ConfigMap`.
+
+You can change the file and then use:
+[source,shell,subs=+quotes]
+kubectl apply -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator-logging.yaml_
+
+Or you can edit the `ConfigMap` by:
+[source,shell,subs=+quotes]
+kubectl edit cm strimzi-cluster-operator-logging
+
+After the changes are done in the `ConfigMap`, the logging configuration is reloaded in time interval of specified `monitorInterval` seconds.
+
+NOTE: Created `ConfigMap` contains entry `monitorInterval`.
+Please ensure yourself you are not removing this entry as it serves for dynamic reloading of logging configuration.
+Entry `monitorInterval` configures frequency of logging reloading in the seconds (see link:https://logging.apache.org/log4j/2.x/manual/configuration.html#Automatic_Reconfiguration[Log4j2 Automatic Reconfiguration^]).
+
+If the `ConfigMap` is not present during deploying of Cluster Operator, default logging values are used.
+
+If the `ConfigMap` is deleted by an accident after the Cluster Operator was deployed, the last loaded configuration is used.
+After `ConfigMap` recreation, the new configuration is loaded.
 
 == Periodic reconciliation
 
