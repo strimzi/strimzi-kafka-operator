@@ -399,18 +399,12 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2Service() {
-        Map<String, Object> configOfKafka = new HashMap<>();
-        configOfKafka.put("offsets.topic.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.min.isr", "1");
-
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
                             .withDeleteClaim(true)
@@ -428,7 +422,6 @@ public class TracingST extends AbstractST {
         KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
                             .withDeleteClaim(true)
@@ -498,31 +491,17 @@ public class TracingST extends AbstractST {
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, "From_" + kafkaClusterSourceName + "." + TOPIC_NAME);
         TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
         TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "To_" + kafkaClusterSourceName + "." + TOPIC_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", kafkaClusterSourceName + "." + TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", kafkaClusterSourceName + "." + TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(kafkaClusterSourceName + "." + TOPIC_NAME);
     }
 
     @Test
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
-        Map<String, Object> configOfKafka = new HashMap<>();
-        configOfKafka.put("offsets.topic.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.min.isr", "1");
-
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
                             .withDeleteClaim(true)
@@ -540,7 +519,6 @@ public class TracingST extends AbstractST {
         KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .withConfig(configOfKafka)
                         .withNewPersistentClaimStorage()
                             .withNewSize("10")
                             .withDeleteClaim(true)
@@ -612,14 +590,6 @@ public class TracingST extends AbstractST {
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_NAME);
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME + "-target");
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME + "-target");
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME + "-target");
     }
 
     @Test
@@ -628,11 +598,6 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() {
-        Map<String, Object> configOfKafka = new HashMap<>();
-        configOfKafka.put("offsets.topic.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.replication.factor", "1");
-        configOfKafka.put("transaction.state.log.min.isr", "1");
-
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
@@ -775,26 +740,6 @@ public class TracingST extends AbstractST {
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_NAME);
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "From_" + TOPIC_TARGET_NAME);
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + TOPIC_TARGET_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", TEST_TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TEST_TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TEST_TOPIC_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME);
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_NAME + "-target");
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_NAME + "-target");
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_NAME + "-target");
-
-        LOGGER.info("Deleting topic {} from CR", TOPIC_TARGET_NAME + "-target");
-        cmdKubeClient().deleteByName("kafkatopic", TOPIC_TARGET_NAME + "-target");
-        KafkaTopicUtils.waitForKafkaTopicDeletion(TOPIC_TARGET_NAME + "-target");
     }
 
     @Test
