@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
+import io.fabric8.kubernetes.client.Client;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -27,6 +28,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -92,12 +95,20 @@ class MirrorMaker2ST extends AbstractST {
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + availabilityTopicSourceName;
 
+        String sourceConsumerName = "source-consumer";
+        String sourceProducerName = "source-producer";
+        String targetConsumerName = "target-consumer";
+        String sourceExampleTopic = "source-example-topic";
+        String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
+
         // Deploy source kafka
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
         // Deploy target kafka
         KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
         // Deploy Topic
         KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
+        // Deploy Topic for example clients
+        KafkaTopicResource.topic(kafkaClusterSourceName, sourceExampleTopic).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -132,7 +143,26 @@ class MirrorMaker2ST extends AbstractST {
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
         );
-        
+
+        //deploying example clients for checking if mm2 will mirror messages with headers
+        KafkaClientsResource.consumerStrimzi(sourceConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, 100).done();
+        KafkaClientsResource.producerStrimzi(sourceProducerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, 100)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editContainer(0)
+                            .addNewEnv()
+                                .withName("HEADERS")
+                                .withValue("foo=bar, something=more")
+                            .endEnv()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        ClientUtils.waitTillContinuousClientsFinish(sourceProducerName, sourceConsumerName, NAMESPACE, 100);
+
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                 .editSpec()
                     .editFirstMirror()
@@ -185,6 +215,17 @@ class MirrorMaker2ST extends AbstractST {
             sent,
             internalKafkaClient.receiveMessagesPlain()
         );
+
+        LOGGER.info("Checking if messages with headers are correctly mirrored");
+        KafkaClientsResource.consumerStrimzi(targetConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, 100).done();
+        ClientUtils.waitTillProducerOrConsumerFinish(targetConsumerName, NAMESPACE);
+
+        LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
+        String headerFoo = "key: foo, value: bar";
+        String headerSomething = "key: something, value: more";
+        String log = StUtils.getLogFromPodByTime(kubeClient().listPodsByPrefixInName(targetConsumerName).get(0).getMetadata().getName(), "", Duration.ofSeconds(messagesCount).toSeconds() + "s");
+        assertThat(log.contains(headerFoo), is(true));
+        assertThat(log.contains(headerSomething), is(true));
 
         LOGGER.info("Changing topic to {}", topicSourceNameMirrored);
         internalKafkaClient.setTopicName(topicSourceNameMirrored);
