@@ -28,6 +28,8 @@ public class RebalanceOptions {
     private int concurrentLeaderMovements;
     /** The upper bound, in bytes per second, on the bandwidth used to move replicas */
     private long replicationThrottle;
+    /** A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. */
+    private List<String> replicaMovementStrategies;
 
     public boolean isDryRun() {
         return isDryRun;
@@ -69,6 +71,10 @@ public class RebalanceOptions {
         return replicationThrottle;
     }
 
+    public List<String> getReplicaMovementStrategies() {
+        return replicaMovementStrategies;
+    }
+
     private RebalanceOptions(RebalanceOptionsBuilder builder) {
         this.isDryRun = builder.isDryRun;
         this.verbose = builder.verbose;
@@ -80,6 +86,7 @@ public class RebalanceOptions {
         this.concurrentIntraBrokerPartitionMovements = builder.concurrentIntraPartitionMovements;
         this.concurrentLeaderMovements = builder.concurrentLeaderMovements;
         this.replicationThrottle = builder.replicationThrottle;
+        this.replicaMovementStrategies = builder.replicaMovementStrategies;
     }
 
     public static class RebalanceOptionsBuilder {
@@ -93,6 +100,7 @@ public class RebalanceOptions {
         private int concurrentIntraPartitionMovements;
         private int concurrentLeaderMovements;
         private long replicationThrottle;
+        private List<String> replicaMovementStrategies;
 
         public RebalanceOptionsBuilder() {
             isDryRun = true;
@@ -104,6 +112,7 @@ public class RebalanceOptions {
             concurrentIntraPartitionMovements = 0;
             concurrentLeaderMovements = 0;
             replicationThrottle = 0;
+            replicaMovementStrategies = null;
         }
 
         public RebalanceOptionsBuilder withFullRun() {
@@ -160,6 +169,11 @@ public class RebalanceOptions {
                 throw new IllegalArgumentException("The max replication bandwidth should be greater than zero");
             }
             this.replicationThrottle = bandwidth;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withReplicaMovementStrategies(List<String> replicaMovementStrategies) {
+            this.replicaMovementStrategies = replicaMovementStrategies;
             return this;
         }
 

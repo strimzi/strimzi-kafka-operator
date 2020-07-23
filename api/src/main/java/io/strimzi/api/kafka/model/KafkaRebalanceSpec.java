@@ -23,7 +23,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "goals", "skipHardGoalCheck", "excludedTopics", "concurrentPartitionMovementsPerBroker",
-                     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle" })
+                     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -41,6 +41,7 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
     private int concurrentIntraBrokerPartitionMovements;
     private int concurrentLeaderMovements;
     private long replicationThrottle;
+    private List<String> replicaMovementStrategies;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -116,6 +117,16 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
 
     public void setReplicationThrottle(long bandwidth) {
         this.replicationThrottle = bandwidth;
+    }
+
+    @Description("A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. " +
+        "By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.")
+    public List<String> getReplicaMovementStrategies() {
+        return replicaMovementStrategies;
+    }
+
+    public void setReplicaMovementStrategies(List<String> replicaMovementStrategies) {
+        this.replicaMovementStrategies = replicaMovementStrategies;
     }
 
     @Override

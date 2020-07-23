@@ -2959,6 +2959,8 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |integer
 |replicationThrottle                      1.2+<.<|The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.
 |integer
+|replicaMovementStrategies                1.2+<.<|A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.
+|string array
 |====
 
 [id='type-KafkaRebalanceStatus-{context}']
