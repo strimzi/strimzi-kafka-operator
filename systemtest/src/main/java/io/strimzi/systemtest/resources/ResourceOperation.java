@@ -17,6 +17,10 @@ import io.strimzi.systemtest.Constants;
 import java.time.Duration;
 
 public class ResourceOperation {
+    public static long getTimeoutForResourceReadiness() {
+        return getTimeoutForResourceReadiness("default");
+    }
+
     public static long getTimeoutForResourceReadiness(String kind) {
         long timeout;
 
@@ -42,7 +46,7 @@ public class ResourceOperation {
                 timeout = Duration.ofMinutes(4).toMillis();
                 break;
             default:
-                timeout = Duration.ofMinutes(2).toMillis();
+                timeout = Duration.ofMinutes(3).toMillis();
         }
 
         return timeout;

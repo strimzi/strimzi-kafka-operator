@@ -70,6 +70,7 @@ public class ResourceManager {
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     private static Stack<Runnable> classResources = new Stack<>();
     private static Stack<Runnable> methodResources = new Stack<>();
@@ -382,34 +383,36 @@ public class ResourceManager {
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
     public static <T extends HasMetadata & HasStatus> void logCurrentResourceStatus(T customResource) {
-        List<String> printWholeCR = Arrays.asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND);
+        if (customResource != null) {
+            List<String> printWholeCR = Arrays.asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND);
 
-        String kind = customResource.getKind();
-        String name = customResource.getMetadata().getName();
+            String kind = customResource.getKind();
+            String name = customResource.getMetadata().getName();
 
-        if (printWholeCR.contains(kind)) {
-            LOGGER.info(customResource);
-        } else {
-            List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
+            if (printWholeCR.contains(kind)) {
+                LOGGER.info(customResource);
+            } else {
+                List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-            for (Condition condition : customResource.getStatus().getConditions()) {
-                log.add("\tType: " + condition.getType() + "\n");
-                log.add("\tMessage: " + condition.getMessage() + "\n");
-            }
-
-            log.add("\nPods with conditions and messages:\n\n");
-
-            for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
-                log.add(pod.getMetadata().getName() + ":");
-                for (PodCondition podCondition : pod.getStatus().getConditions()) {
-                    if (podCondition.getMessage() != null) {
-                        log.add("\n\tType: " + podCondition.getType() + "\n");
-                        log.add("\tMessage: " + podCondition.getMessage() + "\n");
-                    }
+                for (Condition condition : customResource.getStatus().getConditions()) {
+                    log.add("\tType: " + condition.getType() + "\n");
+                    log.add("\tMessage: " + condition.getMessage() + "\n");
                 }
-                log.add("\n\n");
+
+                log.add("\nPods with conditions and messages:\n\n");
+
+                for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                    log.add(pod.getMetadata().getName() + ":");
+                    for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                        if (podCondition.getMessage() != null) {
+                            log.add("\n\tType: " + podCondition.getType() + "\n");
+                            log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                        }
+                    }
+                    log.add("\n\n");
+                }
+                LOGGER.info("{}", String.join("", log));
             }
-            LOGGER.info("{}", String.join("", log));
         }
     }
 

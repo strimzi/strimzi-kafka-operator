@@ -115,7 +115,7 @@ class ConnectS2IST extends AbstractST {
 
         KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
-        TestUtils.waitFor("ConnectS2I will be ready and POST will be executed", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
+        TestUtils.waitFor("ConnectS2I will be ready and POST will be executed", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             String createConnectorOutput = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
                     "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", mongoDbConfig).out();
             LOGGER.info("Create Connector result: {}", createConnectorOutput);
@@ -357,7 +357,7 @@ class ConnectS2IST extends AbstractST {
                     .build());
         });
 
-        TestUtils.waitFor("KafkaConnect change", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaConnect change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect").get().getSpec().getResources().getRequests().get("cpu").equals(new Quantity("1")));
 
         cmdKubeClient().exec("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "-n", NAMESPACE);
@@ -366,17 +366,10 @@ class ConnectS2IST extends AbstractST {
 
         String podName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
-        TestUtils.waitFor("Resources are changed", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
-            try {
-                assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
-                        "400M", "2", "300M", "1");
-                assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
-                        "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        });
+        assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
+            "400M", "2", "300M", "1");
+        assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
+            "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
         KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2IName);
         DeploymentConfigUtils.waitForDeploymentConfigDeletion(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));

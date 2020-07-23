@@ -56,7 +56,7 @@ public class KafkaUserUtils {
 
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
         TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
-            Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> observation < KafkaUserResource.kafkaUserClient()
                 .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
