@@ -39,7 +39,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -220,7 +219,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
         String headerFoo = "key: foo, value: bar";
         String headerSomething = "key: something, value: more";
-        String log = StUtils.getLogFromPodByTime(kubeClient().listPodsByPrefixInName(targetConsumerName).get(0).getMetadata().getName(), "", Duration.ofSeconds(messagesCount).toSeconds() + "s");
+        String log = StUtils.getLogFromPodByTime(kubeClient().listPodsByPrefixInName(targetConsumerName).get(0).getMetadata().getName(), "", MESSAGE_COUNT + "s");
         assertThat(log.contains(headerFoo), is(true));
         assertThat(log.contains(headerSomething), is(true));
 
