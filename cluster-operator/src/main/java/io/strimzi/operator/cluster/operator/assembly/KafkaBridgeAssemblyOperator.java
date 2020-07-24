@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.certs.CertManager;
@@ -36,6 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * <p>Assembly operator for a "Kafka Bridge" assembly, which manages:</p>
@@ -67,7 +69,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     }
 
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaBridge assemblyResource) {
+    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaBridge assemblyResource, List<Condition> unknownAndDeprecatedConditions) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
         KafkaBridgeCluster bridge;
@@ -110,6 +112,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
                 kafkaBridgeStatus.setReplicas(bridge.getReplicas());
                 kafkaBridgeStatus.setPodSelector(new LabelSelectorBuilder().withMatchLabels(bridge.getSelectorLabels().toMap()).build());
+                kafkaBridgeStatus.addConditions(unknownAndDeprecatedConditions);
 
                 updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).onComplete(statusResult -> {
                     // If both features succeeded, createOrUpdate succeeded as well

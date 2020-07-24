@@ -14,6 +14,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +34,7 @@ public class ValidationVisitorTest {
                 .endMetadata()
                 .withApiVersion("v1alpha1")
             .build();
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger));
+        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, Collections.emptyList(), Collections.emptyList()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
             && ("Kafka resource testname in namespace testnamespace: " +
                 "Contains object at path spec.kafka with an unknown property: foo").equals(lm.formattedMessage()));
@@ -58,7 +60,7 @@ public class ValidationVisitorTest {
                 .endMetadata()
                 .withApiVersion("v1alpha1")
                 .build();
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger));
+        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, Collections.emptyList(), Collections.emptyList()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property affinity at path spec.zookeeper.affinity has been deprecated. " +

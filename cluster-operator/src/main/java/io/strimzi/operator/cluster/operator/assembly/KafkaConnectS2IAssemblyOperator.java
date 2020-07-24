@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -44,6 +45,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -94,7 +96,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     }
 
     @Override
-    public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I) {
+    public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I, List<Condition> unknownAndDeprecatedConditions) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
         KafkaConnectS2ICluster connect;
@@ -167,6 +169,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
                     kafkaConnectS2Istatus.setReplicas(connect.getReplicas());
                     kafkaConnectS2Istatus.setPodSelector(new LabelSelectorBuilder().withMatchLabels(connect.getSelectorLabels().toMap()).build());
+                    kafkaConnectS2Istatus.addConditions(unknownAndDeprecatedConditions);
 
                     updateStatus(kafkaConnectS2I, reconciliation, kafkaConnectS2Istatus).onComplete(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well

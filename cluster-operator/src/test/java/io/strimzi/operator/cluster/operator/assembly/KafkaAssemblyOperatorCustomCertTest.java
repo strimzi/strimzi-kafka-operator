@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -226,7 +227,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     @Test
     public void testPodToRestartIsEmptyWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
+        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka, Collections.emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
@@ -243,7 +244,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     @Test
     public void testPodToRestartNonemptyWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
+        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka, Collections.emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
@@ -271,7 +272,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     @Test
     public void testPodToRestartTrueWhenCustomCertExternalListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
+        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka, Collections.emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
@@ -315,7 +316,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
 
         Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
+        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka, Collections.emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(functionArgumentCaptor, hasSize(1));
 

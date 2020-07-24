@@ -7,6 +7,7 @@ package io.strimzi.operator.user.operator;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -40,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -102,7 +104,7 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
@@ -183,7 +185,7 @@ public class KafkaUserOperatorTest {
         when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
@@ -258,7 +260,7 @@ public class KafkaUserOperatorTest {
         when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -328,7 +330,7 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.updateStatusAsync(any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
@@ -668,7 +670,7 @@ public class KafkaUserOperatorTest {
                 aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE) {
 
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource, List<Condition> unknownAndDeprecatedConditions) {
                 createdOrUpdated.add(resource.getMetadata().getName());
                 return Future.succeededFuture();
             }
@@ -938,7 +940,7 @@ public class KafkaUserOperatorTest {
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, emptyList())
             .onComplete(context.failing(e -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));
@@ -976,7 +978,7 @@ public class KafkaUserOperatorTest {
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));

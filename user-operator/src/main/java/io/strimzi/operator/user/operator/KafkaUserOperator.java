@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.StatusDiff;
@@ -139,10 +140,11 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
      * @param resource KafkaUser resources with the desired user configuration.
+     * @param unknownAndDeprecatedConditions
      * @return a Future
      */
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
+    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource, List<Condition> unknownAndDeprecatedConditions) {
         Promise<Void> handler = Promise.promise();
         Secret clientsCaCert = secretOperations.get(caNamespace, caCertName);
         Secret clientsCaKey = secretOperations.get(caNamespace, caKeyName);
@@ -199,6 +201,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser,
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, reconciliationResult.mapEmpty());
                     userStatus.setUsername(user.getUserName());
+                    userStatus.addConditions(unknownAndDeprecatedConditions);
 
                     updateStatus(resource, reconciliation, userStatus).onComplete(statusResult -> {
                         // If both features succeeded, createOrUpdate succeeded as well

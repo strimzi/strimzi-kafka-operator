@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -606,7 +607,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to create a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm, emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 // No metrics config  => no CMs created
@@ -1131,7 +1132,7 @@ public class KafkaAssemblyOperatorTest {
         // Now try to update a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterNamespace, clusterName),
-                updatedAssembly)
+                updatedAssembly, emptyList())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // rolling restart
                 Set<String> expectedRollingRestarts = set();
@@ -1232,7 +1233,7 @@ public class KafkaAssemblyOperatorTest {
                 supplier,
                 config) {
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Condition> unknownAndDeprecatedConditions) {
                 String name = kafkaAssembly.getMetadata().getName();
                 if ("foo".equals(name)) {
                     fooAsync.flag();
@@ -1317,7 +1318,7 @@ public class KafkaAssemblyOperatorTest {
                 supplier,
                 config) {
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Condition> unknownAndDeprecatedConditions) {
                 String name = kafkaAssembly.getMetadata().getName();
                 if ("foo".equals(name)) {
                     fooAsync.flag();

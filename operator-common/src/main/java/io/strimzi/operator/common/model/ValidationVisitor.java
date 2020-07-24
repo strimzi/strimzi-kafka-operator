@@ -17,13 +17,16 @@ import java.util.List;
 import java.util.Map;
 
 public class ValidationVisitor implements ResourceVisitor.Visitor {
-
     private final Logger logger;
     private final HasMetadata resource;
+    private final List<String> unknownFields;
+    private final List<String> deprecatedFields;
 
-    public ValidationVisitor(HasMetadata resource, Logger logger) {
+    public ValidationVisitor(HasMetadata resource, Logger logger, List<String> unknownFields, List<String> deprecatedFields) {
         this.resource = resource;
         this.logger = logger;
+        this.unknownFields = unknownFields;
+        this.deprecatedFields = deprecatedFields;
     }
 
     String context() {
@@ -84,6 +87,8 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
             if (!deprecated.removalVersion().isEmpty()) {
                 msg += " This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
             }
+
+            deprecatedFields.add(msg);
             logger.warn("{}: {}", context(), msg);
         }
     }
@@ -103,11 +108,13 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         if (object instanceof UnknownPropertyPreserving) {
             Map<String, Object> properties = ((UnknownPropertyPreserving) object).getAdditionalProperties();
             if (properties != null && !properties.isEmpty()) {
-                logger.warn("{}: Contains object at path {} with {}: {}",
-                        context(),
+                String msg = String.format("Contains object at path %s with %s: %s",
                         String.join(".", path),
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
+
+                unknownFields.add(msg);
+                logger.warn("{}: {}", context(), msg);
             }
         }
     }

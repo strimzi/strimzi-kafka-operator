@@ -887,7 +887,7 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaRebalance resource) {
+    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaRebalance resource, List<Condition> unknownAndDeprecatedConditions) {
         return reconcileRebalance(reconciliation, resource);
     }
 

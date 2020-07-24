@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.vertx.core.Future;
@@ -24,7 +25,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -58,12 +61,12 @@ public class OperatorMetricsTest {
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource, List unknownAndDeprecatedConditions) {
                 return Future.succeededFuture();
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            protected List<Condition> validate(HasMetadata resource) {
+                return Collections.emptyList();
             }
 
             @Override
@@ -97,12 +100,12 @@ public class OperatorMetricsTest {
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource, List unknownAndDeprecatedConditions) {
                 return Future.failedFuture(new RuntimeException("Test error"));
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            protected List<Condition> validate(HasMetadata resource) {
+                return Collections.emptyList();
             }
 
             @Override
@@ -136,12 +139,12 @@ public class OperatorMetricsTest {
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource, List unknownAndDeprecatedConditions) {
                 return Future.failedFuture(new UnableToAcquireLockException());
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            protected List<Condition> validate(HasMetadata resource) {
+                return Collections.emptyList();
             }
 
             @Override
@@ -185,12 +188,12 @@ public class OperatorMetricsTest {
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource, List unknownAndDeprecatedConditions) {
                 return null;
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            protected List<Condition> validate(HasMetadata resource) {
+                return Collections.emptyList();
             }
 
             @Override
@@ -224,7 +227,7 @@ public class OperatorMetricsTest {
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource, List unknownAndDeprecatedConditions) {
                 return Future.succeededFuture();
             }
 
@@ -237,8 +240,8 @@ public class OperatorMetricsTest {
                 return Future.succeededFuture(resources);
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            protected List<Condition> validate(HasMetadata resource) {
+                return Collections.emptyList();
             }
 
             @Override

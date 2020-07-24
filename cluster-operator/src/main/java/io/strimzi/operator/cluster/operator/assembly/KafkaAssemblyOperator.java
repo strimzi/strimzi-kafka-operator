@@ -203,7 +203,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+    public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Condition> unknownAndDeprecatedConditions) {
         Promise<Void> createOrUpdatePromise = Promise.promise();
 
         if (kafkaAssembly.getSpec() == null) {
@@ -237,6 +237,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             status.addCondition(readyCondition);
+            status.addConditions(unknownAndDeprecatedConditions);
+
             reconcileState.updateStatus(status).onComplete(statusResult -> {
                 if (statusResult.succeeded())    {
                     log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());

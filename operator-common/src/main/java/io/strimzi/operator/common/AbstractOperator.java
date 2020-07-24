@@ -12,11 +12,13 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -26,6 +28,9 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -40,7 +45,7 @@ import static io.strimzi.operator.common.Util.async;
  *
  * <ul>
  * <li>uses the Fabric8 kubernetes API and implements
- * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, HasMetadata)}
+ * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, HasMetadata, List)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
  * 
  * <li>add support for operator-side {@linkplain #validate(HasMetadata) validation}.
@@ -135,9 +140,10 @@ public abstract class AbstractOperator<
      * The calling of this method does not imply that anything has actually changed.
      * @param reconciliation Uniquely identifies the reconciliation itself.
      * @param resource The resource to be created, or updated.
+     * @param unknownAndDeprecatedConditions    List with unknown or deprecated conditions found in the CR
      * @return A Future which is completed once the reconciliation of the given resource instance is complete.
      */
-    protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T resource);
+    protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T resource, List<Condition> unknownAndDeprecatedConditions);
 
     /**
      * Asynchronously deletes the resource identified by {@code reconciliation}.
@@ -169,9 +175,9 @@ public abstract class AbstractOperator<
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () -> {
             T cr = resourceOperator.get(namespace, name);
             if (cr != null) {
-                validate(cr);
+                List<Condition> unknownAndDeprecatedConditions = validate(cr);
                 log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
-                return createOrUpdate(reconciliation, cr).recover(createResult -> {
+                return createOrUpdate(reconciliation, cr, unknownAndDeprecatedConditions).recover(createResult -> {
                     log.error("{}: createOrUpdate failed", reconciliation, createResult);
                     return Future.failedFuture(createResult);
                 });
@@ -258,10 +264,31 @@ public abstract class AbstractOperator<
      * @param resource The custom resource
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
      */
-    protected void validate(T resource) {
+    protected List<Condition> validate(T resource) {
         if (resource != null) {
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log));
+            List<String> unknownFields = new ArrayList<>();
+            List<String> deprecatedFields = new ArrayList<>();
+
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, unknownFields, deprecatedFields));
+
+            return prepareUnknownAndDeprecatedFieldsConditions(unknownFields, deprecatedFields);
         }
+
+        return Collections.emptyList();
+    }
+
+    private static List<Condition> prepareUnknownAndDeprecatedFieldsConditions(List<String> unknownFields, List<String> deprecatedFields)  {
+        List<Condition> conditions = new ArrayList<>(unknownFields.size() + deprecatedFields.size());
+
+        for (String msg : unknownFields)    {
+            conditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg));
+        }
+
+        for (String msg : deprecatedFields)    {
+            conditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg));
+        }
+
+        return conditions;
     }
 
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
