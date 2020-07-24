@@ -50,6 +50,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -161,7 +162,7 @@ class MirrorMaker2ST extends AbstractST {
                         .editContainer(0)
                             .addNewEnv()
                                 .withName("HEADERS")
-                                .withValue("foo=bar, something=more")
+                                .withValue("header_key_one=header_value_one, header_key_two=header_value_two")
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -169,7 +170,7 @@ class MirrorMaker2ST extends AbstractST {
             .endSpec()
             .done();
 
-        ClientUtils.waitTillClientFinish(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
 
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
@@ -214,14 +215,14 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Checking if messages with headers are correctly mirrored");
-        ClientUtils.waitTillClientFinish(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
 
         LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
-        String headerFoo = "key: foo, value: bar";
-        String headerSomething = "key: something, value: more";
+        String header1 = "key: header_key_one, value: header_value_one";
+        String header2 = "key: header_key_two, value: header_value_two";
         String log = StUtils.getLogFromPodByTime(kubeClient().listPodsByPrefixInName(targetConsumerName).get(0).getMetadata().getName(), "", MESSAGE_COUNT + "s");
-        assertThat(log.contains(headerFoo), is(true));
-        assertThat(log.contains(headerSomething), is(true));
+        assertThat(log, containsString(header1));
+        assertThat(log, containsString(header2));
 
         LOGGER.info("Changing topic to {}", topicSourceNameMirrored);
         internalKafkaClient.setTopicName(topicSourceNameMirrored);

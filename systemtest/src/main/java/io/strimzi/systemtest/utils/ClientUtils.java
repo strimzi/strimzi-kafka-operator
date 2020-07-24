@@ -50,7 +50,7 @@ public class ClientUtils {
                     kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(consumerName).get().getStatus().getSucceeded().equals(1));
     }
 
-    public static void waitTillClientFinish(String jobName, String namespace, int messageCount) {
+    public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
         long timeout = (long) messageCount * 3000;
         LOGGER.info("Waiting for producer/consumer:{} will be finished in next {} ms", jobName, timeout);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
