@@ -7,7 +7,7 @@
 
 This procedure describes how to access a Strimzi Kafka cluster from an external client using node ports.
 
-To connect to a broker, you need a hostname (advertised address) and port number for the Kafka _bootstrap address_,
+To connect to a broker, you need a hostname and port number for the Kafka _bootstrap address_,
 as well as the certificate used for authentication.
 
 .Prerequisites
@@ -47,7 +47,7 @@ kubectl apply -f _KAFKA-CONFIG-FILE_
 +
 `NodePort` type services are created for each Kafka broker, as well as an external _bootstrap service_.
 The bootstrap service routes external traffic to the Kafka brokers.
-Node addresses used for connection are propagated to the `status` of each service.
+Node addresses used for connection are propagated to the `status` of the Kafka custom resource.
 
 . Retrieve the bootstrap address you can use to access the Kafka cluster.
 +

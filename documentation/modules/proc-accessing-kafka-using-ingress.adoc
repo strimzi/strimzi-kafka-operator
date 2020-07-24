@@ -5,12 +5,12 @@
 [id='proc-accessing-kafka-using-ingress-{context}']
 = Accessing Kafka using ingress
 
-This procedure shows how to access a Strimzi Kafka cluster from an external client outside of Kubernetes using Ingress.
+This procedure shows how to access a Strimzi Kafka cluster from an external client outside of Kubernetes using Nginx Ingress.
 
 To connect to a broker, you need a hostname (advertised address) for the Ingress _bootstrap address_,
 as well as the certificate used for authentication.
 
-Ingress is used for HTTP access, so the port used to connect is always 443.
+For access using Ingress, the port is always 443.
 
 .Prerequisites
 
@@ -22,7 +22,7 @@ Ingress is used for HTTP access, so the port used to connect is always 443.
 
 . Configure a `Kafka` resource with an external listener set to the `ingress` type.
 +
-Specify the Ingress hosts for the bootstrap service and kafka brokers.
+Specify the Ingress hosts for the bootstrap service and Kafka brokers.
 +
 For example:
 +
@@ -52,21 +52,15 @@ spec:
   zookeeper:
     # ...
 ----
-<1> Ingress hosts for the bootstrap service and kafka brokers.
-
-. Make sure the hosts in the `configuration` resolve to the Ingress endpoints.
-+
-[source,shell,subs=+quotes]
-kubectl get services
-kubectl describe service _INGRESS-NAME_
+<1> Ingress hosts for the bootstrap service and Kafka brokers.
 
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _KAFKA-CONFIG-FILE_
 +
-`ingress` type services are created for each Kafka broker, as well as an external _bootstrap service_.
-The bootstrap service routes external traffic to the Kafka brokers.
+`ClusterIP` type services are created for each Kafka broker, as well as an additional _bootstrap service_.
+These services are used by the Ingress controller to route traffic to the Kafka brokers.
 An `Ingress` resource is also created for each service to expose them using the Ingress controller.
 The Ingress hosts are propagated to the `status` of each service.
 +

@@ -7,10 +7,10 @@
 
 This procedure describes how to access a Strimzi Kafka cluster from an external client using loadbalancers.
 
-To connect to a broker, you need a hostname (advertised address) for the loadbalancer _bootstrap address_,
-as well as the certificate used for authentication.
+To connect to a broker, you need the address of the _bootstrap loadbalancer_,
+as well as the certificate used for TLS encryption.
 
-The port used to connect is always 9094.
+For access using loadbalancers, the port is always 9094.
 
 .Prerequisites
 
@@ -47,7 +47,7 @@ spec:
 kubectl apply -f _KAFKA-CONFIG-FILE_
 +
 `loadbalancer` type services and loadbalancers are created for each Kafka broker, as well as an external _bootstrap service_.
-The bootstrap service routes external traffic to the Kafka brokers.
+The bootstrap service routes external traffic to all Kafka brokers.
 DNS names and IP addresses used for connection are propagated to the `status` of each service.
 
 . Retrieve the address of the bootstrap service you can use to access the Kafka cluster.
