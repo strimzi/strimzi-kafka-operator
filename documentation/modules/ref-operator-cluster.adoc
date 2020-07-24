@@ -120,7 +120,7 @@ If you are using a different DNS domain name suffix in your cluster, change the 
 
 == Logging configuration
 
-Together with Cluster Operator, `ConfigMap` containing its logging configuration is created.
+When installing Cluster Operator, `ConfigMap` containing its logging configuration is created.
 This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator-logging.yaml`.
 Cluster Operator logging is then configured by changing this `ConfigMap`.
 
@@ -141,7 +141,7 @@ Entry `monitorInterval` configures frequency of logging reloading in the seconds
 If the `ConfigMap` is not present during deploying of Cluster Operator, default logging values are used.
 
 If the `ConfigMap` is deleted by an accident after the Cluster Operator was deployed, the last loaded configuration is used.
-After `ConfigMap` recreation, the new configuration is loaded.
+After recreating the `ConfigMap`, the new configuration is loaded.
 
 == Periodic reconciliation
 
