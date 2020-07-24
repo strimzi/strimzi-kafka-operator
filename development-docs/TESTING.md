@@ -254,6 +254,12 @@ Once this variable is set, the teardown phase will be skipped after test finishe
 subsequent setup phase will be much faster, due to all components being already deployed.
 Unfortunately, this approach is not applicable for tests where component configuration changes.
 
+## Skip surefire tests
+
+There are several tests, which are executed via Maven Surefire plugin. 
+Those tests are some kind of unit tests for internal systemtest package tooling.
+You can skip them by adding `-Dskip.surefire.tests` option to mvn command.
+
 ## Testing Cluster Operator deployment via OLM
 
 Strimzi also supports deployment of Cluster Operator through OperatorHub, which needs to have updated manifest for each version and be tested.
