@@ -9,7 +9,7 @@ Configure and initialize a Jaeger tracer using a set of xref:ref-tracing-environ
 
 .Procedure
 
-Perform the following steps for each client application.
+In each client application:
 
 . Add Maven dependencies for Jaeger to the `pom.xml` file for the client application:
 +

@@ -1,0 +1,62 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-distributed-tracing-{context}']
+= Distributed tracing
+
+Distributed tracing allows you to track the progress of transactions between applications in a distributed system. In a microservices architecture, tracing tracks the progress of transactions between services. Trace data is useful for monitoring application performance and investigating issues with target systems and end-user applications.
+
+In Strimzi, tracing facilitates the end-to-end tracking of messages: from source systems to Kafka, and then from Kafka to target systems and applications. It complements the metrics that are available to view in link:{BookURLDeploying}#assembly-metrics-setup-{context}[Grafana dashboards], as well as the component loggers. 
+
+[discrete]
+== How Strimzi supports tracing
+
+Support for tracing is built in to the following components:
+
+* Kafka Connect (including Kafka Connect with Source2Image support)
+* MirrorMaker
+* MirrorMaker 2.0
+* Strimzi Kafka Bridge
+
+You enable and configure tracing for these components using template configuration properties in their custom resources.
+
+To enable tracing in Kafka producers, consumers, and Kafka Streams API applications, you _instrument_ application code using the link:https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library (included with Strimzi). When instrumented, clients generate trace data; for example, when producing messages or writing offsets to the log.
+
+Traces are sampled according to a sampling strategy and then visualized in the Jaeger user interface.
+
+[NOTE]
+====
+Tracing is not supported for Kafka brokers.
+
+Setting up tracing for applications and systems beyond Strimzi is outside the scope of this chapter. To learn more about this subject, search for "inject and extract" in the {OpenTracingDocs}.
+====
+
+[discrete]
+== Outline of procedures
+
+To set up tracing for Strimzi, follow these procedures in order:
+
+* Set up tracing for clients:
+
+** xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[Initialize a Jaeger tracer for Kafka clients]
+
+* Instrument clients with tracers:
+
+** xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument producers and consumers for tracing]
+
+** xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Instrument Kafka Streams applications for tracing]
+
+* xref:assembly-setting-up-tracing-mirror-maker-connect-bridge-{context}[Set up tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge]
+
+.Prerequisites
+
+* The Jaeger backend components are deployed to your Kubernetes cluster. For deployment instructions, see the https://www.jaegertracing.io/docs/1.18/deployment/[Jaeger deployment documentation^].
+
+include::../../modules/tracing/con-overview-opentracing-jaeger.adoc[leveloffset=+1]
+
+include::assembly-setting-up-tracing-kafka-clients.adoc[leveloffset=+1]
+
+include::assembly-instrumenting-kafka-clients-tracers.adoc[leveloffset=+1]
+
+include::assembly-setting-up-tracing-mirror-maker-connect-bridge.adoc[leveloffset=+1]
