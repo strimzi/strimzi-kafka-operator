@@ -17,7 +17,7 @@
 * Migration to Helm 3
 * Refactored the format of the `KafkaRebalance` resource's status. The state of the rebalance is now displayed in the associated `Condition`'s `type` field rather than the `status` field. This was done so that the information would display correctly in various Kubernetes tools.
 * Added performance tuning options to the `KafkaRebalance` CR and the ability to define a regular expression that will exclude matching topics from a rebalance optimization proposal.
-* Use Strimzi Kafka Bridge 0.17.0
+* Use Strimzi Kafka Bridge 0.18.0
 * Make it possible to configure labels and annotations for secrets created by the User Operator
 * Strimzi Kafka Bridge metrics integration:
   * enable/disable metrics in the KafkaBridge custom resource
