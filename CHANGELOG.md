@@ -7,6 +7,7 @@
 * Cruise Control metrics integration:
   * enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
   * new Grafana dashboard for the Cruise Control metrics
+* Configure Cluster Operator logging using ConfigMap instead of environment variable and support dynamic changes  
 
 ## 0.19.0
 
