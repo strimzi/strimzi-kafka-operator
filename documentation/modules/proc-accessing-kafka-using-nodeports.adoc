@@ -48,8 +48,10 @@ kubectl apply -f _KAFKA-CONFIG-FILE_
 `NodePort` type services are created for each Kafka broker, as well as an external _bootstrap service_.
 The bootstrap service routes external traffic to the Kafka brokers.
 Node addresses used for connection are propagated to the `status` of the Kafka custom resource.
++
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
 
-. Retrieve the bootstrap address you can use to access the Kafka cluster.
+. Retrieve the bootstrap address you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +
 [source,shell,subs=+quotes]
 kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'

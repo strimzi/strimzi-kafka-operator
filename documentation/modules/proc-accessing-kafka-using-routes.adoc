@@ -48,8 +48,10 @@ oc apply -f _KAFKA-CONFIG-FILE_
 The services route the traffic from the OpenShift Routes to the Kafka brokers.
 An OpenShift `Route` resource is also created for each service to expose them using the HAProxy load balancer.
 DNS addresses used for connection are propagated to the `status` of each service.
++
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
 
-. Retrieve the address of the bootstrap service you can use to access the Kafka cluster.
+. Retrieve the address of the bootstrap service you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +
 [source,shell,subs=+quotes]
 kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'

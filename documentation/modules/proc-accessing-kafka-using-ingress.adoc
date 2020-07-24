@@ -64,6 +64,8 @@ These services are used by the Ingress controller to route traffic to the Kafka 
 An `Ingress` resource is also created for each service to expose them using the Ingress controller.
 The Ingress hosts are propagated to the `status` of each service.
 +
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
++
 Use the address for the bootstrap host you specified in the `configuration` and port 443 (_BOOTSTRAP-HOST:443_) in your Kafka client as the _bootstrap address_ to connect to the Kafka cluster.
 
 . Extract the public certificate of the broker certificate authority.
