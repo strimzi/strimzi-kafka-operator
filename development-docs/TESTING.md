@@ -255,6 +255,12 @@ This env variable is every useful in debugging some types of test case.
 When this variable is set the teardown phase will be skipped when the test finishes and if you keep it set, setup phase will be much quicker, because all components are already deployed. 
 Unfortunately, this approach is not friendly for tests where component configuration change.  
 
+## Skip surefire tests
+
+There are several tests, which are executed via Maven Surefire plugin. 
+Those tests are some kind of unit tests for internal systemtest package tooling.
+You can skip them by adding `-Dskip.surefire.tests` option to mvn command.
+
 ## Testing Cluster Operator deployment via OLM
 
 Strimzi also supports deploy Cluster Operator through OperatorHub. 
