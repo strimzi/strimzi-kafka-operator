@@ -14,21 +14,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import io.vertx.micrometer.MicrometerMetricsOptions;
-import io.vertx.micrometer.VertxPrometheusOptions;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,31 +31,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaIT {
+public class TolerationsIT {
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private static Vertx vertx;
     private String namespace = "kafka-it-2";
 
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true)
-        ));
-    }
-
-    @AfterAll
-    public static void after(VertxTestContext context) {
-        Checkpoint checkpoint = context.checkpoint();
-        vertx.close(done -> {
-            checkpoint.flag();
-        });
-    }
-
     @BeforeEach
-    public void beforeEach() throws IOException, InterruptedException {
+    public void beforeEach() {
         cluster.createNamespace(namespace);
     }
 
@@ -97,12 +72,11 @@ public class KafkaIT {
                         .endMetadata()
                         .withNewSpec()
                             .withTolerations(tolerationList)
-                        .withDnsPolicy("ClusterFirst")
-                        .withRestartPolicy("Always")
-                        .withSchedulerName("default-scheduler")
-                        .withSecurityContext(null)
-                        .withTerminationGracePeriodSeconds(30L)
-
+                            .withDnsPolicy("ClusterFirst")
+                            .withRestartPolicy("Always")
+                            .withSchedulerName("default-scheduler")
+                            .withSecurityContext(null)
+                            .withTerminationGracePeriodSeconds(30L)
                         .endSpec()
                     .endTemplate()
                 .endSpec()
