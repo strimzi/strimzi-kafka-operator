@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.FLAKY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -70,7 +69,6 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(FLAKY)
     void testCruiseControlWithRebalanceResource() {
         KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
         KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME).done();
