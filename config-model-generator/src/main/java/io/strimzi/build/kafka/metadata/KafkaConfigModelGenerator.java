@@ -84,7 +84,7 @@ public class KafkaConfigModelGenerator {
             } else if (key.validator instanceof ConfigDef.ValidList) {
                 descriptor.setItems(validList(key));
             } else if (key.validator instanceof ApiVersionValidator$) {
-                Iterator<ApiVersion> iterator = ApiVersion$.MODULE$.allVersions().iterator();
+                Iterator<ApiVersion> iterator = ((scala.collection.GenIterableLike<ApiVersion, ?>) ApiVersion$.MODULE$.allVersions()).iterator();
                 LinkedHashSet<String> versions = new LinkedHashSet<>();
                 while (iterator.hasNext()) {
                     ApiVersion next = iterator.next();
