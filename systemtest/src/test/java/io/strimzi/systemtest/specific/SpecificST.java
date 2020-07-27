@@ -160,7 +160,7 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka() {
         String nonExistingVersion = "6.6.6";
-        String nonExistingVersionMessage = "Unsupported Kafka.spec.kafka.version: " + nonExistingVersion + ". Supported versions are.*";
+        String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported. Supported versions are.*";
 
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
