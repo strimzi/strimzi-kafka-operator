@@ -5,19 +5,26 @@
 [id='proc-accessing-kafka-using-ingress-{context}']
 = Accessing Kafka using ingress
 
-This procedure shows how to access Strimzi Kafka clusters from outside of Kubernetes using Ingress.
+This procedure shows how to access a Strimzi Kafka cluster from an external client outside of Kubernetes using Nginx Ingress.
+
+To connect to a broker, you need a hostname (advertised address) for the Ingress _bootstrap address_,
+as well as the certificate used for authentication.
+
+For access using Ingress, the port is always 443.
 
 .Prerequisites
 
-* An Kubernetes cluster
+* Kubernetes cluster
 * Deployed {NginxIngressController} with TLS passthrough enabled
 * A running Cluster Operator
 
 .Procedure
 
-. Deploy Kafka cluster with an external listener enabled and configured to the type `ingress`.
+. Configure a `Kafka` resource with an external listener set to the `ingress` type.
 +
-An example configuration with an external listener configured to use `Ingress`:
+Specify the Ingress hosts for the bootstrap service and Kafka brokers.
++
+For example:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -31,7 +38,7 @@ spec:
         type: ingress
         authentication:
           type: tls
-        configuration:
+        configuration: <1>
           bootstrap:
             host: bootstrap.myingress.com
           brokers:
@@ -45,22 +52,29 @@ spec:
   zookeeper:
     # ...
 ----
-
-. Make sure the hosts in the `configuration` section properly resolve to the Ingress endpoints.
+<1> Ingress hosts for the bootstrap service and Kafka brokers.
 
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _KAFKA-CONFIG-FILE_
++
+`ClusterIP` type services are created for each Kafka broker, as well as an additional _bootstrap service_.
+These services are used by the Ingress controller to route traffic to the Kafka brokers.
+An `Ingress` resource is also created for each service to expose them using the Ingress controller.
+The Ingress hosts are propagated to the `status` of each service.
++
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
++
+Use the address for the bootstrap host you specified in the `configuration` and port 443 (_BOOTSTRAP-HOST:443_) in your Kafka client as the _bootstrap address_ to connect to the Kafka cluster.
 
-. Extract the public certificate of the broker certificate authority
+. Extract the public certificate of the broker certificate authority.
 +
 [source,shell,subs=+quotes]
 kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
-. Use the extracted certificate in your Kafka client to configure the TLS connection.
+Use the extracted certificate in your Kafka client to configure the TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
-Connect with your client to the host you specified in the configuration on port 443.
 
 .Additional resources
 * For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
