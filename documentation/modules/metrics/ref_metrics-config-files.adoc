@@ -41,7 +41,7 @@ metrics
 <3> Grafana dashboard specific to xref:assembly-kafka-exporter-{context}[Kafka Exporter]
 <4> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect
 <5> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper
-<6> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2
+<6> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2.0
 <7> Kafka Bridge resource with metrics enabled
 <8> Configuration to add roles for service monitoring
 <9> Hook definitions for sending notifications through Alertmanager
