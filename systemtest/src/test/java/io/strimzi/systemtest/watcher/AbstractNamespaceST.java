@@ -74,8 +74,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
         cluster.setNamespace(topicNamespace);
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
-        cluster.setNamespace(kafkaClusterNamespace);
         KafkaTopicUtils.waitForKafkaTopicReady(topic);
+        cluster.setNamespace(kafkaClusterNamespace);
     }
 
     void deleteNewTopic(String namespace, String topic) {
