@@ -24,10 +24,11 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "image", "config",
+        "image", "tlsSidecar", "resources",
         "livenessProbe", "readinessProbe",
-        "jvmOptions", "resources",
-        "logging", "tlsSidecar", "template", "brokerCapacity"})
+        "jvmOptions", "logging",
+        "template", "brokerCapacity",
+        "config", "metrics"})
 @EqualsAndHashCode
 public class CruiseControlSpec implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
@@ -49,6 +50,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private CruiseControlTemplate template;
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
+    private Map<String, Object> metrics;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The docker image for the pods.")
@@ -91,6 +93,17 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
 
     public void setConfig(Map<String, Object> config) {
         this.config = config;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("The Prometheus JMX Exporter configuration. " +
+            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    public Map<String, Object> getMetrics() {
+        return metrics;
+    }
+
+    public void setMetrics(Map<String, Object> metrics) {
+        this.metrics = metrics;
     }
 
     @Description("Logging configuration (log4j1) for Cruise Control.")
