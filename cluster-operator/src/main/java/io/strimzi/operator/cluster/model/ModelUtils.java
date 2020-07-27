@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.SystemProperty;
@@ -572,4 +573,38 @@ public class ModelUtils {
         return validLines;
     }
 
+    /**
+     * If the toleration.value is an empty string, set it to null. That solves an issue when built STS contains a filed
+     * with an empty property value. K8s is removing properties like this and thus we cannot fetch an equal STS which was
+     * created with (some) empty value.
+     * @param tolerations tolerations list to check whether toleration.value is an empty string and eventually replace it by null
+     */
+    public static void removeEmptyValuesFromTolerations(List<Toleration> tolerations) {
+        if (tolerations != null) {
+            tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
+        }
+    }
+
+    /**
+     * Checks whether tolerations and template.tolerations exits. If so, latter takes precedence. Entries like tolerations.value == ""
+     * are replaced by tolerations.value = null
+     * @param tolerations path to tolerations in CR
+     * @param tolerationList tolerations
+     * @param templateTolerations path to template.tolerations in CR
+     * @param podTemplate pod template containing tolerations
+     * @return adjusted list with tolerations
+     */
+    public static List<Toleration> tolerations(String tolerations, List<Toleration> tolerationList, String templateTolerations, PodTemplate podTemplate) {
+        List<Toleration> tolerationsListLocal;
+        if (podTemplate != null && podTemplate.getTolerations() != null) {
+            if (tolerationList != null) {
+                log.warn("Tolerations given on both {} and {}; latter takes precedence", tolerations, templateTolerations);
+            }
+            tolerationsListLocal = podTemplate.getTolerations();
+        } else {
+            tolerationsListLocal = tolerationList;
+        }
+        removeEmptyValuesFromTolerations(tolerationsListLocal);
+        return tolerationsListLocal;
+    }
 }
