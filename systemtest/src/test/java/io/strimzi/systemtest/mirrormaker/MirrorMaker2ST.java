@@ -94,19 +94,12 @@ class MirrorMaker2ST extends AbstractST {
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + availabilityTopicSourceName;
 
-        String sourceProducerName = "source-producer";
-        String targetConsumerName = "target-consumer";
-        String sourceExampleTopic = "source-example-topic";
-        String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
-
         // Deploy source kafka
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
         // Deploy target kafka
         KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
         // Deploy Topic
         KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
-        // Deploy Topic for example clients
-        KafkaTopicResource.topic(kafkaClusterSourceName, sourceExampleTopic).done();
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -153,25 +146,6 @@ class MirrorMaker2ST extends AbstractST {
                 .done();
         LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
 
-        //deploying example clients for checking if mm2 will mirror messages with headers
-        KafkaClientsResource.consumerStrimzi(targetConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, MESSAGE_COUNT).done();
-        KafkaClientsResource.producerStrimzi(sourceProducerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, MESSAGE_COUNT)
-            .editSpec()
-                .editTemplate()
-                    .editSpec()
-                        .editContainer(0)
-                            .addNewEnv()
-                                .withName("HEADERS")
-                                .withValue("header_key_one=header_value_one, header_key_two=header_value_two")
-                            .endEnv()
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .done();
-
-        ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
-
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
@@ -213,16 +187,6 @@ class MirrorMaker2ST extends AbstractST {
             sent,
             internalKafkaClient.receiveMessagesPlain()
         );
-
-        LOGGER.info("Checking if messages with headers are correctly mirrored");
-        ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
-
-        LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
-        String header1 = "key: header_key_one, value: header_value_one";
-        String header2 = "key: header_key_two, value: header_value_two";
-        String log = StUtils.getLogFromPodByTime(kubeClient().listPodsByPrefixInName(targetConsumerName).get(0).getMetadata().getName(), "", MESSAGE_COUNT + "s");
-        assertThat(log, containsString(header1));
-        assertThat(log, containsString(header2));
 
         LOGGER.info("Changing topic to {}", topicSourceNameMirrored);
         internalKafkaClient.setTopicName(topicSourceNameMirrored);
@@ -647,7 +611,48 @@ class MirrorMaker2ST extends AbstractST {
         }
     }
 
+    @Test
+    void testMirrorMaker2CorrectlyMirrorsHeaders() {
+        String sourceProducerName = "source-producer";
+        String targetConsumerName = "target-consumer";
+        String sourceExampleTopic = "source-example-topic";
+        String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
 
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        // Deploy Topic for example clients
+        KafkaTopicResource.topic(kafkaClusterSourceName, sourceExampleTopic).done();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
+
+        //deploying example clients for checking if mm2 will mirror messages with headers
+        KafkaClientsResource.consumerStrimzi(targetConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, MESSAGE_COUNT).done();
+        KafkaClientsResource.producerStrimzi(sourceProducerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, MESSAGE_COUNT)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editContainer(0)
+                            .addNewEnv()
+                                .withName("HEADERS")
+                                .withValue("header_key_one=header_value_one, header_key_two=header_value_two")
+                            .endEnv()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        ClientUtils.waitTillContinuousClientsFinish(sourceProducerName, targetConsumerName, NAMESPACE, MESSAGE_COUNT);
+
+        LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
+        String header1 = "key: header_key_one, value: header_value_one";
+        String header2 = "key: header_key_two, value: header_value_two";
+        String log = StUtils.getLogFromPodByTime(kubeClient().listPodsByPrefixInName(targetConsumerName).get(0).getMetadata().getName(), "", MESSAGE_COUNT + "s");
+        assertThat(log, containsString(header1));
+        assertThat(log, containsString(header2));
+    }
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
