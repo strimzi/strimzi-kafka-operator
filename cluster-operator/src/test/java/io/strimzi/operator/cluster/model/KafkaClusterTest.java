@@ -3559,4 +3559,120 @@ public class KafkaClusterTest {
         assertThat(ex.getMessage(), is("Kafka " + namespace + "/" + cluster + " has invalid configuration. " +
                 "Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes."));
     }
+
+    @Test
+    public void testCruiseControlWithHigherMinISR() {
+        Map<String, Object> config = new HashMap<>();
+        int minInsyncReplicas = 2;
+        config.put(KafkaCluster.CC_REPLICATION_FACTOR_CONFIG_FIELD, 1);
+        config.put(KafkaCluster.KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD, minInsyncReplicas);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(minInsyncReplicas + 1)
+                        .withConfig(config)
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        KafkaCluster kafka = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(kafka.ccReplicationFactor, is(String.valueOf(minInsyncReplicas + 1)));
+    }
+
+    @Test
+    public void testCruiseControlDefaultWithHigherMinISR() {
+        Map<String, Object> config = new HashMap<>();
+        int minInsyncReplicas = 2;
+        config.put(KafkaCluster.KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD, minInsyncReplicas);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(minInsyncReplicas + 1)
+                        .withConfig(config)
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        KafkaCluster kafka = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(kafka.ccReplicationFactor, is(String.valueOf(minInsyncReplicas + 1)));
+    }
+
+    @Test
+    public void testCruiseControlWithSameMinISR() {
+        Map<String, Object> config = new HashMap<>();
+        int minInsyncReplicas = 2;
+        config.put(KafkaCluster.CC_REPLICATION_FACTOR_CONFIG_FIELD, minInsyncReplicas);
+        config.put(KafkaCluster.KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD, minInsyncReplicas);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(minInsyncReplicas + 1)
+                        .withConfig(config)
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        KafkaCluster kafka = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(kafka.ccReplicationFactor, is(String.valueOf(minInsyncReplicas + 1)));
+    }
+
+    @Test
+    public void testCruiseControlWithLowerMinISR() {
+        Map<String, Object> config = new HashMap<>();
+        int minInsyncReplicas = 2;
+        int ccMetricTopicReplicas = minInsyncReplicas + 1;
+        config.put(KafkaCluster.CC_REPLICATION_FACTOR_CONFIG_FIELD, ccMetricTopicReplicas);
+        config.put(KafkaCluster.KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD, minInsyncReplicas);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(minInsyncReplicas + 1)
+                        .withConfig(config)
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        KafkaCluster kafka = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(kafka.ccReplicationFactor, is(String.valueOf(ccMetricTopicReplicas)));
+    }
+
+    @Test
+    public void testCruiseControlWithCCMTRGreaterThanReplicas() {
+        Map<String, Object> config = new HashMap<>();
+        int minInsyncReplicas = 2;
+        int ccMetricTopicReplicas = minInsyncReplicas + 1;
+        config.put(KafkaCluster.CC_REPLICATION_FACTOR_CONFIG_FIELD, ccMetricTopicReplicas);
+        config.put(KafkaCluster.KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD, minInsyncReplicas);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(minInsyncReplicas)
+                        .withConfig(config)
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        KafkaCluster kafka = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        assertThat(kafka.ccReplicationFactor, is(String.valueOf(minInsyncReplicas)));
+    }
 }

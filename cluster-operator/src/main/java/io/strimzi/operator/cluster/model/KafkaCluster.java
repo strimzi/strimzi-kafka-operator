@@ -175,9 +175,9 @@ public class KafkaCluster extends AbstractModel {
 
     private static final String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
     private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
-    private static final String KAFKA_REPLICATION_FACTOR_CONFIG_FIELD = "default.replication.factor";
+    protected static final String KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD = "min.insync.replicas";
     private static final String CC_NUM_PARTITIONS_CONFIG_FIELD = "cruise.control.metrics.topic.num.partitions";
-    private static final String CC_REPLICATION_FACTOR_CONFIG_FIELD = "cruise.control.metrics.topic.replication.factor";
+    protected static final String CC_REPLICATION_FACTOR_CONFIG_FIELD = "cruise.control.metrics.topic.replication.factor";
 
     protected static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
@@ -228,8 +228,9 @@ public class KafkaCluster extends AbstractModel {
     private CruiseControlSpec cruiseControlSpec;
     private String kafkaDefaultNumPartitions = "1";
     private String kafkaDefaultReplicationFactor = "1";
+    private String kafkaDefaultMinInsyncReplias = "1";
     private String ccNumPartitions = null;
-    private String ccReplicationFactor = null;
+    protected String ccReplicationFactor = null;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
     private CertAndKeySecretSource secretSourceExternal = null;
@@ -466,13 +467,13 @@ public class KafkaCluster extends AbstractModel {
         }
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
-        // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
+        // If the required Cruise Control metric reporter configurations are missing then set them using Kafka defaults
         if (configuration.getConfigOption(CC_NUM_PARTITIONS_CONFIG_FIELD) == null) {
             result.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, result.kafkaDefaultNumPartitions);
         }
-        if (configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD) == null) {
-            result.ccReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, result.kafkaDefaultReplicationFactor);
-        }
+
+        result.ccReplicationFactor = checkCCMetricsReplication(configuration, result, kafkaClusterSpec);
+
         String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
         if (metricReporters != null) {
@@ -759,6 +760,64 @@ public class KafkaCluster extends AbstractModel {
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
+    }
+
+    /**
+     * Checks that the Cruise Control metrics topic replication level is above the cluster's minimum insync replication value. If it is less than or
+     * equal to the minISR then it will be set to minISR + 1, unless that value is greater than the number of brokers in the cluster. If that is the
+     * case then it is set to the number of brokers provided that is greater than minISR, if not then a warning is sent and it is set as minISR. If the
+     * configured CC metric replication is greater than minISR + 1 then it is left as is.
+     *
+     * @param configuration The Kafka configuration. Needed to check the min.insync.replica and CC metrics topic settings.
+     * @param result The KafkaCluster object being contructed. Needed for default settings.
+     * @param kafkaClusterSpec The KafkaClusterSpec objecct needed for the checking the number of brokers in the cluster.
+     * @return The recommended CC metrics topic replication factor as a string.
+     */
+    private static String checkCCMetricsReplication(KafkaConfiguration configuration, KafkaCluster result, KafkaClusterSpec kafkaClusterSpec) {
+
+        int configuredCCReplicationFactor;
+        if (configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD) == null) {
+            configuredCCReplicationFactor = Integer.parseInt(result.kafkaDefaultReplicationFactor);
+        } else {
+            configuredCCReplicationFactor = Integer.parseInt(configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD));
+        }
+        int brokerMinInsyncReplicas;
+        if (configuration.getConfigOption(KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD) == null) {
+            brokerMinInsyncReplicas = Integer.parseInt(result.kafkaDefaultMinInsyncReplias);
+        } else {
+            brokerMinInsyncReplicas = Integer.parseInt(configuration.getConfigOption(KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD));
+        }
+
+        // We want the CC metrics topics to have a replication factor at least one higher than the broker minimum so that metrics
+        // producer acks are likely to be acknowledged faster.
+        int checkedCcReplicationFactor = Math.max(configuredCCReplicationFactor, brokerMinInsyncReplicas + 1);
+
+        // However, we need to check that we are not setting the replication factor to more than the available number of brokers.
+        if (checkedCcReplicationFactor > kafkaClusterSpec.getReplicas()) {
+            if (kafkaClusterSpec.getReplicas() >= brokerMinInsyncReplicas) {
+                // If the number of brokers is greater than or equal to the cluster minISR then set the CC metric topic replicas to
+                // equal the number of brokers.
+                checkedCcReplicationFactor = kafkaClusterSpec.getReplicas();
+            } else {
+                // If we are here then we have an issue because minISR has been set higher than the number of brokers, which is a bad idea.
+                // We are assuming the user must be ok with this so we set the CC replication factor equal to the min.insync.replicas.
+                checkedCcReplicationFactor = brokerMinInsyncReplicas;
+                log.warn("The configured {} ({}) is less than the number of brokers in the cluster ({}). This is not recommended, " +
+                         "either add additional brokers or reduce the {} to be less than or equal to the number of brokers.",
+                         KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD, brokerMinInsyncReplicas, kafkaClusterSpec.getReplicas(),
+                         KAFKA_MIN_INSYNC_REPLICA_CONFIG_FIELD);
+            }
+        }
+
+        // If the user set the CC replication factor and we have changed it we need to tell them
+        if (configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD) != null && checkedCcReplicationFactor != configuredCCReplicationFactor) {
+            log.warn("The configured {} ({}) has been changed to {} for performance reasons",
+                     CC_REPLICATION_FACTOR_CONFIG_FIELD, configuredCCReplicationFactor, checkedCcReplicationFactor);
+        } else if (configuredCCReplicationFactor != checkedCcReplicationFactor) {
+            log.debug("Cruise control metrics topic replication factor set to {}", checkedCcReplicationFactor);
+        }
+
+        return String.valueOf(checkedCcReplicationFactor);
     }
 
     protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
