@@ -30,7 +30,6 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -47,7 +46,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -422,14 +420,13 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     @Test
-    @Timeout(value = 30, timeUnit = TimeUnit.SECONDS)
     public void testRebalancingCompleted(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Ready,
                 KafkaRebalanceAnnotation.none, null,
-                MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
+                MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID)
                 .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
@@ -444,7 +441,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Rebalancing,
                 KafkaRebalanceAnnotation.none, null,
-                MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
+                MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID)
                 .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }

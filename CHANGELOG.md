@@ -9,6 +9,7 @@
 * Updated Cruise Control to version 2.5.32
 * Fix Cruise Control crash loop when updating container configurations
 * Configure extenal logging `ConfigMap` name and key.
+* Added broker load information to rebalance optimization proposals. The load before and the predicted load after, for various metrics, are displayed along with the difference between them.
 
 ### Deprecations and removals
 

@@ -26,12 +26,14 @@ import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlLoadParameters;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRebalanceKeys;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -42,18 +44,19 @@ import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi.CC_REST_API_SUMMARY;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 
 /**
@@ -130,6 +133,7 @@ public class KafkaRebalanceAssemblyOperator
 
     private static final long REBALANCE_POLLING_TIMER_MS = 5_000;
     private static final int MAX_API_RETRIES = 5;
+    protected static final String BROKER_LOAD_KEY = "brokerLoad";
 
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
@@ -409,18 +413,171 @@ public class KafkaRebalanceAssemblyOperator
                 .build();
     }
 
-    private KafkaRebalanceStatus buildRebalanceStatus(String sessionID, KafkaRebalanceState cruiseControlState, Map<String, Object> optimizationResult) {
+    /**
+     * Converts the supplied JSONArray containing the load information JSONObject for each broker, into a map linking from
+     * broker ID to a map linking a more readable version of the load parameters key to their values. The load parameters
+     * that are extracted and the readable versions of the keys are dictated by the values defined in the
+     * {@link CruiseControlLoadParameters} enum.
+     *
+     * @param brokerLoadArray The JSONArray of broker load JSONObjects returned by the Cruise Control rebalance endpoint.
+     * @return A map linking from broker ID integer to a map of load parameter to value.
+     */
+    protected static Map<Integer, Map<String, Object>> extractLoadParameters(JsonArray brokerLoadArray) {
+
+        Map<Integer, Map<String, Object>> tempMap = new HashMap<>();
+
+        for (Object rawBrokerLoad : brokerLoadArray) {
+            JsonObject brokerLoad = (JsonObject) rawBrokerLoad;
+
+            Map<String, Object> brokerLoadMap = new HashMap<>();
+
+            for (CruiseControlLoadParameters intParam : CruiseControlLoadParameters.getIntegerParameters()) {
+                if (brokerLoad.containsKey(intParam.getCruiseControlKey())) {
+                    brokerLoadMap.put(intParam.getStrimziKey(), brokerLoad.getInteger(intParam.getCruiseControlKey()));
+                }
+            }
+
+            for (CruiseControlLoadParameters doubleParam : CruiseControlLoadParameters.getDoubleParameters()) {
+                if (brokerLoad.containsKey(doubleParam.getCruiseControlKey())) {
+                    brokerLoadMap.put(doubleParam.getStrimziKey(), brokerLoad.getDouble(doubleParam.getCruiseControlKey()));
+                }
+            }
+
+            int brokerID = brokerLoad.getInteger(CruiseControlRebalanceKeys.BROKER_ID.getKey());
+            tempMap.put(brokerID, brokerLoadMap);
+
+        }
+
+        return tempMap;
+
+    }
+
+    /**
+     * Converts the supplied before and after broker load arrays into a map linking from broker ID integer to a map linking
+     * from load parameter to an array of [before, after, difference]. The load paramters included in the map are dictated
+     * by the values in he {@link CruiseControlLoadParameters} enum.
+     *
+     * @param brokerLoadBeforeArray The JSONArray of broker load JSONObjects, for before the optimization proposal is applied,
+     *                              returned by the Cruise Control rebalance endpoint.
+     * @param brokerLoadAfterArray The JSONArray of broker load JSONObjects, for after the optimization proposal is applied,
+     *                             returned by the Cruise Control rebalance endpoint.
+     * @return A map linking from broker ID integer to a map of load parameter to [before, after, difference] arrays.
+     */
+    protected static Map<Integer, Map<String, Object>> createBeforeAfterLoadMap(JsonArray brokerLoadBeforeArray, JsonArray brokerLoadAfterArray) {
+
+        // There is no guarantee that the brokers are in the same order in both the before and after arrays.
+        // Therefore we need to convert them into maps indexed by broker ID so we can align them later for the comparison.
+        Map<Integer, Map<String, Object>> loadBeforeMap = extractLoadParameters(brokerLoadBeforeArray);
+        Map<Integer, Map<String, Object>> loadAfterMap = extractLoadParameters(brokerLoadAfterArray);
+
+        if (loadBeforeMap.size() != loadAfterMap.size()) {
+            throw new RuntimeException("Broker data was missing from the load before/after information");
+        }
+
+        Map<Integer, Map<String, Object>> brokersBeforeAfterStats = new HashMap<>();
+
+        for (int brokerID : loadBeforeMap.keySet()) {
+            Map<String, Object> brokerBefore = loadBeforeMap.get(brokerID);
+            Map<String, Object> brokerAfter = loadAfterMap.get(brokerID);
+
+            Map<String, Object> brokerStats = new HashMap<>();
+
+            for (CruiseControlLoadParameters intLoadParameter : CruiseControlLoadParameters.getIntegerParameters()) {
+
+                if (brokerBefore.containsKey(intLoadParameter.getStrimziKey()) &&
+                        brokerAfter.containsKey(intLoadParameter.getStrimziKey())) {
+
+                    int intBeforeStat = (int) brokerBefore.get(intLoadParameter.getStrimziKey());
+                    int intAfterStat = (int) brokerAfter.get(intLoadParameter.getStrimziKey());
+                    int intDiff = intAfterStat - intBeforeStat;
+
+                    int[] intStats = {intBeforeStat, intAfterStat, intDiff};
+                    brokerStats.put(intLoadParameter.getStrimziKey(), intStats);
+                } else {
+                    log.warn("{} information was missing from the broker before/after load information",
+                            intLoadParameter.getStrimziKey());
+                }
+
+            }
+
+            for (CruiseControlLoadParameters doubleLoadParameter : CruiseControlLoadParameters.getDoubleParameters()) {
+
+                if (brokerBefore.containsKey(doubleLoadParameter.getStrimziKey()) &&
+                        brokerAfter.containsKey(doubleLoadParameter.getStrimziKey())) {
+
+                    double doubleBeforeStat = (double) brokerBefore.get(doubleLoadParameter.getStrimziKey());
+                    double doubleAfterStat = (double) brokerAfter.get(doubleLoadParameter.getStrimziKey());
+                    double doubleDiff = doubleAfterStat - doubleBeforeStat;
+
+                    double[] doubleStats = {doubleBeforeStat, doubleAfterStat, doubleDiff};
+                    brokerStats.put(doubleLoadParameter.getStrimziKey(), doubleStats);
+                } else {
+                    log.warn("{} information was missing from the broker before/after load information",
+                            doubleLoadParameter.getStrimziKey());
+                }
+
+            }
+
+            brokersBeforeAfterStats.put(brokerID, brokerStats);
+        }
+
+        return brokersBeforeAfterStats;
+
+    }
+
+    /**
+     * Converts the supplied JSONObject containing the response from the {@link CruiseControlApi#rebalance} or
+     * {@link CruiseControlApi#getUserTaskStatus} methods, into a map linking to a proposal summary map and a broker
+     * load map.
+     *
+     * @param  proposalJson The JSONObject representing the response from the Cruise Control rebalance endpoint.
+     * @return A map containing the proposal summary and broker load maps.
+     */
+    protected static Map<String, Object> processOptimizationProposal(JsonObject proposalJson) {
+
+        JsonArray brokerLoadBeforeOptimization;
+        JsonArray brokerLoadAfterOptimization;
+        if (proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()) &&
+                proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
+            brokerLoadBeforeOptimization = proposalJson
+                    .getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
+                    .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
+            brokerLoadAfterOptimization = proposalJson
+                    .getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
+                    .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
+        } else {
+            throw new RuntimeException("The rebalance optimization proposal returned by Cruise Control did not contain broker load information");
+        }
+
+        Map<Integer, Map<String, Object>> beforeAndAfterBrokerLoad = createBeforeAfterLoadMap(
+                brokerLoadBeforeOptimization, brokerLoadAfterOptimization);
+
+        Map<String, Object> optimizationProposal = new HashMap<>();
+        optimizationProposal.put(CruiseControlRebalanceKeys.SUMMARY.getKey(),
+                proposalJson.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()).getMap());
+        optimizationProposal.put(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad);
+
+        return optimizationProposal;
+    }
+
+    private KafkaRebalanceStatus buildRebalanceStatus(String sessionID, KafkaRebalanceState cruiseControlState, JsonObject proposalJson) {
+        Map<String, Object> optimizationProposal = processOptimizationProposal(proposalJson);
         return new KafkaRebalanceStatusBuilder()
                 .withSessionId(sessionID)
-                .withOptimizationResult(optimizationResult)
+                .withOptimizationResult(optimizationProposal)
                 .withConditions(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()))
                 .build();
     }
 
     /**
+<<<<<<< HEAD
      * This method handles the transition from the {@code New} state.
      * When a new {@code KafkaRebalance} is created, it calls the Cruise Control API requesting a rebalance proposal.
      *
+=======
+     * This method handles the transition from {@code New} state.
+     * When a new {@link KafkaRebalance} is created, it calls the Cruise Control API for requesting a rebalance proposal.
+>>>>>>> 7439c8537 (Reformatted optimization proposals to add before and after cluster load information)
      * If the proposal is immediately ready, the next state is {@code ProposalReady}.
      * If the proposal is not ready yet and Cruise Control is still processing it, the next state is {@code PendingProposal}.
      *
@@ -642,7 +799,7 @@ public class KafkaRebalanceAssemblyOperator
                                                     vertx.cancelTimer(t);
                                                     log.info("{}: Rebalance ({}) is now complete", reconciliation, sessionId);
                                                     p.complete(buildRebalanceStatus(
-                                                        null, KafkaRebalanceState.Ready, taskStatusJson.getJsonObject(CC_REST_API_SUMMARY).getMap()));
+                                                        null, KafkaRebalanceState.Ready, taskStatusJson));
                                                     break;
                                                 case COMPLETED_WITH_ERROR:
                                                     // TODO: There doesn't seem to be a way to retrieve the actual error message from the user tasks endpoint?
@@ -664,7 +821,7 @@ public class KafkaRebalanceAssemblyOperator
                                                         // Cancel the timer so that the status is returned and updated.
                                                         vertx.cancelTimer(t);
                                                         p.complete(buildRebalanceStatus(
-                                                            sessionId, KafkaRebalanceState.Rebalancing, taskStatusJson.getJsonObject(CC_REST_API_SUMMARY).getMap()));
+                                                            sessionId, KafkaRebalanceState.Rebalancing, taskStatusJson));
                                                     }
                                                     ccApiErrorCount.set(0);
                                                     // TODO: Find out if there is any way to check the progress of a rebalance.
@@ -812,6 +969,7 @@ public class KafkaRebalanceAssemblyOperator
                                                           boolean dryrun, RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder, String userTaskID) {
 
         log.info("{}: Requesting Cruise Control rebalance [dryrun={}]", reconciliation, dryrun);
+        rebalanceOptionsBuilder.withVerboseResponse();
         if (!dryrun) {
             rebalanceOptionsBuilder.withFullRun();
         }
@@ -840,14 +998,14 @@ public class KafkaRebalanceAssemblyOperator
                         }
                     }
 
-                    // If there is sufficient data and the proposal is complete (the response has the "summary" key)
-                    if (!response.getJson().containsKey(CC_REST_API_SUMMARY)) {
+                    if (response.getJson().containsKey(CruiseControlRebalanceKeys.SUMMARY.getKey())) {
+                        // If there is enough data and the proposal is complete (the response has the "summary" key) then we move
+                        // to ProposalReady for a dry run or to the Rebalancing state for a full run
+                        KafkaRebalanceState ready = dryrun ? KafkaRebalanceState.ProposalReady : KafkaRebalanceState.Rebalancing;
+                        return buildRebalanceStatus(response.getUserTaskId(), ready, response.getJson());
+                    } else {
                         throw new CruiseControlRestException("Rebalance returned unknown response: " + response.toString());
                     }
-
-                    // Transition to ProposalReady for a dry run or to the Rebalancing state for a full run
-                    KafkaRebalanceState newState = dryrun ? KafkaRebalanceState.ProposalReady : KafkaRebalanceState.Rebalancing;
-                    return buildRebalanceStatus(response.getUserTaskId(), newState, response.getJson().getJsonObject(CC_REST_API_SUMMARY).getMap());
                 });
     }
 
