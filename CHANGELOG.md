@@ -62,6 +62,10 @@ For this reason, we are deprecating the monitoring port `tcp-prometheus` (9404) 
 This port will be removed in the next release.
 Together with it we will also remove the Prometheus annotation from the service.
 
+#### Removal warning of Cluster Operator log level
+
+Because of the new Cluster Operator dynamic logging configuration via [PR#3328](https://github.com/strimzi/strimzi-kafka-operator/pull/3328) we are going to remove the `STRIMZI_LOG_LEVEL` environment variable from the Cluster Operator deployment YAML file in the 0.20.0 release.
+
 ## 0.18.0
 
 * Add possibility to set Java System Properties for User Operator and Topic Operator via `Kafka` CR.
