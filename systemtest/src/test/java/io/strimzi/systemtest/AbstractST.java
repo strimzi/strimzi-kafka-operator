@@ -652,7 +652,7 @@ public abstract class AbstractST implements TestSeparator {
             assertionError = new AssertionError(e);
         }
 
-        if (Environment.SKIP_TEARDOWN == null) {
+        if (!Environment.SKIP_TEARDOWN) {
             tearDownEnvironmentAfterEach();
         }
 
@@ -663,7 +663,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @AfterAll
     void teardownEnvironmentClass() {
-        if (Environment.SKIP_TEARDOWN == null) {
+        if (!Environment.SKIP_TEARDOWN) {
             tearDownEnvironmentAfterAll();
             teardownEnvForOperator();
         }
