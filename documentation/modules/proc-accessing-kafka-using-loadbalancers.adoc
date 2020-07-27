@@ -5,6 +5,13 @@
 [id='proc-accessing-kafka-using-loadbalancers-{context}']
 = Accessing Kafka using loadbalancers
 
+This procedure describes how to access a Strimzi Kafka cluster from an external client using loadbalancers.
+
+To connect to a broker, you need the address of the _bootstrap loadbalancer_,
+as well as the certificate used for TLS encryption.
+
+For access using loadbalancers, the port is always 9094.
+
 .Prerequisites
 
 * A Kubernetes cluster
@@ -12,9 +19,9 @@
 
 .Procedure
 
-. Deploy Kafka cluster with an external listener enabled and configured to the type `loadbalancer`.
+. Configure a `Kafka` resource with an external listener set to the `loadbalancer` type.
 +
-An example configuration with an external listener configured to use loadbalancers:
+For example:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -36,27 +43,21 @@ spec:
 
 . Create or update the resource.
 +
-This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _KAFKA-CONFIG-FILE_
++
+`loadbalancer` type services and loadbalancers are created for each Kafka broker, as well as an external _bootstrap service_.
+The bootstrap service routes external traffic to all Kafka brokers.
+DNS names and IP addresses used for connection are propagated to the `status` of each service.
++
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
 
-. Find the hostname of the bootstrap loadbalancer.
+. Retrieve the address of the bootstrap service you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +
-This can be done using `kubectl get`:
 [source,shell,subs=+quotes]
-kubectl get service _KAFKA-CLUSTER-NAME_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
-+
-If no hostname was found (nothing was returned by the command), use the loadbalancer IP address.
-+
-This can be done using `kubectl get`:
-[source,shell,subs=+quotes]
-kubectl get service _KAFKA-CLUSTER-NAME_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
-+
-Use the hostname or IP address together with port 9094 in your Kafka client as the _bootstrap_ address.
+kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
 
-. Unless TLS encryption was disabled, extract the public certificate of the broker certification authority.
-+
-This can be done using `kubectl get`:
+. If TLS encryption is enabled, extract the public certificate of the broker certification authority.
 +
 [source,shell,subs=+quotes]
 kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
