@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
@@ -23,8 +24,8 @@ import java.util.function.Function;
 public class Environment {
 
     private static final Logger LOGGER = LogManager.getLogger(Environment.class);
-    private static final Map<String, String> values = new HashMap<>();
-    private static final JsonNode jsonEnv = loadJsonEnv();
+    private static final Map<String, String> VALUES = new HashMap<>();
+    private static final JsonNode JSON_DATA = loadJsonEnv();
 
     /**
      * Specify config json/yaml path with env variables values
@@ -149,7 +150,7 @@ public class Environment {
         String debugFormat = "{}: {}";
         LOGGER.info("Used environment variables:");
         LOGGER.info(debugFormat, "CONFIG", config);
-        values.forEach((key, value) -> LOGGER.info(debugFormat, key, value));
+        VALUES.forEach((key, value) -> LOGGER.info(debugFormat, key, value));
     }
 
     public static boolean isOlmInstall() {
@@ -169,22 +170,27 @@ public class Environment {
     }
 
     private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
-        String value = System.getenv(var) != null ? System.getenv(var) : (Objects.requireNonNull(jsonEnv).get(var) != null ? jsonEnv.get(var).asText() : null);
+        String value = System.getenv(var) != null ?
+                System.getenv(var) :
+                (Objects.requireNonNull(JSON_DATA).get(var) != null ?
+                        JSON_DATA.get(var).asText() :
+                        null);
         T returnValue = defaultValue;
         if (value != null) {
             returnValue = converter.apply(value);
         }
-        values.put(var, String.valueOf(returnValue));
+        VALUES.put(var, String.valueOf(returnValue));
         return returnValue;
     }
 
     private static JsonNode loadJsonEnv() {
-        config = System.getenv().getOrDefault(CONFIG_ENV, Paths.get(System.getProperty("user.dir"), "config.json").toAbsolutePath().toString());
+        config = System.getenv().getOrDefault(CONFIG_ENV,
+                Paths.get(System.getProperty("user.dir"), "config.json").toAbsolutePath().toString());
         ObjectMapper mapper = new ObjectMapper();
         try {
             File jsonFile = new File(config).getAbsoluteFile();
             return mapper.readTree(jsonFile);
-        } catch (Exception e) {
+        } catch (IOException ex) {
             LOGGER.info("Json configuration not provider or not exists");
             return mapper.createObjectNode();
         }
