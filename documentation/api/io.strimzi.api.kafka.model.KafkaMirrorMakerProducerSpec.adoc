@@ -24,6 +24,7 @@ The `config` property contains the Kafka MirrorMaker producer configuration opti
 * Boolean
 
 For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
+You can also xref:con-common-configuration-ssl-reference[configure the `ssl.endpoint.identification.algorithm` property] to enable or disable hostname verification.
 
 *Exceptions*
 
@@ -39,7 +40,7 @@ Specifically, all configuration options with keys equal to or starting with one 
 
 * `bootstrap.servers`
 * `interceptor.classes`
-* `ssl.` (with the exception of xref:con-common-configuration-ssl-reference[cipher suites])
+* `ssl.` (xref:con-common-configuration-ssl-reference[not including specific exceptions])
 * `sasl.`
 * `security.`
 
