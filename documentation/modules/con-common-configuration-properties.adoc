@@ -8,7 +8,7 @@
 Common configuration properties apply to more than one resource.
 
 [id='con-common-configuration-replicas-{context}']
-.`replicas`
+=== `replicas`
 
 Use the `replicas` property to configure replicas.
 
@@ -22,7 +22,7 @@ When the node where the component is deployed crashes, Kubernetes will automatic
 However, running Kafka components with multiple replicas can provide faster failover times as the other nodes will be up and running.
 
 [id='con-common-configuration-bootstrap-{context}']
-.`bootstrapServers`
+=== `bootstrapServers`
 
 Use the `bootstrapServers` property to configure a list of bootstrap servers.
 
@@ -35,7 +35,7 @@ If deployed by Strimzi but on different Kubernetes clusters, the list content de
 When using Kafka with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the given cluster.
 
 [id='con-common-configuration-ssl-{context}']
-.`ssl`
+=== `ssl`
 
 Use the three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
 A _cipher suite_ combines algorithms for secure connection and data transfer.
@@ -58,7 +58,7 @@ spec:
 Allowed values are `TLSv1.1` and `TLSv1.2`.
 
 [id='con-common-configuration-resources-{context}']
-.`resources`
+=== `resources`
 
 You request CPU and memory resources for components.
 Limits specify the maximum resources that can be consumed by a given container.
@@ -119,7 +119,7 @@ Memory requests and limits are specified in megabytes, gigabytes, mebibytes, and
 For more details about memory specification and additional supported units, see {K8sMeaningOfMemory}.
 
 [id='con-common-configuration-images-{context}']
-.`image`
+=== `image`
 
 Use the `image` property to configure the container image used by the component.
 
@@ -224,7 +224,7 @@ spec:
 ----
 
 [id='con-common-configuration-healthchecks-{context}']
-.livenessProbe` and `readinessProbe` healthchecks
+=== livenessProbe` and `readinessProbe` healthchecks
 
 Use the `livenessProbe` and `readinessProbe` properties to configure healthcheck probes supported in Strimzi.
 
@@ -257,7 +257,7 @@ livenessProbe:
 For more information about the `livenessProbe` and `readinessProbe` options, see xref:type-Probe-reference[Probe schema reference].
 
 [id='con-common-configuration-prometheus-{context}']
-.`metrics`
+=== `metrics`
 
 Use the `metrics` property to enable and configure Prometheus metrics.
 
@@ -273,7 +273,7 @@ When the `metrics` property is not defined in the resource, the Prometheus metri
 For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
 
 [id='con-common-configuration-jvm-{context}']
-.`jvmOptions`
+=== `jvmOptions`
 
 JVM options can be configured using the `jvmOptions` property in following resources:
 
@@ -377,7 +377,7 @@ The example configuration above will result in the following JVM options:
 NOTE: When neither of the two options (`-server` and `-XX`) are specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` is used.
 
 [id='con-common-configuration-garbage-collection-{context}']
-.Garbage collector logging
+=== Garbage collector logging
 
 The `jvmOptions` property also allows you to enable and disable garbage collector (GC) logging.
 GC logging is disabled by default.
