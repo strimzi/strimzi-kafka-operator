@@ -38,7 +38,7 @@ When using Kafka with a Kafka cluster not managed by Strimzi, you can specify th
 .`ssl`
 
 Use the three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
-A _cipher suite_ combines algorithms for secure connection and data transfer.
+A cipher suite combines algorithms for secure connection and data transfer.
 
 You can also configure the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification.
 

@@ -12,7 +12,7 @@ The `config` property in `Kafka.spec.kafka` contains Kafka broker configuration 
 * Boolean
 
 You can specify and configure all of the options in the "Broker Configs" section of the {ApacheKafkaBrokerConfig} apart from those managed directly by Strimzi.
-Specifically, you are prevented from modifying all configuration options with keys equal to or starting with one of the following strings:
+Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `listeners`
 * `advertised.`
@@ -32,13 +32,13 @@ Specifically, you are prevented from modifying all configuration options with ke
 * `authorizer.`
 * `super.user`
 
-If the `config` property specifies a restricted option, it is ignored and a warning message is printed to the Cluster Operator log file.
+When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
 All other supported options are passed to Kafka.
 
-There are exceptions to the restrictions imposed on the configuration.
+There are exceptions to the forbidden options.
 You can use three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
-A _cipher suite_ combines algorithms for secure connection and data transfer.
-You can also configure the `zookeeper.connection.timeout.ms` property to set maximum time allowed for establishing a ZooKeeper connection.
+A cipher suite combines algorithms for secure connection and data transfer.
+You can also configure the `zookeeper.connection.timeout.ms` property to set the maximum time allowed for establishing a ZooKeeper connection.
 
 .Example Kafka broker configuration
 [source,yaml,subs="attributes+"]

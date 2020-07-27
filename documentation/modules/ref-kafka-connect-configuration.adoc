@@ -42,9 +42,9 @@ Certain options have default values:
 
 These options are automatically configured in case they are not present in the `KafkaConnect.spec.config` or `KafkaConnectS2I.spec.config` properties.
 
-There are exceptions to the restrictions imposed on the configuration.
+There are exceptions to the forbidden options.
 You can use three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
-A _cipher suite_ combines algorithms for secure connection and data transfer.
+A cipher suite combines algorithms for secure connection and data transfer.
 You can also configure the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification.
 
 .Example Kafka Connect configuration
