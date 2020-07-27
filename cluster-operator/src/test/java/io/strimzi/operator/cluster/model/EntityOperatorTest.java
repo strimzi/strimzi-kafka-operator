@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -172,6 +174,17 @@ public class EntityOperatorTest {
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
 
+        Toleration toleration = new TolerationBuilder()
+                .withEffect("NoSchedule")
+                .withValue("")
+                .build();
+
+        Toleration assertToleration = new TolerationBuilder()
+                .withEffect("NoSchedule")
+                .withValue(null)
+                .build();
+
+
         Kafka resource =
                 new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
@@ -192,6 +205,7 @@ public class EntityOperatorTest {
                                         .endMetadata()
                                         .withNewPriorityClassName("top-priority")
                                         .withNewSchedulerName("my-scheduler")
+                                        .withTolerations(singletonList(toleration))
                                     .endPod()
                                 .endTemplate()
                             .endEntityOperator()
@@ -209,6 +223,8 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
     }
 
     @Test

@@ -370,4 +370,26 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.wildcardServiceDnsNameWithoutClusterDomain("my-ns", "my-service"),
                 is("*.my-service.my-ns.svc"));
     }
+
+
+    @Test
+    public void testEmptyTolerations() {
+        Toleration t1 = new TolerationBuilder()
+                .withValue("")
+                .withEffect("NoExecute")
+                .build();
+
+        Toleration t2 = new TolerationBuilder()
+                .withValue(null)
+                .withEffect("NoExecute")
+                .build();
+
+        PodTemplate pt1 = new PodTemplate();
+        pt1.setTolerations(singletonList(t1));
+        PodTemplate pt2 = new PodTemplate();
+        pt2.setTolerations(singletonList(t2));
+
+        assertThat(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt1),
+                is(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt2)));
+    }
 }
