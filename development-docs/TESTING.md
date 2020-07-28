@@ -181,6 +181,14 @@ All available test groups are listed in [Constants](systemtest/src/main/java/io/
 ## Environment variables
 
 System tests can be configured by several environment variables, which are loaded before test execution.
+
+Variables can be defined via environmental variables or a configuration file, this file can be located anywhere on the file system as long as a path is provided to this file.
+The path is defined by environmental variable `ST_CONFIG_PATH`, if the `ST_CONFIG_PATH` environmental variable is not defined, the default config file location is used `systemtest/config.json`.
+Loading of system configuration has the following priority order:
+1. Environment variable
+2. Variable defined in configuration file
+3. Default value
+
 All environment variables are defined in [Environment](systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
 
 | Name                                   | Description                                                                              | Default                                          |
