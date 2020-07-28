@@ -6,8 +6,10 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +47,14 @@ public class KafkaRebalanceUtils {
 
     public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
         KafkaRebalance kafkaRebalance = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get();
-        ResourceManager.waitForResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient(), kafkaRebalance, state.toString());
+        ResourceManager.waitForResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient(), kafkaRebalance, state.toString(), ResourceOperation.getTimeoutForKafkaRebalanceState(state));
+    }
+
+    public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {
+        LOGGER.info("Annotating KafkaRebalance:{} with annotation {}", resourceName, annotation.toString());
+        return ResourceManager.cmdKubeClient().namespace(kubeClient().getNamespace())
+            .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, "strimzi.io/rebalance=" + annotation.toString())
+            .out();
     }
 
 }

@@ -12,8 +12,10 @@ import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 
 import java.util.function.Consumer;
@@ -75,7 +77,8 @@ public class KafkaRebalanceResource {
     }
 
     private static KafkaRebalance waitFor(KafkaRebalance kafkaRebalance) {
-        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, "PendingProposal");
+        long timeout = ResourceOperation.getTimeoutForKafkaRebalanceState(KafkaRebalanceState.PendingProposal);
+        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, KafkaRebalanceState.PendingProposal.toString(), timeout);
     }
 
     private static KafkaRebalance deleteLater(KafkaRebalance kafkaRebalance) {
