@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
+import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -53,7 +54,7 @@ public class KafkaRebalanceUtils {
     public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {
         LOGGER.info("Annotating KafkaRebalance:{} with annotation {}", resourceName, annotation.toString());
         return ResourceManager.cmdKubeClient().namespace(kubeClient().getNamespace())
-            .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, "strimzi.io/rebalance=" + annotation.toString())
+            .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, KafkaRebalanceAssemblyOperator.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation.toString())
             .out();
     }
 

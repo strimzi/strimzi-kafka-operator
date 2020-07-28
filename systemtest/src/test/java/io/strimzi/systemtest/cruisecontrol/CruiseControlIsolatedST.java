@@ -136,8 +136,6 @@ public class CruiseControlIsolatedST extends AbstractST {
         KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME)
             .editOrNewSpec()
                 .withExcludedTopics("excluded-.*")
-                .withReplicationThrottle(200000)
-                .withConcurrentLeaderMovements(1200)
             .endSpec()
             .done();
 
