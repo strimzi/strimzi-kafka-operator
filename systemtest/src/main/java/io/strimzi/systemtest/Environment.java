@@ -25,12 +25,12 @@ public class Environment {
 
     private static final Logger LOGGER = LogManager.getLogger(Environment.class);
     private static final Map<String, String> VALUES = new HashMap<>();
-    private static final JsonNode JSON_DATA = loadJsonEnv();
+    private static final JsonNode JSON_DATA = loadConfigurationFile();
 
     /**
-     * Specify config json/yaml path with env variables values
+     * Specify the system test configuration file path from an environmental variable
      */
-    private static final String CONFIG_ENV = "CONFIG";
+    private static final String CONFIG_FILE_PATH_ENVAR = "ST_CONFIG_PATH";
     /**
      * Specify organization which owns image used in system tests.
      */
@@ -183,8 +183,8 @@ public class Environment {
         return returnValue;
     }
 
-    private static JsonNode loadJsonEnv() {
-        config = System.getenv().getOrDefault(CONFIG_ENV,
+    private static JsonNode loadConfigurationFile() {
+        config = System.getenv().getOrDefault(CONFIG_FILE_PATH_ENVAR,
                 Paths.get(System.getProperty("user.dir"), "config.json").toAbsolutePath().toString());
         ObjectMapper mapper = new ObjectMapper();
         try {
