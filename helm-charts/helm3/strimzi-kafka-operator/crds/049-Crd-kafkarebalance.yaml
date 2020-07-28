@@ -23,6 +23,11 @@ spec:
       - kr
     categories:
       - strimzi
+  additionalPrinterColumns:
+    - name: Cluster
+      description: The name of the Kafka cluster this resource rebalances
+      JSONPath: .metadata.labels.strimzi\.io/cluster
+      type: string
   subresources:
     status: {}
   validation:
