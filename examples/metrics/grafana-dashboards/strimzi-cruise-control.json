@@ -52,7 +52,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1596032501954,
+  "iteration": 1596037257491,
   "links": [],
   "panels": [
     {
@@ -65,7 +65,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "The number of snapshot windows that is monitored",
+      "description": "The number of snapshot windows that are monitored",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -312,9 +312,9 @@
       "colorBackground": false,
       "colorValue": true,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
+        "#d44a3a",
+        "#FF780A",
+        "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Balancedness Score",
@@ -377,7 +377,7 @@
           "refId": "A"
         }
       ],
-      "thresholds": "2",
+      "thresholds": "50,80",
       "title": "Balancedness Score",
       "type": "singlestat",
       "valueFontSize": "200%",
@@ -2058,5 +2058,5 @@
   "timezone": "",
   "title": "Strimzi Cruise Control",
   "uid": "8wCTC5Tmq",
-  "version": 17
+  "version": 2
 }
