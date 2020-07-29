@@ -8,6 +8,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -45,7 +46,12 @@ public class HelmResource {
     public static void clusterOperator(long operationTimeout, long reconciliationInterval) {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 entry("imageRepositoryOverride", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
-                entry("imageTagOverride", Environment.STRIMZI_TAG),
+                entry("image.tag", Environment.STRIMZI_TAG),
+                entry("topicOperator.image.tag", Environment.STRIMZI_TAG),
+                entry("userOperator.image.tag", Environment.STRIMZI_TAG),
+                entry("kafkaInit.image.tag", Environment.STRIMZI_TAG),
+                entry("jmxTrans.image.tag", Environment.STRIMZI_TAG),
+                entry("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion()),
                 entry("image.pullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
                 entry("resources.requests.memory", REQUESTS_MEMORY),
                 entry("resources.requests.cpu", REQUESTS_CPU),
