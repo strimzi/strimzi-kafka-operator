@@ -9,10 +9,12 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.KafkaDynamicConfiguration;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
@@ -32,6 +34,8 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaUtils {
 
@@ -171,5 +175,50 @@ public class KafkaUtils {
             count[0] = 0;
             return false;
         });
+    }
+
+    /**
+     * Method which, update/replace Kafka configuration
+     * @param clusterName name of the cluster where Kafka resource can be found
+     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param value value of specific property
+     */
+    public static void updateSpecificConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+        KafkaResource.replaceKafkaResource(clusterName, (kafka) -> {
+            LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
+            Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
+            config.put(kafkaDynamicConfiguration.toString(), value);
+            kafka.getSpec().getKafka().setConfig(config);
+            LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
+        });
+    }
+
+    /**
+     * Method which, extends the @see updateConfiguration(String clusterName, KafkaConfiguration kafkaConfiguration, Object value) method
+     * with stability and ensures after update of Kafka resource there will be not rolling update
+     * @param clusterName name of the cluster where Kafka resource can be found
+     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param value value of specific property
+     */
+    public static void updateConfigurationWithStabilityWait(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+        updateSpecificConfiguration(clusterName, kafkaDynamicConfiguration, value);
+        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
+    }
+
+    public static void verifyDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+        KafkaUtils.updateConfigurationWithStabilityWait(clusterName, kafkaDynamicConfiguration, value);
+
+        assertThat(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()), is(value));
+    }
+
+    /**
+     * Method, which encapsulates the update phase of dyn. configuration + verifying that updating configuration were successfully done
+     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param value value of specific property
+     */
+    public static void verifyDynamicConfiguration(KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+        KafkaUtils.updateConfigurationWithStabilityWait("my-cluster", kafkaDynamicConfiguration, value);
+
+        assertThat(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName("my-cluster").get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()), is(value));
     }
 }
