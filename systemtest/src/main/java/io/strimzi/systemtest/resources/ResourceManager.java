@@ -394,9 +394,12 @@ public class ResourceManager {
             } else {
                 List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-                for (Condition condition : customResource.getStatus().getConditions()) {
-                    log.add("\tType: " + condition.getType() + "\n");
-                    log.add("\tMessage: " + condition.getMessage() + "\n");
+                List<Condition> conditions = customResource.getStatus().getConditions();
+                if (conditions != null) {
+                    for (Condition condition : customResource.getStatus().getConditions()) {
+                        log.add("\tType: " + condition.getType() + "\n");
+                        log.add("\tMessage: " + condition.getMessage() + "\n");
+                    }
                 }
 
                 log.add("\nPods with conditions and messages:\n\n");
@@ -431,7 +434,9 @@ public class ResourceManager {
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
-            () -> logCurrentResourceStatus(resource));
+            () -> logCurrentResourceStatus(operation.inNamespace(resource.getMetadata().getNamespace())
+                    .withName(resource.getMetadata().getName())
+                    .get()));
 
         LOGGER.info("{}: {} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
         return resource;
