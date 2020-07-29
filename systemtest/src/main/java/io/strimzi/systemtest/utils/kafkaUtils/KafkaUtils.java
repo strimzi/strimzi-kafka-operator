@@ -34,8 +34,6 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaUtils {
 
@@ -184,7 +182,7 @@ public class KafkaUtils {
      * @param value value of specific property
      */
     public static void updateSpecificConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
-        KafkaResource.replaceKafkaResource(clusterName, (kafka) -> {
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
             config.put(kafkaDynamicConfiguration.toString(), value);
@@ -205,20 +203,18 @@ public class KafkaUtils {
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
     }
 
-    public static void verifyDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
-        KafkaUtils.updateConfigurationWithStabilityWait(clusterName, kafkaDynamicConfiguration, value);
-
-        assertThat(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()), is(value));
-    }
-
     /**
      * Method, which encapsulates the update phase of dyn. configuration + verifying that updating configuration were successfully done
      * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
      * @param value value of specific property
      */
-    public static void verifyDynamicConfiguration(KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
-        KafkaUtils.updateConfigurationWithStabilityWait("my-cluster", kafkaDynamicConfiguration, value);
+    public static void verifyDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+        KafkaUtils.updateConfigurationWithStabilityWait(clusterName, kafkaDynamicConfiguration, value);
 
-        assertThat(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName("my-cluster").get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()), is(value));
+        boolean result = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()) == value;
+
+        if (!result) {
+            throw new AssertionError(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString() + " value doesn't match to expected value " + value));
+        }
     }
 }
