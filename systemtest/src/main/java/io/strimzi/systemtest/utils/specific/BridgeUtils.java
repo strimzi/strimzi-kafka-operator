@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.specific;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.HttpUtils;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -16,6 +17,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -188,5 +190,15 @@ public class BridgeUtils {
                 }
             });
         return future.get(1, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Returns Strimzi Kafka Bridge version which is associated with Strimzi Kafka Operator.
+     * The value is parsed from {@code /bridge.version} classpath resource and return it as a string.
+     * @return bridge version
+     */
+    public static String getBridgeVersion() {
+        InputStream bridgeVersionInputStream = BridgeUtils.class.getResourceAsStream("/bridge.version");
+        return TestUtils.readResource(bridgeVersionInputStream).replace("\n", "");
     }
 }

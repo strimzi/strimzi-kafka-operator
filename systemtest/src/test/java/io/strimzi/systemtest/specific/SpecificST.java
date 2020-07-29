@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -248,6 +249,7 @@ public class SpecificST extends AbstractST {
 
     @BeforeAll
     void setup() {
+        LOGGER.info(BridgeUtils.getBridgeVersion());
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
