@@ -128,7 +128,7 @@ public class VerifiableClient {
 
         this.setAllowedArguments(this.clientType);
         this.clientArgumentMap = new ClientArgumentMap();
-        this.clientArgumentMap.put(ClientArgument.BROKER_LIST, bootstrapServer);
+        this.clientArgumentMap.put(ClientArgument.BOOTSTRAP_SERVER, bootstrapServer);
         this.clientArgumentMap.put(ClientArgument.TOPIC, topicName);
         this.clientArgumentMap.put(ClientArgument.MAX_MESSAGES, Integer.toString(maxMessages));
         if (kafkaUsername != null) this.clientArgumentMap.put(ClientArgument.USER,  kafkaUsername.replace("-", "_"));
@@ -298,7 +298,7 @@ public class VerifiableClient {
         switch (clientType) {
             case CLI_KAFKA_VERIFIABLE_PRODUCER:
                 allowedArguments.add(ClientArgument.TOPIC);
-                allowedArguments.add(ClientArgument.BROKER_LIST);
+                allowedArguments.add(ClientArgument.BOOTSTRAP_SERVER);
                 allowedArguments.add(ClientArgument.MAX_MESSAGES);
                 allowedArguments.add(ClientArgument.THROUGHPUT);
                 allowedArguments.add(ClientArgument.ACKS);
@@ -309,7 +309,7 @@ public class VerifiableClient {
                 allowedArguments.add(ClientArgument.USER);
                 break;
             case CLI_KAFKA_VERIFIABLE_CONSUMER:
-                allowedArguments.add(ClientArgument.BROKER_LIST);
+                allowedArguments.add(ClientArgument.BOOTSTRAP_SERVER);
                 allowedArguments.add(ClientArgument.TOPIC);
                 allowedArguments.add(ClientArgument.GROUP_ID);
                 allowedArguments.add(ClientArgument.MAX_MESSAGES);
