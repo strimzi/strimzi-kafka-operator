@@ -243,6 +243,7 @@
                 <directory>..</directory>
                 <includes>
                     <include>kafka-versions.yaml</include>
+                    <include>bridge.version</include>
                 </includes>
             </resource>
         </resources>
