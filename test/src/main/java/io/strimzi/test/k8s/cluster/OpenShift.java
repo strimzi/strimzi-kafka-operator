@@ -22,7 +22,7 @@ public class OpenShift implements KubeCluster {
     @Override
     public boolean isClusterUp() {
         try {
-            return Exec.exec(OC, "status").exitStatus();
+            return Exec.exec(OC, "status").exitStatus() && Exec.exec(OC, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
             e.printStackTrace();
             return false;

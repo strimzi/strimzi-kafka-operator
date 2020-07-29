@@ -27,7 +27,7 @@ public class Kubernetes implements KubeCluster {
     @Override
     public boolean isClusterUp() {
         try {
-            return Exec.exec(CMD, "cluster-info").exitStatus();
+            return Exec.exec(CMD, "cluster-info").exitStatus() && !Exec.exec(CMD, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
             e.printStackTrace();
             return false;
