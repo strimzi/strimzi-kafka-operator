@@ -697,7 +697,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
-        String clusterCmName = "valodik";
+        String clusterCmName = "foo";
         String clusterCmNamespace = "test";
         KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
                 .withBootstrapServers(consumerBootstrapServers)
