@@ -107,13 +107,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> deploymentOperations.waitForObserved(namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {
-
-                        if (mirrorHasZeroReplicas) {
-                            StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, new RuntimeException(
-                                    "Kafka Mirror Maker cluster '" + assemblyResource.getMetadata().getName() + "' in namespace " + assemblyResource.getMetadata().getNamespace() + " has 0 replicas."));
-                        } else {
-                            StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
-                        }
+                    StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
 
                         kafkaMirrorMakerStatus.setReplicas(mirror.getReplicas());
                         kafkaMirrorMakerStatus.setPodSelector(new LabelSelectorBuilder().withMatchLabels(mirror.getSelectorLabels().toMap()).build());

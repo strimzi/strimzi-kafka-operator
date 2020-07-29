@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerFluent;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
@@ -505,7 +506,11 @@ public class ResourceUtils {
     }
 
     public static KafkaMirrorMaker createKafkaMirrorMakerCluster(String clusterCmNamespace, String clusterCmName, String image, KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer, String whitelist, Map<String, Object> metricsCm) {
-        return new KafkaMirrorMakerBuilder()
+        return createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, null, producer, consumer, whitelist, metricsCm);
+    }
+
+    public static KafkaMirrorMaker createKafkaMirrorMakerCluster(String clusterCmNamespace, String clusterCmName, String image, Integer replicas, KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer, String whitelist, Map<String, Object> metricsCm) {
+        KafkaMirrorMakerFluent.SpecNested<KafkaMirrorMakerBuilder> kafkaMirrorMakerBuilder = new KafkaMirrorMakerBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
@@ -513,11 +518,17 @@ public class ResourceUtils {
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
-                .withImage(image)
-                .withProducer(producer)
-                .withConsumer(consumer)
-                .withWhitelist(whitelist)
-                .withMetrics(metricsCm)
+                    .withImage(image);
+
+        if (replicas != null) {
+            kafkaMirrorMakerBuilder.withReplicas(replicas);
+        }
+
+        return kafkaMirrorMakerBuilder
+                    .withProducer(producer)
+                    .withConsumer(consumer)
+                    .withWhitelist(whitelist)
+                    .withMetrics(metricsCm)
                 .endSpec()
                 .build();
     }

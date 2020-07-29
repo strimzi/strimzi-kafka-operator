@@ -688,4 +688,55 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 async.flag();
             })));
     }
+
+    @Test
+    public void testCreateOrUpdateZeroReplica(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+
+        String clusterCmName = "valodik";
+        String clusterCmNamespace = "test";
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+
+        KafkaMirrorMaker clusterCm = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, 0, producer, consumer, whitelist, metricsCm);
+
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockDcOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+
+        ArgumentCaptor<KafkaMirrorMaker> mirrorMakerCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker.class);
+        when(mockMirrorOps.updateStatusAsync(mirrorMakerCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
+                new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint async = context.checkpoint();
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // 0 Replicas - readiness should never get called.
+                    verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
+
+                    async.flag();
+                })));
+    }
 }
