@@ -434,7 +434,9 @@ public class ResourceManager {
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
-            () -> logCurrentResourceStatus(resource));
+            () -> logCurrentResourceStatus(operation.inNamespace(resource.getMetadata().getNamespace())
+                    .withName(resource.getMetadata().getName())
+                    .get()));
 
         LOGGER.info("{}: {} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
         return resource;
