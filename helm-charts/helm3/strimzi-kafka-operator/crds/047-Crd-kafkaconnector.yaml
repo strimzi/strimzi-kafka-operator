@@ -23,6 +23,19 @@ spec:
       - kctr
     categories:
       - strimzi
+  additionalPrinterColumns:
+    - name: Cluster
+      description: The name of the Kafka Connect cluster this connector belongs to
+      JSONPath: .metadata.labels.strimzi\.io/cluster
+      type: string
+    - name: Connector class
+      description: The class used by this connector
+      JSONPath: .spec.class
+      type: string
+    - name: Max Tasks
+      description: Maximum number of tasks
+      JSONPath: .spec.tasksMax
+      type: integer
   subresources:
     status: {}
     scale:
