@@ -76,7 +76,8 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 
     export KUBECONFIG=$HOME/.kube/config
     sudo -E minikube start --vm-driver=none --kubernetes-version=v1.15.0 \
-      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=RBAC
+      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=RBAC \
+      --network-plugin=cni --enable-default-cni
     sudo chown -R travis: /home/travis/.minikube/
     sudo -E minikube addons enable default-storageclass
 
@@ -87,6 +88,9 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         echo "Minikube failed to start or RBAC could not be properly set up"
         exit 1
     fi
+    # Install cilium to setup network policies on minikube
+	kubectl create -f https://raw.githubusercontent.com/cilium/cilium/1.8.2/install/kubernetes/quick-install.yaml
+
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
     MS_VERSION=1.13.1
