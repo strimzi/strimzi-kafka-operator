@@ -88,8 +88,6 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         echo "Minikube failed to start or RBAC could not be properly set up"
         exit 1
     fi
-    # Install cilium to setup network policies on minikube
-	kubectl create -f https://raw.githubusercontent.com/cilium/cilium/1.8.2/install/kubernetes/quick-install.yaml
 
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
