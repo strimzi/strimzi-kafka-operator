@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -16,6 +17,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +26,7 @@ import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
@@ -34,6 +37,8 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 
 public class KafkaUtils {
 
@@ -204,17 +209,39 @@ public class KafkaUtils {
     }
 
     /**
-     * Method, which encapsulates the update phase of dyn. configuration + verifying that updating configuration were successfully done
+     * Method, which encapsulates the update phase of dyn. configuration of Kafka CR + verifying that updating configuration were successfully changed inside Kafka CR
      * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
      * @param value value of specific property
      */
-    public static void verifyDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+    public static boolean replaceAndVerifyCrDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+        // exercise phase
         KafkaUtils.updateConfigurationWithStabilityWait(clusterName, kafkaDynamicConfiguration, value);
 
-        boolean result = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()) == value;
+        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()) == value;
+    }
 
-        if (!result) {
-            throw new AssertionError(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString() + " value doesn't match to expected value " + value));
+    /**
+     * Method, which, verifying that updating configuration were successfully changed inside Kafka pods
+     * @param kafkaPodNamePrefix prefix of Kafka pods
+     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param value value of specific property
+     * @return
+     * true = if specific property match the excepted property
+     * false = if specific property doesn't match the excepted property
+     */
+    public static boolean verifyKafkaPodDynamicConfiguration(String kafkaPodNamePrefix, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+
+        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(kafkaPodNamePrefix);
+
+        for (Pod pod : kafkaPods) {
+            String result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties").out();
+
+            if (!result.contains(kafkaDynamicConfiguration.toString() + "=" + value)) {
+                LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod, kafkaDynamicConfiguration.toString(), value);
+                LOGGER.error("Kafka configuration {}", result);
+                return false;
+            }
         }
+        return true;
     }
 }
