@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlServerParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -33,7 +34,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -206,15 +209,12 @@ public class CruiseControlConfigurationST extends AbstractST {
         containerConfiguration.load(configurationContainerStream);
 
         LOGGER.info("Verifying that all configuration in the cruise control container matching the cruise control file {} properties", CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
+        List<String> checkCCProperties = Arrays.asList("num.partition.metrics.windows", "num.broker.metrics.windows", "partition.metrics.window.ms",
+                "broker.metrics.window.ms", "completed.user.task.retention.time.ms", "goals", "default.goals");
 
-        assertThat(containerConfiguration.getProperty("num.partition.metrics.windows"), is(fileConfiguration.getProperty("num.partition.metrics.windows")));
-        assertThat(containerConfiguration.getProperty("completed.user.task.retention.time.ms"), is(fileConfiguration.getProperty("completed.user.task.retention.time.ms")));
-        assertThat(containerConfiguration.getProperty("num.broker.metrics.windows"), is(fileConfiguration.getProperty("num.broker.metrics.windows")));
-        assertThat(containerConfiguration.getProperty("broker.metrics.window.ms"), is(fileConfiguration.getProperty("broker.metrics.window.ms")));
-        assertThat(containerConfiguration.getProperty("default.goals"), is(fileConfiguration.getProperty("default.goals")));
-        assertThat(containerConfiguration.getProperty("partition.metrics.window.ms"), is(fileConfiguration.getProperty("partition.metrics.window.ms")));
-        assertThat(containerConfiguration.getProperty("goals"), is(fileConfiguration.getProperty("goals")));
-        assertThat(containerConfiguration.getProperty("cruise.control.metrics.reporter.kubernetes.mode"), is(fileConfiguration.getProperty("cruise.control.metrics.reporter.kubernetes.mode")));
+        for (String propertyName : checkCCProperties) {
+            assertThat(containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
+        }
     }
 
     @Order(5)
@@ -225,6 +225,75 @@ public class CruiseControlConfigurationST extends AbstractST {
         String cruiseControlConfigurationFileContent = cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
 
         assertThat(cruiseControlConfigurationFileContent, not(nullValue()));
+    }
+
+    @Order(6)
+    @Test
+    void testConfigurationPerformanceOptions() throws IOException {
+        Container cruiseControlContainer = null;
+        EnvVar cruiseControlConfiguration = null;
+
+        Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+
+            LOGGER.info("Changing cruise control performance tuning options");
+
+            CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
+                    .addToConfig(CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
+                            CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getDefaultValue())
+                    .addToConfig(CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
+                            CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getDefaultValue())
+                    .addToConfig(CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
+                            CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getDefaultValue())
+                    .addToConfig(CruiseControlServerParameters.REPLICATION_THROTTLE.getName(),
+                            CruiseControlServerParameters.REPLICATION_THROTTLE.getDefaultValue())
+                .build();
+
+            kafka.getSpec().setCruiseControl(cruiseControl);
+        });
+
+        LOGGER.info("Verifying that CC pod is rolling, after changing options");
+        DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(CLUSTER_NAME), 1, cruiseControlSnapShot);
+
+        LOGGER.info("Verifying that Kafka pods did not roll");
+        StatefulSetUtils.waitForNoRollingUpdate(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaSnapShot);
+
+        LOGGER.info("Verifying new configuration in the Kafka CR");
+        Pod cruiseControlPod = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0);
+        String cruiseControlPodName = cruiseControlPod.getMetadata().getName();
+
+        // Get CruiseControl resource properties
+        for (Container container : cruiseControlPod.getSpec().getContainers()) {
+            if (container.getName().equals("cruise-control")) {
+                cruiseControlContainer = container;
+            }
+        }
+        for (EnvVar envVar : Objects.requireNonNull(cruiseControlContainer).getEnv()) {
+            if (envVar.getName().equals("CRUISE_CONTROL_CONFIGURATION")) {
+                cruiseControlConfiguration = envVar;
+            }
+        }
+        InputStream configurationContainerStream = new ByteArrayInputStream(Objects.requireNonNull(cruiseControlConfiguration).getValue().getBytes(StandardCharsets.UTF_8));
+        Properties containerConfiguration = new Properties();
+        containerConfiguration.load(configurationContainerStream);
+
+        String configurationFileContent = cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        InputStream configurationFileStream = new ByteArrayInputStream(configurationFileContent.getBytes(StandardCharsets.UTF_8));
+        Properties fileConfiguration = new Properties();
+        fileConfiguration.load(configurationFileStream);
+
+        LOGGER.info("Verifying Cruise control performance options are set in Kafka CR");
+        List<String> checkCCProperties = Arrays.asList(
+                CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
+                CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
+                CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
+                CruiseControlServerParameters.REPLICATION_THROTTLE.getName()
+        );
+        for (String propertyName : checkCCProperties) {
+            assertThat(containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
+        }
     }
     
     @BeforeAll
