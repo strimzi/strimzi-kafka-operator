@@ -17,7 +17,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +25,6 @@ import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.regex.Pattern;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
@@ -37,8 +35,6 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
 
 public class KafkaUtils {
 
@@ -209,13 +205,16 @@ public class KafkaUtils {
     }
 
     /**
-     * Method, which encapsulates the update phase of dyn. configuration of Kafka CR + verifying that updating configuration were successfully changed inside Kafka CR
+     * Method, verifying that updating configuration were successfully changed inside Kafka CR
      * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
      * @param value value of specific property
      */
-    public static boolean replaceAndVerifyCrDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
-        // exercise phase
-        KafkaUtils.updateConfigurationWithStabilityWait(clusterName, kafkaDynamicConfiguration, value);
+    public static boolean verifyCrDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+        LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and excepted is {}={}",
+            kafkaDynamicConfiguration.toString(),
+            KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()),
+            kafkaDynamicConfiguration.toString(),
+            value);
 
         return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()) == value;
     }
@@ -234,10 +233,13 @@ public class KafkaUtils {
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(kafkaPodNamePrefix);
 
         for (Pod pod : kafkaPods) {
-            String result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties").out();
 
-            if (!result.contains(kafkaDynamicConfiguration.toString() + "=" + value)) {
-                LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod, kafkaDynamicConfiguration.toString(), value);
+            String result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+
+            LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
+
+            if (!result.contains(kafkaDynamicConfiguration + "=" + value)) {
+                LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), kafkaDynamicConfiguration.toString(), value);
                 LOGGER.error("Kafka configuration {}", result);
                 return false;
             }

@@ -27,9 +27,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -39,7 +37,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -59,7 +56,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.timemeasuring.Operation;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -78,10 +74,8 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
@@ -100,7 +94,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -1512,354 +1505,16 @@ class KafkaST extends AbstractST {
         int replicas = 3;
         Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, replicas, 1)
             .editSpec()
-                .editKafka()
-                    .addToConfig("offsets.topic.replication.factor", 4)
-                    .addToConfig("transaction.state.log.min.isr", 4)
-                    .addToConfig("transaction.state.log.replication.factor", 4)
-                .endKafka()
+            .editKafka()
+            .addToConfig("offsets.topic.replication.factor", 4)
+            .addToConfig("transaction.state.log.min.isr", 4)
+            .addToConfig("transaction.state.log.replication.factor", 4)
+            .endKafka()
             .endSpec().build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
-                "Kafka configuration option .* should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas);
+            "Kafka configuration option .* should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas);
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).delete(kafka);
-    }
-
-    @Test
-    void testSimpleDynamicConfiguration() {
-        int kafkaReplicas = 2;
-        Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "1");
-        kafkaConfig.put("transaction.state.log.replication.factor", "1");
-        kafkaConfig.put("default.replication.factor", "1");
-        kafkaConfig.put("log.message.format.version", "2.4");
-
-        Map<String, Object> updatedKafkaConfig = new HashMap<>();
-        updatedKafkaConfig.put("offsets.topic.replication.factor", "1");
-        updatedKafkaConfig.put("transaction.state.log.replication.factor", "1");
-        updatedKafkaConfig.put("default.replication.factor", "1");
-        updatedKafkaConfig.put("log.message.format.version", "2.4");
-        updatedKafkaConfig.put("unclean.leader.election.enable", "true");
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, kafkaReplicas, 1)
-                .editSpec()
-                    .editKafka()
-                        .withConfig(kafkaConfig)
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        String kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("default.replication.factor=1"));
-
-        String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, is("Dynamic configs for broker 0 are:\n"));
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-
-        LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setConfig(updatedKafkaConfig);
-        });
-
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(false));
-
-        LOGGER.info("Verify values after update");
-        kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("default.replication.factor=1"));
-
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=true"));
-    }
-
-    @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(LOADBALANCER_SUPPORTED)
-    @SuppressWarnings({"checkstyle:MethodLength"})
-    void testDynamicConfigurationWithExternalListeners() {
-        int kafkaReplicas = 2;
-        int zkReplicas = 1;
-        Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "1");
-        kafkaConfig.put("transaction.state.log.replication.factor", "1");
-        kafkaConfig.put("default.replication.factor", "1");
-        kafkaConfig.put("log.message.format.version", "2.4");
-
-        Map<String, Object> updatedKafkaConfig = new HashMap<>();
-        updatedKafkaConfig.put("offsets.topic.replication.factor", "1");
-        updatedKafkaConfig.put("transaction.state.log.replication.factor", "1");
-        updatedKafkaConfig.put("default.replication.factor", "1");
-        updatedKafkaConfig.put("log.message.format.version", "2.4");
-        updatedKafkaConfig.put("unclean.leader.election.enable", "true");
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, kafkaReplicas, zkReplicas)
-                .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("plain")
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                    .endListeners()
-                    .withConfig(kafkaConfig)
-                .endKafka()
-                .endSpec()
-                .done();
-
-
-        // change dynamically changeable option
-        updatedKafkaConfig.put("unclean.leader.election.enable", "false");
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setConfig(updatedKafkaConfig);
-        });
-
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(false));
-
-        String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
-
-        // Edit listeners - this should cause RU (because of new crts)
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("plain")
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                            .build(),
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
-                            .build()
-            ), null);
-            kafkaClusterSpec.setListeners(lst);
-        });
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
-
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
-
-        // change dynamically changeable option
-        updatedKafkaConfig.put("unclean.leader.election.enable", "true");
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setConfig(updatedKafkaConfig);
-        });
-
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(false));
-
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=true"));
-
-        // change dynamically changeable option
-        updatedKafkaConfig.put("unclean.leader.election.enable", "false");
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setConfig(updatedKafkaConfig);
-        });
-
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(false));
-
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=false"));
-
-        // Remove external listeners (node port) - this should cause RU (we need to update advertised.listeners)
-        // Other external listeners cases are rolling because of crts
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("plain")
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                            .build()
-            ), null);
-            kafkaClusterSpec.setListeners(lst);
-        });
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
-
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
-
-        // change dynamically changeable option
-        updatedKafkaConfig.put("unclean.leader.election.enable", "true");
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setConfig(updatedKafkaConfig);
-        });
-
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(false));
-
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-        assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=true"));
-    }
-
-    @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testDynamicConfigurationExternalTls() {
-        int kafkaReplicas = 2;
-        Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "1");
-        kafkaConfig.put("transaction.state.log.replication.factor", "1");
-        kafkaConfig.put("default.replication.factor", "1");
-        kafkaConfig.put("log.message.format.version", "2.4");
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, kafkaReplicas, 1)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.LOADBALANCER)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
-                        .withConfig(kafkaConfig)
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        BasicExternalKafkaClient basicExternalKafkaClientTls = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withSecurityProtocol(SecurityProtocol.SSL)
-            .build();
-
-        BasicExternalKafkaClient basicExternalKafkaClientPlain = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-            .build();
-
-        String userName = "john";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-
-        basicExternalKafkaClientTls.setKafkaUsername(userName);
-
-        basicExternalKafkaClientPlain.verifyProducedAndConsumedMessages(
-                basicExternalKafkaClientPlain.sendMessagesPlain(),
-                basicExternalKafkaClientPlain.receiveMessagesPlain()
-        );
-
-        assertThrows(Exception.class, () -> {
-            basicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            basicExternalKafkaClientTls.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to plain communication");
-        });
-
-        LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
-                            .withNewKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerAuthenticationTlsAuth()
-                            .build()
-            ), null);
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setListeners(lst);
-        });
-
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
-        basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
-                basicExternalKafkaClientTls.sendMessagesTls(),
-                basicExternalKafkaClientTls.receiveMessagesTls()
-        );
-
-        assertThrows(Exception.class, () -> {
-            basicExternalKafkaClientPlain.sendMessagesPlain(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            basicExternalKafkaClientPlain.receiveMessagesPlain(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to tls communication");
-        });
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(false)
-                            .build()
-            ), null);
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setListeners(lst);
-        });
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-
-        assertThrows(Exception.class, () -> {
-            basicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            basicExternalKafkaClientTls.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to plain communication");
-        });
-
-        basicExternalKafkaClientPlain.verifyProducedAndConsumedMessages(
-                basicExternalKafkaClientPlain.sendMessagesPlain(),
-                basicExternalKafkaClientPlain.receiveMessagesPlain()
-        );
     }
 
     protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
