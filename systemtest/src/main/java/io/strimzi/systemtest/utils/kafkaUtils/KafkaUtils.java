@@ -216,7 +216,7 @@ public class KafkaUtils {
             kafkaDynamicConfiguration.toString(),
             value);
 
-        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()) == value;
+        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()).equals(value);
     }
 
     /**
@@ -228,7 +228,7 @@ public class KafkaUtils {
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public static boolean verifyKafkaPodDynamicConfiguration(String kafkaPodNamePrefix, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+    public static boolean verifyPodDynamicConfiguration(String kafkaPodNamePrefix, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
 
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(kafkaPodNamePrefix);
 
