@@ -736,6 +736,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                     // 0 Replicas - readiness should never get called.
                     verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
 
+                    assertThat(mirrorMakerCaptor.getValue().getStatus().getConditions().get(0).getType(), is("Ready"));
                     async.flag();
                 })));
     }

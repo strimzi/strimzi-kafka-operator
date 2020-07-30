@@ -510,7 +510,8 @@ public class ResourceUtils {
     }
 
     public static KafkaMirrorMaker createKafkaMirrorMakerCluster(String clusterCmNamespace, String clusterCmName, String image, Integer replicas, KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer, String whitelist, Map<String, Object> metricsCm) {
-        KafkaMirrorMakerFluent.SpecNested<KafkaMirrorMakerBuilder> kafkaMirrorMakerBuilder = new KafkaMirrorMakerBuilder()
+
+        KafkaMirrorMakerBuilder builder = new KafkaMirrorMakerBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
@@ -518,19 +519,20 @@ public class ResourceUtils {
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
-                    .withImage(image);
-
-        if (replicas != null) {
-            kafkaMirrorMakerBuilder.withReplicas(replicas);
-        }
-
-        return kafkaMirrorMakerBuilder
+                    .withImage(image)
                     .withProducer(producer)
                     .withConsumer(consumer)
                     .withWhitelist(whitelist)
                     .withMetrics(metricsCm)
-                .endSpec()
-                .build();
+                .endSpec();
+
+        if (replicas != null) {
+            builder.editOrNewSpec()
+                        .withReplicas(replicas)
+                    .endSpec();
+        }
+
+        return builder.build();
     }
 
     public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapservers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, boolean enableMetrics) {
