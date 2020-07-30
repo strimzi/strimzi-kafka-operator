@@ -1612,6 +1612,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
     void testDynamicConfigurationWithExternalListeners() {
         int kafkaReplicas = 2;
         int zkReplicas = 1;
@@ -1632,8 +1633,8 @@ class KafkaST extends AbstractST {
                 .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
+                        .withNewKafkaListenerExternalNodePort()
+                        .endKafkaListenerExternalNodePort()
                         .withNewPlain()
                         .endPlain()
                     .endListeners()
