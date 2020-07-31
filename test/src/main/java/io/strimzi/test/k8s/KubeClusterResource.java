@@ -6,6 +6,8 @@ package io.strimzi.test.k8s;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cluster.KubeCluster;
+import io.strimzi.test.k8s.cluster.Minishift;
+import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -333,5 +335,9 @@ public class KubeClusterResource {
 
     public String getDefaultOlmNamespace() {
         return cluster().defaultOlmNamespace();
+    }
+
+    public boolean isNotKubernetes() {
+        return cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift;
     }
 }
