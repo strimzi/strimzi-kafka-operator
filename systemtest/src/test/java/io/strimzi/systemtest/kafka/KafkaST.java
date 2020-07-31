@@ -559,12 +559,12 @@ class KafkaST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDepName);
 
         assertResources(cmdKubeClient().namespace(), KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
-                "1536Mi", "1", "1Gi", "500m");
+                "1536Mi", "1", "1Gi", "50m");
         assertExpectedJavaOpts(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "-Xmx1g", "-Xms512m", "-server", "-XX:+UseG1GC");
 
         assertResources(cmdKubeClient().namespace(), KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
-                "1G", "500m", "500M", "250m");
+                "1G", "500m", "500M", "25m");
         assertExpectedJavaOpts(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
                 "-Xmx1G", "-Xms512M", "-server", "-XX:+UseG1GC");
 
@@ -574,9 +574,9 @@ class KafkaST extends AbstractST {
         assertThat("EO pod does not exist", pod.isPresent(), is(true));
 
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "topic-operator",
-                "1Gi", "500m", "512Mi", "250m");
+                "1Gi", "500m", "384Mi", "25m");
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
-                "512M", "300m", "256M", "300m");
+                "512M", "300m", "256M", "30m");
 
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "topic-operator",
                 "-Xmx2G", "-Xms1024M", null, null);
