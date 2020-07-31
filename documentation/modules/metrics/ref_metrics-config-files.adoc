@@ -21,20 +21,22 @@ metrics
 │   ├── strimzi-kafka-mirror-maker-2.json
 │   ├── strimzi-operators.json
 │   ├── strimzi-kafka-bridge.json
+│   ├── strimzi-cruise-control.json
 │   └── strimzi-kafka-exporter.json <3>
 ├── kafka-connect-metrics.yaml <4>
 ├── kafka-metrics.yaml <5>
 ├── kafka-mirror-maker-2-metrics.yaml <6>
 ├── kafka-bridge-metrics.yaml <7>
+├── kafka-cruise-control-metrics.yaml <8>
 ├── prometheus-additional-properties
-│   └── prometheus-additional.yaml <8>
+│   └── prometheus-additional.yaml <9>
 ├── prometheus-alertmanager-config
-│   └── alert-manager-config.yaml <9>
+│   └── alert-manager-config.yaml <10>
 └── prometheus-install
-    ├── alert-manager.yaml <10>
-    ├── prometheus-rules.yaml <11>
-    ├── prometheus.yaml <12>
-    ├── strimzi-pod-monitor.yaml <13>
+    ├── alert-manager.yaml <11>
+    ├── prometheus-rules.yaml <12>
+    ├── prometheus.yaml <13>
+    ├── strimzi-pod-monitor.yaml <14>
 --
 <1> Installation file for the Grafana image
 <2> Grafana dashboards
@@ -43,9 +45,10 @@ metrics
 <5> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper
 <6> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2.0
 <7> Kafka Bridge resource with metrics enabled
-<8> Configuration to add roles for service monitoring
-<9> Hook definitions for sending notifications through Alertmanager
-<10> Resources for deploying and configuring Alertmanager
-<11> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
-<12> Installation file for the Prometheus image
-<13> Prometheus job definitions to scrape metrics data from pods
+<8> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control
+<9> Configuration to add roles for service monitoring
+<10> Hook definitions for sending notifications through Alertmanager
+<11> Resources for deploying and configuring Alertmanager
+<12> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
+<13> Installation file for the Prometheus image
+<14> Prometheus job definitions to scrape metrics data from pods
