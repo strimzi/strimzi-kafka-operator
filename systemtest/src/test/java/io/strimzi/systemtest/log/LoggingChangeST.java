@@ -81,7 +81,7 @@ class LoggingChangeST extends AbstractST {
             "zookeeper.root.logger=INFO\n" +
             "log4j.rootLogger=${zookeeper.root.logger}, CONSOLE";
 
-        String loggersConfigCO = "name = ClusterOperatorConfig\n" +
+        String loggersConfigCO = "name = COConfig\n" +
             "appender.console.type = Console\n" +
             "appender.console.name = STDOUT\n" +
             "appender.console.layout.type = JsonLayout\n" +

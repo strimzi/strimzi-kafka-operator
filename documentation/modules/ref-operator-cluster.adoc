@@ -5,7 +5,7 @@
 [id='ref-operator-cluster-{context}']
 = Cluster Operator configuration
 
-The Cluster Operator can be configured through the following supported environment variables.
+The Cluster Operator can be configured through the following supported environment variables and through the logging configuration.
 
 `STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
 When not set, set to empty string, or to `*` the Cluster Operator will operate in all namespaces.
@@ -118,30 +118,29 @@ The DNS domain name is added to the Kafka broker certificates used for hostname 
 +
 If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
 
+[discrete]
 == Logging configuration
 
-When installing Cluster Operator, `ConfigMap` containing its logging configuration is created.
+A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
 This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator-logging.yaml`.
-Cluster Operator logging is then configured by changing this `ConfigMap`.
+You configure Cluster Operator logging by changing the `ConfigMap`.
 
-You can change the file and then use:
+To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator-logging.yaml` file and then run the following command:
 [source,shell,subs=+quotes]
 kubectl apply -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator-logging.yaml_
 
-Or you can edit the `ConfigMap` by:
+Alternatively, edit the `ConfigMap` directly:
 [source,shell,subs=+quotes]
 kubectl edit cm strimzi-cluster-operator-logging
 
-After the changes are done in the `ConfigMap`, the logging configuration is reloaded in time interval of specified `monitorInterval` seconds.
+To change the frequency of the reload interval, set a time in seconds in the monitorInterval option in the created ConfigMap.
 
-NOTE: Created `ConfigMap` contains entry `monitorInterval`.
-Please ensure yourself you are not removing this entry as it serves for dynamic reloading of logging configuration.
-Entry `monitorInterval` configures frequency of logging reloading in the seconds (see link:https://logging.apache.org/log4j/2.x/manual/configuration.html#Automatic_Reconfiguration[Log4j2 Automatic Reconfiguration^]).
+If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
 
-If the `ConfigMap` is not present during deploying of Cluster Operator, default logging values are used.
+If the `ConfigMap` is accidentally deleted after the Cluster Operator is deployed, the most recently loaded logging configuration is used.
+Create a new `ConfigMap` to load a new logging configuration.
 
-If the `ConfigMap` is deleted by an accident after the Cluster Operator was deployed, the last loaded configuration is used.
-After recreating the `ConfigMap`, the new configuration is loaded.
+NOTE: Do not remove the monitorInterval option from the ConfigMap.
 
 == Periodic reconciliation
 
