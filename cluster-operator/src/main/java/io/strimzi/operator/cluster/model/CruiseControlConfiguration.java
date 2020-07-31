@@ -30,11 +30,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
                 CruiseControl.DISK_CAPACITY_GOAL,
                 CruiseControl.NETWORK_INBOUND_CAPACITY_GOAL,
                 CruiseControl.NETWORK_OUTBOUND_CAPACITY_GOAL,
-                // TODO: The CPU metric are currently not reported correctly when running on Kubernetes
-                //       we should add this back in once fixed upstream,
-                //       CC issue: https://github.com/linkedin/cruise-control/issues/1242
-                //       Strimzi issue: https://github.com/strimzi/strimzi-kafka-operator/issues/3215
-                //CruiseControl.CPU_CAPACITY_GOAL,
+                CruiseControl.CPU_CAPACITY_GOAL,
                 CruiseControl.REPLICA_DISTRIBUTION_GOAL,
                 CruiseControl.POTENTIAL_NETWORK_OUTAGE_GOAL,
                 CruiseControl.DISK_USAGE_DISTRIBUTION_GOAL,
@@ -60,12 +56,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
                     CruiseControl.REPLICA_CAPACITY_GOAL,
                     CruiseControl.DISK_CAPACITY_GOAL,
                     CruiseControl.NETWORK_INBOUND_CAPACITY_GOAL,
-                    CruiseControl.NETWORK_OUTBOUND_CAPACITY_GOAL
-                    // TODO: The CPU metric are currently not reported correctly when running on Kubernetes
-                    //       we should add this back in once fixed upstream,
-                    //       CC issue: https://github.com/linkedin/cruise-control/issues/1242
-                    //       Strimzi issue: https://github.com/strimzi/strimzi-kafka-operator/issues/3215
-                    //CruiseControl.CPU_CAPACITY_GOAL
+                    CruiseControl.NETWORK_OUTBOUND_CAPACITY_GOAL,
+                    CruiseControl.CPU_CAPACITY_GOAL
             )
     );
 
@@ -97,7 +89,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
 
     static {
-        Map<String, String> config = new HashMap<>(7);
+        Map<String, String> config = new HashMap<>(8);
         config.put("partition.metrics.window.ms", Integer.toString(300_000));
         config.put("num.partition.metrics.windows", "1");
         config.put("broker.metrics.window.ms", Integer.toString(300_000));

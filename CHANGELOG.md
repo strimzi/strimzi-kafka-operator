@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.20.0
+
+* Updated to Cruise Control 2.0.124, which fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
+
 ## 0.19.0
 
 * Add support for authorization using Open Policy Agent
