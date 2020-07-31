@@ -151,7 +151,7 @@
         "#bf1b00"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of valid windows",
+      "description": "Number of time windows considered to be valid because of enough samples for computing a proposal.",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -317,7 +317,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Balancedness Score",
+      "description": "The current balancedness score of the Kafka cluster as calculated by the anomaly detector (every 5 minutes by default)",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -589,7 +589,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Disk Failure Rate",
+      "description": "Disk Read Failure Rate",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -636,7 +636,7 @@
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "Disk Failure Rate",
+          "legendFormat": "Disk Read Failure Rate",
           "refId": "A"
         }
       ],
@@ -644,7 +644,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Disk Failure Rate",
+      "title": "Disk Read Failure Rate",
       "tooltip": {
         "shared": true,
         "sort": 0,
