@@ -494,7 +494,7 @@ class KafkaST extends AbstractST {
                             .addToLimits("memory", new Quantity("1.5Gi"))
                             .addToLimits("cpu", new Quantity("1"))
                             .addToRequests("memory", new Quantity("1Gi"))
-                            .addToRequests("cpu", new Quantity("500m"))
+                            .addToRequests("cpu", new Quantity("50m"))
                             .build())
                     .withNewJvmOptions()
                         .withXmx("1g")
@@ -509,7 +509,7 @@ class KafkaST extends AbstractST {
                             .addToLimits("memory", new Quantity("1G"))
                             .addToLimits("cpu", new Quantity("0.5"))
                             .addToRequests("memory", new Quantity("0.5G"))
-                            .addToRequests("cpu", new Quantity("250m"))
+                            .addToRequests("cpu", new Quantity("25m"))
                             .build())
                     .withNewJvmOptions()
                         .withXmx("1G")
@@ -524,8 +524,8 @@ class KafkaST extends AbstractST {
                             new ResourceRequirementsBuilder()
                                 .addToLimits("memory", new Quantity("1024Mi"))
                                 .addToLimits("cpu", new Quantity("500m"))
-                                .addToRequests("memory", new Quantity("512Mi"))
-                                .addToRequests("cpu", new Quantity("0.25"))
+                                .addToRequests("memory", new Quantity("384Mi"))
+                                .addToRequests("cpu", new Quantity("0.025"))
                                 .build())
                         .withNewJvmOptions()
                             .withXmx("2G")
@@ -539,7 +539,7 @@ class KafkaST extends AbstractST {
                                 .addToLimits("memory", new Quantity("512M"))
                                 .addToLimits("cpu", new Quantity("300m"))
                                 .addToRequests("memory", new Quantity("256M"))
-                                .addToRequests("cpu", new Quantity("300m"))
+                                .addToRequests("cpu", new Quantity("30m"))
                                 .build())
                         .withNewJvmOptions()
                             .withXmx("1G")
@@ -1613,6 +1613,7 @@ class KafkaST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(LOADBALANCER_SUPPORTED)
     void testDynamicConfigurationWithExternalListeners() {
         int kafkaReplicas = 2;
         int zkReplicas = 1;
@@ -1633,8 +1634,8 @@ class KafkaST extends AbstractST {
                 .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
                         .withNewPlain()
                         .endPlain()
                     .endListeners()
