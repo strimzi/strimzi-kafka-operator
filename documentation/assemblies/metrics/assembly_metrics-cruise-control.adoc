@@ -9,7 +9,7 @@ If you are already using Prometheus and Grafana for monitoring of built-in Kafka
 
 The example Grafana dashboard for the Cruise Control provides:
 
-* Information about rebalance proposals computation, goals violation, cluster balancedness and more
+* Information about optimization proposals computation, goals violation, cluster balancedness and more
 * Information about REST API calls for rebalance proposals and actual rebalance operations
 * JVM metrics from Cruise Control itself
 
@@ -53,14 +53,14 @@ When metrics data has been collected for some time, the Cruise Control charts ar
 Cruise Control:: Shows metrics for:
 +
 * The number of snapshot windows that are monitored
-* Number of time windows considered to be valid because of enough samples for computing a proposal.
-* Number of ongoing executions running for proposals or rebalance
+* Number of time windows considered to be valid because of enough samples for computing a proposal
+* Number of ongoing executions running for proposals or rebalances
 * The current balancedness score of the Kafka cluster as calculated by the anomaly detector (every 5 minutes by default)
-* The percentafe of monitored partitions
-* How often a goal violation happens
+* The percentage of monitored partitions
+* The number of goal violations reported by the anomaly detector (every 5 minutes by default)
 * How often a disk read failure happens on the brokers
-* Failures rate about fetching samples
-* Time needed for computing a rebalance proposal
+* Rate of metric sample fetch failures
+* Time needed for computing an optimization proposal
 * Time for creating a cluster model
 * How often a proposal request or an actual rebalance request is made through the REST API
 * How often the overall cluster state and the user tasks state are requested through the REST API
