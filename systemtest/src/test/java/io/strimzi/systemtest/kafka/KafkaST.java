@@ -494,7 +494,7 @@ class KafkaST extends AbstractST {
                             .addToLimits("memory", new Quantity("1.5Gi"))
                             .addToLimits("cpu", new Quantity("1"))
                             .addToRequests("memory", new Quantity("1Gi"))
-                            .addToRequests("cpu", new Quantity("500m"))
+                            .addToRequests("cpu", new Quantity("50m"))
                             .build())
                     .withNewJvmOptions()
                         .withXmx("1g")
@@ -509,7 +509,7 @@ class KafkaST extends AbstractST {
                             .addToLimits("memory", new Quantity("1G"))
                             .addToLimits("cpu", new Quantity("0.5"))
                             .addToRequests("memory", new Quantity("0.5G"))
-                            .addToRequests("cpu", new Quantity("250m"))
+                            .addToRequests("cpu", new Quantity("25m"))
                             .build())
                     .withNewJvmOptions()
                         .withXmx("1G")
@@ -524,8 +524,8 @@ class KafkaST extends AbstractST {
                             new ResourceRequirementsBuilder()
                                 .addToLimits("memory", new Quantity("1024Mi"))
                                 .addToLimits("cpu", new Quantity("500m"))
-                                .addToRequests("memory", new Quantity("512Mi"))
-                                .addToRequests("cpu", new Quantity("0.25"))
+                                .addToRequests("memory", new Quantity("384Mi"))
+                                .addToRequests("cpu", new Quantity("0.025"))
                                 .build())
                         .withNewJvmOptions()
                             .withXmx("2G")
@@ -539,7 +539,7 @@ class KafkaST extends AbstractST {
                                 .addToLimits("memory", new Quantity("512M"))
                                 .addToLimits("cpu", new Quantity("300m"))
                                 .addToRequests("memory", new Quantity("256M"))
-                                .addToRequests("cpu", new Quantity("300m"))
+                                .addToRequests("cpu", new Quantity("30m"))
                                 .build())
                         .withNewJvmOptions()
                             .withXmx("1G")
@@ -559,12 +559,12 @@ class KafkaST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDepName);
 
         assertResources(cmdKubeClient().namespace(), KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
-                "1536Mi", "1", "1Gi", "500m");
+                "1536Mi", "1", "1Gi", "50m");
         assertExpectedJavaOpts(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "-Xmx1g", "-Xms512m", "-server", "-XX:+UseG1GC");
 
         assertResources(cmdKubeClient().namespace(), KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
-                "1G", "500m", "500M", "250m");
+                "1G", "500m", "500M", "25m");
         assertExpectedJavaOpts(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
                 "-Xmx1G", "-Xms512M", "-server", "-XX:+UseG1GC");
 
@@ -574,9 +574,9 @@ class KafkaST extends AbstractST {
         assertThat("EO pod does not exist", pod.isPresent(), is(true));
 
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "topic-operator",
-                "1Gi", "500m", "512Mi", "250m");
+                "1Gi", "500m", "384Mi", "25m");
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
-                "512M", "300m", "256M", "300m");
+                "512M", "300m", "256M", "30m");
 
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "topic-operator",
                 "-Xmx2G", "-Xms1024M", null, null);
@@ -1612,6 +1612,8 @@ class KafkaST extends AbstractST {
     }
 
     @Test
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(LOADBALANCER_SUPPORTED)
     void testDynamicConfigurationWithExternalListeners() {
         int kafkaReplicas = 2;
         int zkReplicas = 1;
