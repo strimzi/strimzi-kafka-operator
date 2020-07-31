@@ -7,18 +7,17 @@
 
 If you are already using Prometheus and Grafana for monitoring of built-in Kafka metrics, you can configure Prometheus to also scrape the Cruise Control Prometheus endpoint.
 
-The example Grafana dashboard for the Cruise Control provides:
+The example Grafana dashboard for Cruise Control provides:
 
-* Information about optimization proposals computation, goals violation, cluster balancedness and more
+* Information about optimization proposals computation, goals violation, cluster balancedness, and more
 * Information about REST API calls for rebalance proposals and actual rebalance operations
 * JVM metrics from Cruise Control itself
 
 == Configuring Cruise Control
 
-You can enable the Cruise Control metrics in the `Kafka` resource using the `cruiseControl.metrics` property that contains the JMX exporter configuration about metrics to expose.
+You can enable the Cruise Control metrics in the `Kafka` resource using the `cruiseControl.metrics` property that contains the JMX exporter configuration about the metrics to expose.
 
 For example:
-+
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -52,18 +51,18 @@ When metrics data has been collected for some time, the Cruise Control charts ar
 
 Cruise Control:: Shows metrics for:
 +
-* The number of snapshot windows that are monitored
-* Number of time windows considered to be valid because of enough samples for computing a proposal
+* Number of snapshot windows that are monitored by Cruise Control
+* Number of time windows considered valid because they contain enough samples to compute an optimization proposal
 * Number of ongoing executions running for proposals or rebalances
-* The current balancedness score of the Kafka cluster as calculated by the anomaly detector (every 5 minutes by default)
-* The percentage of monitored partitions
-* The number of goal violations reported by the anomaly detector (every 5 minutes by default)
+* Current balancedness score of the Kafka cluster as calculated by the anomaly detector component of Cruise Control (every 5 minutes by default)
+* Percentage of monitored partitions
+* Number of goal violations reported by the anomaly detector (every 5 minutes by default)
 * How often a disk read failure happens on the brokers
 * Rate of metric sample fetch failures
-* Time needed for computing an optimization proposal
-* Time for creating a cluster model
-* How often a proposal request or an actual rebalance request is made through the REST API
-* How often the overall cluster state and the user tasks state are requested through the REST API
+* Time needed to compute an optimization proposal
+* Time needed to create the cluster model
+* How often a proposal request or an actual rebalance request is made through the Cruise Control REST API
+* How often the overall cluster state and the user tasks state are requested through the Cruise Control REST API
 * JVM memory used
 * JVM garbage collection time
 * JVM garbage collection count
