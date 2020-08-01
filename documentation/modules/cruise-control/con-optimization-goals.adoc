@@ -13,12 +13,10 @@ The supported goals, in the default descending order of priority, are as follows
 
 . Rack-awareness
 . Replica capacity
-. Capacity: Disk capacity, Network inbound capacity, Network outbound capacity
-//.. CPU capacity
+. Capacity: Disk capacity, Network inbound capacity, Network outbound capacity, CPU capacity
 . Replica distribution
 . Potential network output
-. Resource distribution: Disk utilization distribution, Network inbound utilization distribution, Network outbound utilization distribution
-//.. CPU utilization distribution
+. Resource distribution: Disk utilization distribution, Network inbound utilization distribution, Network outbound utilization distribution, CPU utilization distribution
 . Leader bytes-in rate distribution
 . Topic replica distribution
 . Leader replica distribution
@@ -28,7 +26,7 @@ The supported goals, in the default descending order of priority, are as follows
 
 For more information on each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
 
-NOTE: CPU goals, intra-broker disk goals, "Write your own" goals, and Kafka assigner goals are not yet supported.
+NOTE: Intra-broker disk goals, "Write your own" goals, and Kafka assigner goals are not yet supported.
 
 [discrete]
 == Goals configuration in Strimzi custom resources
@@ -56,7 +54,7 @@ Cruise Control will ignore this goal if doing so enables all the configured hard
 In Cruise Control, the following xref:master-goals[master optimization goals] are preset as hard goals:
 
 [source]
-RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal
+RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; CPUCapacityGoal
 
 You configure hard goals in the Cruise Control deployment configuration, by editing the `hard.goals` property in `Kafka.spec.cruiseControl.config`.
 
@@ -105,7 +103,7 @@ Goals that are not listed in the master optimization goals are not available for
 Unless you change the Cruise Control xref:proc-deploying-cruise-control-{context}[deployment configuration], Strimzi will inherit the following master optimization goals from Cruise Control, in descending priority order:
 
 [source]
-RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; ReplicaDistributionGoal; PotentialNwOutGoal; DiskUsageDistributionGoal; NetworkInboundUsageDistributionGoal; NetworkOutboundUsageDistributionGoal; TopicReplicaDistributionGoal; LeaderReplicaDistributionGoal; LeaderBytesInDistributionGoal; PreferredLeaderElectionGoal
+RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; CPUCapacityGoal; ReplicaDistributionGoal; PotentialNwOutGoal; DiskUsageDistributionGoal; NetworkInboundUsageDistributionGoal; NetworkOutboundUsageDistributionGoal; TopicReplicaDistributionGoal; LeaderReplicaDistributionGoal; LeaderBytesInDistributionGoal; PreferredLeaderElectionGoal
 
 Five of these goals are preset as xref:hard-soft-goals[hard goals].
 
