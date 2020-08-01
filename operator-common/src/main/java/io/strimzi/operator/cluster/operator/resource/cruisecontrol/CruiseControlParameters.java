@@ -21,7 +21,8 @@ public enum CruiseControlParameters {
     CONCURRENT_PARTITION_MOVEMENTS("concurrent_partition_movements_per_broker"),
     CONCURRENT_INTRA_PARTITION_MOVEMENTS("concurrent_intra_broker_partition_movements"),
     CONCURRENT_LEADER_MOVEMENTS("concurrent_leader_movements"),
-    REPLICATION_THROTTLE("replication_throttle");
+    REPLICATION_THROTTLE("replication_throttle"),
+    REPLICA_MOVEMENT_STRATEGIES("replica_movement_strategies");
 
     String key;
 
