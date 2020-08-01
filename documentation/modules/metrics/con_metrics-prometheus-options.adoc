@@ -17,7 +17,6 @@ Additional Prometheus-related configuration is also provided in the following fi
 * `prometheus-additional.yaml`
 * `prometheus-rules.yaml`
 * `strimzi-pod-monitor.yaml`
-* `strimzi-service-monitor.yaml`
 
 For Prometheus to obtain monitoring data:
 

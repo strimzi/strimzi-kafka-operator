@@ -27,6 +27,10 @@ spec:
     categories:
       - strimzi
   additionalPrinterColumns:
+    - name: Cluster
+      description: The name of the Kafka cluster this user belongs to
+      JSONPath: .metadata.labels.strimzi\.io/cluster
+      type: string
     - name: Authentication
       description: How the user is authenticated
       JSONPath: .spec.authentication.type

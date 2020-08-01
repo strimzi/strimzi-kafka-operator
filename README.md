@@ -39,8 +39,8 @@ All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.co
 might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
 label.
 
-The [Hacking guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) describes how to build Strimzi and how to 
-test your changes before submitting a patch or opening a PR.
+The [Dev guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/development-docs/DEV_GUIDE.md) describes how to build Strimzi.
+Before submitting a patch, please make sure to understand, how to test your changes before opening a PR [Test guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/development-docs/TESTING.md).
 
 The [Documentation Contributor Guide](https://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
 

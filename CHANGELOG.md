@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.20.0
+
+* Updated to Cruise Control 2.0.124, which fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
+
 ## 0.19.0
 
 * Add support for authorization using Open Policy Agent
@@ -16,7 +20,8 @@
 * Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.
 * Migration to Helm 3
 * Refactored the format of the `KafkaRebalance` resource's status. The state of the rebalance is now displayed in the associated `Condition`'s `type` field rather than the `status` field. This was done so that the information would display correctly in various Kubernetes tools.
-* Use Strimzi Kafka Bridge 0.17.0
+* Added performance tuning options to the `KafkaRebalance` CR and the ability to define a regular expression that will exclude matching topics from a rebalance optimization proposal.
+* Use Strimzi Kafka Bridge 0.18.0
 * Make it possible to configure labels and annotations for secrets created by the User Operator
 * Strimzi Kafka Bridge metrics integration:
   * enable/disable metrics in the KafkaBridge custom resource
@@ -24,6 +29,15 @@
 * Support dynamically changeable logging in the Entity Operator and Kafka Bridge 
 
 ### Deprecations and removals
+
+#### Deprecation of Helm v2 chart
+
+The Helm v2 support will end soon. 
+Bug fixing should stop on August 13th 2020 and security fixes on November 13th.
+See https://helm.sh/blog/covid-19-extending-helm-v2-bug-fixes/ for more details.
+
+In sync with that, the Helm v2 chart of Strimzi Cluster Operator is now deprecated and will be removed in the future as Helm v2 support ends.
+Since Strimzi 0.19.0, we have a new chart for Helm v3 which can be used instead.
 
 #### Removal of v1alpha1 versions of several custom resources
 
@@ -44,6 +58,17 @@ The `pod_name` and `container_name` labels provided on the cadvisor metrics are 
 We removed the old ones from the Prometheus scraping configuration/alerts and on the Kafka and ZooKeeper dashboard as well.
 It means that the charts related to memory and CPU usage are not going to work on Kuvbernetes version previous 1.14.
 For more information on what is changed: https://github.com/strimzi/strimzi-kafka-operator/pull/3312
+
+#### Deprecation of monitoring port on Kafka and ZooKeeper related services
+
+The `PodMonitor` resource is now used instead of the `ServiceMonitor` for scraping metrics from Kafka, ZooKeeper, Kafka Connect and so on.
+For this reason, we are deprecating the monitoring port `tcp-prometheus` (9404) on all the services where it is declared (Kafka bootstrap, ZooKeeper client and so on).
+This port will be removed in the next release.
+Together with it we will also remove the Prometheus annotation from the service.
+
+#### Removal warning of Cluster Operator log level
+
+Because of the new Cluster Operator dynamic logging configuration via [PR#3328](https://github.com/strimzi/strimzi-kafka-operator/pull/3328) we are going to remove the `STRIMZI_LOG_LEVEL` environment variable from the Cluster Operator deployment YAML file in the 0.20.0 release.
 
 ## 0.18.0
 

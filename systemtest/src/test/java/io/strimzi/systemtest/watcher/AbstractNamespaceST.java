@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -17,13 +16,13 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -75,11 +74,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
         cluster.setNamespace(topicNamespace);
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
-            cluster.setNamespace(kafkaClusterNamespace);
-            List<String> topics2 = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
-            return topics2.contains(topic);
-        });
+        KafkaTopicUtils.waitForKafkaTopicReady(topic);
+        cluster.setNamespace(kafkaClusterNamespace);
     }
 
     void deleteNewTopic(String namespace, String topic) {

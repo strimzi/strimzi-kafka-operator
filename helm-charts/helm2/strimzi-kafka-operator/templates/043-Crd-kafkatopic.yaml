@@ -31,6 +31,10 @@ spec:
     categories:
       - strimzi
   additionalPrinterColumns:
+    - name: Cluster
+      description: The name of the Kafka cluster this topic belongs to
+      JSONPath: .metadata.labels.strimzi\.io/cluster
+      type: string
     - name: Partitions
       description: The desired number of partitions in the topic
       JSONPath: .spec.partitions

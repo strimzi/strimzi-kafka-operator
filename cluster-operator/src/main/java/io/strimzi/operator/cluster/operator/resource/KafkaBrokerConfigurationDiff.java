@@ -131,7 +131,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     /**
      * Computes diff between two maps. Entries in IGNORABLE_PROPERTIES are skipped
      * @param brokerId id of compared broker
-     * @param desired desired configuration
+     * @param desired desired configuration, may be null if the related ConfigMap does not exist yet or no changes are required
      * @param brokerConfigs current configuration
      * @param configModel default configuration for {@code kafkaVersion} of broker
      * @return KafkaConfiguration containing all entries which were changed from current in desired configuration
@@ -139,7 +139,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     private static Collection<AlterConfigOp> diff(int brokerId, String desired,
                                                   Config brokerConfigs,
                                                   Map<String, ConfigModel> configModel) {
-        if (brokerConfigs == null) {
+        if (brokerConfigs == null || desired == null) {
             return Collections.emptyList();
         }
         Map<String, String> currentMap;

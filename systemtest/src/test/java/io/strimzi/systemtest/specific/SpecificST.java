@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,7 +161,7 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka() {
         String nonExistingVersion = "6.6.6";
-        String nonExistingVersionMessage = "Unsupported Kafka.spec.kafka.version: " + nonExistingVersion + ". Supported versions are.*";
+        String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported. Supported versions are.*";
 
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -248,6 +249,7 @@ public class SpecificST extends AbstractST {
 
     @BeforeAll
     void setup() {
+        LOGGER.info(BridgeUtils.getBridgeVersion());
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 

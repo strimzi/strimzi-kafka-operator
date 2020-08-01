@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.List;
 
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.PROMETHEUS;
@@ -66,10 +65,6 @@ public class PrometheusST extends AbstractST {
         assertThat("alertmanager-alertmanager secret does not contain key alertmanager.yaml", kubeClient().getSecret("alertmanager-alertmanager").getData().get("alertmanager.yaml") != null);
     }
 
-    // No need to recreate environment after failed test. Only values from collected metrics are checked
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
-
     @BeforeAll
     void setup() throws IOException {
         LOGGER.info("Creating resources before the test class");
@@ -85,7 +80,6 @@ public class PrometheusST extends AbstractST {
 
         DeploymentUtils.waitForDeploymentAndPodsReady("prometheus-operator", 1);
 
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-service-monitor.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-pod-monitor.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus-rules.yaml", NAMESPACE));
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/alert-manager.yaml", NAMESPACE));

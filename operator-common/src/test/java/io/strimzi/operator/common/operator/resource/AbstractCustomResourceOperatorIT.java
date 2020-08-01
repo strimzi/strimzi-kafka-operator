@@ -196,7 +196,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     }
 
     /**
-     * Tests what happens when the resource is modifed while updating the status
+     * Tests what happens when the resource is modified while updating the status
      *
      * @param context
      */

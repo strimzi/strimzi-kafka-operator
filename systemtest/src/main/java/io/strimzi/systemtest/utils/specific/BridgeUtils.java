@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.specific;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.HttpUtils;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -16,6 +17,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -170,5 +172,33 @@ public class BridgeUtils {
     public static JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
                                                   WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
         return createBridgeConsumer(config, bridgeHost, bridgePort, groupId, webClient, Collections.emptyMap());
+    }
+
+    public static boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.info("Deleting consumer");
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        client.delete(bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + name)
+            .putHeader("Content-Type", Constants.KAFKA_BRIDGE_JSON)
+            .as(BodyCodec.jsonObject())
+            .send(ar -> {
+                if (ar.succeeded()) {
+                    LOGGER.info("Consumer deleted");
+                    future.complete(ar.succeeded());
+                } else {
+                    LOGGER.error("Cannot delete consumer", ar.cause());
+                    future.completeExceptionally(ar.cause());
+                }
+            });
+        return future.get(1, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Returns Strimzi Kafka Bridge version which is associated with Strimzi Kafka Operator.
+     * The value is parsed from {@code /bridge.version} classpath resource and return it as a string.
+     * @return bridge version
+     */
+    public static String getBridgeVersion() {
+        InputStream bridgeVersionInputStream = BridgeUtils.class.getResourceAsStream("/bridge.version");
+        return TestUtils.readResource(bridgeVersionInputStream).replace("\n", "");
     }
 }

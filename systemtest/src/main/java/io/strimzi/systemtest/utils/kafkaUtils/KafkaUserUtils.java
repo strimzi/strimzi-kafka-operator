@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -21,6 +22,7 @@ public class KafkaUserUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserUtils.class);
     private static final String KAFKA_USER_NAME_PREFIX = "my-user-";
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private KafkaUserUtils() {}
 
@@ -45,7 +47,7 @@ public class KafkaUserUtils {
 
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for KafkaUser deletion {}", userName);
-        TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null,
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
@@ -54,7 +56,7 @@ public class KafkaUserUtils {
 
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
         TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
-            Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> observation < KafkaUserResource.kafkaUserClient()
                 .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }

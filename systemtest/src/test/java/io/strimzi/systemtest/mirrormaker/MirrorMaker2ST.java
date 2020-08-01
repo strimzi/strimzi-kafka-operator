@@ -27,6 +27,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -49,6 +50,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -78,6 +80,7 @@ class MirrorMaker2ST extends AbstractST {
         Map<String, Object> expectedConfig = StUtils.loadProperties("group.id=mirrormaker2-cluster\n" +
                 "key.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
                 "value.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
+                "header.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
                 "config.storage.topic=mirrormaker2-cluster-configs\n" +
                 "status.storage.topic=mirrormaker2-cluster-status\n" +
                 "offset.storage.topic=mirrormaker2-cluster-offsets\n" +
@@ -131,8 +134,16 @@ class MirrorMaker2ST extends AbstractST {
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
         );
-        
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                .editSpec()
+                    .editFirstMirror()
+                        .editSourceConnector()
+                            .addToConfig("refresh.topics.interval.seconds", "60")
+                        .endSourceConnector()
+                    .endMirror()
+                .endSpec()
+                .done();
         LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
 
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
@@ -600,7 +611,48 @@ class MirrorMaker2ST extends AbstractST {
         }
     }
 
+    @Test
+    void testMirrorMaker2CorrectlyMirrorsHeaders() {
+        String sourceProducerName = "source-producer";
+        String targetConsumerName = "target-consumer";
+        String sourceExampleTopic = "source-example-topic";
+        String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
 
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        // Deploy Topic for example clients
+        KafkaTopicResource.topic(kafkaClusterSourceName, sourceExampleTopic).done();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
+
+        //deploying example clients for checking if mm2 will mirror messages with headers
+        KafkaClientsResource.consumerStrimzi(targetConsumerName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, MESSAGE_COUNT).done();
+        KafkaClientsResource.producerStrimzi(sourceProducerName, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, MESSAGE_COUNT)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editContainer(0)
+                            .addNewEnv()
+                                .withName("HEADERS")
+                                .withValue("header_key_one=header_value_one, header_key_two=header_value_two")
+                            .endEnv()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        ClientUtils.waitTillContinuousClientsFinish(sourceProducerName, targetConsumerName, NAMESPACE, MESSAGE_COUNT);
+
+        LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
+        String header1 = "key: header_key_one, value: header_value_one";
+        String header2 = "key: header_key_two, value: header_value_two";
+        String log = StUtils.getLogFromPodByTime(kubeClient().listPodsByPrefixInName(targetConsumerName).get(0).getMetadata().getName(), "", MESSAGE_COUNT + "s");
+        assertThat(log, containsString(header1));
+        assertThat(log, containsString(header2));
+    }
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();

@@ -198,16 +198,7 @@ public class EntityOperator extends AbstractModel {
 
     @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(EntityOperatorSpec entityOperatorSpec) {
-        if (entityOperatorSpec.getTemplate() != null
-                && entityOperatorSpec.getTemplate().getPod() != null
-                && entityOperatorSpec.getTemplate().getPod().getTolerations() != null) {
-            if (entityOperatorSpec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.entityOperator.tolerations and spec.entityOperator.template.pod.tolerations; latter takes precedence");
-            }
-            return entityOperatorSpec.getTemplate().getPod().getTolerations();
-        } else {
-            return entityOperatorSpec.getTolerations();
-        }
+        return ModelUtils.tolerations("spec.entityOperator.tolerations", entityOperatorSpec.getTolerations(), "spec.entityOperator.template.pod.tolerations", entityOperatorSpec.getTemplate() == null ? null : entityOperatorSpec.getTemplate().getPod());
     }
 
     @SuppressWarnings("deprecation")

@@ -91,6 +91,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
             writer.println("cruise.control.metrics.topic.auto.create=true");
+            writer.println("cruise.control.metrics.reporter.kubernetes.mode=true");
             if (numPartitions != null) {
                 writer.println("cruise.control.metrics.topic.num.partitions=" + numPartitions);
             }

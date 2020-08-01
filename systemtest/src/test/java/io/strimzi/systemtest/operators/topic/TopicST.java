@@ -86,10 +86,6 @@ public class TopicST extends AbstractST {
 
         kafkaTopic = KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).done();
 
-        TestUtils.waitFor("Waiting for " + newTopicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () -> KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0).contains(newTopicName)
-        );
-
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
     }
@@ -164,17 +160,11 @@ public class TopicST extends AbstractST {
                 .endSpec()
                 .done();
 
-        TestUtils.waitFor("Waiting to " + topicName + " to be ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
-        );
-
         KafkaTopicResource.replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
+        KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
 
         String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 3 and then the replication should be changed directly in Kafka.";
-
-        TestUtils.waitFor("Waiting for " + topicName + " to has to contains message" + exceptedMessage, Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
-        );
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage), is(true));
 
         String topicCRDMessage = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
 
@@ -286,7 +276,7 @@ public class TopicST extends AbstractST {
     }
 
     void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> {
                 try {
                     List<String> topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
@@ -312,12 +302,6 @@ public class TopicST extends AbstractST {
     void deployTestSpecificResources() {
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
-        deployTestSpecificResources();
     }
 
     @BeforeAll

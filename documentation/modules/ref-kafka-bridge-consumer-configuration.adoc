@@ -29,8 +29,10 @@ IMPORTANT: The Cluster Operator does not validate keys or values in the `config`
 When an invalid configuration is provided, the Kafka Bridge cluster might not start or might become unstable.
 In this circumstance, fix the configuration in the `KafkaBridge.spec.consumer.config` object, then the Cluster Operator can roll out the new configuration to all Kafka Bridge nodes.
 
-Use the three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
-A _cipher suite_ combines algorithms for secure connection and data transfer.
+There are exceptions to the forbidden options.
+You can use three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
+A cipher suite combines algorithms for secure connection and data transfer.
+You can also configure the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification.
 
 .Example Kafka Bridge consumer configuration
 [source,yaml,subs="attributes+"]
@@ -48,6 +50,7 @@ spec:
       ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <1>
       ssl.enabled.protocols: "TLSv1.2" <2>
       ssl.protocol: "TLSv1.2" <3>
+      ssl.endpoint.identification.algorithm: HTTPS <4>
     # ...
 ----
 <1> The cipher suite for TLS using a combination of `ECDHE` key exchange mechanism, `RSA` authentication algorithm,
@@ -55,3 +58,4 @@ spec:
 <2> The SSl protocol `TLSv1.2` is enabled.
 <3> Specifies the `TLSv1.2` protocol to generate the SSL context.
 Allowed values are `TLSv1.1` and `TLSv1.2`.
+<4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.

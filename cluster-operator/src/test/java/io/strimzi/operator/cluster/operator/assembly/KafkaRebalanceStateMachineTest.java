@@ -24,6 +24,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -126,7 +127,7 @@ public class KafkaRebalanceStateMachineTest {
                             .withName(RESOURCE_NAME)
                             .withNamespace(CLUSTER_NAMESPACE)
                             .withLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
-                            .withAnnotations(Collections.singletonMap(KafkaRebalanceAssemblyOperator.ANNO_STRIMZI_IO_REBALANCE, userAnnotation == null ? "none" : userAnnotation))
+                            .withAnnotations(Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REBALANCE, userAnnotation == null ? "none" : userAnnotation))
                         .endMetadata()
                         .withSpec(rebalanceSpec);
 

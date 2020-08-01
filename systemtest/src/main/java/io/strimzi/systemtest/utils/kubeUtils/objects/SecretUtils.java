@@ -30,6 +30,7 @@ public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private SecretUtils() { }
 
@@ -94,7 +95,7 @@ public class SecretUtils {
 
     public static void waitForClusterSecretsDeletion(String clusterName) {
         LOGGER.info("Waiting for Secret {} deletion", clusterName);
-        TestUtils.waitFor("Secret " + clusterName + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
+        TestUtils.waitFor("Secret " + clusterName + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 List<Secret> secretList = kubeClient().listSecrets(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
                 if (secretList.isEmpty()) {
@@ -144,7 +145,7 @@ public class SecretUtils {
         kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
 
         LOGGER.info("Waiting for Secret: {} to be deleted", secretName);
-        TestUtils.waitFor(String.format("Deletion of secret: {}", secretName), Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+        TestUtils.waitFor(String.format("Deletion of secret: {}", secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> kubeClient().getSecret(secretName) == null);
 
         LOGGER.info("Secret: {} successfully deleted", secretName);

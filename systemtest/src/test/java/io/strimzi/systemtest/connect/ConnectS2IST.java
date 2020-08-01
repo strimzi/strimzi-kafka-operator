@@ -115,7 +115,7 @@ class ConnectS2IST extends AbstractST {
 
         KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
-        TestUtils.waitFor("ConnectS2I will be ready and POST will be executed", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
+        TestUtils.waitFor("ConnectS2I will be ready and POST will be executed", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             String createConnectorOutput = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
                     "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", mongoDbConfig).out();
             LOGGER.info("Create Connector result: {}", createConnectorOutput);
@@ -137,7 +137,7 @@ class ConnectS2IST extends AbstractST {
         // Calls to Connect API are executed from kafka-0 pod
         deployConnectS2IWithMongoDb(kafkaConnectS2IName, true);
 
-        // Make sure that Connenct API is ready
+        // Make sure that Connect API is ready
         KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
         KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
@@ -152,10 +152,12 @@ class ConnectS2IST extends AbstractST {
             .endSpec().done();
 
         checkConnectorInStatus(NAMESPACE, kafkaConnectS2IName);
+        String apiUrl = KafkaConnectS2IResources.serviceName(kafkaConnectS2IName);
 
-        String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
+        String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + apiUrl + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
 
+        String connectorConfig = KafkaConnectorUtils.getConnectorConfig(kafkaClientsPodName, kafkaConnectS2IName, apiUrl);
         KafkaConnectorResource.replaceKafkaConnectorResource(kafkaConnectS2IName, kC -> {
             Map<String, Object> config = kC.getSpec().getConfig();
             config.put("mongodb.user", "test-user");
@@ -163,12 +165,9 @@ class ConnectS2IST extends AbstractST {
             kC.getSpec().setTasksMax(8);
         });
 
-        TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
-            () -> {
-                String connectorConfig = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/config").out();
-                assertThat(connectorStatus, containsString("RUNNING"));
-                return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("mongodb.user\":\"test-user");
-            });
+        connectorConfig = KafkaConnectorUtils.waitForConnectorConfigUpdate(kafkaClientsPodName, kafkaConnectS2IName, connectorConfig, apiUrl);
+        assertThat(connectorConfig.contains("tasks.max\":\"8"), is(true));
+        assertThat(connectorConfig.contains("mongodb.user\":\"test-user"), is(true));
     }
 
     @Test
@@ -358,7 +357,7 @@ class ConnectS2IST extends AbstractST {
                     .build());
         });
 
-        TestUtils.waitFor("KafkaConnect change", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaConnect change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect").get().getSpec().getResources().getRequests().get("cpu").equals(new Quantity("1")));
 
         cmdKubeClient().exec("start-build", KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName), "-n", NAMESPACE);
@@ -367,17 +366,10 @@ class ConnectS2IST extends AbstractST {
 
         String podName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
 
-        TestUtils.waitFor("Resources are changed", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION, () -> {
-            try {
-                assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
-                        "400M", "2", "300M", "1");
-                assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
-                        "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        });
+        assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
+            "400M", "2", "300M", "1");
+        assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
+            "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
         KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2IName);
         DeploymentConfigUtils.waitForDeploymentConfigDeletion(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));
@@ -435,17 +427,17 @@ class ConnectS2IST extends AbstractST {
 
         KafkaConnectUtils.waitForConnectNotReady(CLUSTER_NAME);
 
+        String connectorConfig = KafkaConnectorUtils.getConnectorConfig(connectS2IPodName, CLUSTER_NAME, "localhost");
+
         String newTopic = "new-topic";
         KafkaConnectorResource.replaceKafkaConnectorResource(CLUSTER_NAME, kc -> {
             kc.getSpec().getConfig().put("topics", newTopic);
             kc.getSpec().setTasksMax(8);
         });
 
-        TestUtils.waitFor("mongodb.user and tasks.max upgrade in S2I connector", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
-            () -> {
-                String connectorConfig = cmdKubeClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/config").out();
-                return connectorConfig.contains("tasks.max\":\"8") && connectorConfig.contains("topics\":\"" + newTopic);
-            });
+        connectorConfig = KafkaConnectorUtils.waitForConnectorConfigUpdate(connectS2IPodName, CLUSTER_NAME, connectorConfig, "localhost");
+        assertThat(connectorConfig.contains("tasks.max\":\"8"), is(true));
+        assertThat(connectorConfig.contains("topics\":\"" + newTopic), is(true));
 
         // Now delete KafkaConnector resource and create connector manually
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
@@ -770,12 +762,6 @@ class ConnectS2IST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
-        deployKafkaClients();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
         deployKafkaClients();
     }
 

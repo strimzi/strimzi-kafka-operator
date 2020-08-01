@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
@@ -461,11 +460,6 @@ class LoggingChangeST extends AbstractST {
     void setup() throws Exception {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("Skip env recreation after failed tests!");
     }
 
     @Override

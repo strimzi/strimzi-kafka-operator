@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -109,7 +108,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
 
         // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
                 || !kubeClient().getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
@@ -134,7 +133,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(zkName, 3, zkPods);
 
         // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                 || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
@@ -215,11 +214,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         int sentAfter = internalKafkaClient.sendMessagesTls();
         assertThat(sentAfter, is(MESSAGE_COUNT));
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
     @BeforeAll

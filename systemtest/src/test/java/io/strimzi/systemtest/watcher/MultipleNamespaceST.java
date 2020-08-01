@@ -87,9 +87,4 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         cluster.setNamespace(CO_NAMESPACE);
     }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        deployTestSpecificResources();
-    }
 }

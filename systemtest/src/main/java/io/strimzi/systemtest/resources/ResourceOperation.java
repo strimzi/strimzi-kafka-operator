@@ -17,6 +17,10 @@ import io.strimzi.systemtest.Constants;
 import java.time.Duration;
 
 public class ResourceOperation {
+    public static long getTimeoutForResourceReadiness() {
+        return getTimeoutForResourceReadiness("default");
+    }
+
     public static long getTimeoutForResourceReadiness(String kind) {
         long timeout;
 
@@ -42,7 +46,7 @@ public class ResourceOperation {
                 timeout = Duration.ofMinutes(4).toMillis();
                 break;
             default:
-                timeout = Duration.ofMinutes(2).toMillis();
+                timeout = Duration.ofMinutes(3).toMillis();
         }
 
         return timeout;
@@ -64,9 +68,35 @@ public class ResourceOperation {
     }
 
     /**
-     * rollingUpdateTimeout returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update
+     * timeoutForPodsOperation returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update,
+     *  scale up or create
      */
-    public static long rollingUpdateTimeout(int numberOfPods) {
+    public static long timeoutForPodsOperation(int numberOfPods) {
         return Duration.ofMinutes(5).toMillis() * Math.max(1, numberOfPods);
+    }
+
+    public static long getTimeoutForResourceDeletion() {
+        return getTimeoutForResourceDeletion("default");
+    }
+
+    public static long getTimeoutForResourceDeletion(String kind) {
+        long timeout;
+
+        switch (kind) {
+            case Kafka.RESOURCE_KIND:
+            case KafkaConnect.RESOURCE_KIND:
+            case KafkaConnectS2I.RESOURCE_KIND:
+            case KafkaMirrorMaker2.RESOURCE_KIND:
+            case KafkaMirrorMaker.RESOURCE_KIND:
+            case KafkaBridge.RESOURCE_KIND:
+            case Constants.STATEFUL_SET:
+            case Constants.POD:
+                timeout = Duration.ofMinutes(5).toMillis();
+                break;
+            default:
+                timeout = Duration.ofMinutes(3).toMillis();
+        }
+
+        return timeout;
     }
 }

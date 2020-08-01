@@ -280,6 +280,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         if (mirror.getGroupsBlacklistPattern() != null) {
             config.put("groups.blacklist", mirror.getGroupsBlacklistPattern());
         }
+
+        if (mirrorMaker2Cluster.getTracing() != null)   {
+            config.put("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+            config.put("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+        }
+
         config.putAll(mirror.getAdditionalProperties());
     }
 

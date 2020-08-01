@@ -34,7 +34,6 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -55,6 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi.CC_REST_API_SUMMARY;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 
 /**
  * <p>Assembly operator for a "KafkaRebalance" assembly, which interacts with the Cruise Control REST API</p>
@@ -127,10 +127,6 @@ public class KafkaRebalanceAssemblyOperator
         extends AbstractOperator<KafkaRebalance, AbstractWatchableResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>>> {
 
     private static final Logger log = LogManager.getLogger(KafkaRebalanceAssemblyOperator.class.getName());
-
-    // This annotation with related possible values (approve, stop, refresh) is set by the user for interacting
-    // with the rebalance operator in order to start, stop or refresh rebalancing proposals and operations
-    public static final String ANNO_STRIMZI_IO_REBALANCE = Annotations.STRIMZI_DOMAIN + "rebalance";
 
     private static final long REBALANCE_POLLING_TIMER_MS = 5_000;
     private static final int MAX_API_RETRIES = 5;
@@ -293,6 +289,9 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalanceSpec.isSkipHardGoalCheck()) {
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
         }
+        if (kafkaRebalanceSpec.getExcludedTopics() != null) {
+            rebalanceOptionsBuilder.withExcludedTopics(kafkaRebalanceSpec.getExcludedTopics());
+        }
         if (kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker() > 0) {
             rebalanceOptionsBuilder.withConcurrentPartitionMovementsPerBroker(kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker());
         }
@@ -304,6 +303,9 @@ public class KafkaRebalanceAssemblyOperator
         }
         if (kafkaRebalanceSpec.getReplicationThrottle() > 0) {
             rebalanceOptionsBuilder.withReplicationThrottle(kafkaRebalanceSpec.getReplicationThrottle());
+        }
+        if (kafkaRebalanceSpec.getReplicaMovementStrategies() != null) {
+            rebalanceOptionsBuilder.withReplicaMovementStrategies(kafkaRebalanceSpec.getReplicaMovementStrategies());
         }
 
         return rebalanceOptionsBuilder;

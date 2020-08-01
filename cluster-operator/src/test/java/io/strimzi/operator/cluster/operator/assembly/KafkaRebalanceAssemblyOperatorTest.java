@@ -31,6 +31,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -913,7 +914,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         KafkaRebalance patchedKr = new KafkaRebalanceBuilder(kafkaRebalance)
                 .editMetadata()
-                    .addToAnnotations(KafkaRebalanceAssemblyOperator.ANNO_STRIMZI_IO_REBALANCE, annotationValue.toString())
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, annotationValue.toString())
                 .endMetadata()
                 .build();
 
