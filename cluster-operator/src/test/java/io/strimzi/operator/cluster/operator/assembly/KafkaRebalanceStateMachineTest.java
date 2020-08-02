@@ -173,7 +173,7 @@ public class KafkaRebalanceStateMachineTest {
         return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
                 .compose(result -> {
                     context.verify(() -> {
-                        assertThat(result.getConditions(), State.hasStateInConditions(nextState));
+                        assertThat(result.getConditions(), StateMatchers.hasStateInConditions(nextState));
                     });
                     return Future.succeededFuture(result);
                 });
@@ -509,7 +509,7 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
-    private static class State extends AbstractOperatorState {
+    private static class StateMatchers extends AbstractResourceStateMatchers {
 
     }
 }

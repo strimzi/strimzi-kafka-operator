@@ -17,10 +17,10 @@ import java.util.List;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
-public class AbstractOperatorState {
+public class AbstractResourceStateMatchers {
 
 
-    public static Matcher<KafkaRebalance> hasState(final KafkaRebalanceState state) {
+    public static Matcher<KafkaRebalance> hasState() {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
@@ -47,7 +47,7 @@ public class AbstractOperatorState {
 
             @Override
             public void describeTo(final Description description) {
-                description.appendText("Expected state is ").appendValue(state);
+                //
             }
         };
 
@@ -55,7 +55,7 @@ public class AbstractOperatorState {
 
 
     /**
-     * Checks all conditions in the supplied status to see if type of one of them matches the supplied rebalance state.
+     * Checks all conditions in the supplied resource to see if the type of one of them matches the supplied rebalance state.
      * @param state he expected rebalance state to be searched for.
      * @return
      */
