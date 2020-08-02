@@ -557,11 +557,12 @@ public class ResourceUtils {
                         .withNamespace(namespace)
                         .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
-                        .build());
+                        .build())
+                .withNewSpec().endSpec();
 
         if (replicas != null) {
             kafkaMirrorMaker2Builder
-                    .withNewSpec()
+                    .editOrNewSpec()
                         .withReplicas(replicas)
                     .endSpec();
         }
