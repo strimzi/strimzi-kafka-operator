@@ -68,7 +68,7 @@ public class KafkaBridgeClusterTest {
     private final String defaultProducerConfiguration = "";
     private final String defaultConsumerConfiguration = "";
 
-    private final KafkaBridge resource = new KafkaBridgeBuilder(ResourceUtils.createEmptyKafkaBridgeCluster(namespace, cluster))
+    private final KafkaBridge resource = new KafkaBridgeBuilder(ResourceUtils.createEmptyKafkaBridge(namespace, cluster))
             .withNewSpec()
                 .withEnableMetrics(true)
                 .withImage(image)
@@ -120,7 +120,7 @@ public class KafkaBridgeClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(ResourceUtils.createEmptyKafkaBridgeCluster(namespace, cluster), VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(ResourceUtils.createEmptyKafkaBridge(namespace, cluster), VERSIONS);
 
         assertThat(kbc.image, is("strimzi/kafka-bridge:latest"));
         assertThat(kbc.replicas, is(KafkaBridgeCluster.DEFAULT_REPLICAS));

@@ -100,7 +100,7 @@ public class KafkaConnectS2IClusterTest {
             .build();
 
 
-    private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
+    private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
 
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -146,7 +146,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster), VERSIONS);
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2I(namespace, cluster), VERSIONS);
 
         assertThat(kc.image, is(KafkaConnectS2IResources.deploymentName(cluster) + ":latest"));
         assertThat(kc.replicas, is(KafkaConnectS2ICluster.DEFAULT_REPLICAS));
@@ -307,7 +307,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testInsecureSourceRepo() {
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
 
         assertThat(kc.isInsecureSourceRepository(), is(true));

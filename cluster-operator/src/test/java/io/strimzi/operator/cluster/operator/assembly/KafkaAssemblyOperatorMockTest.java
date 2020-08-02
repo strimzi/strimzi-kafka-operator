@@ -470,7 +470,7 @@ public class KafkaAssemblyOperatorMockTest {
                 // Try to update the storage class
                 String changedClass = originalStorageClass + "2";
 
-                Kafka changedClusterCm = new KafkaBuilder(cluster)
+                Kafka patchedPersistenceKafka = new KafkaBuilder(cluster)
                         .editSpec()
                             .editKafka()
                                 .withNewPersistentClaimStorage()
@@ -480,7 +480,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(patchedPersistenceKafka);
 
                 LOGGER.info("Updating with changed storage class");
             })))
@@ -542,9 +542,9 @@ public class KafkaAssemblyOperatorMockTest {
                 // ephemeral -> persistent
                 // or
                 // persistent -> ephemeral
-                Kafka changedClusterCm = null;
+                Kafka updatedStorageKafka = null;
                 if (kafkaStorage instanceof EphemeralStorage) {
-                    changedClusterCm = new KafkaBuilder(cluster)
+                    updatedStorageKafka = new KafkaBuilder(cluster)
                             .editSpec()
                                 .editKafka()
                                     .withNewPersistentClaimStorage()
@@ -554,7 +554,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endSpec()
                             .build();
                 } else if (kafkaStorage instanceof PersistentClaimStorage) {
-                    changedClusterCm = new KafkaBuilder(cluster)
+                    updatedStorageKafka = new KafkaBuilder(cluster)
                             .editSpec()
                                 .editKafka()
                                     .withNewEphemeralStorage()
@@ -565,7 +565,7 @@ public class KafkaAssemblyOperatorMockTest {
                 } else {
                     context.failNow(new Exception("If storage is not ephemeral or persistent something has gone wrong"));
                 }
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
 
                 LOGGER.info("Updating with changed storage type");
             })))
@@ -650,13 +650,13 @@ public class KafkaAssemblyOperatorMockTest {
                 originalKafkaDeleteClaim.set(deleteClaim(kafkaStorage));
 
                 // Try to update the storage class
-                Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
+                Kafka updatedStorageKafka = new KafkaBuilder(cluster).editSpec().editKafka()
                         .withNewPersistentClaimStorage()
                         .withSize("123")
                         .withStorageClass("foo")
                         .withDeleteClaim(!originalKafkaDeleteClaim.get())
                         .endPersistentClaimStorage().endKafka().endSpec().build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
                 LOGGER.info("Updating with changed delete claim");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
@@ -746,9 +746,14 @@ public class KafkaAssemblyOperatorMockTest {
 
                 assertThat(client.pods().inNamespace(NAMESPACE).withName(newPod).get(), is(nullValue()));
 
-                Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
-                        .withReplicas(scaleUpTo).endKafka().endSpec().build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
+                Kafka scaledUpKafka = new KafkaBuilder(cluster)
+                        .editSpec()
+                            .editKafka()
+                                .withReplicas(scaleUpTo)
+                            .endKafka()
+                        .endSpec()
+                        .build();
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(scaledUpKafka);
 
                 LOGGER.info("Scaling up to {} Kafka pods", scaleUpTo);
             })))

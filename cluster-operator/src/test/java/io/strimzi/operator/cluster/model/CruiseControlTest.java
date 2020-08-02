@@ -116,7 +116,7 @@ public class CruiseControlTest {
             .build();
 
     private final Kafka resource =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
                 .editKafka()
                     .withVersion(version)
@@ -183,7 +183,7 @@ public class CruiseControlTest {
         userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
         userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
                 .editKafka()
                     .withVersion(version)
@@ -217,7 +217,7 @@ public class CruiseControlTest {
 
         jbodStorage.setVolumes(volumes);
 
-        resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
                 .editKafka()
                     .withVersion(version)
@@ -338,7 +338,7 @@ public class CruiseControlTest {
                 .endTemplate()
                 .build();
 
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
@@ -372,7 +372,7 @@ public class CruiseControlTest {
                 .endTemplate()
                 .build();
 
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
@@ -385,7 +385,7 @@ public class CruiseControlTest {
 
     @Test
     public void testCruiseControlNotDeployed() {
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null,  null);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
@@ -416,7 +416,7 @@ public class CruiseControlTest {
 
     @Test
     public void testGenerateServiceWhenDisabled()   {
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
@@ -456,7 +456,7 @@ public class CruiseControlTest {
                 .withValue("value1")
                 .build());
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewCruiseControl()
                         .withImage(ccImage)
@@ -525,7 +525,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .editKafka()
                         .withVersion(version)
@@ -559,7 +559,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editKafka()
                         .withVersion(version)
@@ -592,7 +592,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editKafka()
                         .withVersion(version)
@@ -627,7 +627,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .editKafka()
                                 .withVersion(version)
@@ -674,7 +674,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .editKafka()
                                 .withVersion(version)
@@ -717,7 +717,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .editKafka()
                                 .withVersion(version)
@@ -772,7 +772,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resourceWithCustomGoals =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .editKafka()
                                 .withVersion(version)
