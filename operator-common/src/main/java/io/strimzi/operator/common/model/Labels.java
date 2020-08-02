@@ -346,7 +346,7 @@ public class Labels {
      * @return A string which can be used as the Kuberneter label selector (e.g. key1=value1,key2=value2).
      */
     public String toSelectorString() {
-        return labels.keySet().stream().map(key -> key + "=" + labels.get(key)).collect(Collectors.joining(","));
+        return labels.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).collect(Collectors.joining(","));
     }
 
     /**
