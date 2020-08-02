@@ -49,8 +49,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -80,30 +80,6 @@ public class KafkaRebalanceStateMachineTest {
     @BeforeEach
     public void resetServer() {
         ccServer.reset();
-    }
-
-    /**
-     * Checks all conditions in the supplied status to see if type of one of them matches the supplied rebalance state.
-     *
-     * @param  received The status instance to be checked.
-     * @param expectedState The expected rebalance state to be searched for.
-     * @return True if any of the conditions in the supplied status are of a type matching the supplied expected state.
-     */
-    public static boolean expectedStatusCheck(KafkaRebalanceStatus received, KafkaRebalanceState expectedState) {
-
-        List<String> foundStatuses = new ArrayList<>();
-
-        for (Condition condition :  received.getConditions()) {
-            String type = condition.getType();
-            if (type.equals(expectedState.toString())) {
-                log.info("Found condition with expected state: " + expectedState.toString());
-                return true;
-            } else {
-                foundStatuses.add(type);
-            }
-        }
-        log.error("Expected : " + expectedState.toString() + " but found : " + foundStatuses);
-        return false;
     }
 
     /**
@@ -197,7 +173,7 @@ public class KafkaRebalanceStateMachineTest {
         return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
                 .compose(result -> {
                     context.verify(() -> {
-                        assertTrue(expectedStatusCheck(result, nextState));
+                        assertThat(result.getConditions(), State.hasStateInConditions(nextState));
                     });
                     return Future.succeededFuture(result);
                 });
@@ -530,6 +506,10 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalanceState.Stopped, KafkaRebalanceState.PendingProposal,
                 KafkaRebalanceAnnotation.refresh, null, null)
                 .onComplete(result -> checkOptimizationResults(result, context, true));
+
+    }
+
+    private static class State extends AbstractOperatorState {
 
     }
 }
