@@ -59,7 +59,7 @@ spec:
           properties:
             replicas:
               type: integer
-              minimum: 1
+              minimum: 0
               description: The number of pods in the `Deployment`.
             image:
               type: string

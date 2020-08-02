@@ -50,7 +50,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-oauth-certs/";
 
     // Configuration defaults
-    protected static final int DEFAULT_REPLICAS = 3;
     private static final int DEFAULT_HEALTHCHECK_DELAY = 60;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final int DEFAULT_HEALTHCHECK_PERIOD = 10;
@@ -117,7 +116,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.name = KafkaMirrorMakerResources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
-        this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
@@ -133,8 +131,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker);
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
-        kafkaMirrorMakerCluster.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         if (spec != null) {
+            kafkaMirrorMakerCluster.setReplicas(spec.getReplicas());
             kafkaMirrorMakerCluster.setResources(spec.getResources());
 
             if (spec.getReadinessProbe() != null) {
