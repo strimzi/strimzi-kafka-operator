@@ -13,7 +13,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 
@@ -162,7 +161,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     kafkaMirrorMaker2Status.setUrl(KafkaMirrorMaker2Resources.url(mirrorMaker2Cluster.getCluster(), namespace, KafkaMirrorMaker2Cluster.REST_API_PORT));
 
                     kafkaMirrorMaker2Status.setReplicas(mirrorMaker2Cluster.getReplicas());
-                    kafkaMirrorMaker2Status.setPodSelector(new LabelSelectorBuilder().withMatchLabels(mirrorMaker2Cluster.getSelectorLabels().toMap()).build());
+                    kafkaMirrorMaker2Status.setLabelSelector(mirrorMaker2Cluster.getSelectorLabels().toSelectorString());
 
                     this.maybeUpdateStatusCommon(resourceOperator, kafkaMirrorMaker2, reconciliation, kafkaMirrorMaker2Status,
                         (mirrormaker2, status) -> new KafkaMirrorMaker2Builder(mirrormaker2).withStatus(status).build()).onComplete(statusResult -> {

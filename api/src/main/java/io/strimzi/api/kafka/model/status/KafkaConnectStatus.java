@@ -6,11 +6,9 @@ package io.strimzi.api.kafka.model.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -34,7 +32,7 @@ public class KafkaConnectStatus extends Status {
     private String url;
     private List<ConnectorPlugin> connectorPlugins;
     private int replicas;
-    private LabelSelector podSelector;
+    private String labelSelector;
 
     @Description("The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.")
     public String getUrl() {
@@ -66,13 +64,12 @@ public class KafkaConnectStatus extends Status {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @KubeLink(group = "meta", version = "v1", kind = "labelselector")
     @Description("Label selector for pods providing this resource.")
-    public LabelSelector getPodSelector() {
-        return podSelector;
+    public String getLabelSelector() {
+        return labelSelector;
     }
 
-    public void setPodSelector(LabelSelector podSelector) {
-        this.podSelector = podSelector;
+    public void setLabelSelector(String labelSelector) {
+        this.labelSelector = labelSelector;
     }
 }

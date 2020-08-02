@@ -343,6 +343,13 @@ public class Labels {
     }
 
     /**
+     * @return A string which can be used as the Kuberneter label selector (e.g. key1=value1,key2=value2).
+     */
+    public String toSelectorString() {
+        return labels.keySet().stream().map(key -> key + "=" + labels.get(key)).collect(Collectors.joining(","));
+    }
+
+    /**
      * @param cluster The cluster.
      * @return A singleton instance with the given {@code cluster} for the {@code strimzi.io/cluster} key.
      */
