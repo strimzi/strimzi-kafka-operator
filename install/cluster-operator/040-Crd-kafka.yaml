@@ -4993,16 +4993,97 @@ spec:
                 image:
                   type: string
                   description: The docker image for the pods.
-                config:
+                tlsSidecar:
                   type: object
-                  description: 'The Cruise Control configuration. For a full list
-                    of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations.
-                    Note that properties with the following prefixes cannot be set:
-                    bootstrap.servers, client.id, zookeeper., network., security.,
-                    failed.brokers.zk.path,webserver.http., webserver.api.urlprefix,
-                    webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
-                    metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file,
-                    self.healing., anomaly.detection., ssl.'
+                  properties:
+                    image:
+                      type: string
+                      description: The docker image for the container.
+                    livenessProbe:
+                      type: object
+                      properties:
+                        failureThreshold:
+                          type: integer
+                          description: Minimum consecutive failures for the probe
+                            to be considered failed after having succeeded. Defaults
+                            to 3. Minimum value is 1.
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is
+                            first checked.
+                        periodSeconds:
+                          type: integer
+                          description: How often (in seconds) to perform the probe.
+                            Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          description: Minimum consecutive successes for the probe
+                            to be considered successful after having failed. Defaults
+                            to 1. Must be 1 for liveness. Minimum value is 1.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                          description: The timeout for each attempted health check.
+                      description: Pod liveness checking.
+                    logLevel:
+                      type: string
+                      enum:
+                      - emerg
+                      - alert
+                      - crit
+                      - err
+                      - warning
+                      - notice
+                      - info
+                      - debug
+                      description: The log level for the TLS sidecar. Default value
+                        is `notice`.
+                    readinessProbe:
+                      type: object
+                      properties:
+                        failureThreshold:
+                          type: integer
+                          description: Minimum consecutive failures for the probe
+                            to be considered failed after having succeeded. Defaults
+                            to 3. Minimum value is 1.
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is
+                            first checked.
+                        periodSeconds:
+                          type: integer
+                          description: How often (in seconds) to perform the probe.
+                            Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          description: Minimum consecutive successes for the probe
+                            to be considered successful after having failed. Defaults
+                            to 1. Must be 1 for liveness. Minimum value is 1.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                          description: The timeout for each attempted health check.
+                      description: Pod readiness checking.
+                    resources:
+                      type: object
+                      properties:
+                        limits:
+                          type: object
+                        requests:
+                          type: object
+                      description: CPU and memory resources to reserve.
+                  description: TLS sidecar configuration.
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                  description: CPU and memory resources to reserve for the Cruise
+                    Control container.
                 livenessProbe:
                   type: object
                   properties:
@@ -5089,15 +5170,6 @@ spec:
                       description: A map of additional system properties which will
                         be passed using the `-D` option to the JVM.
                   description: JVM Options for the Cruise Control container.
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                    requests:
-                      type: object
-                  description: CPU and memory resources to reserve for the Cruise
-                    Control container.
                 logging:
                   type: object
                   properties:
@@ -5117,88 +5189,6 @@ spec:
                   required:
                   - type
                   description: Logging configuration (log4j1) for Cruise Control.
-                tlsSidecar:
-                  type: object
-                  properties:
-                    image:
-                      type: string
-                      description: The docker image for the container.
-                    livenessProbe:
-                      type: object
-                      properties:
-                        failureThreshold:
-                          type: integer
-                          description: Minimum consecutive failures for the probe
-                            to be considered failed after having succeeded. Defaults
-                            to 3. Minimum value is 1.
-                        initialDelaySeconds:
-                          type: integer
-                          minimum: 0
-                          description: The initial delay before first the health is
-                            first checked.
-                        periodSeconds:
-                          type: integer
-                          description: How often (in seconds) to perform the probe.
-                            Default to 10 seconds. Minimum value is 1.
-                        successThreshold:
-                          type: integer
-                          description: Minimum consecutive successes for the probe
-                            to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
-                          type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
-                      description: Pod liveness checking.
-                    logLevel:
-                      type: string
-                      enum:
-                      - emerg
-                      - alert
-                      - crit
-                      - err
-                      - warning
-                      - notice
-                      - info
-                      - debug
-                      description: The log level for the TLS sidecar. Default value
-                        is `notice`.
-                    readinessProbe:
-                      type: object
-                      properties:
-                        failureThreshold:
-                          type: integer
-                          description: Minimum consecutive failures for the probe
-                            to be considered failed after having succeeded. Defaults
-                            to 3. Minimum value is 1.
-                        initialDelaySeconds:
-                          type: integer
-                          minimum: 0
-                          description: The initial delay before first the health is
-                            first checked.
-                        periodSeconds:
-                          type: integer
-                          description: How often (in seconds) to perform the probe.
-                            Default to 10 seconds. Minimum value is 1.
-                        successThreshold:
-                          type: integer
-                          description: Minimum consecutive successes for the probe
-                            to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
-                          type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
-                      description: Pod readiness checking.
-                    resources:
-                      type: object
-                      properties:
-                        limits:
-                          type: object
-                        requests:
-                          type: object
-                      description: CPU and memory resources to reserve.
-                  description: TLS sidecar configuration.
                 template:
                   type: object
                   properties:
@@ -5745,6 +5735,20 @@ spec:
                       description: Broker capacity for outbound network throughput
                         in bytes per second, for example 10000KB/s.
                   description: The Cruise Control `brokerCapacity` configuration.
+                config:
+                  type: object
+                  description: 'The Cruise Control configuration. For a full list
+                    of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations.
+                    Note that properties with the following prefixes cannot be set:
+                    bootstrap.servers, client.id, zookeeper., network., security.,
+                    failed.brokers.zk.path,webserver.http., webserver.api.urlprefix,
+                    webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
+                    metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file,
+                    self.healing., anomaly.detection., ssl.'
+                metrics:
+                  type: object
+                  description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
+                    for details of the structure of this configuration.
               description: Configuration for Cruise Control deployment. Deploys a
                 Cruise Control instance when specified.
             jmxTrans:
