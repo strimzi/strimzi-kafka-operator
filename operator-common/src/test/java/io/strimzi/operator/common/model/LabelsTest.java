@@ -100,6 +100,20 @@ public class LabelsTest {
     }
 
     @Test
+    public void testToLabelSelectorString()   {
+        Map sourceMap = new HashMap<String, String>(4);
+        sourceMap.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
+        sourceMap.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+        sourceMap.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
+        sourceMap.put("key1", "value1");
+        Labels labels = Labels.fromMap(sourceMap);
+
+        String expected = "key1=value1," + Labels.STRIMZI_CLUSTER_LABEL + "=my-cluster," + Labels.STRIMZI_KIND_LABEL + "=Kafka," + Labels.STRIMZI_NAME_LABEL + "=my-cluster-kafka";
+
+        assertThat(labels.toSelectorString(), is(expected));
+    }
+
+    @Test
     public void testWithUserLabels()   {
         Labels start = Labels.forStrimziCluster("my-cluster");
 
