@@ -36,7 +36,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
         "compression.type,  zstd",
 
         "log.flush.interval.ms, " + 20,
-        "log.lush.interval.messages, " + 300,
 
         "log.retention.ms,  " + 20,
         "log.retention.bytes, " + 250,
@@ -51,14 +50,14 @@ public class DynamicConfigurationSharedST extends AbstractST {
         "log.cleaner.delete.retention.ms, " + 1_000,
         "log.cleaner.io.buffer.load.factor, " + 12,
         "log.cleaner.io.buffer.size, " + 10_000,
-        "log.cleaner.io.max.bytes.per.second, + " + 1.523,
+        "log.cleaner.io.max.bytes.per.second, " + 1.523,
         "log.cleaner.max.compaction.lag.ms, " + 32_000,
         "log.cleaner.min.compaction.lag.ms, " + 1_000,
-        "log.cleaner.threads, " + 0,
+        "log.cleaner.threads, " + 1,
 
         "num.network.threads, " + 2,
         "testLogIndexLogMessageLogMessage, " + 5,
-        "log.message.timestamp.difference.max.ms, + " + 12_000,
+        "log.message.timestamp.difference.max.ms, " + 12_000,
         "log.preallocate, " + true,
 
         "max.connections, " + 10,
