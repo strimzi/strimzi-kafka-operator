@@ -93,7 +93,7 @@ public class EntityTopicOperatorTest {
             .build();
 
     private final Kafka resource =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                     .withEntityOperator(entityOperatorSpec)
                     .endSpec()
@@ -156,7 +156,7 @@ public class EntityTopicOperatorTest {
                 .withTopicOperator(entityTopicOperatorSpec)
                 .build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -180,7 +180,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testFromCrdNoEntityOperator() {
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
         assertThat(entityTopicOperator, is(nullValue()));
@@ -190,7 +190,7 @@ public class EntityTopicOperatorTest {
     public void testFromCrdNoTopicOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()

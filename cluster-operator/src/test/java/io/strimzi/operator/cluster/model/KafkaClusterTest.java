@@ -140,7 +140,7 @@ public class KafkaClusterTest {
             .withReadinessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
             .build();
 
-    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog))
+    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog))
             .editSpec()
                 .editKafka()
                     .withTlsSidecar(tlsSidecar)
@@ -320,7 +320,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateStatefulSetWithSetStorageSelector() {
         Map<String, String> selector = TestUtils.map("foo", "bar");
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -335,7 +335,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateStatefulSetWithEmptyStorageSelector() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -351,7 +351,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateStatefulSetWithSetSizeLimit() {
         String sizeLimit = "1Gi";
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -366,7 +366,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateStatefulSetWithEmptySizeLimit() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -514,7 +514,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testPvcNames() {
-        Kafka assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka assembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -531,7 +531,7 @@ public class KafkaClusterTest {
                     is(kc.VOLUME_NAME + "-" + KafkaCluster.kafkaPodName(cluster, i)));
         }
 
-        assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        assembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -613,7 +613,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testExternalRoutes() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -688,7 +688,7 @@ public class KafkaClusterTest {
         routeListenerBrokerOverride2.setBroker(2);
         routeListenerBrokerOverride2.setHost("my-host-2.cz");
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -725,7 +725,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testExternalLoadBalancers() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -773,7 +773,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testLoadBalancerExternalTrafficPolicyLocal() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -807,7 +807,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testLoadBalancerExternalTrafficPolicyCluster() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -845,7 +845,7 @@ public class KafkaClusterTest {
         sourceRanges.add("10.0.0.0/8");
         sourceRanges.add("130.211.204.1/32");
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -883,7 +883,7 @@ public class KafkaClusterTest {
         sourceRanges.add("10.0.0.0/8");
         sourceRanges.add("130.211.204.1/32");
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -931,7 +931,7 @@ public class KafkaClusterTest {
                 .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -971,7 +971,7 @@ public class KafkaClusterTest {
                 .withLoadBalancerIP("10.0.0.3")
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1011,7 +1011,7 @@ public class KafkaClusterTest {
                 .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1038,7 +1038,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testExternalNodePorts() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1080,7 +1080,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testExternalNodePortsWithAddressType() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1109,7 +1109,7 @@ public class KafkaClusterTest {
         NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
         nodePortListenerBrokerOverride.setBroker(0);
         nodePortListenerBrokerOverride.setNodePort(32101);
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
             image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
             .editSpec()
                 .editKafka()
@@ -1163,7 +1163,7 @@ public class KafkaClusterTest {
         NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
         nodePortListenerBrokerOverride.setBroker(0);
         nodePortListenerBrokerOverride.setNodePort(32101);
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
             image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
             .editSpec()
                 .editKafka()
@@ -1194,7 +1194,7 @@ public class KafkaClusterTest {
         nodePortListenerBrokerOverride.setBroker(0);
         nodePortListenerBrokerOverride.setNodePort(32101);
         nodePortListenerBrokerOverride.setAdvertisedHost("advertised.host");
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
             image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
             .editSpec()
                 .editKafka()
@@ -1351,7 +1351,7 @@ public class KafkaClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l17", "v17", "l18", "v18");
         Map<String, String> pdbAnots = TestUtils.map("a17", "v17", "a18", "v18");
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1502,7 +1502,7 @@ public class KafkaClusterTest {
                 .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
-        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
@@ -1523,7 +1523,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testReplicationPortNetworkPolicyOnOldKubernetes() {
-        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
         KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
@@ -1550,7 +1550,7 @@ public class KafkaClusterTest {
                 .endNamespaceSelector()
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1590,7 +1590,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testNoNetworkPolicyPeers() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1625,7 +1625,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGracePeriod() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1648,7 +1648,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testDefaultGracePeriod() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -1668,7 +1668,7 @@ public class KafkaClusterTest {
      */
     @Test
     public void testStunnelImage() {
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
 
         Kafka kafka = new KafkaBuilder(resource)
@@ -1727,7 +1727,7 @@ public class KafkaClusterTest {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1756,7 +1756,7 @@ public class KafkaClusterTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
@@ -1771,7 +1771,7 @@ public class KafkaClusterTest {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1793,7 +1793,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testDefaultImagePullSecrets() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -1804,7 +1804,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testSecurityContext() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1827,7 +1827,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testDefaultSecurityContext() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -1838,7 +1838,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1858,7 +1858,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testDefaultPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -1869,7 +1869,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testImagePullPolicy() {
-        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -1902,7 +1902,7 @@ public class KafkaClusterTest {
         nodePortListenerBrokerOverride2.setAdvertisedHost("my-host-2.cz");
         nodePortListenerBrokerOverride2.setAdvertisedPort(10002);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1931,7 +1931,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGetExternalServiceWithoutAdvertisedHostAndPortOverride() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -1962,7 +1962,7 @@ public class KafkaClusterTest {
         nodePortListenerBrokerOverride0.setAdvertisedHost("my-host-0.cz");
         nodePortListenerBrokerOverride0.setAdvertisedPort(10000);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -1992,7 +1992,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGetExternalAdvertisedUrlWithoutOverrides() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2015,7 +2015,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGeneratePersistentVolumeClaimsPersistentWithClaimDeletion() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2045,7 +2045,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2075,7 +2075,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2121,7 +2121,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGeneratePersistentVolumeClaimsJbod() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2187,7 +2187,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGeneratePersistentVolumeClaimsJbodWithTemplate() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2233,7 +2233,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGeneratePersistentVolumeClaimsJbodWithOverrides() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2277,7 +2277,7 @@ public class KafkaClusterTest {
     @Test
     public void testGeneratePersistentVolumeClaimsJbodWithoutVolumes() {
         assertThrows(InvalidResourceException.class, () -> {
-            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                     image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
@@ -2297,7 +2297,7 @@ public class KafkaClusterTest {
                     .withVolumes(new PersistentClaimStorageBuilder().withSize("100Gi").build())
                     .build();
 
-            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                     image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
@@ -2312,7 +2312,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGeneratePersistentVolumeClaimsEphemeral()    {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2345,7 +2345,7 @@ public class KafkaClusterTest {
 
         // Test Storage changes and how the are reverted
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2362,7 +2362,7 @@ public class KafkaClusterTest {
         assertThat(kc.getWarningConditions().size(), is(1));
         assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
-        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2379,7 +2379,7 @@ public class KafkaClusterTest {
         assertThat(kc.getWarningConditions().size(), is(1));
         assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
-        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2396,7 +2396,7 @@ public class KafkaClusterTest {
         assertThat(kc.getWarningConditions().size(), is(1));
         assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
-        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2431,7 +2431,7 @@ public class KafkaClusterTest {
                 .withBroker(2)
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2530,7 +2530,7 @@ public class KafkaClusterTest {
                 .withBroker(2)
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2571,7 +2571,7 @@ public class KafkaClusterTest {
                 .withBroker(0)
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2612,7 +2612,7 @@ public class KafkaClusterTest {
     public void testClusterRoleBindingNodePort() {
         String testNamespace = "other-namespace";
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(testNamespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(testNamespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2639,7 +2639,7 @@ public class KafkaClusterTest {
     public void testClusterRoleBindingRack() {
         String testNamespace = "other-namespace";
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(testNamespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(testNamespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2661,7 +2661,7 @@ public class KafkaClusterTest {
     public void testNullClusterRoleBinding() {
         String testNamespace = "other-namespace";
 
-        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(testNamespace, cluster, replicas,
+        Kafka kafkaAssembly = ResourceUtils.createKafka(testNamespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
@@ -2689,7 +2689,7 @@ public class KafkaClusterTest {
         testEnvs.add(envVar1);
         testEnvs.add(envVar2);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2735,7 +2735,7 @@ public class KafkaClusterTest {
         ContainerTemplate kafkaContainer = new ContainerTemplate();
         kafkaContainer.setEnv(testEnvs);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2784,7 +2784,7 @@ public class KafkaClusterTest {
         ContainerTemplate tlsContainer = new ContainerTemplate();
         tlsContainer.setEnv(testEnvs);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2819,7 +2819,7 @@ public class KafkaClusterTest {
         ContainerTemplate tlsContainer = new ContainerTemplate();
         tlsContainer.setEnv(testEnvs);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2859,7 +2859,7 @@ public class KafkaClusterTest {
         ContainerTemplate initContainer = new ContainerTemplate();
         initContainer.setEnv(testEnvs);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2901,7 +2901,7 @@ public class KafkaClusterTest {
         ContainerTemplate initContainer = new ContainerTemplate();
         initContainer.setEnv(testEnvs);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -2942,7 +2942,7 @@ public class KafkaClusterTest {
                 .endCapabilities()
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -2980,7 +2980,7 @@ public class KafkaClusterTest {
                 .endCapabilities()
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3016,7 +3016,7 @@ public class KafkaClusterTest {
                 .endCapabilities()
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3045,7 +3045,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateDeploymentWithOAuthWithClientSecret() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3092,7 +3092,7 @@ public class KafkaClusterTest {
                 .withCertificate("ca2.crt")
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3159,7 +3159,7 @@ public class KafkaClusterTest {
                 .withCertificate("ca2.crt")
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3276,7 +3276,7 @@ public class KafkaClusterTest {
         String key = "my.key";
         String secret = "my-secret";
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3307,7 +3307,7 @@ public class KafkaClusterTest {
         String key = "my.key";
         String secret = "my-secret";
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3338,7 +3338,7 @@ public class KafkaClusterTest {
         String key = "my.key";
         String secret = "my-secret";
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3369,7 +3369,7 @@ public class KafkaClusterTest {
         String key = "my.key";
         String secret = "my-secret";
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3400,7 +3400,7 @@ public class KafkaClusterTest {
         String key = "my.key";
         String secret = "my-secret";
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3427,7 +3427,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateDeploymentWithKeycloakAuthorizationMissingOAuthListeners() {
         assertThrows(InvalidResourceException.class, () -> {
-            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                     image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
@@ -3454,7 +3454,7 @@ public class KafkaClusterTest {
                 .withCertificate("tls.crt")
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -3507,7 +3507,7 @@ public class KafkaClusterTest {
     @Test
     public void testReplicasAndRelatedOptionsValidationNok() {
         String propertyName = "offsets.topic.replication.factor";
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3524,7 +3524,7 @@ public class KafkaClusterTest {
     @Test
     public void testReplicasAndRelatedOptionsValidationOk() {
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -3542,7 +3542,7 @@ public class KafkaClusterTest {
         config.put("transaction.state.log.replication.factor", 1);
         config.put("transaction.state.log.min.isr", 1);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()

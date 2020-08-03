@@ -94,7 +94,7 @@ public class KafkaConnectClusterTest {
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
             .addMapPairs(defaultConfiguration.asMap())
             .addPair("foo", "bar");
-    private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
+    private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, cluster))
             .withNewSpec()
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
@@ -149,7 +149,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster), VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnect(namespace, cluster), VERSIONS);
 
         assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
         assertThat(kc.replicas, is(KafkaConnectCluster.DEFAULT_REPLICAS));

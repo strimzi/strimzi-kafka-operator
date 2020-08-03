@@ -99,7 +99,7 @@ public class KafkaMirrorMaker2ClusterTest {
             .withBootstrapServers(bootstrapServers)
             .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
             .build();
-    private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(namespace, cluster))
+    private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .withImage(image)
@@ -158,7 +158,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(namespace, cluster), VERSIONS);
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster), VERSIONS);
 
         assertThat(kmm2.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
         assertThat(kmm2.replicas, is(KafkaMirrorMaker2Cluster.DEFAULT_REPLICAS));
