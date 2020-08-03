@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.KafkaDynamicConfiguration;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -31,6 +32,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -234,15 +236,19 @@ public class KafkaUtils {
 
         for (Pod pod : kafkaPods) {
 
-            String result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+            TestUtils.waitFor("Wait until dyn.configuration is changed", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
+                () -> {
+                    String result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
 
-            LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
+                    LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
 
-            if (!result.contains(kafkaDynamicConfiguration + "=" + value)) {
-                LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), kafkaDynamicConfiguration.toString(), value);
-                LOGGER.error("Kafka configuration {}", result);
-                return false;
-            }
+                    if (!result.contains(kafkaDynamicConfiguration + "=" + value)) {
+                        LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), kafkaDynamicConfiguration.toString(), value);
+                        LOGGER.error("Kafka configuration {}", result);
+                        return false;
+                    }
+                    return true;
+                });
         }
         return true;
     }

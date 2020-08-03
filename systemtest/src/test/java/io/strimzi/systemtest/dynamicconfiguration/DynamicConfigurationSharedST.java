@@ -13,6 +13,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -119,11 +120,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
     @Test
     void testLogCleaner() {
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_backoff_ms, 10);
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_backoff_ms, 10), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_cleaner_backoff_ms, 10), is(true));
-
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_dedupe_buffer_size, 4_000_000);
 
         assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_dedupe_buffer_size, 4_000_000), is(true));
@@ -154,15 +150,10 @@ public class DynamicConfigurationSharedST extends AbstractST {
         assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_max_compaction_lag_ms, 32_000), is(true));
         assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_cleaner_max_compaction_lag_ms, 32_000), is(true));
 
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_roll_ms, 0.3);
+        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_min_compaction_lag_ms, 1_000);
 
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_min_cleanable_ratio, 0.3), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_cleaner_min_cleanable_ratio, 0.3), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_min_compaction_lag_ms, 1);
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_min_compaction_lag_ms, 1), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_cleaner_min_compaction_lag_ms, 1), is(true));
+        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_min_compaction_lag_ms, 1_000), is(true));
+        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_cleaner_min_compaction_lag_ms, 1_000), is(true));
 
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleaner_threads, 0);
 
@@ -177,39 +168,14 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
     @Test
     void testInSyncReplicasNumIoNumNetworkNumRecoveryNumReplicaFetchers() {
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.min_insync_replicas, 1);
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.min_insync_replicas, 1), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.min_insync_replicas, 1), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.num_io_threads, 4);
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.num_io_threads, 4), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.num_io_threads, 4), is(true));
-
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.num_network_threads, 2);
 
         assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.num_network_threads, 2), is(true));
         assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.num_network_threads, 2), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleanup_policy, Arrays.asList("compact", "delete"));
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.num_recovery_threads_per_data_dir, 3), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.num_recovery_threads_per_data_dir, 3), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_cleanup_policy, 1);
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.num_replica_fetchers, 1), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.num_replica_fetchers, 1), is(true));
     }
 
     @Test
     void testLogIndexLogMessageLogMessage() {
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_index_interval_bytes, 1024);
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_index_interval_bytes, 1024), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_index_interval_bytes, 1024), is(true));
-
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_index_size_max_bytes, 5);
 
         assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_index_size_max_bytes, 5), is(true));
@@ -219,16 +185,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
         assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_message_timestamp_difference_max_ms, 12_000), is(true));
         assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_message_timestamp_difference_max_ms, 12_000), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_message_timestamp_type, "CreateTime");
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_message_timestamp_type, "CreateTime"), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_message_timestamp_type, "CreateTime"), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_message_downconversion_enable, true);
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.log_message_downconversion_enable, true), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.log_message_downconversion_enable, true), is(true));
 
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.log_preallocate, true);
 
@@ -247,11 +203,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
         assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.max_connections_per_ip, 20), is(true));
         assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.max_connections_per_ip, 20), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.max_connections_per_ip_overrides, "");
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.max_connections_per_ip_overrides, ""), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.max_connections_per_ip_overrides, ""), is(true));
     }
 
     @Test
@@ -265,11 +216,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
         assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.message_max_bytes, 2048), is(true));
         assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.message_max_bytes, 2048), is(true));
-
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, KafkaDynamicConfiguration.metric_reporters, "");
-
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, KafkaDynamicConfiguration.metric_reporters, ""), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaDynamicConfiguration.metric_reporters, ""), is(true));
     }
 
     @BeforeAll
