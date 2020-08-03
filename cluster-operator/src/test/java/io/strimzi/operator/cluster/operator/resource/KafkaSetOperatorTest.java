@@ -45,13 +45,13 @@ public class KafkaSetOperatorTest {
     }
 
     private Kafka getResource() {
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kafkaName = "foo";
+        String kafkaNamespace = "test";
         int replicas = 3;
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return new KafkaBuilder(ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName,
+        return new KafkaBuilder(ResourceUtils.createKafka(kafkaNamespace, kafkaName,
                 replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editKafka()

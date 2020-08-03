@@ -99,7 +99,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             .build();
 
     private final Kafka kafka =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                         .editKafka()
                             .withVersion(version)
@@ -763,7 +763,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         // build a Kafka cluster without the cruiseControl definition
         Kafka kafka =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .editKafka()
                                 .withVersion(version)
