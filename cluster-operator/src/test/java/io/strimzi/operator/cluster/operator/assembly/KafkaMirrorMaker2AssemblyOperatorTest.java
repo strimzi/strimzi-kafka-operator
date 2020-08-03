@@ -658,7 +658,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
-        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(kmm2Namespace, kmm2Name, 0);
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name, 0);
 
         when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
         when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
