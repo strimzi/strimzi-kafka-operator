@@ -55,6 +55,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -669,7 +670,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.reconcile(anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
@@ -691,6 +691,9 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
+
+                    // 0 Replicas - readiness should never get called.
+                    verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
 
                     // Verify service
                     List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -717,7 +720,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
                     // Verify status
                     List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
-                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getUrl(), is("http://foo-mirrormaker2-api.test.svc:8083"));
+                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getUrl(), is(nullValue()));
                     assertThat(capturedMirrorMaker2s.get(0).getStatus().getReplicas(), is(mirrorMaker2.getReplicas()));
                     assertThat(capturedMirrorMaker2s.get(0).getStatus().getPodSelector().getMatchLabels(), is(mirrorMaker2.getSelectorLabels().toMap()));
                     assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
