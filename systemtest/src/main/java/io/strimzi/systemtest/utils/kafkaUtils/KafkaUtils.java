@@ -10,8 +10,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.enums.KafkaDynamicConfiguration;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -184,11 +182,11 @@ public class KafkaUtils {
      * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
      * @param value value of specific property
      */
-    public static void updateSpecificConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+    public static void updateSpecificConfiguration(String clusterName, String kafkaDynamicConfiguration, Object value) {
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
-            config.put(kafkaDynamicConfiguration.toString(), value);
+            config.put(kafkaDynamicConfiguration, value);
             kafka.getSpec().getKafka().setConfig(config);
             LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
         });
@@ -198,24 +196,24 @@ public class KafkaUtils {
      * Method which, extends the @see updateConfiguration(String clusterName, KafkaConfiguration kafkaConfiguration, Object value) method
      * with stability and ensures after update of Kafka resource there will be not rolling update
      * @param clusterName name of the cluster where Kafka resource can be found
-     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param kafkaDynamicConfiguration key of specific property
      * @param value value of specific property
      */
-    public static void updateConfigurationWithStabilityWait(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+    public static void updateConfigurationWithStabilityWait(String clusterName, String kafkaDynamicConfiguration, Object value) {
         updateSpecificConfiguration(clusterName, kafkaDynamicConfiguration, value);
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
     }
 
     /**
      * Method, verifying that updating configuration were successfully changed inside Kafka CR
-     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param kafkaDynamicConfiguration key of specific property
      * @param value value of specific property
      */
-    public static boolean verifyCrDynamicConfiguration(String clusterName, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+    public static boolean verifyCrDynamicConfiguration(String clusterName, String kafkaDynamicConfiguration, Object value) {
         LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and excepted is {}={}",
-            kafkaDynamicConfiguration.toString(),
+            kafkaDynamicConfiguration,
             KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()),
-            kafkaDynamicConfiguration.toString(),
+            kafkaDynamicConfiguration,
             value);
 
         return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()).equals(value);
@@ -224,13 +222,13 @@ public class KafkaUtils {
     /**
      * Method, which, verifying that updating configuration were successfully changed inside Kafka pods
      * @param kafkaPodNamePrefix prefix of Kafka pods
-     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param kafkaDynamicConfiguration key of specific property
      * @param value value of specific property
      * @return
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public static boolean verifyPodDynamicConfiguration(String kafkaPodNamePrefix, KafkaDynamicConfiguration kafkaDynamicConfiguration, Object value) {
+    public static boolean verifyPodDynamicConfiguration(String kafkaPodNamePrefix, String kafkaDynamicConfiguration, Object value) {
 
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(kafkaPodNamePrefix);
 
@@ -243,7 +241,7 @@ public class KafkaUtils {
                     LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
 
                     if (!result.contains(kafkaDynamicConfiguration + "=" + value)) {
-                        LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), kafkaDynamicConfiguration.toString(), value);
+                        LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), kafkaDynamicConfiguration, value);
                         LOGGER.error("Kafka configuration {}", result);
                         return false;
                     }
