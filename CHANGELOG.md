@@ -7,6 +7,7 @@
 * Cruise Control metrics integration:
   * enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
   * new Grafana dashboard for the Cruise Control metrics
+* Removed deprecated metrics port 9404 and Prometheus annotations from services
 
 ## 0.19.0
 

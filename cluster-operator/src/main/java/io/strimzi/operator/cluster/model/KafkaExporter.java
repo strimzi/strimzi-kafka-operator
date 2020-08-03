@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -27,7 +25,6 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -153,17 +150,6 @@ public class KafkaExporter extends AbstractModel {
 
     protected void setSaramaLoggingEnabled(boolean saramaLoggingEnabled) {
         this.saramaLoggingEnabled = saramaLoggingEnabled;
-    }
-
-    public Service generateService() {
-        if (!isDeployed()) {
-            return null;
-        }
-
-        List<ServicePort> ports = new ArrayList<>(1);
-
-        ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
     }
 
     protected List<ContainerPort> getContainerPortList() {

@@ -342,13 +342,10 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public Service generateService() {
-        List<ServicePort> ports = new ArrayList<>(2);
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        }
+        List<ServicePort> ports = new ArrayList<>(1);
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
-        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceAnnotations));
     }
 
     public static String policyName(String cluster) {
