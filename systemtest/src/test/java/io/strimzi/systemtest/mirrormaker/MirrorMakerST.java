@@ -680,6 +680,7 @@ public class MirrorMakerST extends AbstractST {
             .endMetadata()
             .done();
 
+        long oldObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
         String mmDepName = KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME);
         List<String> mmPods = kubeClient().listPodNames("type", "kafka-mirror-maker");
         assertThat(mmPods.size(), is(3));
@@ -692,9 +693,11 @@ public class MirrorMakerST extends AbstractST {
 
         mmPods = kubeClient().listPodNames("type", "kafka-mirror-maker");
         KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        long actualObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
 
         assertThat(mmPods.size(), is(0));
         assertThat(mmStatus.getConditions().get(0).getType(), is("Ready"));
+        assertThat(actualObsGen, is(not(oldObsGen)));
     }
     
     @BeforeAll
