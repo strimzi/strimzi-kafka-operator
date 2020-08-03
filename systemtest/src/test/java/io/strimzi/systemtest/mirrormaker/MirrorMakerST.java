@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -23,7 +24,9 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
@@ -662,6 +665,36 @@ public class MirrorMakerST extends AbstractST {
         for (String pod : mmPods) {
             assertThat(pod.contains(mmGenName), is(true));
         }
+    }
+
+    @Test
+    void testScaleMirrorMakerToZero() {
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 3, false)
+            .editMetadata()
+                .addToLabels("type", "kafka-mirror-maker")
+            .endMetadata()
+            .done();
+
+        String mmDepName = KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME);
+        List<String> mmPods = kubeClient().listPodNames("type", "kafka-mirror-maker");
+        assertThat(mmPods.size(), is(3));
+
+        LOGGER.info("Scaling MirrorMaker to zero");
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setReplicas(0));
+
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(mmDepName), 0, true);
+
+        mmPods = kubeClient().listPodNames("type", "kafka-mirror-maker");
+        KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+
+        assertThat(mmPods.size(), is(0));
+        assertThat(mmStatus.getConditions().get(0).getType(), is("Ready"));
     }
     
     @BeforeAll
