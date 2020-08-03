@@ -192,7 +192,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
                 assertThat(connectStatus.getUrl(), is("http://foo-connect-api.test.svc:8083"));
                 assertThat(connectStatus.getReplicas(), is(connect.getReplicas()));
-                assertThat(connectStatus.getPodSelector().getMatchLabels(), is(connect.getSelectorLabels().toMap()));
+                assertThat(connectStatus.getLabelSelector(), is(connect.getSelectorLabels().toSelectorString()));
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
@@ -854,7 +854,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
                 assertThat(connectStatus.getUrl(), is("http://foo-connect-api.test.svc:8083"));
                 assertThat(connectStatus.getReplicas(), is(connect.getReplicas()));
-                assertThat(connectStatus.getPodSelector().getMatchLabels(), is(connect.getSelectorLabels().toMap()));
+                assertThat(connectStatus.getLabelSelector(), is(connect.getSelectorLabels().toSelectorString()));
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
                 if (connectorOperator) {

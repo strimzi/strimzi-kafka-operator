@@ -178,7 +178,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUrl(), is("http://foo-bridge-service.test.svc:8080"));
                 assertThat(capturedStatuses.get(0).getStatus().getReplicas(), is(bridge.getReplicas()));
-                assertThat(capturedStatuses.get(0).getStatus().getPodSelector().getMatchLabels(), is(bridge.getSelectorLabels().toMap()));
+                assertThat(capturedStatuses.get(0).getStatus().getLabelSelector(), is(bridge.getSelectorLabels().toSelectorString()));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
 
