@@ -24,7 +24,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -688,7 +687,6 @@ public class MirrorMakerST extends AbstractST {
         LOGGER.info("Scaling MirrorMaker to zero");
         KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getSpec().setReplicas(0));
 
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(mmDepName), 0, true);
 
         mmPods = kubeClient().listPodNames("type", "kafka-mirror-maker");
