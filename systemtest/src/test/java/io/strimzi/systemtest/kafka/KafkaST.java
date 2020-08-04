@@ -1505,11 +1505,11 @@ class KafkaST extends AbstractST {
         int replicas = 3;
         Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, replicas, 1)
             .editSpec()
-            .editKafka()
-            .addToConfig("offsets.topic.replication.factor", 4)
-            .addToConfig("transaction.state.log.min.isr", 4)
-            .addToConfig("transaction.state.log.replication.factor", 4)
-            .endKafka()
+                .editKafka()
+                    .addToConfig("offsets.topic.replication.factor", 4)
+                    .addToConfig("transaction.state.log.min.isr", 4)
+                    .addToConfig("transaction.state.log.replication.factor", 4)
+                .endKafka()
             .endSpec().build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
