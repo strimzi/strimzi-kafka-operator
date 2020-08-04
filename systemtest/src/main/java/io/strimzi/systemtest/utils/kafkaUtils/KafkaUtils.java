@@ -212,11 +212,11 @@ public class KafkaUtils {
     public static boolean verifyCrDynamicConfiguration(String clusterName, String kafkaDynamicConfiguration, Object value) {
         LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and excepted is {}={}",
             kafkaDynamicConfiguration,
-            KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()),
+            KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration),
             kafkaDynamicConfiguration,
             value);
 
-        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration.toString()).equals(value);
+        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration).equals(value);
     }
 
     /**
