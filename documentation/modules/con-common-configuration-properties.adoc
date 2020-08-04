@@ -228,7 +228,7 @@ spec:
 ----
 
 [id='con-common-configuration-healthchecks-{context}']
-=== livenessProbe` and `readinessProbe` healthchecks
+=== `livenessProbe` and `readinessProbe` healthchecks
 
 Use the `livenessProbe` and `readinessProbe` properties to configure healthcheck probes supported in Strimzi.
 
