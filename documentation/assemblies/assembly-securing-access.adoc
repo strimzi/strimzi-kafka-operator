@@ -1,0 +1,37 @@
+// This assembly is included in the following assemblies:
+//
+// using/master.adoc
+
+[id='assembly-securing-access-{context}']
+= Managing secure access to Kafka
+
+You can secure Kafka by managing the access each client has to the Kafka brokers.
+
+A secure connection between Kafka brokers and clients can encompass:
+
+* Encryption for data exchange
+* Authentication to prove identity
+* Authorization to allow or decline actions executed by users
+
+This chapter explains how to set up secure connections, with sections describing:
+
+* Security options for Kafka clusters and clients
+* How to secure Kafka brokers
+* How to configure external listeners
+* OAuth 2.0 token-based authentication and authorization
+
+//Config options for securing Kafka
+include::assembly-securing-kafka-brokers.adoc[leveloffset=+1]
+
+//Config options for clients
+include::assembly-securing-kafka-clients.adoc[leveloffset=+1]
+
+//Config to secure access
+include::assembly-securing-kafka.adoc[leveloffset=+1]
+
+//Kafka config for external listeners
+include::assembly-securing-external-listeners.adoc[leveloffset=+1]
+
+//oauth options
+include::oauth/assembly-oauth-authentication.adoc[leveloffset=+1]
+include::oauth/assembly-oauth-authorization.adoc[leveloffset=+1]

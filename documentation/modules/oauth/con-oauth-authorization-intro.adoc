@@ -23,5 +23,5 @@ In addition, you can configure your Kafka brokers to use OAuth 2.0 authorization
 .Additional resources
 
 * xref:assembly-oauth-authentication_str[Using OAuth 2.0 token based authentication]
-* xref:simple-acl-{context}[ACL authorization]
+* xref:con-securing-kafka-authorization-{context}[ACL authorization]
 * {keycloak-server-doc}

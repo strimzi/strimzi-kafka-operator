@@ -93,7 +93,7 @@ spec:
 <2> External listener type specified as `route`, `loadbalancer`, `nodeport` or `ingress`.
 <3> Enables TLS encryption on the listener. Not required for `route` listeners.
 <4> Authentication specified as `tls`.
-<5> (Optional, for `nodeport` listeners only) Configuration to link:{BookURLUsing}#con-kafka-broker-external-listeners-nodeports-deployment-configuration-kafka[specify a preference for the first address type used by Strimzi as the node address^].
+<5> (Optional, for `nodeport` listeners only) Configuration to link:{BookURLUsing}#type-NodePortListenerConfiguration-reference[specify a preference for the first address type used by Strimzi as the node address^].
 <6> (Optional, but not applicable to `ingress` listeners) Overrides customize the bootstrap and broker addresses advertised to clients.
 Strimzi automatically determines the addresses to advertise to clients.
 The addresses are automatically assigned by Kubernetes.
@@ -102,7 +102,7 @@ Validation is not performed on overrides.
 The override configuration differs according to the external listener type,
 so you can override hosts for `route`, DNS names or IP addresses for `loadbalancer`, and node ports (shown) for `nodeport`.
 Refer to the link:{BookURLUsing}#type-KafkaListeners-reference[Kafka listeners schema reference^] for more information on external listener `overrides`.
-<7> Authorization link:{BookURLUsing}#ref-kafka-authorization-deployment-configuration-kafka[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin^].
+<7> Authorization link:{BookURLUsing}#con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin^].
 <8> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
 
 . Create or update the `Kafka` resource.

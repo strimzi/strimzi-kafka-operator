@@ -1,0 +1,91 @@
+// Module included in the following assemblies:
+//
+// assembly-securing-kafka.adoc
+
+[id='proc-securing-kafka-{context}']
+= Securing Kafka brokers
+
+This procedure shows the steps involved in securing Kafka brokers when running Strimzi.
+
+The security implemented for Kafka brokers must be compatible with the security implemented for the clients requiring access.
+
+* `Kafka.spec.kafka.listeners.*.authentication` matches `KafkaUser.spec.authentication matches`
+* `Kafka.spec.kafka.authorization` matches `KafkaUser.spec.authorization matches`
+
+The steps show the configuration for simple authorization and a listener using TLS authentication.
+For more information about listener configuration, see the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+
+Alternatively, you can use OAuth 2.0 for token-based xref:assembly-oauth-authentication_str[authentication] and xref:assembly-oauth-authorization_str[authorization],
+or xref:type-KafkaAuthorizationOpa-reference[Open Policy Agent authorization].
+
+.Procedure
+
+. Configure the `Kafka` resource.
+.. Configure the `authorization` property for authorization.
+.. Configure the `listeners` property to create a listener with authentication.
++
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    authorization: <1>
+      type: simple
+      superUsers: <2>
+        - CN=client_1
+        - user_2
+        - CN=client_3
+    listeners:
+      tls:
+        authentication:
+          type: tls <3>
+    # ...
+  zookeeper:
+    # ...
+----
+<1> Authorization xref:con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
+<2> List of user principals with unlimited access to Kafka. _CN_ is the common name from the client certificate when TLS authentication is used.
+<3> Listener authentication mechanisms may be configured for each listener, and xref:assembly-securing-kafka-brokers-{context}[specified as mutual TLS or SCRAM-SHA].
++
+If you are configuring an external listener, the configuration is dependent on the chosen connection mechanism.
+
+. Create or update the `Kafka` resource.
++
+[source,shell,subs=+quotes]
+kubectl apply -f _KAFKA-CONFIG-FILE_
++
+The Kafka cluster is configured with a Kafka broker listener using TLS authentication.
++
+A service is created for each Kafka broker pod.
++
+A service is created to serve as the _bootstrap address_ for connection to the Kafka cluster.
++
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
+
+== Retrieving Kafka connection details
+
+You can retrieve Kafka connection details and add them as connection properties to a Kafka client.
+
+. Find the bootstrap address and port from the status of the `Kafka` resource.
++
+[source,shell, subs=+quotes]
+kubectl get kafka _KAFKA-CLUSTER-NAME_ -o jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}'
++
+Use the bootstrap address in your Kafka client to connect to the Kafka cluster.
+
+. Extract the public cluster CA certificate and password from the generated `_KAFKA-CLUSTER-NAME_-cluster-ca-cert` Secret.
++
+[source,shell,subs="+quotes"]
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
++
+[source,shell,subs="+quotes"]
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
++
+Use the certificate and password in your Kafka client to connect to the Kafka cluster with TLS encryption.
++
+NOTE: Cluster CA certificates renew automatically by default. If your are using your own Kafka listener certificates,
+you will need to xref:renewing-your-own-ca-certificates-str[renew the certificates manually^].

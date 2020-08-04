@@ -21,8 +21,7 @@ Otherwise, you have two connection options for your listener configuration when 
 For more information on the configuration of OAuth 2.0 authentication for Kafka broker listeners, see:
 
 * xref:appendix_crds#type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
-* xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[Kafka broker listeners]
-* xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[Authentication and Authorization]
+* xref:assembly-securing-access-{context}[Managing access to Kafka]
 
 .Prerequisites
 
