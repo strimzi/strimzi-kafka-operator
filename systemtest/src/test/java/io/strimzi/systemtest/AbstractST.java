@@ -20,6 +20,7 @@ import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.HelmResource;
 import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -87,7 +88,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
-    protected static final String CONSUMER_GROUP_NAME = "my-consumer-group";
 
     protected String testClass;
     protected String testName;
@@ -95,10 +95,14 @@ public abstract class AbstractST implements TestSeparator {
     protected Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
+
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
     public static final String EXAMPLE_TOPIC_NAME = "my-topic";
-
+    public static final String AVAILABILITY_TOPIC_SOURCE_NAME = "availability-topic-source-" + new Random().nextInt(Integer.MAX_VALUE);
+    public static final String AVAILABILITY_TOPIC_TARGET_NAME = "availability-topic-target-" + new Random().nextInt(Integer.MAX_VALUE);
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
+
+    public static final String CONSUMER_GROUP_NAME = ClientUtils.generateRandomConsumerGroup();
 
     /**
      * This method install Strimzi Cluster Operator based on environment variable configuration.
