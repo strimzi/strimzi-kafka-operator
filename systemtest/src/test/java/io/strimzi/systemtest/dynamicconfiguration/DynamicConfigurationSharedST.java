@@ -16,11 +16,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
 @Tag(REGRESSION)
+@Tag(DYNAMIC_CONFIGURATION)
 public class DynamicConfigurationSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfigurationSharedST.class);

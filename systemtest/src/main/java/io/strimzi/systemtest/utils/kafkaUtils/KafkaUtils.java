@@ -199,7 +199,7 @@ public class KafkaUtils {
      * @param kafkaDynamicConfiguration key of specific property
      * @param value value of specific property
      */
-    public static void updateConfigurationWithStabilityWait(String clusterName, String kafkaDynamicConfiguration, Object value) {
+    public static void  updateConfigurationWithStabilityWait(String clusterName, String kafkaDynamicConfiguration, Object value) {
         updateSpecificConfiguration(clusterName, kafkaDynamicConfiguration, value);
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
     }
