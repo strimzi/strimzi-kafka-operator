@@ -214,6 +214,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         assertThat(containerConfiguration.getProperty("default.goals"), is(fileConfiguration.getProperty("default.goals")));
         assertThat(containerConfiguration.getProperty("partition.metrics.window.ms"), is(fileConfiguration.getProperty("partition.metrics.window.ms")));
         assertThat(containerConfiguration.getProperty("goals"), is(fileConfiguration.getProperty("goals")));
+        assertThat(containerConfiguration.getProperty("cruise.control.metrics.reporter.kubernetes.mode"), is(fileConfiguration.getProperty("cruise.control.metrics.reporter.kubernetes.mode")));
     }
 
     @Order(5)
