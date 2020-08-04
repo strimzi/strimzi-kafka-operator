@@ -825,7 +825,7 @@ public class KafkaCluster extends AbstractModel {
      * @return List with generated ports
      */
     private List<ServicePort> getServicePorts() {
-        List<ServicePort> ports = new ArrayList<>(4);
+        List<ServicePort> ports = new ArrayList<>(3);
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
 
         if (listeners != null && listeners.getPlain() != null) {
@@ -834,10 +834,6 @@ public class KafkaCluster extends AbstractModel {
 
         if (listeners != null && listeners.getTls() != null) {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
-        }
-
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
         return ports;
     }
@@ -874,8 +870,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateService() {
         return createDiscoverableService("ClusterIP", getServicePorts(),
-                Util.mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), prometheusAnnotations(),
-                templateServiceAnnotations));
+                Util.mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), templateServiceAnnotations));
     }
 
     /**

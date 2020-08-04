@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
@@ -619,10 +618,6 @@ public class KafkaAssemblyOperatorTest {
                         ZookeeperCluster.serviceName(kafkaName),
                         KafkaCluster.serviceName(kafkaName),
                         KafkaCluster.headlessServiceName(kafkaName));
-
-                if (metrics)    {
-                    expectedServices.add(KafkaExporterResources.serviceName(kafkaName));
-                }
 
                 if (kafkaListeners != null && kafkaListeners.getExternal() != null) {
                     expectedServices.add(KafkaCluster.externalBootstrapServiceName(kafkaName));
