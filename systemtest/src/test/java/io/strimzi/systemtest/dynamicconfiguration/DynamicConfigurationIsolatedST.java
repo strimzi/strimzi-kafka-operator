@@ -160,6 +160,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .withNewKafkaListenerExternalLoadBalancer()
+                                .withTls(false)
                             .endKafkaListenerExternalLoadBalancer()
                         .endListeners()
                         .withConfig(kafkaConfig)
