@@ -722,7 +722,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                     List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
                     assertThat(capturedMirrorMaker2s.get(0).getStatus().getUrl(), is(nullValue()));
                     assertThat(capturedMirrorMaker2s.get(0).getStatus().getReplicas(), is(mirrorMaker2.getReplicas()));
-                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getPodSelector().getMatchLabels(), is(mirrorMaker2.getSelectorLabels().toMap()));
+                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getLabelSelector(), is(mirrorMaker2.getSelectorLabels().toSelectorString()));
                     assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
                     assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
                     async.flag();
