@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import java.util.concurrent.TimeUnit;
@@ -19,8 +23,8 @@ public enum CruiseControlServerParameters {
     private final Object defaultValue;
 
     CruiseControlServerParameters(String name, Object defaultValue) {
-            this.name = name;
-            this.defaultValue = defaultValue;
+        this.name = name;
+        this.defaultValue = defaultValue;
     }
 
     public String getName() {

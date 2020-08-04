@@ -23,7 +23,6 @@ import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -31,11 +30,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.Objects;
@@ -46,11 +47,12 @@ import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -219,10 +221,8 @@ public class CruiseControlConfigurationST extends AbstractST {
                 CruiseControlServerParameters.COMPLETED_USER_TASK_RETENTION_MS.getName(),
                 "goals", "default.goals");
 
-        IsIterableContainingInAnyOrder.containsInAnyOrder(containerConfiguration.stringPropertyNames(),
-                hasItems(checkCCProperties));
-
         for (String propertyName : checkCCProperties) {
+            assertThat(containerConfiguration.stringPropertyNames(), hasItem(propertyName));
             assertThat(containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
         }
     }
@@ -245,21 +245,23 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
+        Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
+                put(CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
+                    CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getDefaultValue());
+                put(CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
+                    CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getDefaultValue());
+                put(CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
+                    CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getDefaultValue());
+                put(CruiseControlServerParameters.REPLICATION_THROTTLE.getName(),
+                    CruiseControlServerParameters.REPLICATION_THROTTLE.getDefaultValue());
+            }};
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
 
             LOGGER.info("Changing cruise control performance tuning options");
 
             CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
-                    .addToConfig(CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
-                            CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getDefaultValue())
-                    .addToConfig(CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
-                            CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getDefaultValue())
-                    .addToConfig(CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
-                            CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getDefaultValue())
-                    .addToConfig(CruiseControlServerParameters.REPLICATION_THROTTLE.getName(),
-                            CruiseControlServerParameters.REPLICATION_THROTTLE.getDefaultValue())
-                .build();
+                    .addToConfig(performanceTuningOpts).build();
 
             kafka.getSpec().setCruiseControl(cruiseControl);
         });
@@ -272,7 +274,6 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         LOGGER.info("Verifying new configuration in the Kafka CR");
         Pod cruiseControlPod = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0);
-        String cruiseControlPodName = cruiseControlPod.getMetadata().getName();
 
         // Get CruiseControl resource properties
         for (Container container : cruiseControlPod.getSpec().getContainers()) {
@@ -289,27 +290,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         Properties containerConfiguration = new Properties();
         containerConfiguration.load(configurationContainerStream);
 
-        String configurationFileContent = cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
-        InputStream configurationFileStream = new ByteArrayInputStream(configurationFileContent.getBytes(StandardCharsets.UTF_8));
-        Properties fileConfiguration = new Properties();
-        fileConfiguration.load(configurationFileStream);
-
         LOGGER.info("Verifying Cruise control performance options are set in Kafka CR");
-        List<String> checkCCProperties = Arrays.asList(
-                CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
-                CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
-                CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
-                CruiseControlServerParameters.REPLICATION_THROTTLE.getName()
-        );
-
-        LOGGER.info("Verifying Cruise control configuration keys changes");
-        IsIterableContainingInAnyOrder.containsInAnyOrder(containerConfiguration.stringPropertyNames(),
-                hasItems(checkCCProperties));
-
-        LOGGER.info("Verifying Cruise control configuration default value changes");
-        for (String propertyName : checkCCProperties) {
-            assertThat("Check CC defined config values", containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
-        }
+//        Map<String, String> tmpContainerConfigMap = Maps.fromProperties(containerConfiguration);
+        performanceTuningOpts.forEach((key, value) ->
+                assertThat(containerConfiguration, hasEntry(key, value.toString())));
     }
     
     @BeforeAll
