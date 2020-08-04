@@ -550,17 +550,28 @@ public class ResourceUtils {
     /**
      * Create an empty Kafka MirrorMaker 2.0 custom resource
      */
-    public static KafkaMirrorMaker2 createEmptyKafkaMirrorMaker2(String namespace, String name) {
-        return new KafkaMirrorMaker2Builder()
+    public static KafkaMirrorMaker2 createEmptyKafkaMirrorMaker2(String namespace, String name, Integer replicas) {
+        KafkaMirrorMaker2Builder kafkaMirrorMaker2Builder = new KafkaMirrorMaker2Builder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(namespace)
                         .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
-                .withNewSpec()
-                .endSpec()
-                .build();
+                .withNewSpec().endSpec();
+
+        if (replicas != null) {
+            kafkaMirrorMaker2Builder
+                    .editOrNewSpec()
+                        .withReplicas(replicas)
+                    .endSpec();
+        }
+
+        return kafkaMirrorMaker2Builder.build();
+    }
+
+    public static KafkaMirrorMaker2 createEmptyKafkaMirrorMaker2(String namespace, String name) {
+        return createEmptyKafkaMirrorMaker2(namespace, name, null);
     }
 
     public static void cleanUpTemporaryTLSFiles() {
