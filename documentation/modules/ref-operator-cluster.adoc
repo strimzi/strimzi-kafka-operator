@@ -119,19 +119,21 @@ The DNS domain name is added to the Kafka broker certificates used for hostname 
 If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
 
 [discrete]
-== Logging configuration
+== Configuration by ConfigMap
+
+Currently only Cluster Operator logging can be configured by ConfigMap.
 
 A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
-This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator-logging.yaml`.
-You configure Cluster Operator logging by changing the `ConfigMap`.
+This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
+You configure Cluster Operator logging by changing the data field `log4j2.properties` in this `ConfigMap`.
 
-To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator-logging.yaml` file and then run the following command:
+To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
 [source,shell,subs=+quotes]
-kubectl apply -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator-logging.yaml_
+kubectl apply -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
 
 Alternatively, edit the `ConfigMap` directly:
 [source,shell,subs=+quotes]
-kubectl edit cm strimzi-cluster-operator-logging
+kubectl edit cm strimzi-cluster-operator
 
 To change the frequency of the reload interval, set a time in seconds in the monitorInterval option in the created ConfigMap.
 

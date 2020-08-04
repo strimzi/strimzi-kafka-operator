@@ -20,7 +20,7 @@ spec:
       volumes:
         - name: co-logging-volume
           configMap:
-            name: strimzi-cluster-operator-logging
+            name: strimzi-cluster-operator
       containers:
         - name: strimzi-cluster-operator
           image: strimzi/operator:latest

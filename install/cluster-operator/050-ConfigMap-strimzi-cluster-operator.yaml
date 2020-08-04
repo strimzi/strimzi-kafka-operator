@@ -1,7 +1,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: strimzi-cluster-operator-logging
+  name: strimzi-cluster-operator
   labels:
     app: strimzi
 data:
