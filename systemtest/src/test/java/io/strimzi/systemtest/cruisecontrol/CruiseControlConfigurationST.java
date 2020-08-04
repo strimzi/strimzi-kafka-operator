@@ -23,6 +23,7 @@ import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -49,6 +50,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -209,8 +211,16 @@ public class CruiseControlConfigurationST extends AbstractST {
         containerConfiguration.load(configurationContainerStream);
 
         LOGGER.info("Verifying that all configuration in the cruise control container matching the cruise control file {} properties", CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
-        List<String> checkCCProperties = Arrays.asList("num.partition.metrics.windows", "num.broker.metrics.windows", "partition.metrics.window.ms",
-                "broker.metrics.window.ms", "completed.user.task.retention.time.ms", "goals", "default.goals");
+        List<String> checkCCProperties = Arrays.asList(
+                CruiseControlServerParameters.PARTITION_METRICS_WINDOWS.getName(),
+                CruiseControlServerParameters.PARTITION_METRICS_WINDOW_MS.getName(),
+                CruiseControlServerParameters.BROKER_METRICS_WINDOWS.getName(),
+                CruiseControlServerParameters.BROKER_METRICS_WINDOW_MS.getName(),
+                CruiseControlServerParameters.COMPLETED_USER_TASK_RETENTION_MS.getName(),
+                "goals", "default.goals");
+
+        IsIterableContainingInAnyOrder.containsInAnyOrder(containerConfiguration.stringPropertyNames(),
+                hasItems(checkCCProperties));
 
         for (String propertyName : checkCCProperties) {
             assertThat(containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
@@ -291,8 +301,14 @@ public class CruiseControlConfigurationST extends AbstractST {
                 CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
                 CruiseControlServerParameters.REPLICATION_THROTTLE.getName()
         );
+
+        LOGGER.info("Verifying Cruise control configuration keys changes");
+        IsIterableContainingInAnyOrder.containsInAnyOrder(containerConfiguration.stringPropertyNames(),
+                hasItems(checkCCProperties));
+
+        LOGGER.info("Verifying Cruise control configuration default value changes");
         for (String propertyName : checkCCProperties) {
-            assertThat(containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
+            assertThat("Check CC defined config values", containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
         }
     }
     

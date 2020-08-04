@@ -79,6 +79,11 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     public static final String CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY = "hard.goals";
     public static final String CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY = "self.healing.goals";
     public static final String CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY = "anomaly.detection.goals";
+    public static final String CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY = "partition.metrics.window.ms";
+    public static final String CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY = "num.partition.metrics.windows";
+    public static final String CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY = "broker.metrics.window.ms";
+    public static final String CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY = "num.broker.metrics.windows";
+    public static final String CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY = "completed.user.task.retention.time.ms";
 
    /*
     * Map containing default values for required configuration properties
@@ -90,11 +95,11 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
 
     static {
         Map<String, String> config = new HashMap<>(8);
-        config.put("partition.metrics.window.ms", Integer.toString(300_000));
-        config.put("num.partition.metrics.windows", "1");
-        config.put("broker.metrics.window.ms", Integer.toString(300_000));
-        config.put("num.broker.metrics.windows", "20");
-        config.put("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
+        config.put(CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY, Integer.toString(300_000));
+        config.put(CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY, "1");
+        config.put(CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY, Integer.toString(300_000));
+        config.put(CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY, "20");
+        config.put(CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY, Long.toString(TimeUnit.DAYS.toMillis(1)));
         config.put(CRUISE_CONTROL_GOALS_CONFIG_KEY, CRUISE_CONTROL_GOALS);
         config.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY, CRUISE_CONTROL_GOALS);
         config.put(CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY, CRUISE_CONTROL_HARD_GOALS);
