@@ -228,7 +228,7 @@ spec:
 ----
 
 [id='con-common-configuration-healthchecks-{context}']
-=== livenessProbe` and `readinessProbe` healthchecks
+=== `livenessProbe` and `readinessProbe` healthchecks
 
 Use the `livenessProbe` and `readinessProbe` properties to configure healthcheck probes supported in Strimzi.
 
@@ -395,3 +395,95 @@ jvmOptions:
   gcLoggingEnabled: true
 # ...
 ----
+
+[id='con-common-configuration-listener-addresses-{context}']
+=== External listener advertised addresses
+
+By default, Strimzi tries to automatically determine the hostnames and ports that your Kafka cluster advertises to its clients.
+This is not sufficient in all situations, because the infrastructure on which Strimzi is running might not provide the right hostname or port through which Kafka can be accessed.
+You can customize the advertised hostname and port in the `overrides` property of the external listener.
+Strimzi will then automatically configure the advertised address in the Kafka brokers and add it to the broker certificates so it can be used for TLS hostname verification.
+Overriding the advertised host and ports is available for all types of external listeners.
+
+.Example of an external listener configured with overrides for advertised addresses
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: route
+    authentication:
+      type: tls
+    overrides:
+      brokers:
+      - broker: 0
+        advertisedHost: example.hostname.0
+        advertisedPort: 12340
+      - broker: 1
+        advertisedHost: example.hostname.1
+        advertisedPort: 12341
+      - broker: 2
+        advertisedHost: example.hostname.2
+        advertisedPort: 12342
+# ...
+----
+
+Additionally, you can specify the name of the bootstrap service.
+This name will be added to the broker certificates and can be used for TLS hostname verification.
+Adding the additional bootstrap address is available for all types of external listeners.
+
+.Example of an external listener configured with an additional bootstrap address
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: route
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        address: example.hostname
+# ...
+----
+
+[id='con-common-configuration-listener-network-policy-{context}']
+=== Listener network policies
+
+Use `networkPolicyPeers` configuration to restrict access to a listener at the network level.
+The following example shows a `networkPolicyPeers` configuration for a `plain` and a `tls` listener:
+
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain:
+    authentication:
+      type: scram-sha-512
+    networkPolicyPeers:
+      - podSelector:
+          matchLabels:
+            app: kafka-sasl-consumer
+      - podSelector:
+          matchLabels:
+            app: kafka-sasl-producer
+  tls:
+    authentication:
+      type: tls
+    networkPolicyPeers:
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - namespaceSelector:
+          matchLabels:
+            project: myproject2
+# ...
+----
+
+In the example:
+
+* Only application pods matching the labels `app: kafka-sasl-consumer` and `app: kafka-sasl-producer` can connect to the `plain` listener.
+The application pods must be running in the same namespace as the Kafka broker.
+* Only application pods running in namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
+
+The syntax of the `networkPolicyPeers` field is the same as the `from` field in `NetworkPolicy` resources.

@@ -1,0 +1,36 @@
+Use `KafkaListenerExternalIngress` properties to configure an external listener to expose expose Kafka using Kubernetes `Ingress` and the {NginxIngressController}.
+A dedicated `Ingress` resource is created for every Kafka broker pod.
+An additional `Ingress` resource is created to serve as a Kafka bootstrap address.
+Kafka clients can use these `Ingress` resources to connect to Kafka on port 443.
+
+.Example of an external listener of type `ingress`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    authentication:
+      type: tls
+# ...
+----
+
+NOTE: External listeners using `Ingress` have been currently tested only with the {NginxIngressController}.
+
+[id='property-ingress-listener-class-{context}']
+.`class`
+
+By default, the `Ingress` class is set to `nginx`.
+You can change the `Ingress` class using the `class` property.
+
+.Example of an external listener of type `ingress` using `Ingress` class `nginx-internal`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    class: nginx-internal
+    # ...
+# ...
+----
