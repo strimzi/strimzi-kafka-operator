@@ -31,7 +31,6 @@
   * enable/disable metrics in the KafkaBridge custom resource
   * new Grafana dashboard for the bridge metrics
 * Support dynamically changeable logging in the Entity Operator and Kafka Bridge 
-* Configure Cluster Operator logging using ConfigMap instead of environment variable and support dynamic changes
 
 ### Deprecations and removals
 

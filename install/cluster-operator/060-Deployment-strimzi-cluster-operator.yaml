@@ -18,7 +18,7 @@ spec:
     spec:
       serviceAccountName: strimzi-cluster-operator
       volumes:
-        - name: co-logging-volume
+        - name: co-config-volume
           configMap:
             name: strimzi-cluster-operator
       containers:
@@ -30,7 +30,7 @@ spec:
           args:
             - /opt/strimzi/bin/cluster_operator_run.sh
           volumeMounts:
-            - name: co-logging-volume
+            - name: co-config-volume
               mountPath: /opt/strimzi/custom-config/
           env:
             - name: STRIMZI_NAMESPACE
