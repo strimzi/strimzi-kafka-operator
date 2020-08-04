@@ -345,7 +345,7 @@ public class ZookeeperCluster extends AbstractModel {
         List<ServicePort> ports = new ArrayList<>(1);
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
-        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceAnnotations));
+        return createService("ClusterIP", ports, templateServiceAnnotations);
     }
 
     public static String policyName(String cluster) {

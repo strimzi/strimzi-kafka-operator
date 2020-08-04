@@ -9,6 +9,8 @@
   * new Grafana dashboard for the Cruise Control metrics
 * Removed deprecated metrics port 9404 and Prometheus annotations from services
 
+### Deprecations and removals
+
 ## 0.19.0
 
 * Add support for authorization using Open Policy Agent
@@ -33,6 +35,12 @@
 * Support dynamically changeable logging in the Entity Operator and Kafka Bridge 
 
 ### Deprecations and removals
+
+The `PodMonitor` resource is now used instead of the `ServiceMonitor` for scraping metrics from Kafka, ZooKeeper, Kafka Connect and so on.
+For this reason, we have removed the monitoring port `tcp-prometheus` (9404) on all the services where it is declared (Kafka bootstrap, ZooKeeper client and so on).
+It was already deprecated in the previous 0.19.0 release.
+Together with it we have also removed the Prometheus annotations from the services. If you want to add them, you can use the templates.
+Finally, the Kafka Exporter service was has been removed because it was used just for the monitoring port.
 
 #### Deprecation of Helm v2 chart
 
