@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -126,7 +127,7 @@ public class KafkaBridgeResource {
     }
 
     private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
-        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, CustomResourceStatus.Ready.getType());
     }
 
     private static KafkaBridge deleteLater(KafkaBridge kafkaBridge) {

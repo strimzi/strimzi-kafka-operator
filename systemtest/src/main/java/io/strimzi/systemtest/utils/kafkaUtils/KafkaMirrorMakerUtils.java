@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 
@@ -25,10 +26,10 @@ public class KafkaMirrorMakerUtils {
     }
 
     public static void waitForKafkaMirrorMakerReady(String clusterName) {
-        waitForKafkaMirrorMakerStatus(clusterName, "Ready");
+        waitForKafkaMirrorMakerStatus(clusterName, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForKafkaMirrorMakerNotReady(String clusterName) {
-        waitForKafkaMirrorMakerStatus(clusterName, "NotReady");
+        waitForKafkaMirrorMakerStatus(clusterName, CustomResourceStatus.NotReady.getType());
     }
 }

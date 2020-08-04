@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
@@ -60,8 +61,7 @@ class UserST extends AbstractST {
         Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(condition,
-                "True",
-                "Ready");
+                "True", CustomResourceStatus.Ready.getType());
 
         // Create sasl user with long name, shouldn't fail
         KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
@@ -79,9 +79,7 @@ class UserST extends AbstractST {
 
         verifyCRStatusCondition(condition,
                 "only up to 64 characters",
-                "InvalidResourceException",
-                "True",
-                "NotReady");
+                "InvalidResourceException", CustomResourceStatus.NotReady.getStatus(), CustomResourceStatus.NotReady.getType());
     }
 
     @Test
@@ -236,7 +234,7 @@ class UserST extends AbstractST {
                     .getStatus().getConditions().get(0);
             LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
-            assertThat(kafkaCondition.getType(), is("Ready"));
+            assertThat(kafkaCondition.getType(), is(CustomResourceStatus.Ready.getType()));
             LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
         }
     }

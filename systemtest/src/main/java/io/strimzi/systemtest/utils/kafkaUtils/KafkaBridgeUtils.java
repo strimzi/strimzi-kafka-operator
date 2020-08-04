@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.vertx.core.json.JsonArray;
@@ -76,10 +77,10 @@ public class KafkaBridgeUtils {
     }
 
     public static void waitForKafkaBridgeReady(String clusterName) {
-        waitForKafkaBridgeStatus(clusterName, "Ready");
+        waitForKafkaBridgeStatus(clusterName, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForKafkaBridgeNotReady(String clusterName) {
-        waitForKafkaBridgeStatus(clusterName, "NotReady");
+        waitForKafkaBridgeStatus(clusterName, CustomResourceStatus.NotReady.getType());
     }
 }

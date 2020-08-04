@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -42,7 +43,7 @@ public class KafkaUserUtils {
         SecretUtils.waitForSecretReady(userName,
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
 
-        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, "Ready");
+        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
@@ -81,10 +82,10 @@ public class KafkaUserUtils {
     }
 
     public static void waitForKafkaUserReady(String userName) {
-        waitForKafkaUserStatus(userName, "Ready");
+        waitForKafkaUserStatus(userName, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForKafkaUserNotReady(String userName) {
-        waitForKafkaUserStatus(userName, "NotReady");
+        waitForKafkaUserStatus(userName, CustomResourceStatus.NotReady.getType());
     }
 }

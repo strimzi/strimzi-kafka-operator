@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -62,7 +63,7 @@ public class KafkaTopicUtils {
         LOGGER.info("Waiting for KafkaTopic {} creation ", topicName);
         TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
-                    .withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready"),
+                    .withName(topicName).get().getStatus().getConditions().get(0).getType().equals(CustomResourceStatus.Ready.getType()),
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
         );
     }
@@ -72,7 +73,7 @@ public class KafkaTopicUtils {
         TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).list().getItems().stream()
                     .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
-                    .findFirst().get().getStatus().getConditions().get(0).getType().equals("Ready")
+                    .findFirst().get().getStatus().getConditions().get(0).getType().equals(CustomResourceStatus.Ready.getType())
         );
     }
 
@@ -103,11 +104,11 @@ public class KafkaTopicUtils {
     }
 
     public static void waitForKafkaTopicReady(String topicName) {
-        waitForKafkaTopicStatus(topicName, "Ready");
+        waitForKafkaTopicStatus(topicName, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForKafkaTopicNotReady(String topicName) {
-        waitForKafkaTopicStatus(topicName, "NotReady");
+        waitForKafkaTopicStatus(topicName, CustomResourceStatus.NotReady.getType());
     }
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {

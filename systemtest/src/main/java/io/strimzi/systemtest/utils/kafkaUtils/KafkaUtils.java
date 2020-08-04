@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -38,11 +39,11 @@ public class KafkaUtils {
     private KafkaUtils() {}
 
     public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, "Ready");
+        waitForKafkaStatus(clusterName, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForKafkaNotReady(String clusterName) {
-        waitForKafkaStatus(clusterName, "NotReady");
+        waitForKafkaStatus(clusterName, CustomResourceStatus.NotReady.getType());
     }
 
     public static void waitForKafkaStatus(String clusterName, String state) {

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 
@@ -25,10 +26,10 @@ public class KafkaConnectS2IUtils {
     }
 
     public static void waitForConnectS2IReady(String clusterName) {
-        waitForConnectS2IStatus(clusterName, "Ready");
+        waitForConnectS2IStatus(clusterName, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForConnectS2INotReady(String clusterName) {
-        waitForConnectS2IStatus(clusterName, "NotReady");
+        waitForConnectS2IStatus(clusterName, CustomResourceStatus.NotReady.getType());
     }
 }

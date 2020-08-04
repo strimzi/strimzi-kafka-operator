@@ -26,6 +26,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -901,7 +902,7 @@ class ConnectST extends AbstractST {
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
-        assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+        assertThat(connectStatus.getConditions().get(0).getType(), is(CustomResourceStatus.Ready.getType()));
     }
 
     @Test
@@ -941,8 +942,8 @@ class ConnectST extends AbstractST {
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
-        assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
-        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(connectStatus.getConditions().get(0).getType(), is(CustomResourceStatus.Ready.getType()));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals(CustomResourceStatus.NotReady.getType())), is(true));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 

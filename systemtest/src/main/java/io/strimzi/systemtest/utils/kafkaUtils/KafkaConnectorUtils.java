@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -58,11 +59,11 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorReady(String connectorName) {
-        waitForConnectorStatus(connectorName, "Ready");
+        waitForConnectorStatus(connectorName, CustomResourceStatus.Ready.getType());
     }
 
     public static void waitForConnectorNotReady(String connectorName) {
-        waitForConnectorStatus(connectorName, "NotReady");
+        waitForConnectorStatus(connectorName, CustomResourceStatus.NotReady.getType());
     }
 
     public static String getCreatedConnectors(String connectPodName) {

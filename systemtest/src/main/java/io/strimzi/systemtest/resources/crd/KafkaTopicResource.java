@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,7 +78,7 @@ public class KafkaTopicResource {
     }
 
     private static KafkaTopic waitFor(KafkaTopic kafkaTopic) {
-        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), kafkaTopic, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), kafkaTopic, CustomResourceStatus.Ready.getType());
     }
 
     private static KafkaTopic deleteLater(KafkaTopic kafkaTopic) {
