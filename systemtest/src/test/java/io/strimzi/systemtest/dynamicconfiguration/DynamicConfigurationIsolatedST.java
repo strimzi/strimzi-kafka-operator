@@ -205,6 +205,8 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to plain communication");
         });
 
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaListeners updatedKl = new KafkaListenersBuilder()
@@ -217,7 +219,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             kafkaClusterSpec.setListeners(updatedKl);
         });
 
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
 
         basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
                 basicExternalKafkaClientTls.sendMessagesTls(),
@@ -230,7 +232,8 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to tls communication");
         });
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaListeners updatedKl = new KafkaListenersBuilder()
@@ -242,7 +245,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             kafkaClusterSpec.setListeners(updatedKl);
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
+        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
 
         assertThrows(Exception.class, () -> {
             basicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
