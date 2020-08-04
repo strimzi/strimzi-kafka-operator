@@ -1,4 +1,4 @@
-Use `KafkaClusterSpec` properties to configure simple authorization for a `KafkaUser`.
+Use `ACLRule` properties to configure simple authorization for a `KafkaUser`.
 
 .An example `KafkaUser` with authorization
 [source,yaml,subs="attributes+"]
