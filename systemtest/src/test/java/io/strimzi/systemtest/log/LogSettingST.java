@@ -231,17 +231,6 @@ class LogSettingST extends AbstractST {
     @OpenShiftOnly
     @Order(9)
     void testLoggersConnectS2I() {
-        KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_NAME, CLUSTER_NAME, 1)
-            .editSpec()
-                .withNewInlineLogging()
-                    .withLoggers(CONNECT_LOGGERS)
-                .endInlineLogging()
-                .withNewJvmOptions()
-                    .withGcLoggingEnabled(true)
-                .endJvmOptions()
-            .endSpec()
-            .done();
-
         assertThat("KafkaConnectS2I's log level is set properly", checkLoggersLevel(CONNECT_LOGGERS, CONNECTS2I_MAP), is(true));
     }
 
@@ -554,6 +543,19 @@ class LogSettingST extends AbstractST {
                 .endJvmOptions()
                 .endSpec()
             .done();
+
+        if (cluster.isNotKubernetes()) {
+            KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_NAME, CLUSTER_NAME, 1)
+                .editSpec()
+                    .withNewInlineLogging()
+                        .withLoggers(CONNECT_LOGGERS)
+                    .endInlineLogging()
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(true)
+                    .endJvmOptions()
+                .endSpec()
+                .done();
+        }
     }
 
     private String startDeploymentMeasuring() {
