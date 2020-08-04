@@ -1,4 +1,4 @@
-Use `LoadBalancerListenerOverride` properties to configure overrides for route external listeners.
+Use `RouteListenerOverride` properties to configure overrides for route external listeners.
 
 [id='property-route-listener-overrides-{context}']
 .`overrides`
