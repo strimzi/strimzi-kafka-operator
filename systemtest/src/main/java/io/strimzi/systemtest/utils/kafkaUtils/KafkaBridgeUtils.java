@@ -7,7 +7,6 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.vertx.core.json.JsonArray;
@@ -20,6 +19,7 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -82,6 +82,6 @@ public class KafkaBridgeUtils {
     }
 
     public static void waitForKafkaBridgeNotReady(String clusterName) {
-        waitForKafkaBridgeStatus(clusterName, CustomResourceStatus.NotReady);
+        waitForKafkaBridgeStatus(clusterName, NotReady);
     }
 }

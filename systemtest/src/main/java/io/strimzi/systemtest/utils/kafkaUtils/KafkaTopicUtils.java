@@ -7,7 +7,6 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -17,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -109,7 +109,7 @@ public class KafkaTopicUtils {
     }
 
     public static void waitForKafkaTopicNotReady(String topicName) {
-        waitForKafkaTopicStatus(topicName, CustomResourceStatus.NotReady);
+        waitForKafkaTopicStatus(topicName, NotReady);
     }
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {
