@@ -686,7 +686,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mm2Pods.size(), is(0));
         assertThat(mm2Status.getConditions().get(0).getType(), is("Ready"));
         assertThat(actualObsGen, is(not(oldObsGen)));
-        assertThat(mm2Status.getUrl(), is(null));
+        assertThat(mm2Status.getUrl() == null, is(null));
     }
 
     @BeforeAll
