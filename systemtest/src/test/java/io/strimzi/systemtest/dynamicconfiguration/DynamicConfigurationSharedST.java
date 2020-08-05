@@ -31,23 +31,17 @@ public class DynamicConfigurationSharedST extends AbstractST {
     @ParameterizedTest
     @CsvSource({
         "background.threads, " + 12,
-
         "compression.type,  snappy",
         "compression.type,  gzip",
         "compression.type,  lz4",
         "compression.type,  zstd",
-
         "log.flush.interval.ms, " + 20,
-
         "log.retention.ms,  " + 20,
         "log.retention.bytes, " + 250,
-
         "log.segment.bytes,   " + 1_100,
         "log.segment.delete.delay.ms,  " + 400,
-
         "log.roll.jitter.ms, " + 500,
         "log.roll.ms, " + 300,
-
         "log.cleaner.dedupe.buffer.size, " + 4_000_000,
         "log.cleaner.delete.retention.ms, " + 1_000,
         "log.cleaner.io.buffer.load.factor, " + 12,
@@ -56,15 +50,10 @@ public class DynamicConfigurationSharedST extends AbstractST {
         "log.cleaner.max.compaction.lag.ms, " + 32_000,
         "log.cleaner.min.compaction.lag.ms, " + 1_000,
         "log.cleaner.threads, " + 1,
-
-        "num.network.threads, " + 2,
         "testLogIndexLogMessageLogMessage, " + 5,
-        "log.message.timestamp.difference.max.ms, " + 12_000,
         "log.preallocate, " + true,
-
         "max.connections, " + 10,
         "max.connections.per.ip, " + 20,
-
         "unclean.leader.election.enable, " + true,
         "message.max.bytes, " + 2048
     })

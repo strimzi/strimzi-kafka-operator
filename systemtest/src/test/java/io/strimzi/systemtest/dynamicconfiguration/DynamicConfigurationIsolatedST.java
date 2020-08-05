@@ -35,7 +35,6 @@ import java.util.Map;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -152,21 +151,23 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     }
 
     @Test
-    @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testDynamicConfigurationExternalTls() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
+                        .withNewKafkaListenerExternalNodePort()
                             .withTls(false)
-                        .endKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalNodePort()
                     .endListeners()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
             .done();
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
@@ -204,21 +205,19 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to plain communication");
         });
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaListeners updatedKl = new KafkaListenersBuilder()
-                    .withNewKafkaListenerExternalLoadBalancer()
+                    .withNewKafkaListenerExternalNodePort()
                         .withNewKafkaListenerAuthenticationTlsAuth()
                         .endKafkaListenerAuthenticationTlsAuth()
-                    .endKafkaListenerExternalLoadBalancer()
+                    .endKafkaListenerExternalNodePort()
                     .build();
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setListeners(updatedKl);
         });
 
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
 
         basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
                 basicExternalKafkaClientTls.sendMessagesTls(),
@@ -231,20 +230,18 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to tls communication");
         });
 
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaListeners updatedKl = new KafkaListenersBuilder()
-                    .withNewKafkaListenerExternalLoadBalancer()
+                    .withNewKafkaListenerExternalNodePort()
                         .withTls(false)
-                    .endKafkaListenerExternalLoadBalancer()
+                    .endKafkaListenerExternalNodePort()
                     .build();
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setListeners(updatedKl);
         });
 
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
 
         assertThrows(Exception.class, () -> {
             basicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
