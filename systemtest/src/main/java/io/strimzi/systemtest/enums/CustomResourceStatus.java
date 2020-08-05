@@ -5,23 +5,7 @@
 package io.strimzi.systemtest.enums;
 
 public enum CustomResourceStatus {
-    Ready("Ready", "True"),
-    NotReady("NotReady", "True"),
-    Warning("Warning", "True");
-
-    private final String type;
-    private final String status;
-
-    CustomResourceStatus(String type, String status) {
-        this.type = type;
-        this.status = status;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getStatus() {
-        return status;
-    }
+    Ready,
+    NotReady,
+    Warning
 }

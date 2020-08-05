@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -76,6 +75,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
@@ -1286,7 +1286,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different TLS version");
 
-        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, CustomResourceStatus.NotReady.getType());
+        KafkaConnectUtils.waitForConnectStatus(CLUSTER_NAME, NotReady);
 
         LOGGER.info("Replacing Kafka Connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
 

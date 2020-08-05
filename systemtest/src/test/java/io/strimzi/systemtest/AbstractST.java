@@ -559,11 +559,11 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String status, String type) {
+    protected void verifyCRStatusCondition(Condition condition, String status, Object type) {
         verifyCRStatusCondition(condition, null, null, status, type);
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, String type) {
+    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, Object type) {
         assertThat(condition.getStatus(), is(status));
         assertThat(condition.getType(), is(type));
 

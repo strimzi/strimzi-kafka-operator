@@ -14,12 +14,12 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaConnectorResource {
@@ -93,7 +93,7 @@ public class KafkaConnectorResource {
     }
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, CustomResourceStatus.Ready.getType());
+        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, Ready);
     }
 
     private static KafkaConnector deleteLater(KafkaConnector kafkaConnector) {

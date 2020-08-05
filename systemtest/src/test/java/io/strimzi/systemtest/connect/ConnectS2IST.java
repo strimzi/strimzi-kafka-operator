@@ -25,7 +25,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -72,6 +71,8 @@ import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -638,7 +639,7 @@ class ConnectS2IST extends AbstractST {
         KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
 
         assertThat(connectS2IPods.size(), Matchers.is(0));
-        assertThat(connectS2IStatus.getConditions().get(0).getType(), is(CustomResourceStatus.Ready.getType()));
+        assertThat(connectS2IStatus.getConditions().get(0).getType(), is(Ready));
     }
 
     @Test
@@ -677,8 +678,8 @@ class ConnectS2IST extends AbstractST {
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
 
         assertThat(connectS2IPods.size(), Matchers.is(0));
-        assertThat(connectS2IStatus.getConditions().get(0).getType(), is(CustomResourceStatus.Ready.getType()));
-        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals(CustomResourceStatus.NotReady.getType())), is(true));
+        assertThat(connectS2IStatus.getConditions().get(0).getType(), is(Ready));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 

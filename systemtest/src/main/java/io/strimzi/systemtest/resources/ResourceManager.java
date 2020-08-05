@@ -426,14 +426,14 @@ public class ResourceManager {
      * @param status - desired status
      * @return returns CR
      */
-    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status, long resourceTimeout) {
+    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Object status, long resourceTimeout) {
         LOGGER.info("Wait for {}: {} will have desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
 
         TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeout,
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
-                    .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
+                    .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status.toString())),
             () -> logCurrentResourceStatus(operation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .get()));
@@ -442,7 +442,7 @@ public class ResourceManager {
         return resource;
     }
 
-    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
+    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Object status) {
         long resourceTimeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
         return waitForResourceStatus(operation, resource, status, resourceTimeout);
     }

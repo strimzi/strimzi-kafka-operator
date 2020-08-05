@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaTopicUtils {
@@ -63,7 +64,7 @@ public class KafkaTopicUtils {
         LOGGER.info("Waiting for KafkaTopic {} creation ", topicName);
         TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
-                    .withName(topicName).get().getStatus().getConditions().get(0).getType().equals(CustomResourceStatus.Ready.getType()),
+                    .withName(topicName).get().getStatus().getConditions().get(0).getType().equals(Ready.toString()),
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
         );
     }
@@ -73,7 +74,7 @@ public class KafkaTopicUtils {
         TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).list().getItems().stream()
                     .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
-                    .findFirst().get().getStatus().getConditions().get(0).getType().equals(CustomResourceStatus.Ready.getType())
+                    .findFirst().get().getStatus().getConditions().get(0).getType().equals(Ready.toString())
         );
     }
 
@@ -98,17 +99,17 @@ public class KafkaTopicUtils {
      * @param topicName name of KafkaTopic
      * @param state desired state
      */
-    public static void waitForKafkaTopicStatus(String topicName, String state) {
+    public static void waitForKafkaTopicStatus(String topicName, Object state) {
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
         ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, state);
     }
 
     public static void waitForKafkaTopicReady(String topicName) {
-        waitForKafkaTopicStatus(topicName, CustomResourceStatus.Ready.getType());
+        waitForKafkaTopicStatus(topicName, Ready);
     }
 
     public static void waitForKafkaTopicNotReady(String topicName) {
-        waitForKafkaTopicStatus(topicName, CustomResourceStatus.NotReady.getType());
+        waitForKafkaTopicStatus(topicName, CustomResourceStatus.NotReady);
     }
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {

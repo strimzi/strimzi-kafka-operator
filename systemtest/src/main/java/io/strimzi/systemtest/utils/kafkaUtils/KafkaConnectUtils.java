@@ -6,13 +6,14 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -27,17 +28,17 @@ public class KafkaConnectUtils {
      * @param clusterName name of KafkaConnect cluster
      * @param status desired state
      */
-    public static void waitForConnectStatus(String clusterName, String status) {
+    public static void waitForConnectStatus(String clusterName, Object status) {
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaConnectResource.kafkaConnectClient(), kafkaConnect, status);
     }
 
     public static void waitForConnectReady(String clusterName) {
-        waitForConnectStatus(clusterName, CustomResourceStatus.Ready.getType());
+        waitForConnectStatus(clusterName, Ready);
     }
 
     public static void waitForConnectNotReady(String clusterName) {
-        waitForConnectStatus(clusterName, CustomResourceStatus.NotReady.getType());
+        waitForConnectStatus(clusterName, NotReady);
     }
 
     public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {

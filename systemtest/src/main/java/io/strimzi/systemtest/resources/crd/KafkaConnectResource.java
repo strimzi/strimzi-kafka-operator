@@ -17,13 +17,13 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaConnectResource {
@@ -119,7 +119,7 @@ public class KafkaConnectResource {
     }
 
     private static KafkaConnect waitFor(KafkaConnect kafkaConnect) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectClient(), kafkaConnect, CustomResourceStatus.Ready.getType());
+        return ResourceManager.waitForResourceStatus(kafkaConnectClient(), kafkaConnect, Ready);
     }
 
     private static KafkaConnect deleteLater(KafkaConnect kafkaConnect) {

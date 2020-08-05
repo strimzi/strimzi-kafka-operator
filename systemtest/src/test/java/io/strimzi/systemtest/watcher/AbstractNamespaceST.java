@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -26,6 +25,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -48,13 +48,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
                     .getStatus().getConditions().get(0);
             LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
-            return kafkaCondition.getType().equals(CustomResourceStatus.Ready.getType());
+            return kafkaCondition.getType().equals(Ready.toString());
         });
 
         Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
                 .getStatus().getConditions().get(0);
 
-        assertThat(kafkaCondition.getType(), is(CustomResourceStatus.Ready.getType()));
+        assertThat(kafkaCondition.getType(), is(Ready));
         cluster.setNamespace(previousNamespace);
     }
 

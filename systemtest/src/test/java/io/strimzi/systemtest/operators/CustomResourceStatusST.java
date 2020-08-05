@@ -27,7 +27,6 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -73,6 +72,8 @@ import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -138,7 +139,7 @@ class CustomResourceStatusST extends AbstractST {
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
-        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(CustomResourceStatus.Ready.getType()));
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready));
         LOGGER.info("KafkaUser is in desired state: Ready");
     }
 
@@ -156,7 +157,7 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
         LOGGER.info("KafkaUser Message: {}", kafkaCondition.getMessage());
         LOGGER.info("KafkaUser Reason: {}", kafkaCondition.getReason());
-        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(CustomResourceStatus.NotReady.getType()));
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(NotReady));
         LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
 
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
@@ -526,7 +527,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals(CustomResourceStatus.NotReady.getType())), is(true));
+            .anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
             .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
@@ -537,7 +538,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals(CustomResourceStatus.NotReady.getType())), is(true));
+            .anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
             .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()

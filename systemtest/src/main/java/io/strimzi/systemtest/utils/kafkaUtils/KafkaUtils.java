@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -27,6 +26,8 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -39,14 +40,14 @@ public class KafkaUtils {
     private KafkaUtils() {}
 
     public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, CustomResourceStatus.Ready.getType());
+        waitForKafkaStatus(clusterName, Ready);
     }
 
     public static void waitForKafkaNotReady(String clusterName) {
-        waitForKafkaStatus(clusterName, CustomResourceStatus.NotReady.getType());
+        waitForKafkaStatus(clusterName, NotReady);
     }
 
-    public static void waitForKafkaStatus(String clusterName, String state) {
+    public static void waitForKafkaStatus(String clusterName, Object state) {
         Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }

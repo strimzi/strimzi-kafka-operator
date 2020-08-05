@@ -5,10 +5,11 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaMirrorMaker2Utils {
@@ -20,16 +21,16 @@ public class KafkaMirrorMaker2Utils {
      * @param clusterName name of KafkaMirrorMaker2 cluster
      * @param state desired state
      */
-    public static void waitForKafkaMirrorMaker2Status(String clusterName, String state) {
+    public static void waitForKafkaMirrorMaker2Status(String clusterName, Object state) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
     }
 
     public static void waitForKafkaMirrorMaker2Ready(String clusterName) {
-        waitForKafkaMirrorMaker2Status(clusterName, CustomResourceStatus.Ready.getType());
+        waitForKafkaMirrorMaker2Status(clusterName, Ready);
     }
 
     public static void waitForKafkaMirrorMaker2NotReady(String clusterName) {
-        waitForKafkaMirrorMaker2Status(clusterName, CustomResourceStatus.NotReady.getType());
+        waitForKafkaMirrorMaker2Status(clusterName, NotReady);
     }
 }

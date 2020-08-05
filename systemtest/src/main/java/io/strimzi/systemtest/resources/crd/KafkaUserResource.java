@@ -12,12 +12,13 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
+
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
@@ -68,7 +69,7 @@ public class KafkaUserResource {
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, CustomResourceStatus.Ready.getType());
+        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, Ready);
     }
 
     private static KafkaUser deleteLater(KafkaUser kafkaUser) {

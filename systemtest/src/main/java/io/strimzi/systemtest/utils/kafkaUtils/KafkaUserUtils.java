@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -17,6 +16,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
@@ -43,7 +44,7 @@ public class KafkaUserUtils {
         SecretUtils.waitForSecretReady(userName,
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
 
-        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, CustomResourceStatus.Ready.getType());
+        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, Ready);
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
@@ -76,16 +77,16 @@ public class KafkaUserUtils {
      * @param userName name of KafkaUser
      * @param state desired state
      */
-    public static void waitForKafkaUserStatus(String userName, String state) {
+    public static void waitForKafkaUserStatus(String userName, Object state) {
         KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
         ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
     }
 
     public static void waitForKafkaUserReady(String userName) {
-        waitForKafkaUserStatus(userName, CustomResourceStatus.Ready.getType());
+        waitForKafkaUserStatus(userName, Ready);
     }
 
     public static void waitForKafkaUserNotReady(String userName) {
-        waitForKafkaUserStatus(userName, CustomResourceStatus.NotReady.getType());
+        waitForKafkaUserStatus(userName, NotReady);
     }
 }

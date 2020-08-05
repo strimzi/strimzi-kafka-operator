@@ -20,6 +20,7 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,16 +72,16 @@ public class KafkaBridgeUtils {
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static void waitForKafkaBridgeStatus(String clusterName, String state) {
+    public static void waitForKafkaBridgeStatus(String clusterName, Object state) {
         KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaBridgeResource.kafkaBridgeClient(), kafkaBridge, state);
     }
 
     public static void waitForKafkaBridgeReady(String clusterName) {
-        waitForKafkaBridgeStatus(clusterName, CustomResourceStatus.Ready.getType());
+        waitForKafkaBridgeStatus(clusterName, Ready);
     }
 
     public static void waitForKafkaBridgeNotReady(String clusterName) {
-        waitForKafkaBridgeStatus(clusterName, CustomResourceStatus.NotReady.getType());
+        waitForKafkaBridgeStatus(clusterName, CustomResourceStatus.NotReady);
     }
 }

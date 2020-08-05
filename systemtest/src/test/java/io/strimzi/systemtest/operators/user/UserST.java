@@ -12,7 +12,9 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
@@ -21,9 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -31,6 +30,8 @@ import java.net.URLEncoder;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -60,8 +61,7 @@ class UserST extends AbstractST {
 
         Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
 
-        verifyCRStatusCondition(condition,
-                "True", CustomResourceStatus.Ready.getType());
+        verifyCRStatusCondition(condition, "True", Ready);
 
         // Create sasl user with long name, shouldn't fail
         KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
@@ -79,7 +79,7 @@ class UserST extends AbstractST {
 
         verifyCRStatusCondition(condition,
                 "only up to 64 characters",
-                "InvalidResourceException", CustomResourceStatus.NotReady.getStatus(), CustomResourceStatus.NotReady.getType());
+                "InvalidResourceException", "True", NotReady);
     }
 
     @Test
@@ -234,7 +234,7 @@ class UserST extends AbstractST {
                     .getStatus().getConditions().get(0);
             LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
-            assertThat(kafkaCondition.getType(), is(CustomResourceStatus.Ready.getType()));
+            assertThat(kafkaCondition.getType(), is(Ready));
             LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
         }
     }
