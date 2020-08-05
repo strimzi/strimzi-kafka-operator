@@ -156,7 +156,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
+                .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult);
