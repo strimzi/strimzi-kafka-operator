@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// using/assembly-management-tasks.adoc
+
+[id='assembly-client-config-{context}']
+= Tuning client configuration
+
+Use configuration properties to optimize the performance of Kafka producers and consumers.
+
+A minimum set of configuration properties is required.
+But you can add or adjust properties to change how producers and consumers interact with Kafka.
+
+For example, you can tune latency and throughput of messages so that clients can respond to data in real time.
+Or you can change the configuration to provide stronger message durability guarantees.
+
+include::modules/con-producer-config-properties.adoc[leveloffset=+1]
+//To be included later
+//include::../modules/con-consumer-config-properties.adoc[leveloffset=+1]
