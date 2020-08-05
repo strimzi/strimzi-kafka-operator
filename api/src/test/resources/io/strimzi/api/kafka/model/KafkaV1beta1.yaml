@@ -154,10 +154,10 @@ spec:
     renewalDays: 32
     validityDays: 395
     generateCertificateAuthority: false
-    generateSecretOwnerReference: false
+    generateSecretOwnerReference: true
   clientsCa:
     renewalDays: 20
     validityDays: 400
     generateCertificateAuthority: false
-    generateSecretOwnerReference: false
+    generateSecretOwnerReference: true
 
