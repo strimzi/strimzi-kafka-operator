@@ -5,6 +5,7 @@ metadata:
 data:
   log4j2.properties: |
     name = COConfig
+    monitorInterval = 30
 
     appender.console.type = Console
     appender.console.name = STDOUT
@@ -25,4 +26,3 @@ data:
     logger.zookeepertrustmanager.name = org.apache.zookeeper
     logger.zookeepertrustmanager.level = WARN
     logger.zookeepertrustmanager.additivity = false
-    monitorInterval = 30

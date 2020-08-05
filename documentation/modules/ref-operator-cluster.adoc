@@ -121,7 +121,7 @@ If you are using a different DNS domain name suffix in your cluster, change the 
 [discrete]
 == Configuration by ConfigMap
 
-Currently only Cluster Operator logging can be configured by ConfigMap.
+The Cluster Operator's logging is configured by the `strimzi-cluster-operator` `ConfigMap`.
 
 A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
 This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
@@ -135,7 +135,7 @@ Alternatively, edit the `ConfigMap` directly:
 [source,shell,subs=+quotes]
 kubectl edit cm strimzi-cluster-operator
 
-To change the frequency of the reload interval, set a time in seconds in the monitorInterval option in the created ConfigMap.
+To change the frequency of the reload interval, set a time in seconds in the `monitorInterval` option in the created `ConfigMap`.
 
 If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
 
