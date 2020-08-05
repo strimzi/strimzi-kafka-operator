@@ -3,9 +3,14 @@
 // assembly-management-tasks.adoc
 
 [id="resource-status-access_{context}"]
-= Checking the status of a custom resource
+= Working with custom resources
 
-The `status` property of a Strimzi custom resource publishes information about the resource to users and tools that need it.
+You can use `kubectl` commands to retrieve information and perform other operations on Strimzi custom resources.
+
+Using `kubectl` with the `status` property of a custom resource allows you to publish information about the resource to users and tools that need it.
+
+//accessing resource information
+include::modules/con-custom-resources-info.adoc[leveloffset=+1]
 
 //reference table for resource status
 include::modules/con-custom-resources-status.adoc[leveloffset=+1]
