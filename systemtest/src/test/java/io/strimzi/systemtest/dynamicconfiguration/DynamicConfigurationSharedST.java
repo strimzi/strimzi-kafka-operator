@@ -68,7 +68,7 @@ public class DynamicConfigurationSharedST extends AbstractST {
         "unclean.leader.election.enable, " + true,
         "message.max.bytes, " + 2048
     })
-    void testParametrizedTest(String kafkaDynamicConfigurationKey, Object kafkaDynamicConfigurationValue) {
+    void testDynamicKafkaConfigurationProperties(String kafkaDynamicConfigurationKey, Object kafkaDynamicConfigurationValue) {
         // exercise phase
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, kafkaDynamicConfigurationKey, kafkaDynamicConfigurationValue);
 

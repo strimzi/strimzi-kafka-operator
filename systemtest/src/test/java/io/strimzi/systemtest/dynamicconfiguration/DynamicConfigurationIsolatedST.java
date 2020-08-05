@@ -156,17 +156,17 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     void testDynamicConfigurationExternalTls() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .withNewKafkaListenerExternalLoadBalancer()
-                                .withTls(false)
-                            .endKafkaListenerExternalLoadBalancer()
-                        .endListeners()
-                        .withConfig(kafkaConfig)
-                    .endKafka()
-                .endSpec()
-                .done();
+            .editSpec()
+                .editKafka()
+                    .withNewListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(kafkaConfig)
+                .endKafka()
+            .endSpec()
+            .done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
@@ -177,7 +177,6 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
@@ -186,7 +185,6 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
             .build();
 
