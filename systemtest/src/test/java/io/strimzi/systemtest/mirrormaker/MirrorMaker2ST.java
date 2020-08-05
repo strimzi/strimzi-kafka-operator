@@ -674,7 +674,7 @@ class MirrorMaker2ST extends AbstractST {
         List<String> mm2Pods = kubeClient().listPodNames("type", "kafka-mirror-maker-2");
         assertThat(mm2Pods.size(), is(3));
 
-        LOGGER.info("Scaling MirrorMaker to zero");
+        LOGGER.info("Scaling MirrorMaker2 to zero");
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(CLUSTER_NAME, mm2 -> mm2.getSpec().setReplicas(0));
 
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(mm2DepName), 0, true);
