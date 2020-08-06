@@ -49,15 +49,13 @@ public class DynamicConfigurationSharedST extends AbstractST {
         "log.cleaner.io.max.bytes.per.second, " + 1.523,
         "log.cleaner.max.compaction.lag.ms, " + 32_000,
         "log.cleaner.min.compaction.lag.ms, " + 1_000,
-        "log.cleaner.threads, " + 1,
-        "testLogIndexLogMessageLogMessage, " + 5,
         "log.preallocate, " + true,
         "max.connections, " + 10,
         "max.connections.per.ip, " + 20,
         "unclean.leader.election.enable, " + true,
-        "message.max.bytes, " + 2048
+        "message.max.bytes, " + 2048,
     })
-    void testDynamicKafkaConfigurationProperties(String kafkaDynamicConfigurationKey, Object kafkaDynamicConfigurationValue) {
+    void testLogDynamicKafkaConfigurationProperties(String kafkaDynamicConfigurationKey, Object kafkaDynamicConfigurationValue) {
         // exercise phase
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, kafkaDynamicConfigurationKey, kafkaDynamicConfigurationValue);
 
@@ -72,6 +70,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
     }
 }
