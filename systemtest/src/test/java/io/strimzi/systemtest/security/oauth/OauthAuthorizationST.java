@@ -14,6 +14,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClie
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.WaitException;
@@ -255,7 +256,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withKafkaUsername(TEAM_A_CLIENT)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withConsumerGroupName("x_" + CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withConsumerGroupName("x_" + ClientUtils.generateRandomConsumerGroup())
             .withOauthClientId(TEAM_B_CLIENT)
             .withClientSecretName(TEAM_B_CLIENT_SECRET)
             .withOauthTokenEndpointUri(oauthTokenEndpointUri)

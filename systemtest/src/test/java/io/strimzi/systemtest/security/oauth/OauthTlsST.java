@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -40,7 +41,6 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -261,7 +261,7 @@ public class OauthTlsST extends OauthAbstractST {
             .done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
-                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, true)
+            ClientUtils.generateRandomConsumerGroup(), 1, true)
                 .editSpec()
                     .withNewConsumer()
                         // this is for kafka tls connection
@@ -272,7 +272,7 @@ public class OauthTlsST extends OauthAbstractST {
                                 .build())
                         .endTls()
                         .withBootstrapServers(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
-                        .withGroupId("my-group" +  new Random().nextInt(Integer.MAX_VALUE))
+                        .withGroupId(ClientUtils.generateRandomConsumerGroup())
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                         .withNewKafkaClientAuthenticationOAuth()
                             .withNewTokenEndpointUri(oauthTokenEndpointUri)
@@ -327,14 +327,14 @@ public class OauthTlsST extends OauthAbstractST {
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME); 
 
         oauthExternalKafkaClientTls.setClusterName(targetKafkaCluster);
-        oauthExternalKafkaClientTls.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        oauthExternalKafkaClientTls.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         assertThat(oauthExternalKafkaClientTls.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
 
     @BeforeEach
     void setUpEach() {
-        oauthExternalKafkaClientTls.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        oauthExternalKafkaClientTls.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
     }
 
     @BeforeAll

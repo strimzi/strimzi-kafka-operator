@@ -1000,7 +1000,6 @@ class KafkaST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
@@ -1069,7 +1068,6 @@ class KafkaST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
@@ -1782,7 +1780,6 @@ class KafkaST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
@@ -1791,7 +1788,6 @@ class KafkaST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
             .build();
 

@@ -11,6 +11,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.http.HttpMethod;
@@ -25,7 +26,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -46,7 +46,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     void testCorsOriginAllowed(VertxTestContext context) {
         final String kafkaBridgeUser = "bridge-user-example";
         final String topicName = "topic-simple-receive";
-        final String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String groupId = ClientUtils.generateRandomConsumerGroup();
 
         JsonObject config = new JsonObject();
         config.put("name", kafkaBridgeUser);
@@ -82,7 +82,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     @Test
     void testCorsForbidden(VertxTestContext context) {
         final String kafkaBridgeUser = "bridge-user-example";
-        final String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String groupId = ClientUtils.generateRandomConsumerGroup();
 
         final String notAllowedOrigin = "https://evil.io";
 
