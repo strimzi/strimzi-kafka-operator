@@ -99,7 +99,7 @@ public class KafkaTopicUtils {
      * @param topicName name of KafkaTopic
      * @param state desired state
      */
-    public static void waitForKafkaTopicStatus(String topicName, Object state) {
+    public static void waitForKafkaTopicStatus(String topicName, Enum<?>  state) {
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
         ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, state);
     }

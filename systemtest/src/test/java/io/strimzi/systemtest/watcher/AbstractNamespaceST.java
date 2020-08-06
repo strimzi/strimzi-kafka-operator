@@ -54,7 +54,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
                 .getStatus().getConditions().get(0);
 
-        assertThat(kafkaCondition.getType(), is(Ready));
+        assertThat(kafkaCondition.getType(), is(Ready.toString()));
         cluster.setNamespace(previousNamespace);
     }
 

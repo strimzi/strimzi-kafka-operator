@@ -141,7 +141,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
 
-        assertThat(kafkaCondition.getType(), is(Ready));
+        assertThat(kafkaCondition.getType(), is(Ready.toString()));
 
         List<Secret> secretsOfSecondNamespace = kubeClient(SECOND_NAMESPACE).listSecrets();
 

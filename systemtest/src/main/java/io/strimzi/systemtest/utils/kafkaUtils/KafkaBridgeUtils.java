@@ -72,7 +72,7 @@ public class KafkaBridgeUtils {
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static void waitForKafkaBridgeStatus(String clusterName, Object state) {
+    public static void waitForKafkaBridgeStatus(String clusterName, Enum<?> state) {
         KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaBridgeResource.kafkaBridgeClient(), kafkaBridge, state);
     }

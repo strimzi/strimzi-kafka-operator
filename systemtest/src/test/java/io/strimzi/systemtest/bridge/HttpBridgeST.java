@@ -250,7 +250,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
-        assertThat(bridgeStatus.getConditions().get(0).getType(), is(Ready));
+        assertThat(bridgeStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @Test

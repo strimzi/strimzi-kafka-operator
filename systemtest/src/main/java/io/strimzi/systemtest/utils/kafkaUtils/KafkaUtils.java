@@ -47,7 +47,7 @@ public class KafkaUtils {
         waitForKafkaStatus(clusterName, NotReady);
     }
 
-    public static void waitForKafkaStatus(String clusterName, Object state) {
+    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
         Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }

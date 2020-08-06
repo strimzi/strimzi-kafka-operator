@@ -234,7 +234,7 @@ class UserST extends AbstractST {
                     .getStatus().getConditions().get(0);
             LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
-            assertThat(kafkaCondition.getType(), is(Ready));
+            assertThat(kafkaCondition.getType(), is(Ready.toString()));
             LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
         }
     }

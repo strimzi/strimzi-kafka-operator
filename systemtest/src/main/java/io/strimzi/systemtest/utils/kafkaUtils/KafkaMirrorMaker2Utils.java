@@ -21,7 +21,7 @@ public class KafkaMirrorMaker2Utils {
      * @param clusterName name of KafkaMirrorMaker2 cluster
      * @param state desired state
      */
-    public static void waitForKafkaMirrorMaker2Status(String clusterName, Object state) {
+    public static void waitForKafkaMirrorMaker2Status(String clusterName, Enum<?>  state) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
     }

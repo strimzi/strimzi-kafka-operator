@@ -28,7 +28,7 @@ public class KafkaConnectUtils {
      * @param clusterName name of KafkaConnect cluster
      * @param status desired state
      */
-    public static void waitForConnectStatus(String clusterName, Object status) {
+    public static void waitForConnectStatus(String clusterName, Enum<?>  status) {
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaConnectResource.kafkaConnectClient(), kafkaConnect, status);
     }

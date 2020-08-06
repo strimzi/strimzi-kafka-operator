@@ -139,7 +139,7 @@ class CustomResourceStatusST extends AbstractST {
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
-        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready));
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready.toString()));
         LOGGER.info("KafkaUser is in desired state: Ready");
     }
 
@@ -157,7 +157,7 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
         LOGGER.info("KafkaUser Message: {}", kafkaCondition.getMessage());
         LOGGER.info("KafkaUser Reason: {}", kafkaCondition.getReason());
-        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(NotReady));
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(NotReady.toString()));
         LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
 
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();

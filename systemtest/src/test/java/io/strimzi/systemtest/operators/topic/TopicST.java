@@ -177,6 +177,7 @@ public class TopicST extends AbstractST {
     @Test
     void testSendingMessagesToNonExistingTopic() {
         int sent = 0;
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -210,8 +211,8 @@ public class TopicST extends AbstractST {
                 internalKafkaClient.receiveMessagesPlain()
         );
 
-        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
-        created = hasTopicInKafka(TOPIC_NAME);
+        LOGGER.info("Checking if {} is on topic list", topicName);
+        created = hasTopicInKafka(topicName);
         assertThat(created, is(true));
 
         assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is("Ready"));

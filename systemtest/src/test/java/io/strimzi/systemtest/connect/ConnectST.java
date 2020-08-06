@@ -903,7 +903,7 @@ class ConnectST extends AbstractST {
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
-        assertThat(connectStatus.getConditions().get(0).getType(), is(Ready));
+        assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @Test
@@ -943,7 +943,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
-        assertThat(connectStatus.getConditions().get(0).getType(), is(Ready));
+        assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }

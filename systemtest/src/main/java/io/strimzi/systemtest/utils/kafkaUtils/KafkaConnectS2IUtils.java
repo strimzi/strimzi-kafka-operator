@@ -21,7 +21,7 @@ public class KafkaConnectS2IUtils {
      * @param clusterName The name of the Kafka ConnectS2I cluster.
      * @param status desired status value
      */
-    public static void waitForConnectS2IStatus(String clusterName, Object status) {
+    public static void waitForConnectS2IStatus(String clusterName, Enum<?>  status) {
         KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaConnectS2IResource.kafkaConnectS2IClient(), kafkaConnectS2I, status);
     }
