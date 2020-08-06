@@ -61,7 +61,7 @@ class UserST extends AbstractST {
 
         Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
 
-        verifyCRStatusCondition(condition, "True", Ready);
+        verifyCRStatusCondition(condition, "True", Ready.toString());
 
         // Create sasl user with long name, shouldn't fail
         KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
@@ -79,7 +79,7 @@ class UserST extends AbstractST {
 
         verifyCRStatusCondition(condition,
                 "only up to 64 characters",
-                "InvalidResourceException", "True", NotReady);
+                "InvalidResourceException", "True", NotReady.toString());
     }
 
     @Test
