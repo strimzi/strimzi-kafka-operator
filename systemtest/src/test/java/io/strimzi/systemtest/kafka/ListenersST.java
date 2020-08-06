@@ -24,6 +24,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -1399,7 +1400,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient.setCaCertName(null);
-        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
@@ -1481,7 +1482,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient.setCaCertName(null);
-        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),

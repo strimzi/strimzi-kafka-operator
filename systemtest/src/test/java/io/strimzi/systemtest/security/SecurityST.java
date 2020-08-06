@@ -28,6 +28,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -152,12 +153,11 @@ class SecurityST extends AbstractST {
             boolean zkShouldRoll,
             boolean kafkaShouldRoll,
             boolean eoShouldRoll) {
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         createKafkaCluster();
 
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         String defaultKafkaClientsPodName =
@@ -165,11 +165,10 @@ class SecurityST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -223,7 +222,7 @@ class SecurityST extends AbstractST {
                     value, is(not(initialCaCerts.get(secretName))));
         }
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
 
@@ -242,7 +241,7 @@ class SecurityST extends AbstractST {
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         LOGGER.info("Checking consumed messages to pod:{}", MirrorMaker.defaultMirrorMakerMessageHandler$::new);
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -391,7 +390,7 @@ class SecurityST extends AbstractST {
         }
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             MESSAGE_COUNT,
@@ -405,7 +404,7 @@ class SecurityST extends AbstractST {
         defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -491,13 +490,12 @@ class SecurityST extends AbstractST {
         InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/cluster-ca.crt");
         String clusterCaCert = TestUtils.readResource(secretInputStream);
         SecretUtils.createSecret(clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         // 2. Now create a cluster
         createKafkaCluster();
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         String defaultKafkaClientsPodName =
@@ -505,11 +503,10 @@ class SecurityST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -729,7 +726,7 @@ class SecurityST extends AbstractST {
 
         internalKafkaClient.setPodName(deniedKafkaClientsPodName);
         internalKafkaClient.setTopicName(topic1);
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         LOGGER.info("Verifying that {} pod is not able to exchange messages", deniedKafkaClientsPodName);
         assertThrows(AssertionError.class, () ->  {
@@ -811,7 +808,7 @@ class SecurityST extends AbstractST {
         String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(deniedKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         internalKafkaClient.setTopicName(topic1);
 
         LOGGER.info("Verifying that {} pod is  not able to exchange messages", deniedKafkaClientsPodName);
@@ -887,7 +884,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
         KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.defaultKafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
-            "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
+            ClientUtils.generateRandomConsumerGroup(), 1, true)
             .editMetadata()
                 .addToLabels("type", "kafka-mirror-maker")
             .endMetadata()
@@ -1127,7 +1124,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
                 " ACLs on only write operation", nonSuperuserName, TOPIC_NAME);
 
-        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         assertThrows(WaitException.class, () -> basicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
     }
@@ -1144,9 +1141,8 @@ class SecurityST extends AbstractST {
             .endSpec().done();
 
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         String defaultKafkaClientsPodName =
@@ -1154,7 +1150,7 @@ class SecurityST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
@@ -1203,7 +1199,7 @@ class SecurityST extends AbstractST {
             }
         );
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
@@ -1222,17 +1218,17 @@ class SecurityST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
 
         // Try to send and receive messages with new certificates
-        topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         internalKafkaClient.setTopicName(topicName);
 
         internalKafkaClient.checkProducedAndConsumedMessages(

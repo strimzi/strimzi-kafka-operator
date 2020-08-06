@@ -177,7 +177,6 @@ public class TopicST extends AbstractST {
     @Test
     void testSendingMessagesToNonExistingTopic() {
         int sent = 0;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -186,19 +185,18 @@ public class TopicST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        LOGGER.info("Checking if {} is on topic list", topicName);
-        boolean created = hasTopicInKafka(topicName);
+        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
+        boolean created = hasTopicInKafka(TOPIC_NAME);
         assertThat(created, is(false));
-        LOGGER.info("Topic with name {} is not created yet", topicName);
+        LOGGER.info("Topic with name {} is not created yet", TOPIC_NAME);
 
-        LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
+        LOGGER.info("Trying to send messages to non-existing topic {}", TOPIC_NAME);
         // Try produce multiple times in case first try will fail because topic is not exists yet
         for (int retry = 0; retry < 3; retry++) {
             sent = internalKafkaClient.sendMessagesPlain();
@@ -212,11 +210,11 @@ public class TopicST extends AbstractST {
                 internalKafkaClient.receiveMessagesPlain()
         );
 
-        LOGGER.info("Checking if {} is on topic list", topicName);
-        created = hasTopicInKafka(topicName);
+        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
+        created = hasTopicInKafka(TOPIC_NAME);
         assertThat(created, is(true));
 
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is("Ready"));
         LOGGER.info("Topic successfully created");
     }
 
@@ -245,7 +243,6 @@ public class TopicST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(isolatedKafkaCluster)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesPlain();

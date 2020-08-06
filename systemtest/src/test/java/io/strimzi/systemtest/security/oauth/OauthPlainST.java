@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerPlainBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -42,7 +43,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -164,11 +164,11 @@ public class OauthPlainST extends OauthAbstractST {
             .done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafkaCluster,
-                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
+                ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editSpec()
                     .withNewConsumer()
                         .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-                        .withGroupId("my-group" +  new Random().nextInt(Integer.MAX_VALUE))
+                        .withGroupId(ClientUtils.generateRandomConsumerGroup())
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                         .withNewKafkaClientAuthenticationOAuth()
                             .withNewTokenEndpointUri(oauthTokenEndpointUri)
@@ -199,7 +199,7 @@ public class OauthPlainST extends OauthAbstractST {
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + CLUSTER_NAME + " to " + targetKafkaCluster,
             Constants.GLOBAL_CLIENTS_POLL, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
-                oauthExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+                oauthExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
                 return oauthExternalKafkaClient.receiveMessagesPlain() == MESSAGE_COUNT;
             });
     }
@@ -285,7 +285,7 @@ public class OauthPlainST extends OauthAbstractST {
         TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
-                oauthExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+                oauthExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
                 return oauthExternalKafkaClient.receiveMessagesPlain() == MESSAGE_COUNT;
             });
     }
@@ -390,7 +390,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @BeforeEach
     void setUpEach() {
-        oauthExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        oauthExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
     }
 
     @BeforeAll

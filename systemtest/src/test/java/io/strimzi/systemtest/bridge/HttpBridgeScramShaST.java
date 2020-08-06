@@ -33,8 +33,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
-import java.util.Random;
-
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -58,16 +56,15 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     @Test
     void testSendSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
-        String topicName = "topic-simple-send-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
         JsonObject records = BridgeUtils.generateHttpMessages(messageCount);
-        JsonObject response = BridgeUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
+        JsonObject response = BridgeUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, TOPIC_NAME, client);
         KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
         BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
@@ -80,12 +77,11 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
     @Test
     void testReceiveSimpleMessageTlsScramSha() throws Exception {
-        String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
         BasicExternalKafkaClient kafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
@@ -97,46 +93,42 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         assertThat(kafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         String name = "kafka-consumer-simple-receive";
-        String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();
         config.put("name", name);
         config.put("format", "json");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create consumer
-        JsonObject response = BridgeUtils.createBridgeConsumer(config, bridgeHost, bridgePort, groupId, client);
+        JsonObject response = BridgeUtils.createBridgeConsumer(config, bridgeHost, bridgePort, CONSUMER_GROUP_NAME, client);
         assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));
         // Create topics json
         JsonArray topic = new JsonArray();
-        topic.add(topicName);
+        topic.add(TOPIC_NAME);
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
         // Subscribe
-        assertThat(BridgeUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
+        assertThat(BridgeUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, CONSUMER_GROUP_NAME, name, client), is(true));
         // Try to consume messages
-        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, CONSUMER_GROUP_NAME, name, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+            bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, CONSUMER_GROUP_NAME, name, client);
         }
 
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, name, client), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, CONSUMER_GROUP_NAME, name, client), is(true));
     }
 
     @Test
     void testScramShaAuthWithWeirdNamedUser() throws Exception {
-        String topicName = "topic" + rng.nextInt(Integer.MAX_VALUE);
-        String groupId = "my-group-" + rng.nextInt(Integer.MAX_VALUE);
-
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
         // Create user with normal name -> we don't need to set weird name for consumer
         String aliceUser = "alice";
 
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         // Create user
         KafkaUserResource.scramShaUser(CLUSTER_NAME, weirdUserName).done();
         KafkaUserResource.scramShaUser(CLUSTER_NAME, aliceUser).done();
@@ -147,20 +139,20 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         // Create consumer
-        JsonObject response = BridgeUtils.createBridgeConsumer(config, bridgeHost, bridgePort, groupId, client);
+        JsonObject response = BridgeUtils.createBridgeConsumer(config, bridgeHost, bridgePort, CONSUMER_GROUP_NAME, client);
         assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(aliceUser));
 
         // Create topics json
         JsonArray topic = new JsonArray();
-        topic.add(topicName);
+        topic.add(TOPIC_NAME);
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
 
         // Subscribe
-        assertThat(BridgeUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
+        assertThat(BridgeUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, CONSUMER_GROUP_NAME, aliceUser, client), is(true));
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
@@ -170,14 +162,14 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         // Try to consume messages
-        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
+        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, CONSUMER_GROUP_NAME, aliceUser, client);
         if (bridgeResponse.size() == 0) {
             // Real consuming
-            bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
+            bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, CONSUMER_GROUP_NAME, aliceUser, client);
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, CONSUMER_GROUP_NAME, aliceUser, client), is(true));
     }
 
     @BeforeAll

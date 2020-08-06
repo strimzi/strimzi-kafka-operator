@@ -15,6 +15,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -52,7 +53,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -556,7 +556,7 @@ public class TracingST extends AbstractST {
         KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
-                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
+            ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
                 .endMetadata()
@@ -688,7 +688,7 @@ public class TracingST extends AbstractST {
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
-                "my-group" + new Random().nextInt(Integer.MAX_VALUE), 1, false)
+            ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
                 .endMetadata()

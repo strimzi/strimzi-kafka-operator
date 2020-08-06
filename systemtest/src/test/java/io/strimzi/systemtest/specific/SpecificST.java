@@ -18,6 +18,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClie
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.executor.Exec;
@@ -100,7 +101,6 @@ public class SpecificST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -237,7 +237,7 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");
 
-        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         basicExternalKafkaClient.setMessageCount(2 * MESSAGE_COUNT);
 
         assertThrows(TimeoutException.class, () ->

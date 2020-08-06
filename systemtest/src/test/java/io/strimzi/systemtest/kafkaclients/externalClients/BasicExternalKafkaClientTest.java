@@ -54,7 +54,6 @@ class BasicExternalKafkaClientTest {
             .withMessageCount(MESSAGE_COUNT)
             .withNamespaceName(".")
             .withClusterName(".")
-            .withConsumerGroupName("consumer-group" + "-" + new Random().nextInt(Integer.MAX_VALUE))
             .withKafkaClientProperties(
                 new KafkaClientProperties.KafkaClientPropertiesBuilder()
                     .withKeySerializerConfig(StringSerializer.class)

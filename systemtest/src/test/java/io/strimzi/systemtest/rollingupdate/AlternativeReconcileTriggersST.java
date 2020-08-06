@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -137,18 +136,17 @@ class AlternativeReconcileTriggersST extends AbstractST {
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                 || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
-
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
 
         // Create new topic to ensure, that ZK is working properly
-        String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
