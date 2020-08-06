@@ -672,7 +672,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for dynamic change in the kafka pod");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                 "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                 .contains("root=DEBUG"));
 
@@ -714,9 +714,9 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for dynamic change in the kafka pod");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
-                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
-                        .contains("root=INFO"));
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                    "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                    .contains("root=INFO"));
 
         assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
     }
