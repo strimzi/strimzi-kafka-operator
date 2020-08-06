@@ -179,14 +179,14 @@ public class KafkaUtils {
     /**
      * Method which, update/replace Kafka configuration
      * @param clusterName name of the cluster where Kafka resource can be found
-     * @param kafkaDynamicConfiguration enum instance, which defines all supported configurations
+     * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static void updateSpecificConfiguration(String clusterName, String kafkaDynamicConfiguration, Object value) {
+    public static void updateSpecificConfiguration(String clusterName, String brokerConfigName, Object value) {
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
-            config.put(kafkaDynamicConfiguration, value);
+            config.put(brokerConfigName, value);
             kafka.getSpec().getKafka().setConfig(config);
             LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
         });
@@ -196,39 +196,39 @@ public class KafkaUtils {
      * Method which, extends the @see updateConfiguration(String clusterName, KafkaConfiguration kafkaConfiguration, Object value) method
      * with stability and ensures after update of Kafka resource there will be not rolling update
      * @param clusterName name of the cluster where Kafka resource can be found
-     * @param kafkaDynamicConfiguration key of specific property
+     * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static void  updateConfigurationWithStabilityWait(String clusterName, String kafkaDynamicConfiguration, Object value) {
-        updateSpecificConfiguration(clusterName, kafkaDynamicConfiguration, value);
+    public static void  updateConfigurationWithStabilityWait(String clusterName, String brokerConfigName, Object value) {
+        updateSpecificConfiguration(clusterName, brokerConfigName, value);
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
     }
 
     /**
-     * Method, verifying that updating configuration were successfully changed inside Kafka CR
-     * @param kafkaDynamicConfiguration key of specific property
+     * Verifies that updated configuration was successfully changed inside Kafka CR
+     * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static boolean verifyCrDynamicConfiguration(String clusterName, String kafkaDynamicConfiguration, Object value) {
+    public static boolean verifyCrDynamicConfiguration(String clusterName, String brokerConfigName, Object value) {
         LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and excepted is {}={}",
-            kafkaDynamicConfiguration,
-            KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration),
-            kafkaDynamicConfiguration,
+            brokerConfigName,
+            KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
+            brokerConfigName,
             value);
 
-        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(kafkaDynamicConfiguration).equals(value);
+        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
     }
 
     /**
      * Method, which, verifying that updating configuration were successfully changed inside Kafka pods
      * @param kafkaPodNamePrefix prefix of Kafka pods
-     * @param kafkaDynamicConfiguration key of specific property
+     * @param brokerConfigName key of specific property
      * @param value value of specific property
      * @return
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public static boolean verifyPodDynamicConfiguration(String kafkaPodNamePrefix, String kafkaDynamicConfiguration, Object value) {
+    public static boolean verifyPodDynamicConfiguration(String kafkaPodNamePrefix, String brokerConfigName, Object value) {
 
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(kafkaPodNamePrefix);
 
@@ -240,8 +240,8 @@ public class KafkaUtils {
 
                     LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
 
-                    if (!result.contains(kafkaDynamicConfiguration + "=" + value)) {
-                        LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), kafkaDynamicConfiguration, value);
+                    if (!result.contains(brokerConfigName + "=" + value)) {
+                        LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), brokerConfigName, value);
                         LOGGER.error("Kafka configuration {}", result);
                         return false;
                     }
