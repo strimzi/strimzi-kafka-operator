@@ -9,7 +9,9 @@ public enum CruiseControlEndpoints {
     STATE("/kafkacruisecontrol/state"),
     REBALANCE("/kafkacruisecontrol/rebalance"),
     STOP("/kafkacruisecontrol/stop_proposal_execution"),
-    USER_TASKS("/kafkacruisecontrol/user_tasks");
+    USER_TASKS("/kafkacruisecontrol/user_tasks"),
+
+    METRICS("/metrics");
 
     String path;
 

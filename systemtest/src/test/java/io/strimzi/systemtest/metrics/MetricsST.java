@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -16,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -38,10 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -52,6 +56,7 @@ import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
@@ -329,6 +334,26 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
+    @Test
+    @Tag(CRUISE_CONTROL)
+    void testCruiseControlMetrics() {
+
+        String cruiseControlMetrics = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.METRICS);
+
+        Matcher regex = Pattern.compile("^([^#].*)\\s+([^\\s]*)$", Pattern.MULTILINE).matcher(cruiseControlMetrics);
+
+        while (regex.find()) {
+
+            String metricKey = regex.group(1);
+            Object metricValue = regex.group(2);
+
+            LOGGER.debug("{} -> {}", metricKey, metricValue);
+
+            assertThat(metricKey, not(nullValue()));
+            assertThat(metricValue, not(nullValue()));
+        }
+    }
+
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {
         ArrayList<String> command = new ArrayList<>();
         command.add("cat");
@@ -360,15 +385,16 @@ public class MetricsST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3)
-                .editOrNewSpec()
-                    .editEntityOperator()
-                        .editUserOperator()
-                            .withReconciliationIntervalSeconds(30)
-                        .endUserOperator()
-                    .endEntityOperator()
-                .endSpec()
-                .done();
+        KafkaResource.kafkaWithMetricsAndCruiseControlWithMetrics(CLUSTER_NAME, 3, 3)
+            .editOrNewSpec()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withReconciliationIntervalSeconds(30)
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
+
         KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
