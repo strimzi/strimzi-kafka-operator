@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -110,22 +111,23 @@ public class KafkaRoller {
     protected String namespace;
     private final AdminClientProvider adminClientProvider;
     private final String kafkaConfig;
+    private final String kafkaLogging;
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
 
     public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
             long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
             StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-            String kafkaConfig, KafkaVersion kafkaVersion) {
+            String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion) {
         this(vertx, reconciliation, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
-                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaVersion);
+                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaLogging, kafkaVersion);
     }
 
     public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
                        AdminClientProvider adminClientProvider,
-                       String kafkaConfig, KafkaVersion kafkaVersion) {
+                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion) {
         this.namespace = sts.getMetadata().getNamespace();
         this.cluster = Labels.cluster(sts);
         this.numPods = sts.getSpec().getReplicas();
@@ -138,6 +140,7 @@ public class KafkaRoller {
         this.pollingIntervalMs = pollingIntervalMs;
         this.adminClientProvider = adminClientProvider;
         this.kafkaConfig = kafkaConfig;
+        this.kafkaLogging = kafkaLogging;
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
     }
@@ -271,13 +274,15 @@ public class KafkaRoller {
         private final boolean needsRestart;
         private final boolean needsReconfig;
         private final KafkaBrokerConfigurationDiff diff;
+        private final KafkaBrokerLoggingConfigurationDiff logDiff;
         private final Admin adminClient;
 
-        public RestartPlan(Admin adminClient, boolean needsRestart, boolean needsReconfig, KafkaBrokerConfigurationDiff diff) {
+        public RestartPlan(Admin adminClient, boolean needsRestart, boolean needsReconfig, KafkaBrokerConfigurationDiff diff, KafkaBrokerLoggingConfigurationDiff logDiff) {
             this.adminClient = adminClient;
             this.needsRestart = needsRestart;
             this.needsReconfig = needsReconfig;
             this.diff = diff;
+            this.logDiff = logDiff;
         }
 
         Admin adminClient() {
@@ -363,7 +368,7 @@ public class KafkaRoller {
 
         if (restartPlan.needsReconfig) {
             try {
-                dynamicUpdateBrokerConfig(podId, restartPlan.adminClient(), restartPlan.diff);
+                dynamicUpdateBrokerConfig(podId, restartPlan.adminClient(), restartPlan.diff, restartPlan.logDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
                 log.debug("{}: Pod {} could not be updated dynamically ({}), will restart", reconciliation, podId, e);
@@ -407,10 +412,12 @@ public class KafkaRoller {
         // Unless the annotation is present, check the pod is at least ready.
         boolean needsRestart = reasonToRestartPod != null && !reasonToRestartPod.isEmpty();
         KafkaBrokerConfigurationDiff diff = null;
+        KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
         boolean needsReconfig = false;
         Admin adminClient = adminClient(podId, false);
         if (!needsRestart) {
             diff = diff(adminClient, podId);
+            loggingDiff = logging(adminClient, podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
                     log.info("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
@@ -420,10 +427,14 @@ public class KafkaRoller {
                     needsRestart = true;
                 }
             }
+            if (loggingDiff.getDiffSize() > 0) {
+                log.info("{}: Pod {} logging needs to be reconfigured.", reconciliation, podId);
+                needsReconfig = true;
+            }
         } else {
             log.info("{}: Pod {} needs to be restarted. Reason: {}", reconciliation, podId, reasonToRestartPod);
         }
-        return new RestartPlan(adminClient, needsRestart, needsReconfig, diff);
+        return new RestartPlan(adminClient, needsRestart, needsReconfig, diff, loggingDiff);
     }
 
     /**
@@ -433,22 +444,47 @@ public class KafkaRoller {
      * @return a Future which completes with the config of the given broker.
      */
     protected Config brokerConfig(Admin ac, int brokerId) throws ForceableProblem, InterruptedException {
-        ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(brokerId));
+        ConfigResource resource = Util.getBrokersConfig(brokerId);
         return await(Util.kafkaFutureToVertxFuture(vertx, ac.describeConfigs(singletonList(resource)).values().get(resource)),
             30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker config", error)
         );
     }
 
-    protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff)
+    /**
+     * Returns a Future which completes with the logging of the given broker.
+     * @param ac The admin client
+     * @param brokerId The id of the broker.
+     * @return a Future which completes with the logging of the given broker.
+     */
+    protected Config brokerLogging(Admin ac, int brokerId) throws ForceableProblem, InterruptedException {
+        ConfigResource resource = Util.getBrokersLogging(brokerId);
+        return await(Util.kafkaFutureToVertxFuture(vertx, ac.describeConfigs(singletonList(resource)).values().get(resource)),
+                30, TimeUnit.SECONDS,
+            error -> new ForceableProblem("Error getting broker logging", error)
+        );
+    }
+
+    protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
             throws ForceableProblem, InterruptedException {
-        Map<ConfigResource, Collection<AlterConfigOp>> configDiff = configurationDiff.getConfigDiff();
-        log.debug("{}: Altering broker {} with {}", reconciliation, podId, configDiff);
-        AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(configDiff);
+        Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig = new HashMap<>(2);
+        configurationDiff.addConfigDiff(updatedConfig);
+        logDiff.addLoggingDiff(updatedConfig);
+
+        log.info("{}: Altering broker {} with {}", reconciliation, podId, updatedConfig);
+
+        AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(podId)));
+        KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(new ConfigResource(ConfigResource.Type.BROKER_LOGGER, Integer.toString(podId)));
         await(Util.kafkaFutureToVertxFuture(vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error doing dynamic update", error));
-        log.debug("{}: Dynamic AlterConfig for broker {} was successful.", reconciliation, podId);
+        try {
+            await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS, e -> new UnforceableProblem("Error performing dynamic logging update for pod " + podId, e));
+        } catch (UnforceableProblem unforceableProblem) {
+            log.warn("Error performing dynamic logging update for pod {}. ", podId, unforceableProblem);
+        }
+
+        log.info("{}: Dynamic AlterConfig for broker {} was successful.", reconciliation, podId);
     }
 
     private KafkaBrokerConfigurationDiff diff(Admin ac, int podId)
@@ -456,6 +492,13 @@ public class KafkaRoller {
         Config brokerConfig = brokerConfig(ac, podId);
         log.trace("{}: Broker {}: description {}", reconciliation, podId, brokerConfig);
         return new KafkaBrokerConfigurationDiff(brokerConfig, kafkaConfig, kafkaVersion, podId);
+    }
+
+    private KafkaBrokerLoggingConfigurationDiff logging(Admin ac, int podId)
+            throws ForceableProblem, InterruptedException {
+        Config brokerLogging = brokerLogging(ac, podId);
+        log.trace("{}: Broker {}: logging description {}", reconciliation, podId, brokerLogging);
+        return new KafkaBrokerLoggingConfigurationDiff(brokerLogging, kafkaLogging, podId);
     }
 
     /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */

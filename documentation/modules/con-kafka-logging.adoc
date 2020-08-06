@@ -7,7 +7,6 @@
 
 Kafka has its own configurable loggers:
 
-* `kafka.root.logger.level`
 * `log4j.logger.org.I0Itec.zkclient.ZkClient`
 * `log4j.logger.org.apache.zookeeper`
 * `log4j.logger.kafka`
@@ -46,7 +45,7 @@ spec:
     logging:
       type: inline
       loggers:
-        kafka.root.logger.level: "INFO"
+        log4j.logger.kafka: "INFO"
   # ...
   zookeeper:
     # ...
@@ -85,6 +84,8 @@ spec:
     name: customConfigMap
   # ...
 ----
+
+Both external and inline logging changes are configured dynamically.
 
 Operators use the Apache `log4j2` logger implementation, so the logging configuration is described inside the ConfigMap using `log4j2.properties`.
 For more information, see xref:con-entity-operator-logging-{context}[].

@@ -12,6 +12,7 @@
 * Configure Cluster Operator logging using ConfigMap instead of environment variable and support dynamic changes  
 * Switch to use the `AclAuthorizer` class for the `simple` Kafka authorization type. `AclAuthorizer` contains new features such as the ability to control the amount of authorization logs in the broker logs.
 * Support dynamically changeable logging in the Kafka Connect and Kafka Connect S2I
+* Support dynamically changeable logging in the Kafka brokers  
 
 ### Deprecations and removals
 

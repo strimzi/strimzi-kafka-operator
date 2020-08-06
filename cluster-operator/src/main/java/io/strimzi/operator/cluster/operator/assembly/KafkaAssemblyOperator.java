@@ -408,6 +408,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private String zkLoggingHash = "";
         private String kafkaLoggingHash = "";
+        private String kafkaLogging = "";
         private String kafkaBrokerConfigurationHash = "";
 
         /* test */ EntityOperator entityOperator;
@@ -728,7 +729,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(sts -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                             () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
-                            kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                            kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
                             .rollingRestart(rollPodAndLogReason))
                         .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
                         .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
@@ -1279,7 +1280,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return adminClientSecrets()
                 .compose(compositeFuture -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                     () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
-                        kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                        kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
                     .rollingRestart(podNeedsRestart));
         }
 
@@ -2277,6 +2278,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
             this.kafkaLoggingHash = Util.stringHash(loggingConfiguration);
+            this.kafkaLogging = loggingConfiguration;
 
             return brokerCm;
         }
@@ -2452,7 +2454,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
 
-            Annotations.annotations(template).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, kafkaLoggingHash);
+            //Annotations.annotations(template).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, kafkaLoggingHash);
             Annotations.annotations(template).put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash);
 
             // Annotations with custom cert thumbprints to help with rolling updates when they change

@@ -12,6 +12,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.common.config.ConfigResource;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -19,7 +20,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
@@ -74,7 +77,9 @@ public class KafkaBrokerConfigurationDiffTest {
     }
 
     private void assertConfig(KafkaBrokerConfigurationDiff kcd, ConfigEntry ce) {
-        Collection<AlterConfigOp> brokerDiffConf = kcd.getConfigDiff().get(Util.getBrokersConfig(brokerId));
+        Map<ConfigResource, Collection<AlterConfigOp>> map = new HashMap<>(1);
+        kcd.addConfigDiff(map);
+        Collection<AlterConfigOp> brokerDiffConf = map.get(Util.getBrokersConfig(brokerId));
         long appearances = brokerDiffConf.stream().filter(entry -> entry.configEntry().name().equals(ce.name())).count();
         Optional<AlterConfigOp> en = brokerDiffConf.stream().filter(entry -> entry.configEntry().name().equals(ce.name())).findFirst();
         assertThat(appearances, is(1L));
