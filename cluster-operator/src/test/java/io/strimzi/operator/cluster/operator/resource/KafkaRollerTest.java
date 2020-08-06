@@ -602,6 +602,13 @@ public class KafkaRollerTest {
         }
 
         @Override
+        protected Config brokerLogging(Admin ac, int brokerId) throws ForceableProblem, InterruptedException {
+            if (getConfigsException != null) {
+                throw getConfigsException;
+            } else return new Config(emptyList());
+        }
+
+        @Override
         protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem, InterruptedException {
             if (alterConfigsException != null) {
                 throw alterConfigsException;
