@@ -1,0 +1,18 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth.adoc
+
+[id='con-oauth-reauthentication-{context}']
+= Session re-authentication mechanism
+
+The Kafka _SASL OAUTHBEARER_ mechanism supports a so called 're-authentication' mechanism.
+
+When enabled (by setting `maxSecondsWithoutReauthentication` attribute of 'oauth' type `authentication` listener configuration), the authenticated session expires when the access token expires.
+
+The client then has to re-authenticate the existing session by sending a fresh valid access token to the Kafka broker, without dropping the connection.
+
+If token validation is successful a new client session is started over the existing connection.
+If the client fails to re-authenticate, any further attempts to use the connection for sending or receiving messages results in Kafka broker closing the connection.
+Java clients using Kafka client library 2.2 or later will automatically re-authanticate if re-authentication is enabled on the broker.
+
+Re-authentication mechanism was introduced in Kafka version 2.2. You can read more about it in https://cwiki.apache.org/confluence/display/KAFKA/KIP-368%3A+Allow+SASL+Connections+to+Periodically+Re-Authenticate[KIP-368].

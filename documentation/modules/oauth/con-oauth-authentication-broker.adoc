@@ -79,7 +79,7 @@ The local check ensures that a token:
 * Is valid (not expired)
 * Has an issuer that matches a `validIssuerURI`
 
-You specify a `validIssuerUrI` attribute when you configure the listener, so that any tokens not issued by the authorization server are rejected.
+You specify a `validIssuerURI` attribute when you configure the listener, so that any tokens not issued by the authorization server are rejected.
 
 The authorization server does not need to be contacted during fast local JWT token validation.
 You activate fast local JWT token validation by specifying a `jwksEndpointUri` attribute, the endpoint exposed by the OAuth 2.0 authorization server.
@@ -107,6 +107,7 @@ spec:
           validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
           jwksEndpointUri: <__https://<auth-server-address>/auth/realms/tls/protocol/openid-connect/certs__>
           userNameClaim: preferred_username
+          maxSecondsWithoutReauthentication: 3600
           tlsTrustedCertificates:
           - secretName: oauth-server-cert
             certificate: ca.crt
@@ -140,6 +141,7 @@ spec:
           validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
           introspectionEndpointUri: <__https://<auth-server-address>/auth/realms/tls/protocol/openid-connect/token/introspect__>
           userNameClaim: preferred_username
+          maxSecondsWithoutReauthentication: 3600
           tlsTrustedCertificates:
           - secretName: oauth-server-cert
             certificate: ca.crt
