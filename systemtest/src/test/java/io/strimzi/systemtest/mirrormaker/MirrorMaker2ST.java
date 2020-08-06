@@ -56,6 +56,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -686,7 +687,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mm2Pods.size(), is(0));
         assertThat(mm2Status.getConditions().get(0).getType(), is("Ready"));
         assertThat(actualObsGen, is(not(oldObsGen)));
-        assertThat(mm2Status.getUrl() == null, is(null));
+        assertNull(mm2Status.getUrl());
     }
 
     @BeforeAll
