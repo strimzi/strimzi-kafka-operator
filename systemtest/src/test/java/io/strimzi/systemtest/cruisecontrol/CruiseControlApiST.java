@@ -25,7 +25,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
@@ -122,30 +121,11 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString(CruiseControlUserTaskStatus.COMPLETED.toString()));
     }
 
-    @Order(5)
-    @Test
-    void testMetrics() {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.METRICS);
-
-        assertThat(response, not(nullValue()));
-
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.METRICS);
-
-        assertThat(response, not(nullValue()));
-
-        assertThat(response, containsString("GET"));
-        assertThat(response, containsString(CruiseControlEndpoints.STATE.toString()));
-        assertThat(response, containsString("POST"));
-        assertThat(response, containsString(CruiseControlEndpoints.REBALANCE.toString()));
-        assertThat(response, containsString(CruiseControlEndpoints.STOP.toString()));
-        assertThat(response, containsString(CruiseControlUserTaskStatus.COMPLETED.toString()));
-    }
-
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaAndCruiseControlWithMetrics(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
     }
 }

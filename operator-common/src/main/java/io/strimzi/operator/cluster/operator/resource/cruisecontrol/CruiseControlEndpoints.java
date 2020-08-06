@@ -9,10 +9,7 @@ public enum CruiseControlEndpoints {
     STATE("/kafkacruisecontrol/state"),
     REBALANCE("/kafkacruisecontrol/rebalance"),
     STOP("/kafkacruisecontrol/stop_proposal_execution"),
-    USER_TASKS("/kafkacruisecontrol/user_tasks"),
-
-    // this entry is not provided by Cruise Control and instead comes from the JMX Exporter
-    METRICS("/metrics");
+    USER_TASKS("/kafkacruisecontrol/user_tasks");
 
     String path;
 
