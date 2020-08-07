@@ -20,7 +20,7 @@ import java.util.List;
 public class BundleResource {
     private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
 
-    public static final String PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final String PATH_TO_CO_CONFIG = "../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
     public static DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
         return KubernetesResource.deployNewDeployment(defaultCLusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());

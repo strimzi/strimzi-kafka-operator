@@ -89,7 +89,6 @@ the documentation for more details.
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
 | `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`                                       |
 | `image.imagePullSecrets`              | Docker registry pull secret              | `nil`                                                 |
-| `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
