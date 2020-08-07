@@ -118,7 +118,11 @@ public class InitWriter {
             return null;
         }
 
-        Map<String, String> addressMap = addresses.stream().collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress));
+        Map<String, String> addressMap = addresses.stream()
+                .collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress, (address1, address2) -> {
+                    log.warn("Found multiple addresses with the same type. Only the first address '{}' will be used.", address1);
+                    return address1;
+                }));
 
         // If user set preferred address type, we should check it first
         if (config.getAddressType() != null && addressMap.containsKey(config.getAddressType())) {
