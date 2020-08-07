@@ -173,7 +173,7 @@ If no default optimization goals are specified, the cached proposal is generated
 === User-provided optimization goals
 
 _User-provided optimization goals_ narrow down the configured default goals for a particular optimization proposal. 
-You can set them, as required, in `spec.goals` in the `KafkaRebalance` custom resource:
+You can set them, as required, in `spec.goals` in a `KafkaRebalance` custom resource:
 
 ----
 KafkaRebalance.spec.goals
@@ -188,7 +188,9 @@ User-provided optimization goals must:
 * Include all configured xref:hard-soft-goals[hard goals], or an error occurs
 * Be a subset of the master optimization goals
 
-To ignore the configured hard goals in an optimization proposal, add the `skipHardGoalCheck: true` option to the `KafkaRebalance` custom resource.
+To ignore the configured hard goals in the generated optimization proposal, add the `skipHardGoalCheck: true` option to the `KafkaRebalance` custom resource.
+
+To apply an optimization proposal and rebalance the Kafka cluster, you annotate the `KafkaRebalance` custom resource. 
 
 .Additional resources
 
