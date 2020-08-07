@@ -75,7 +75,7 @@ The relevant configurations are summarized below:
 
 | `default.replica.movement.strategies`             .2+| 
   The list of strategies (in priority order) used to determine the order in which partition reassignment commands are executed for generated proposals. Use a comma separated string for server and a YAML array for `KafkaRebalance` resources.
-.2+|Base Replica Movement Strategy
+.2+| `BaseReplicaMovementStrategy`
 | `replicaMovementStrategies`
 
 |============================================================================================================================
