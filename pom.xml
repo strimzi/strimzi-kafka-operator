@@ -107,7 +107,7 @@
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.3.2</quartz.version>
-        <debezium.version>1.1.0.Final</debezium.version>
+        <debezium.version>1.2.1.Final</debezium.version>
         <jaeger.version>1.1.0</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.4</opentracing-kafka.version>
