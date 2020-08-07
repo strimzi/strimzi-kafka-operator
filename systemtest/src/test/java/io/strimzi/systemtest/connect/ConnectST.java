@@ -58,7 +58,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -432,7 +431,6 @@ class ConnectST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -622,7 +620,6 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @OpenShiftOnly
     void testKafkaConnectorWithConnectAndConnectS2IWithSameName() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";
         String connectS2IClusterName = "connect-s2i-cluster";
 
@@ -658,7 +655,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("topics", topicName)
+                .addToConfig("topics", TOPIC_NAME)
                 .addToConfig("file", "/tmp/test-file-sink.txt")
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -689,7 +686,7 @@ class ConnectST extends AbstractST {
             kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
         });
 
-        KafkaConnectorUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
+        KafkaConnectorUtils.createFileSinkConnector(kafkaClientsPodName, TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(CLUSTER_NAME, NAMESPACE, 8083));
         final String connectorName = "sink-test";
         KafkaConnectorUtils.waitForConnectorCreation(connectPodName, connectorName);
         KafkaConnectorUtils.waitForConnectorStability(connectorName, connectPodName);
@@ -704,7 +701,6 @@ class ConnectST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ACCEPTANCE)
     void testMultiNodeKafkaConnectWithConnectorCreation() {
-        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String connectClusterName = "connect-cluster";
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -724,7 +720,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
                 .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("topics", topicName)
+                .addToConfig("topics", TOPIC_NAME)
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -732,7 +728,7 @@ class ConnectST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
@@ -856,14 +852,13 @@ class ConnectST extends AbstractST {
     }
 
     void testConnectAuthorizationWithWeirdUserName(String userName, SecurityProtocol securityProtocol) {
-        String topicName = TOPIC_NAME + rng.nextInt(Integer.MAX_VALUE);
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         String connectorPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-connect").get(0).getMetadata().getName();
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
                 .editSpec()
                     .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                    .addToConfig("topics", topicName)
+                    .addToConfig("topics", TOPIC_NAME)
                     .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
                 .endSpec().done();
 
@@ -873,7 +868,7 @@ class ConnectST extends AbstractST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(securityProtocol)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));

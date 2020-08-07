@@ -36,7 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.kafkaclients.AbstractKafkaClient.generateRandomConsumerGroup;
+import static io.strimzi.systemtest.utils.ClientUtils.generateRandomConsumerGroup;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 public class KafkaClientsResource {

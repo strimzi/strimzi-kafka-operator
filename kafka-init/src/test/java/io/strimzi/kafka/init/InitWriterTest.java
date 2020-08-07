@@ -172,6 +172,23 @@ public class InitWriterTest {
         assertThat(address, is(nullValue()));
     }
 
+    @Test
+    public void testFindAddressWithMultipleAddressesOfSameType()   {
+        List<NodeAddress> addresses = new ArrayList<>(3);
+        addresses.add(new NodeAddressBuilder().withType("ExternalDNS").withAddress("my.external.address").build());
+        addresses.add(new NodeAddressBuilder().withType("ExternalDNS").withAddress("my.external.address2").build());
+        addresses.add(new NodeAddressBuilder().withType("InternalDNS").withAddress("my.internal.address").build());
+        addresses.add(new NodeAddressBuilder().withType("InternalDNS").withAddress("my.internal.address2").build());
+        addresses.add(new NodeAddressBuilder().withType("InternalIP").withAddress("192.168.2.94").build());
+
+        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
+        InitWriter writer = new InitWriter(client, config);
+        String address = writer.findAddress(addresses);
+
+        assertThat(address, is("my.external.address"));
+    }
+
     /**
      * Mock a Kubernetes client for getting cluster node information
      *

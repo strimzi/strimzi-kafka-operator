@@ -341,7 +341,7 @@ public class StrimziUpgradeST extends AbstractST {
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
@@ -392,7 +392,7 @@ public class StrimziUpgradeST extends AbstractST {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else if (f.getName().matches("050-Deployment.*")) {
+            } else if (f.getName().matches("060-Deployment.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
             } else {
                 cmdKubeClient().apply(f);

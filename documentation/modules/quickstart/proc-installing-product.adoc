@@ -51,7 +51,7 @@ sed -i '' 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBin
 kubectl create ns my-kafka-project
 ----
 
-. Edit the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file and set the `STRIMZI_NAMESPACE` environment variable to the namespace `my-kafka-project`.
+. Edit the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file and set the `STRIMZI_NAMESPACE` environment variable to the namespace `my-kafka-project`.
 +
 [source, yaml, subs=+quotes ]
 ----

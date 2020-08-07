@@ -161,7 +161,6 @@ public class MetricsST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(5000)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
