@@ -38,6 +38,7 @@ import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonList;
@@ -177,7 +178,6 @@ public class TopicST extends AbstractST {
     @Test
     void testSendingMessagesToNonExistingTopic() {
         int sent = 0;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -211,11 +211,11 @@ public class TopicST extends AbstractST {
                 internalKafkaClient.receiveMessagesPlain()
         );
 
-        LOGGER.info("Checking if {} is on topic list", topicName);
-        created = hasTopicInKafka(topicName);
+        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
+        created = hasTopicInKafka(TOPIC_NAME);
         assertThat(created, is(true));
 
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is("Ready"));
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is(Ready.toString()));
         LOGGER.info("Topic successfully created");
     }
 
