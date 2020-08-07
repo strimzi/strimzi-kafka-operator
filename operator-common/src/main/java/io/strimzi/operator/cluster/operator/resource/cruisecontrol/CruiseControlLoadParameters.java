@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This enum contains keys for the broker before and after load JSON object. Each entry contains the Cruise Control key,
- * taken from the com.linkedin.kafka.cruisecontrol.servlet.response.stats.BasicStats class, and a more readable key name
- * used for the KafkaRebalance Status. The type field is used to distinguish key that require different castings when
- * extracted to create the [before, after, difference] arrays for the KafkaRebalance status.
+ * This enum contains keys for the JSON object that contains the broker before and after load information. Each entry
+ * contains the Cruise Control keys, taken from the com.linkedin.kafka.cruisecontrol.servlet.response.stats.BasicStats
+ * class, and a more readable key name used for the KafkaRebalance status. The type field is used to distinguish key
+ * that require different castings when extracted to create the [before, after, difference] arrays for the
+ * KafkaRebalance status.
  */
 public enum CruiseControlLoadParameters {
 
@@ -29,13 +30,13 @@ public enum CruiseControlLoadParameters {
     /** The key used in the load JSON object returned by Cruise Control. */
     private String cruiseControlKey;
     /** The key used for the KafakRebalance status field. */
-    private String strimziKey;
+    private String kafkaRebalanceStatusKey;
     /** The type of value stored in the relevant field. */
     private String type;
 
-    CruiseControlLoadParameters(String cruiseControlKey, String strimziKey, String type) {
+    CruiseControlLoadParameters(String cruiseControlKey, String kafkaRebalanceStatusKey, String type) {
         this.cruiseControlKey = cruiseControlKey;
-        this.strimziKey = strimziKey;
+        this.kafkaRebalanceStatusKey = kafkaRebalanceStatusKey;
         this.type = type;
     }
 
@@ -43,8 +44,8 @@ public enum CruiseControlLoadParameters {
         return cruiseControlKey;
     }
 
-    public String getStrimziKey() {
-        return strimziKey;
+    public String getKafkaRebalanceStatusKey() {
+        return kafkaRebalanceStatusKey;
     }
 
     public String getType() {

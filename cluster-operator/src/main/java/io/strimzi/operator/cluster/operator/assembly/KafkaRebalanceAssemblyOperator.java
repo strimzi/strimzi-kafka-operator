@@ -424,7 +424,7 @@ public class KafkaRebalanceAssemblyOperator
      */
     protected static Map<Integer, Map<String, Object>> extractLoadParameters(JsonArray brokerLoadArray) {
 
-        Map<Integer, Map<String, Object>> tempMap = new HashMap<>();
+        Map<Integer, Map<String, Object>> loadMap = new HashMap<>();
 
         for (Object rawBrokerLoad : brokerLoadArray) {
             JsonObject brokerLoad = (JsonObject) rawBrokerLoad;
@@ -433,22 +433,22 @@ public class KafkaRebalanceAssemblyOperator
 
             for (CruiseControlLoadParameters intParam : CruiseControlLoadParameters.getIntegerParameters()) {
                 if (brokerLoad.containsKey(intParam.getCruiseControlKey())) {
-                    brokerLoadMap.put(intParam.getStrimziKey(), brokerLoad.getInteger(intParam.getCruiseControlKey()));
+                    brokerLoadMap.put(intParam.getKafkaRebalanceStatusKey(), brokerLoad.getInteger(intParam.getCruiseControlKey()));
                 }
             }
 
             for (CruiseControlLoadParameters doubleParam : CruiseControlLoadParameters.getDoubleParameters()) {
                 if (brokerLoad.containsKey(doubleParam.getCruiseControlKey())) {
-                    brokerLoadMap.put(doubleParam.getStrimziKey(), brokerLoad.getDouble(doubleParam.getCruiseControlKey()));
+                    brokerLoadMap.put(doubleParam.getKafkaRebalanceStatusKey(), brokerLoad.getDouble(doubleParam.getCruiseControlKey()));
                 }
             }
 
             int brokerID = brokerLoad.getInteger(CruiseControlRebalanceKeys.BROKER_ID.getKey());
-            tempMap.put(brokerID, brokerLoadMap);
+            loadMap.put(brokerID, brokerLoadMap);
 
         }
 
-        return tempMap;
+        return loadMap;
 
     }
 
@@ -463,7 +463,7 @@ public class KafkaRebalanceAssemblyOperator
      *                             returned by the Cruise Control rebalance endpoint.
      * @return A map linking from broker ID integer to a map of load parameter to [before, after, difference] arrays.
      */
-    protected static Map<Integer, Map<String, Object>> createBeforeAfterLoadMap(JsonArray brokerLoadBeforeArray, JsonArray brokerLoadAfterArray) {
+    protected static Map<Integer, Map<String, Object>> parseLoadStats(JsonArray brokerLoadBeforeArray, JsonArray brokerLoadAfterArray) {
 
         // There is no guarantee that the brokers are in the same order in both the before and after arrays.
         // Therefore we need to convert them into maps indexed by broker ID so we can align them later for the comparison.
@@ -471,57 +471,57 @@ public class KafkaRebalanceAssemblyOperator
         Map<Integer, Map<String, Object>> loadAfterMap = extractLoadParameters(brokerLoadAfterArray);
 
         if (loadBeforeMap.size() != loadAfterMap.size()) {
-            throw new RuntimeException("Broker data was missing from the load before/after information");
+            throw new IllegalArgumentException("Broker data was missing from the load before/after information");
         }
 
-        Map<Integer, Map<String, Object>> brokersBeforeAfterStats = new HashMap<>();
+        Map<Integer, Map<String, Object>> brokersStats = new HashMap<>();
 
-        for (int brokerID : loadBeforeMap.keySet()) {
-            Map<String, Object> brokerBefore = loadBeforeMap.get(brokerID);
-            Map<String, Object> brokerAfter = loadAfterMap.get(brokerID);
+        for (Map.Entry<Integer, Map<String, Object>> loadBeforeEntry : loadBeforeMap.entrySet()) {
+            Map<String, Object> brokerBefore = loadBeforeEntry.getValue();
+            Map<String, Object> brokerAfter = loadAfterMap.get(loadBeforeEntry.getKey());
 
             Map<String, Object> brokerStats = new HashMap<>();
 
             for (CruiseControlLoadParameters intLoadParameter : CruiseControlLoadParameters.getIntegerParameters()) {
 
-                if (brokerBefore.containsKey(intLoadParameter.getStrimziKey()) &&
-                        brokerAfter.containsKey(intLoadParameter.getStrimziKey())) {
+                if (brokerBefore.containsKey(intLoadParameter.getKafkaRebalanceStatusKey()) &&
+                        brokerAfter.containsKey(intLoadParameter.getKafkaRebalanceStatusKey())) {
 
-                    int intBeforeStat = (int) brokerBefore.get(intLoadParameter.getStrimziKey());
-                    int intAfterStat = (int) brokerAfter.get(intLoadParameter.getStrimziKey());
+                    int intBeforeStat = (int) brokerBefore.get(intLoadParameter.getKafkaRebalanceStatusKey());
+                    int intAfterStat = (int) brokerAfter.get(intLoadParameter.getKafkaRebalanceStatusKey());
                     int intDiff = intAfterStat - intBeforeStat;
 
                     int[] intStats = {intBeforeStat, intAfterStat, intDiff};
-                    brokerStats.put(intLoadParameter.getStrimziKey(), intStats);
+                    brokerStats.put(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
                 } else {
                     log.warn("{} information was missing from the broker before/after load information",
-                            intLoadParameter.getStrimziKey());
+                            intLoadParameter.getKafkaRebalanceStatusKey());
                 }
 
             }
 
             for (CruiseControlLoadParameters doubleLoadParameter : CruiseControlLoadParameters.getDoubleParameters()) {
 
-                if (brokerBefore.containsKey(doubleLoadParameter.getStrimziKey()) &&
-                        brokerAfter.containsKey(doubleLoadParameter.getStrimziKey())) {
+                if (brokerBefore.containsKey(doubleLoadParameter.getKafkaRebalanceStatusKey()) &&
+                        brokerAfter.containsKey(doubleLoadParameter.getKafkaRebalanceStatusKey())) {
 
-                    double doubleBeforeStat = (double) brokerBefore.get(doubleLoadParameter.getStrimziKey());
-                    double doubleAfterStat = (double) brokerAfter.get(doubleLoadParameter.getStrimziKey());
+                    double doubleBeforeStat = (double) brokerBefore.get(doubleLoadParameter.getKafkaRebalanceStatusKey());
+                    double doubleAfterStat = (double) brokerAfter.get(doubleLoadParameter.getKafkaRebalanceStatusKey());
                     double doubleDiff = doubleAfterStat - doubleBeforeStat;
 
                     double[] doubleStats = {doubleBeforeStat, doubleAfterStat, doubleDiff};
-                    brokerStats.put(doubleLoadParameter.getStrimziKey(), doubleStats);
+                    brokerStats.put(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
                 } else {
                     log.warn("{} information was missing from the broker before/after load information",
-                            doubleLoadParameter.getStrimziKey());
+                            doubleLoadParameter.getKafkaRebalanceStatusKey());
                 }
 
             }
 
-            brokersBeforeAfterStats.put(brokerID, brokerStats);
+            brokersStats.put(loadBeforeEntry.getKey(), brokerStats);
         }
 
-        return brokersBeforeAfterStats;
+        return brokersStats;
 
     }
 
@@ -546,10 +546,10 @@ public class KafkaRebalanceAssemblyOperator
                     .getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
                     .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
         } else {
-            throw new RuntimeException("The rebalance optimization proposal returned by Cruise Control did not contain broker load information");
+            throw new IllegalArgumentException("The rebalance optimization proposal returned by Cruise Control did not contain broker load information");
         }
 
-        Map<Integer, Map<String, Object>> beforeAndAfterBrokerLoad = createBeforeAfterLoadMap(
+        Map<Integer, Map<String, Object>> beforeAndAfterBrokerLoad = parseLoadStats(
                 brokerLoadBeforeOptimization, brokerLoadAfterOptimization);
 
         Map<String, Object> optimizationProposal = new HashMap<>();
@@ -564,8 +564,8 @@ public class KafkaRebalanceAssemblyOperator
         Map<String, Object> optimizationProposal = processOptimizationProposal(proposalJson);
         return new KafkaRebalanceStatusBuilder()
                 .withSessionId(sessionID)
-                .withOptimizationResult(optimizationProposal)
                 .withConditions(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()))
+                .withOptimizationResult(optimizationProposal)
                 .build();
     }
 
@@ -998,7 +998,7 @@ public class KafkaRebalanceAssemblyOperator
                         }
                     }
 
-                    if (response.getJson().containsKey(CruiseControlRebalanceKeys.SUMMARY.getKey())) {
+                    if (response.getJson() != null && response.getJson().containsKey(CruiseControlRebalanceKeys.SUMMARY.getKey())) {
                         // If there is enough data and the proposal is complete (the response has the "summary" key) then we move
                         // to ProposalReady for a dry run or to the Rebalancing state for a full run
                         KafkaRebalanceState ready = dryrun ? KafkaRebalanceState.ProposalReady : KafkaRebalanceState.Rebalancing;

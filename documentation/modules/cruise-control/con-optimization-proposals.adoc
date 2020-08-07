@@ -36,7 +36,7 @@ Consider a shorter interval for fast changing clusters, although this increases 
 
 An optimization proposal consists of two main components, the _summary_ and the _broker load_.
 The summary section provides an overview of the optimization proposal and from this you can gain an idea of the scale of the changes involved in the proposed rebalance.
-The broker load section allow you to see the impact of the proposed rebalance on each of the brokers in the cluster.
+The broker load section allows you to see the impact of the proposed rebalance on each of the brokers in the cluster.
 
 [discrete]
 === Summary
@@ -143,4 +143,4 @@ m| potentialMaxNetworkOutRate  | The hypothetical maximum network output rate th
 
 * xref:proc-generating-optimization-proposals-{context}[] 
 
-* xref:proc-approving-optimization-proposal-{context}[]         
+* xref:proc-approving-optimization-proposal-{context}[]

@@ -12,11 +12,16 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class KafkaRebalanceStatusTest {
+
+    private static final int BROKER_ONE_KEY = 1;
 
 
     public static JsonObject buildOptimizationProposal() {
@@ -28,7 +33,7 @@ public class KafkaRebalanceStatusTest {
         JsonObject brokersBeforeObject = new JsonObject();
         JsonArray brokerLoadBeforeArray = new JsonArray();
         JsonObject brokerOneBefore = new JsonObject();
-        brokerOneBefore.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), 1);
+        brokerOneBefore.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), BROKER_ONE_KEY);
         brokerOneBefore.put(CruiseControlLoadParameters.CPU_PERCENTAGE.getCruiseControlKey(), 10.0);
         brokerOneBefore.put(CruiseControlLoadParameters.REPLICAS.getCruiseControlKey(), 10);
         brokerLoadBeforeArray.add(brokerOneBefore);
@@ -37,7 +42,7 @@ public class KafkaRebalanceStatusTest {
         JsonObject brokersAfterObject = new JsonObject();
         JsonArray brokerLoadAfterArray = new JsonArray();
         JsonObject brokerOneAfter = new JsonObject();
-        brokerOneAfter.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), 1);
+        brokerOneAfter.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), BROKER_ONE_KEY);
         brokerOneAfter.put(CruiseControlLoadParameters.CPU_PERCENTAGE.getCruiseControlKey(), 20.0);
         brokerOneAfter.put(CruiseControlLoadParameters.REPLICAS.getCruiseControlKey(), 5);
         brokerLoadAfterArray.add(brokerOneAfter);
@@ -61,9 +66,9 @@ public class KafkaRebalanceStatusTest {
 
         Map<Integer, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.extractLoadParameters(loadBeforeArray);
 
-        assertTrue(output.containsKey(1));
-        assertTrue(output.get(1).containsKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getStrimziKey()));
-        assertTrue(output.get(1).containsKey(CruiseControlLoadParameters.REPLICAS.getStrimziKey()));
+        assertThat(output, hasKey(BROKER_ONE_KEY));
+        assertThat(output.get(BROKER_ONE_KEY), hasEntry(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey(), 10.0));
+        assertThat(output.get(BROKER_ONE_KEY), hasEntry(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey(), 10));
 
     }
 
@@ -77,18 +82,21 @@ public class KafkaRebalanceStatusTest {
         JsonArray loadAfterArray = proposal.getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
                 .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
 
-        Map<Integer, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.createBeforeAfterLoadMap(
+        Map<Integer, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.parseLoadStats(
                 loadBeforeArray, loadAfterArray);
 
-        assertTrue(output.containsKey(1));
-        double[] cpu = (double[]) output.get(1).get(CruiseControlLoadParameters.CPU_PERCENTAGE.getStrimziKey());
-        assertEquals(cpu[0], 10.0);
-        assertEquals(cpu[1], 20.0);
-        assertEquals(cpu[2], 10.0);
-        int[] replicas = (int[]) output.get(1).get(CruiseControlLoadParameters.REPLICAS.getStrimziKey());
-        assertEquals(replicas[0], 10);
-        assertEquals(replicas[1], 5);
-        assertEquals(-5, replicas[2]);
+        assertThat(output, hasKey(BROKER_ONE_KEY));
+        assertThat(output.get(BROKER_ONE_KEY), hasKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
+        double[] cpu = (double[]) output.get(BROKER_ONE_KEY).get(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey());
+        assertThat(cpu[0], is(10.0));
+        assertThat(cpu[1], is(20.0));
+        assertThat(cpu[2], is(10.0));
+
+        assertThat(output.get(BROKER_ONE_KEY), hasKey(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey()));
+        int[] replicas = (int[]) output.get(BROKER_ONE_KEY).get(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey());
+        assertThat(replicas[0], is(10));
+        assertThat(replicas[1], is(5));
+        assertThat(replicas[2], is(-5));
 
     }
 
@@ -104,13 +112,17 @@ public class KafkaRebalanceStatusTest {
 
         Map<Integer, Map<String, Object>> brokerMap = (Map<Integer, Map<String, Object>>) output.get(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY);
 
-        double[] cpu = (double[]) brokerMap.get(1).get(CruiseControlLoadParameters.CPU_PERCENTAGE.getStrimziKey());
-        assertEquals(cpu[0], 10.0);
-        assertEquals(cpu[1], 20.0);
-        assertEquals(cpu[2], 10.0);
-        int[] replicas = (int[]) brokerMap.get(1).get(CruiseControlLoadParameters.REPLICAS.getStrimziKey());
-        assertEquals(replicas[0], 10);
-        assertEquals(replicas[1], 5);
-        assertEquals(-5, replicas[2]);
+        assertThat(brokerMap, hasKey(BROKER_ONE_KEY));
+        assertThat(brokerMap.get(BROKER_ONE_KEY), hasKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
+        double[] cpu = (double[]) brokerMap.get(BROKER_ONE_KEY).get(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey());
+        assertThat(cpu[0], is(10.0));
+        assertThat(cpu[1], is(20.0));
+        assertThat(cpu[2], is(10.0));
+
+        assertThat(brokerMap.get(BROKER_ONE_KEY), hasKey(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey()));
+        int[] replicas = (int[]) brokerMap.get(BROKER_ONE_KEY).get(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey());
+        assertThat(replicas[0], is(10));
+        assertThat(replicas[1], is(5));
+        assertThat(replicas[2], is(-5));
     }
 }
