@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -30,6 +31,8 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
     private int brokerId;
+
+    public static final String VALID_LOGGER_LEVELS = "ERROR, WARN, TRACE, INFO, DEBUG, FATAL";
 
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
         this.brokerId = brokerId;
@@ -99,7 +102,9 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                     removeProperty(updatedCE, pathValueWithoutSlash, entry);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    updateOrAdd(entry.name(), desiredMap, updatedCE);
+                    if (!entry.value().equals(parseLogLevelFromAppenderCouple(desiredMap.get(entry.name())))) {
+                        updateOrAdd(entry.name(), desiredMap, updatedCE);
+                    }
                 }
             } else {
                 if ("add".equals(op)) {
@@ -129,14 +134,24 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     }
 
     private static void updateOrAddRoot(String level, Collection<AlterConfigOp> updatedCE) {
-        updatedCE.add(new AlterConfigOp(new ConfigEntry("root", level), AlterConfigOp.OpType.SET));
-        log.trace("{} not set in current or has deprecated value. Setting to {}", "root", level);
+        level = parseLogLevelFromAppenderCouple(level);
+        if (isValidLoggerLevel(level)) {
+            updatedCE.add(new AlterConfigOp(new ConfigEntry("root", level), AlterConfigOp.OpType.SET));
+            log.trace("{} not set in current or has deprecated value. Setting to {}", "root", level);
+        } else {
+            log.warn("Level {} is not valid logging level", level);
+        }
     }
 
     private static void updateOrAdd(String propertyName, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
         if (!propertyName.contains("log4j.appender") && !propertyName.equals("monitorInterval")) {
-            updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, desiredMap.get(propertyName)), AlterConfigOp.OpType.SET));
-            log.trace("{} not set in current or has deprecated value. Setting to {}", propertyName, desiredMap.get(propertyName));
+            String level = parseLogLevelFromAppenderCouple(desiredMap.get(propertyName));
+            if (isValidLoggerLevel(level)) {
+                updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, level), AlterConfigOp.OpType.SET));
+                log.trace("{} not set in current or has deprecated value. Setting to {}", propertyName, level);
+            } else {
+                log.warn("Level {} is not valid logging level", level);
+            }
         }
     }
 
@@ -161,6 +176,10 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     @Override
     public boolean isEmpty() {
         return  diff.size() == 0;
+    }
+
+    private static boolean isValidLoggerLevel(String level) {
+        return Arrays.stream(VALID_LOGGER_LEVELS.split(", ")).anyMatch(lev -> lev.equals(level));
     }
 
 }

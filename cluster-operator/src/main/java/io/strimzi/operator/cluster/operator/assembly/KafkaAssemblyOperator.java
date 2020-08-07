@@ -69,6 +69,7 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.NodeUtils;
+import io.strimzi.operator.cluster.model.OrderedProperties;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -408,6 +409,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private String zkLoggingHash = "";
         private String kafkaLogging = "";
+        private String kafkaLoggingAppendersHash = "";
         private String kafkaBrokerConfigurationHash = "";
 
         /* test */ EntityOperator entityOperator;
@@ -681,7 +683,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Utility method for checking the Secret existence when custom CA is used. The custom CA is configured but the
-         * secrets do not exist, it will throw InvalifConfigurationException.
+         * secrets do not exist, it will throw InvalidConfigurationException.
          *
          * @param ca            The CA Configuration from the Custom Resource
          * @param certSecret    Secret with the certificate public key
@@ -1355,9 +1357,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // We are upgrading from previous Strimzi version which has a sidecars. The older sidecar
                         // configurations allowed only older versions of TLS to be used by default. But the Zookeeper
                         // native TLS support enabled by default only secure TLSv1.2. That is correct, but makes the
-                        // upgrade hard since Kakfa will be unable to connect. So in the first roll, we enable also
-                        // older TLS versions in Zookeeper so that we can configure the KAfka sidecars to enable
-                        // TLSv1.2 as well. Thsi will be removed again in the next rolling update of Zookeeper -> done
+                        // upgrade hard since Kafka will be unable to connect. So in the first roll, we enable also
+                        // older TLS versions in Zookeeper so that we can configure the Kafka sidecars to enable
+                        // TLSv1.2 as well. This will be removed again in the next rolling update of Zookeeper -> done
                         // only when Kafka is ready for it.
                         if (sts != null
                                 && sts.getSpec() != null
@@ -2278,6 +2280,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
             this.kafkaLoggingHash = Util.stringHash(loggingConfiguration);
             this.kafkaLogging = loggingConfiguration;
+            this.kafkaLoggingAppendersHash = getStringHash(getLoggingAppenders(loggingConfiguration));
 
             return brokerCm;
         }
@@ -2453,6 +2456,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
 
+            Annotations.annotations(template).put(AbstractModel.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, kafkaLoggingAppendersHash);
             Annotations.annotations(template).put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash);
 
             // Annotations with custom cert thumbprints to help with rolling updates when they change
@@ -2803,10 +2807,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Internal method for deleting PVCs after scale-downs or disk removal from JBOD storage. It gets list of
-         * existing and desired PVCs, diffs them and removes those wioch should not exist.
+         * existing and desired PVCs, diffs them and removes those which should not exist.
          *
          * @param maybeDeletePvcs   List of existing PVCs
-         * @param desiredPvcs       List of PVCs whcih should exist
+         * @param desiredPvcs       List of PVCs which should exist
          * @return
          */
         Future<ReconciliationState> persistentClaimDeletion(List<String> maybeDeletePvcs, List<String> desiredPvcs) {
@@ -3469,6 +3473,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(Future.succeededFuture());
         }
 
+    }
+
+    private String getLoggingAppenders(String loggingConfiguration) {
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(loggingConfiguration);
+        String result = "";
+        for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
+            if (entry.getKey().startsWith("log4j.appender")) {
+                result += entry.getKey() + "=" + entry.getValue();
+            }
+        }
+        return result;
     }
 
     /* test */ Date dateSupplier() {
