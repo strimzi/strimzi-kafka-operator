@@ -468,8 +468,8 @@ public class KafkaRoller {
     protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
             throws ForceableProblem, InterruptedException {
         Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig = new HashMap<>(2);
-        configurationDiff.addConfigDiff(updatedConfig);
-        logDiff.addLoggingDiff(updatedConfig);
+        updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
+        updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
         log.info("{}: Altering broker {} with {}", reconciliation, podId, updatedConfig);
 

@@ -727,10 +727,14 @@ class LoggingChangeST extends AbstractST {
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
-        InlineLogging ilOff = new InlineLogging();
-        ilOff.setLoggers(Collections.singletonMap("log4j.paprika", "INFO"));
+        InlineLogging il = new InlineLogging();
+        il.setLoggers(Collections.singletonMap("log4j.paprika", "INFO"));
 
-        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(il);
+        });
+
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
 
         assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
     }
@@ -741,8 +745,12 @@ class LoggingChangeST extends AbstractST {
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
-        InlineLogging ilOff = new InlineLogging();
-        ilOff.setLoggers(Collections.singletonMap("log4j.rootLogger", "PAPRIKA"));
+        InlineLogging il = new InlineLogging();
+        il.setLoggers(Collections.singletonMap("log4j.rootLogger", "PAPRIKA"));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(il);
+        });
 
         Thread.sleep(LOGGING_RELOADING_INTERVAL);
 

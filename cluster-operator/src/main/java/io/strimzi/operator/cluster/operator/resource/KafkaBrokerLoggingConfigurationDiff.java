@@ -9,12 +9,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.cluster.model.OrderedProperties;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,18 +31,17 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     private final Collection<AlterConfigOp> diff;
     private int brokerId;
 
-
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
         this.brokerId = brokerId;
         this.diff = diff(brokerId, desired, brokerConfigs);
     }
 
     /**
-     * Adds an entry to a map which can be used for dynamic configuration of kafka broker
-     * @param updatedConfig map to add an entry
+     * Returns logging difference
+     * @return Collection of AlterConfigOp containing difference between current and desired logging configuration
      */
-    public void addLoggingDiff(Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig) {
-        updatedConfig.put(Util.getBrokersLogging(brokerId), diff);
+    public Collection<AlterConfigOp> getLoggingDiff() {
+        return diff;
     }
 
     /**
@@ -127,22 +124,19 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
     private static String parseLogLevelFromAppenderCouple(String lev) {
         String[] arr = lev.split(",");
-        String level = "ERROR";
-        if (arr.length == 2) {
-            level = arr[0].replaceAll("\\s", "");
-        }
+        String level = arr[0].replaceAll("\\s", "");
         return level;
     }
 
     private static void updateOrAddRoot(String level, Collection<AlterConfigOp> updatedCE) {
         updatedCE.add(new AlterConfigOp(new ConfigEntry("root", level), AlterConfigOp.OpType.SET));
-        log.info("{} not set in current or has deprecated value. Setting to {}", "root", level);
+        log.trace("{} not set in current or has deprecated value. Setting to {}", "root", level);
     }
 
     private static void updateOrAdd(String propertyName, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
         if (!propertyName.contains("log4j.appender") && !propertyName.equals("monitorInterval")) {
             updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, desiredMap.get(propertyName)), AlterConfigOp.OpType.SET));
-            log.info("{} not set in current or has deprecated value. Setting to {}", propertyName, desiredMap.get(propertyName));
+            log.trace("{} not set in current or has deprecated value. Setting to {}", propertyName, desiredMap.get(propertyName));
         }
     }
 
@@ -157,7 +151,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     private static void removeProperty(Collection<AlterConfigOp> alterConfigOps, String pathValueWithoutSlash, ConfigEntry entry) {
         if (!pathValueWithoutSlash.contains("log4j.appender") && !pathValueWithoutSlash.equals("root") && !"ERROR".equals(entry.value())) {
             alterConfigOps.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, "ERROR"), AlterConfigOp.OpType.SET));
-            log.info("{} not set in desired, setting to ERROR", entry.name());
+            log.trace("{} not set in desired, setting to ERROR", entry.name());
         }
     }
 

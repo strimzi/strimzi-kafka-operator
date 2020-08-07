@@ -21,12 +21,10 @@ import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -114,11 +112,11 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     }
 
     /**
-     * Adds an entry to a map which can be used for dynamic configuration of kafka broker
-     * @param updatedConfig map to add an entry
+     * Returns configuration difference
+     * @return Collection of AlterConfigOp containing difference between current and desired configuration
      */
-    public void addConfigDiff(Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig) {
-        updatedConfig.put(Util.getBrokersConfig(brokerId), diff);
+    public Collection<AlterConfigOp> getConfigDiff() {
+        return diff;
     }
 
     /**

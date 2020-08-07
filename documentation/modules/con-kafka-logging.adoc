@@ -85,7 +85,7 @@ spec:
   # ...
 ----
 
-Both external and inline logging changes are configured dynamically.
+Both external and inline logging changes in Kafka brokers are configured dynamically.
 
 Operators use the Apache `log4j2` logger implementation, so the logging configuration is described inside the ConfigMap using `log4j2.properties`.
 For more information, see xref:con-entity-operator-logging-{context}[].
