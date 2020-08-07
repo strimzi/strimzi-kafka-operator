@@ -168,7 +168,7 @@ public class StrimziUpgradeST extends AbstractST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        coDir = new File(dir, "strimzi-0.18.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-0.19.0/install/cluster-operator/");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
@@ -177,7 +177,7 @@ public class StrimziUpgradeST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withVersion(null)
-                    .addToConfig("log.message.format.version", "2.4")
+                    .addToConfig("log.message.format.version", "2.5")
                 .endKafka()
             .endSpec().done();
 
@@ -197,7 +197,7 @@ public class StrimziUpgradeST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.5.0"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.6.0"));
     }
 
     @SuppressWarnings("MethodLength")
