@@ -22,7 +22,7 @@ For example, in this procedure the Cluster Operator is installed into the namesp
 +
 include::snip-cluster-operator-namespace-sed.adoc[]
 
-. Edit the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file to set the value of the `STRIMZI_NAMESPACE` environment variable to `*`.
+. Edit the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to set the value of the `STRIMZI_NAMESPACE` environment variable to `*`.
 +
 [source,yaml,subs="attributes"]
 ----

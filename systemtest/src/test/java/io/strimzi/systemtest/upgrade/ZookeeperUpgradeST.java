@@ -227,7 +227,7 @@ public class ZookeeperUpgradeST extends AbstractST {
         prepareEnvForOperator(NAMESPACE);
 
         applyRoleBindings(NAMESPACE);
-        // 050-Deployment
+        // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
     }
 }
