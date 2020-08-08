@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
@@ -170,7 +171,7 @@ class ConnectST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
 
         LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
-        cmdKubeClient().deleteByName("kafkatopic", CONNECT_TOPIC_NAME);
+        cmdKubeClient().deleteByName(KafkaTopic.CRD_NAME, CONNECT_TOPIC_NAME);
         KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
