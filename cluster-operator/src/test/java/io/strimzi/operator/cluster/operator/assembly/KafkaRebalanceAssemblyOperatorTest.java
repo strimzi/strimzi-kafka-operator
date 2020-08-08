@@ -257,7 +257,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 @Override
                 public void run() {
                     if (++count == 4) {
-                        // After a while, apply the "stop" annotation to the resource in the PendingProposal state
+                        // after a while, apply the "stop" annotation to the resource in the PendingProposal state
                         annotate(kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.stop);
                     }
                     return;
@@ -793,7 +793,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 // the resource moved from New to NotReady due to the error
                 assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME,
                         KafkaRebalanceState.NotReady, InvalidResourceException.class,
-                        "Kafka resouce lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
+                        "Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
                 checkpoint.flag();
             })));
     }

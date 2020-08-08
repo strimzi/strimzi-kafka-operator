@@ -61,7 +61,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
  *
  * <p>
  *     This operator takes care of the {@code KafkaRebalance} custom resource type that a user can create in order
- *     to interact with the Cruise Control REST API and execute a cluster rebalancing.
+ *     to interact with the Cruise Control REST API and execute a cluster rebalance.
  *     A state machine is used for the rebalancing flow which is reflected in the {@code status} of the custom resource.
  *
  *     When a new {@code KafkaRebalance} custom resource is created, the operator sends a rebalance proposal
@@ -451,7 +451,7 @@ public class KafkaRebalanceAssemblyOperator
                                                     KafkaRebalance kafkaRebalance,
                                                     KafkaRebalanceAnnotation rebalanceAnnotation,
                                                     RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
-        if (KafkaRebalanceAnnotation.refresh.equals(rebalanceAnnotation)) {
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
             // The user has fixed the error on the resource and want to 'refresh'
             // This actually requests a new rebalance proposal
             return onNew(reconciliation, host, apiClient, rebalanceOptionsBuilder);
@@ -485,15 +485,10 @@ public class KafkaRebalanceAssemblyOperator
                                                            KafkaRebalanceAnnotation rebalanceAnnotation,
                                                            RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
         Promise<KafkaRebalanceStatus> p = Promise.promise();
-        if (KafkaRebalanceAnnotation.none.equals(rebalanceAnnotation)) {
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.none) {
             log.debug("{}: Starting Cruise Control rebalance proposal request timer", reconciliation);
             vertx.setPeriodic(REBALANCE_POLLING_TIMER_MS, t ->
                 kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                    .onFailure(e -> {
-                        log.error("{}: Cruise Control getting rebalance resource failed", reconciliation, e.getCause());
-                        vertx.cancelTimer(t);
-                        p.fail(e.getCause());
-                    })
                     .onSuccess(currentKafkaRebalance -> {
                         // Checking that the resource was not deleted between periodic polls
                         if (currentKafkaRebalance != null) {
@@ -507,11 +502,6 @@ public class KafkaRebalanceAssemblyOperator
                                 } else {
                                     requestRebalance(reconciliation, host, apiClient, true, rebalanceOptionsBuilder,
                                             currentKafkaRebalance.getStatus().getSessionId())
-                                        .onFailure(e -> {
-                                            log.error("{}: Cruise Control getting rebalance proposal failed", reconciliation, e.getCause());
-                                            vertx.cancelTimer(t);
-                                            p.fail(e.getCause());
-                                        })
                                         .onSuccess(rebalanceStatus -> {
                                             // If the returned status has an optimization result then the rebalance proposal
                                             // is ready, so stop the polling
@@ -524,6 +514,11 @@ public class KafkaRebalanceAssemblyOperator
                                                 // The rebalance proposal is still not ready yet, keep the timer for polling
                                                 log.debug("{}: Waiting for optimization proposal to be ready", reconciliation);
                                             }
+                                        })
+                                        .onFailure(e -> {
+                                            log.error("{}: Cruise Control getting rebalance proposal failed", reconciliation, e.getCause());
+                                            vertx.cancelTimer(t);
+                                            p.fail(e.getCause());
                                         });
                                 }
                             } else {
@@ -534,6 +529,11 @@ public class KafkaRebalanceAssemblyOperator
                             vertx.cancelTimer(t);
                             p.complete();
                         }
+                    })
+                    .onFailure(e -> {
+                        log.error("{}: Cruise Control getting rebalance resource failed", reconciliation, e.getCause());
+                        vertx.cancelTimer(t);
+                        p.fail(e.getCause());
                     })
             );
         } else {
@@ -602,7 +602,7 @@ public class KafkaRebalanceAssemblyOperator
                                                        KafkaRebalance kafkaRebalance,
                                                        KafkaRebalanceAnnotation rebalanceAnnotation) {
         Promise<KafkaRebalanceStatus> p = Promise.promise();
-        if (KafkaRebalanceAnnotation.none.equals(rebalanceAnnotation)) {
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.none) {
             log.info("{}: Starting Cruise Control rebalance user task status timer", reconciliation);
             String sessionId = kafkaRebalance.getStatus().getSessionId();
             AtomicInteger ccApiErrorCount = new AtomicInteger();
@@ -613,11 +613,6 @@ public class KafkaRebalanceAssemblyOperator
                     p.fail(new CruiseControlRestException("Unable to reach Cruise Control API after " + MAX_API_RETRIES + " attempts"));
                 }
                 kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                    .onFailure(e -> {
-                        log.error("{}: Cruise Control getting rebalance resource failed", reconciliation, e.getCause());
-                        vertx.cancelTimer(t);
-                        p.fail(e.getCause());
-                    })
                     .onSuccess(currentKafkaRebalance -> {
                         // Checking that the resource was not deleted between periodic polls
                         if (currentKafkaRebalance != null) {
@@ -702,6 +697,11 @@ public class KafkaRebalanceAssemblyOperator
                             vertx.cancelTimer(t);
                             p.complete();
                         }
+                    })
+                    .onFailure(e -> {
+                        log.error("{}: Cruise Control getting rebalance resource failed", reconciliation, e.getCause());
+                        vertx.cancelTimer(t);
+                        p.fail(e.getCause());
                     });
             });
         } else {
@@ -766,26 +766,26 @@ public class KafkaRebalanceAssemblyOperator
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                         + "' does not exist in namespace " + clusterNamespace + ".")).mapEmpty();
                     } else if (kafka.getSpec().getCruiseControl() == null) {
-                        log.warn("{}: Kafka resouce lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.", reconciliation);
+                        log.warn("{}: Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.", reconciliation);
                         return updateStatus(kafkaRebalance, new KafkaRebalanceStatus(),
-                                new InvalidResourceException("Kafka resouce lacks 'cruiseControl' declaration "
+                                new InvalidResourceException("Kafka resource lacks 'cruiseControl' declaration "
                                         + ": No deployed Cruise Control for doing a rebalance.")).mapEmpty();
                     }
 
                     CruiseControlApi apiClient = cruiseControlClientProvider();
 
-                    // Get latest KafkaRebalance state as it may have changed
+                    // get latest KafkaRebalance state as it may have changed
                     return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                         .compose(currentKafkaRebalance -> {
                             KafkaRebalanceStatus kafkaRebalanceStatus = currentKafkaRebalance.getStatus();
                             KafkaRebalanceState currentState;
-                            // cluster rebalance is new or it is in one of others states
+                            // cluster rebalance is new or it is in one of the others states
                             if (kafkaRebalanceStatus == null) {
                                 currentState = KafkaRebalanceState.New;
                             } else {
                                 String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);
                                 if (rebalanceStateType == null) {
-                                    throw new RuntimeException("Unable to find KafkaRebalace State in current KafkaRebalance status");
+                                    throw new RuntimeException("Unable to find KafkaRebalance State in current KafkaRebalance status");
                                 }
                                 currentState = KafkaRebalanceState.valueOf(rebalanceStateType);
                             }
@@ -814,21 +814,21 @@ public class KafkaRebalanceAssemblyOperator
         return apiClient.rebalance(host, CruiseControl.REST_API_PORT, rebalanceOptionsBuilder.build(), userTaskID)
                 .map(response -> {
                     if (dryrun) {
-                        if (!response.isSufficientDataForProposal()) {
-                            // If there is not enough data for a rebalance, it's an error at Cruise Control level
+                        if (response.isNotEnoughDataForProposal()) {
+                            // If there is not enough data for a rebalance, it's an error at the Cruise Control level
                             // Need to re-request the proposal at a later time so move to the PendingProposal State.
                             return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal);
-                        } else if (response.isProposalInProgress()) {
+                        } else if (response.isProposalStillCalaculating()) {
                             // If rebalance proposal is still being processed, we need to re-request the proposal at a later time
                             // with the corresponding session-id so we move to the PendingProposal State.
                             return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.PendingProposal);
                         }
                     } else {
-                        if (!response.isSufficientDataForProposal()) {
+                        if (response.isNotEnoughDataForProposal()) {
                             // We do not include a session id with this status as we do not want to retrieve the state of
                             // this failed tasks (COMPLETED_WITH_ERROR)
                             return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal);
-                        } else if (response.isProposalInProgress()) {
+                        } else if (response.isProposalStillCalaculating()) {
                             // If dryrun=false and the proposal is not ready we are going to be in a rebalancing state as
                             // soon as it is ready, so set the state to rebalancing.
                             // In the onRebalancing method the optimization proposal will be added when it is ready.

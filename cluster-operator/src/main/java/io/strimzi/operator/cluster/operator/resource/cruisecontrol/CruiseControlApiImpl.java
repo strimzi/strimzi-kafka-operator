@@ -121,7 +121,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                             CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             if (json.containsKey(CC_REST_API_PROGRESS_KEY)) {
                                 // If the response contains a "progress" key then the rebalance proposal has not yet completed processing
-                                ccResponse.setProposalInProgress(true);
+                                ccResponse.setProposalStillCalaculating(true);
                             } else {
                                 result.fail(new CruiseControlRestException(
                                         "Error for request: " + host + ":" + port + path +
@@ -138,7 +138,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 // If there was a client side error, check whether it was due to not enough data being available
                                 if (json.getString(CC_REST_API_ERROR_KEY).contains("NotEnoughValidWindowsException")) {
                                     CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
-                                    ccResponse.setSufficientDataForProposal(false);
+                                    ccResponse.setNotEnoughDataForProposal(true);
                                     result.complete(ccResponse);
                                 } else {
                                     // If there was any other kind of error propagate this to the operator

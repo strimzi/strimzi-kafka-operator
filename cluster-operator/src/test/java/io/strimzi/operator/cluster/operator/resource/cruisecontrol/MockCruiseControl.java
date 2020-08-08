@@ -70,8 +70,7 @@ public class MockCruiseControl {
                 "io.netty.handler.ssl.SslHandler.level=WARNING";
         LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(loggingConfiguration.getBytes(UTF_8)));
 
-        ClientAndServer server = new ClientAndServer(port);
-        return server;
+        return new ClientAndServer(port);
     }
 
     private static JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {
@@ -149,7 +148,7 @@ public class MockCruiseControl {
     /**
      * Setup NotEnoughValidWindows error rebalance response.
      */
-    public static void setupCCRebalanceInsufficientDataError(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public static void setupCCRebalanceNotEnoughDataError(ClientAndServer ccServer) throws IOException, URISyntaxException {
 
         // Rebalance response with no goal that returns an error
         JsonBody jsonError = getJsonFromResource("CC-Rebalance-NotEnoughValidWindows-error.json");

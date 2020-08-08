@@ -103,7 +103,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRebalanceNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
-        MockCruiseControl.setupCCRebalanceInsufficientDataError(ccServer);
+        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().build();
 
@@ -112,7 +112,7 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                 .onComplete(context.succeeding(result -> {
-                    context.verify(() -> assertThat(result.isSufficientDataForProposal(), is(false)));
+                    context.verify(() -> assertThat(result.isNotEnoughDataForProposal(), is(true)));
                     checkpoint.flag();
                 }));
     }
@@ -129,7 +129,7 @@ public class CruiseControlClientTest {
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
             .onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(result.isProposalInProgress(), is(true)));
+                context.verify(() -> assertThat(result.isProposalStillCalaculating(), is(true)));
                 checkpoint.flag();
             }));
     }

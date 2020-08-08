@@ -8,30 +8,32 @@ import io.vertx.core.json.JsonObject;
 
 public class CruiseControlRebalanceResponse extends CruiseControlResponse {
 
-    private boolean isSufficientDataForProposal;
-    private boolean isProposalInProgress;
+    private boolean isNotEnoughDataForProposal;
+    private boolean isProposalStillCalaculating;
 
     CruiseControlRebalanceResponse(String userTaskId, JsonObject json) {
         super(userTaskId, json);
-        // There is sufficient data for proposal unless response says otherwise
-        this.isSufficientDataForProposal = true;
-        // Proposal is not in progress unless response says otherwise
-        this.isProposalInProgress = false;
+        // There is sufficient data for proposal unless response from Cruise Control says otherwise
+        // Sourced from the NotEnoughValidWindows error from the Cruise Control response
+        this.isNotEnoughDataForProposal = false;
+        // Proposal is not in progress unless response from Cruise Control says otherwise
+        // Sourced from the "progress" field in the response with value "proposalStillCalaculating"
+        this.isProposalStillCalaculating = false;
     }
 
-    public boolean isSufficientDataForProposal() {
-        return this.isSufficientDataForProposal;
+    public boolean isNotEnoughDataForProposal() {
+        return this.isNotEnoughDataForProposal;
     }
 
-    public void setSufficientDataForProposal(boolean notEnoughData) {
-        this.isSufficientDataForProposal = notEnoughData;
+    public void setNotEnoughDataForProposal(boolean notEnoughDataForProposal) {
+        this.isNotEnoughDataForProposal = notEnoughDataForProposal;
     }
 
-    public boolean isProposalInProgress() {
-        return isProposalInProgress;
+    public boolean isProposalStillCalaculating() {
+        return isProposalStillCalaculating;
     }
 
-    public void setProposalInProgress(boolean proposalInProgress) {
-        this.isProposalInProgress = proposalInProgress;
+    public void setProposalStillCalaculating(boolean proposalStillCalaculating) {
+        this.isProposalStillCalaculating = proposalStillCalaculating;
     }
 }
