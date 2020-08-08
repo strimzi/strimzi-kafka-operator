@@ -84,7 +84,7 @@ public class StrimziUpgradeST extends AbstractST {
     // ExpectedTopicCount contains additionally consumer-offset topic and my-topic
     private int expectedTopicCount = upgradeTopicCount + 2;
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip";
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
@@ -392,7 +392,7 @@ public class StrimziUpgradeST extends AbstractST {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else if (f.getName().matches("060-Deployment.*")) {
+            } else if (f.getName().matches(".*Deployment.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
             } else {
                 cmdKubeClient().apply(f);
