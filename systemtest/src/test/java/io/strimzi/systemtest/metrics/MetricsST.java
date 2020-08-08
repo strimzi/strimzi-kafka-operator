@@ -356,6 +356,7 @@ public class MetricsST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() throws Exception {
+        LOGGER.info("Setting up Environment for MetricsST");
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
