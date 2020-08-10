@@ -43,16 +43,6 @@
     replacement: $1
     action: replace
   metric_relabel_configs:
-  - source_labels: [pod]
-    separator: ;
-    regex: (.*)
-    target_label: kubernetes_pod_name
-    replacement: $1
-    action: replace
-  - separator: ;
-    regex: pod
-    replacement: $1
-    action: labeldrop
   - source_labels: [container, __name__]
     separator: ;
     regex: POD;container_(network).*
