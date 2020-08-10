@@ -44,7 +44,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
         KafkaClientsResource.producerStrimziBridge(producerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
-        ClientUtils.waitForStrimziProducerFinish(producerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -76,7 +76,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
         assertThat(internalKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
 
-        ClientUtils.waitForStrimziConsumerFinish(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @BeforeAll

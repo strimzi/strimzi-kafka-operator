@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -50,7 +51,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
         KafkaClientsResource.producerStrimziBridge(producerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
-        ClientUtils.waitForStrimziProducerFinish(producerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -85,7 +86,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .build();
 
         assertThat(internalKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
-        ClientUtils.waitForStrimziConsumerFinish(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @Test
@@ -213,7 +214,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
-        assertThat(bridgeStatus.getConditions().get(0).getType(), is("Ready"));
+        assertThat(bridgeStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @Test
