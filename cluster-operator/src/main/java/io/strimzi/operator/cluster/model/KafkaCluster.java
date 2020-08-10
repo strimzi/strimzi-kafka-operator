@@ -132,7 +132,6 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
 
-    public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
     // OAUTH ENV VARS
@@ -219,8 +218,8 @@ public class KafkaCluster extends AbstractModel {
     private KafkaAuthorization authorization;
     private KafkaVersion kafkaVersion;
     private CruiseControlSpec cruiseControlSpec;
-    private final String kafkaDefaultNumPartitions = "1";
-    private final String kafkaDefaultReplicationFactor = "1";
+    private String kafkaDefaultNumPartitions = "1";
+    private String kafkaDefaultReplicationFactor = "1";
     private String ccNumPartitions = null;
     private String ccReplicationFactor = null;
     private boolean isJmxEnabled;
