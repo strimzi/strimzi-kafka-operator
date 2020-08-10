@@ -9,6 +9,7 @@
   * enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
   * new Grafana dashboard for the Cruise Control metrics
 * Configure Cluster Operator logging using ConfigMap instead of environment variable and support dynamic changes  
+* Switch to use the `AclAuthorizer` class for the `simple` Kafka authorization type. `AclAuthorizer` contains new features such as the ability to control the amount of authorization logs in the broker logs.
 
 ### Deprecations and removals
 
