@@ -517,10 +517,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}) by (kubernetes_pod_name)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",pod=~\"$strimzi_cluster_name-$zk_node\"}) by (pod)",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{kubernetes_pod_name}}",
+          "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
@@ -602,10 +602,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_user_seconds_total{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}[5m])) by (kubernetes_pod_name)",
+          "expr": "sum(rate(container_cpu_user_seconds_total{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",pod=~\"$strimzi_cluster_name-$zk_node\"}[5m])) by (pod)",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{kubernetes_pod_name}}",
+          "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
