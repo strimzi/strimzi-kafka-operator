@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-public enum CruiseControlConfigurationGoals {
+public enum CruiseControlGoals {
 
     RACK_AWARENESS_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal"),
     REPLICA_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal"),
@@ -25,12 +25,12 @@ public enum CruiseControlConfigurationGoals {
 
     private final String name;
 
-    CruiseControlConfigurationGoals(String name) {
+    CruiseControlGoals(String name) {
         this.name = name;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return name;
     }
 }

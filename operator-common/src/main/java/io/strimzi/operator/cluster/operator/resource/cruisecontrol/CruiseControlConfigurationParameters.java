@@ -41,7 +41,7 @@ public enum CruiseControlConfigurationParameters {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return name;
     }
 }
