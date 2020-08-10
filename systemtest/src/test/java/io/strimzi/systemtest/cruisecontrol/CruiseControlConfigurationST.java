@@ -65,6 +65,8 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
     private static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
+    private static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
+    private static final String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
 
     private static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     private static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
@@ -202,7 +204,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         EnvVar cruiseControlConfiguration = null;
 
         for (EnvVar envVar : Objects.requireNonNull(cruiseControlContainer).getEnv()) {
-            if (envVar.getName().equals("CRUISE_CONTROL_CONFIGURATION")) {
+            if (envVar.getName().equals(CRUISE_CONTROL_CONFIGURATION_ENV)) {
                 cruiseControlConfiguration = envVar;
             }
         }
@@ -257,13 +259,10 @@ public class CruiseControlConfigurationST extends AbstractST {
             }};
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-
             LOGGER.info("Changing cruise control performance tuning options");
-
-            CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
-                    .addToConfig(performanceTuningOpts).build();
-
-            kafka.getSpec().setCruiseControl(cruiseControl);
+            kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder()
+                    .addToConfig(performanceTuningOpts)
+                    .build());
         });
 
         LOGGER.info("Verifying that CC pod is rolling, after changing options");
@@ -276,22 +275,20 @@ public class CruiseControlConfigurationST extends AbstractST {
         Pod cruiseControlPod = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0);
 
         // Get CruiseControl resource properties
-        for (Container container : cruiseControlPod.getSpec().getContainers()) {
-            if (container.getName().equals("cruise-control")) {
-                cruiseControlContainer = container;
-            }
-        }
-        for (EnvVar envVar : Objects.requireNonNull(cruiseControlContainer).getEnv()) {
-            if (envVar.getName().equals("CRUISE_CONTROL_CONFIGURATION")) {
-                cruiseControlConfiguration = envVar;
-            }
-        }
-        InputStream configurationContainerStream = new ByteArrayInputStream(Objects.requireNonNull(cruiseControlConfiguration).getValue().getBytes(StandardCharsets.UTF_8));
+        cruiseControlContainer = cruiseControlPod.getSpec().getContainers().stream()
+                .filter(container -> container.getName().equals(CRUISE_CONTROL_CONTAINER_NAME))
+                .findFirst().orElse(null);
+
+        cruiseControlConfiguration = Objects.requireNonNull(cruiseControlContainer).getEnv().stream()
+                .filter(envVar -> envVar.getName().equals(CRUISE_CONTROL_CONFIGURATION_ENV))
+                .findFirst().orElse(null);
+
+        InputStream configurationContainerStream = new ByteArrayInputStream(
+                Objects.requireNonNull(cruiseControlConfiguration).getValue().getBytes(StandardCharsets.UTF_8));
         Properties containerConfiguration = new Properties();
         containerConfiguration.load(configurationContainerStream);
 
         LOGGER.info("Verifying Cruise control performance options are set in Kafka CR");
-//        Map<String, String> tmpContainerConfigMap = Maps.fromProperties(containerConfiguration);
         performanceTuningOpts.forEach((key, value) ->
                 assertThat(containerConfiguration, hasEntry(key, value.toString())));
     }
