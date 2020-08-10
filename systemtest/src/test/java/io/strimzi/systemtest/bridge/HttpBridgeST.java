@@ -86,6 +86,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .build();
 
         assertThat(internalKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
+
         ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
