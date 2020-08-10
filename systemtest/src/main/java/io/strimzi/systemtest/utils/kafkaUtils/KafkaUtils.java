@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -38,14 +40,14 @@ public class KafkaUtils {
     private KafkaUtils() {}
 
     public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, "Ready");
+        waitForKafkaStatus(clusterName, Ready);
     }
 
     public static void waitForKafkaNotReady(String clusterName) {
-        waitForKafkaStatus(clusterName, "NotReady");
+        waitForKafkaStatus(clusterName, NotReady);
     }
 
-    public static void waitForKafkaStatus(String clusterName, String state) {
+    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
         Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }

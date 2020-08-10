@@ -22,6 +22,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaMirrorMakerResource {
@@ -111,7 +112,7 @@ public class KafkaMirrorMakerResource {
     }
 
     private static KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
-        return ResourceManager.waitForResourceStatus(kafkaMirrorMakerClient(), kafkaMirrorMaker, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaMirrorMakerClient(), kafkaMirrorMaker, Ready);
     }
 
     private static KafkaMirrorMaker deleteLater(KafkaMirrorMaker kafkaMirrorMaker) {

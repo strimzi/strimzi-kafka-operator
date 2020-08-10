@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaConnectorResource {
@@ -92,7 +93,7 @@ public class KafkaConnectorResource {
     }
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, Ready);
     }
 
     private static KafkaConnector deleteLater(KafkaConnector kafkaConnector) {
