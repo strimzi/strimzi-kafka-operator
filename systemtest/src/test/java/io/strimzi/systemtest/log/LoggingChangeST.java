@@ -35,6 +35,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -454,6 +455,61 @@ class LoggingChangeST extends AbstractST {
         assertThat(StUtils.getLogFromPodByTime(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "30s"), is(emptyString()));
 
         assertThat("Bridge pod should not roll", DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(CLUSTER_NAME)), equalTo(bridgeSnapshot));
+    }
+
+    @Test
+    void testDynamicallySetClusterOperatorLoggingLevels() {
+        Map<String, String> coPod = DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME);
+        String coPodName = kubeClient().listPodsByPrefixInName(STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+
+        String log4jConfig =
+            "name = COConfig\n" +
+            "monitorInterval = 30\n" +
+            "\n" +
+            "    appender.console.type = Console\n" +
+            "    appender.console.name = STDOUT\n" +
+            "    appender.console.layout.type = PatternLayout\n" +
+            "    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n\n" +
+            "\n" +
+            "    rootLogger.level = INFO\n" +
+            "    rootLogger.appenderRefs = stdout\n" +
+            "    rootLogger.appenderRef.console.ref = STDOUT\n" +
+            "    rootLogger.additivity = false\n" +
+            "\n" +
+            "    # Kafka AdminClient logging is a bit noisy at INFO level\n" +
+            "    logger.kafka.name = org.apache.kafka\n" +
+            "    logger.kafka.level = WARN\n" +
+            "    logger.kafka.additivity = false\n" +
+            "\n" +
+            "    # Zookeeper is very verbose even on INFO level -> We set it to WARN by default\n" +
+            "    logger.zookeepertrustmanager.name = org.apache.zookeeper\n" +
+            "    logger.zookeepertrustmanager.level = WARN\n" +
+            "    logger.zookeepertrustmanager.additivity = false";
+
+        ConfigMap coMap = new ConfigMapBuilder()
+            .withNewMetadata()
+                .addToLabels("app", "strimzi")
+                .withName(STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .withData(Collections.singletonMap("log4j2.properties", log4jConfig))
+            .build();
+
+        LOGGER.info("Changing logging for cluster-operator");
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(coMap);
+
+        String command = "cat /opt/strimzi/custom-config/log4j2.properties";
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().contains(log4jConfig)
+        );
+
+        LOGGER.info("Checking log4j2.properties in CO pod");
+        String podLogConfig = cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        assertThat(podLogConfig, equalTo(log4jConfig));
+
+        LOGGER.info("Checking if CO rolled it's pod");
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
     }
 
     @BeforeAll
