@@ -30,6 +30,9 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -38,6 +41,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 public class KafkaResource {
     private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
     private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/cruise-control/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = "../examples/metrics/kafka-cruise-control-metrics.yaml";
     private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
     private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
 
@@ -108,6 +112,31 @@ public class KafkaResource {
     public static DoneableKafka kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    public static DoneableKafka kafkaAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG);
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    public static DoneableKafka kafkaWithMetricsAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
+
+        Map<String, String> rule = new HashMap<>();
+        rule.put("pattern", "kafka.cruisecontrol<name=(.+)><>(\\w+)");
+        rule.put("name", "kafka_cruisecontrol_$1_$2");
+        rule.put("type", "GAUGE");
+
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .editSpec()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
+                .withNewCruiseControl()
+                    .addToMetrics("lowercaseOutputName", true)
+                    .addToMetrics("rules", Collections.singletonList(rule))
+                .endCruiseControl()
+            .endSpec()
+            .build());
     }
 
     public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
