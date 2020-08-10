@@ -62,6 +62,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -218,6 +219,8 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithEmptyConfig(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         try {
             testUpgradeMinorToPrevMessageFormatConfig(context, emptyMap(), true);
         } catch (UpgradeException e) {
@@ -228,6 +231,8 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithSameMessageFormatConfig(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
                 // Minor version upgrade doesn't require proto or mvg version change, so single phase
@@ -236,11 +241,15 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithOldMessageFormatConfig(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "1.0"), true);
     }
 
     @Test
     public void upgradeMinorToPrevWithSameProtocolVersion(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
@@ -250,6 +259,8 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithOldProtocolVersion(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, "1.1"),
@@ -304,6 +315,8 @@ public class KafkaUpdateTest {
      */
     @Test
     public void testUpgradeMinorToPrevMessageFormatConfig_exceptionDuringPhase0Roll(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         Map<String, Object> initialConfig = singletonMap(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION);
         String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
         String upgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;

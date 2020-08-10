@@ -84,7 +84,7 @@ public class StrimziUpgradeST extends AbstractST {
     // ExpectedTopicCount contains additionally consumer-offset topic and my-topic
     private int expectedTopicCount = upgradeTopicCount + 2;
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip";
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
@@ -168,7 +168,7 @@ public class StrimziUpgradeST extends AbstractST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        coDir = new File(dir, "strimzi-0.18.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-0.19.0/install/cluster-operator/");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
@@ -177,7 +177,7 @@ public class StrimziUpgradeST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withVersion(null)
-                    .addToConfig("log.message.format.version", "2.4")
+                    .addToConfig("log.message.format.version", "2.5")
                 .endKafka()
             .endSpec().done();
 
@@ -197,7 +197,7 @@ public class StrimziUpgradeST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.5.0"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.6.0"));
     }
 
     @SuppressWarnings("MethodLength")
@@ -392,7 +392,7 @@ public class StrimziUpgradeST extends AbstractST {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else if (f.getName().matches("060-Deployment.*")) {
+            } else if (f.getName().matches(".*Deployment.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
             } else {
                 cmdKubeClient().apply(f);

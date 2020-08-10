@@ -99,16 +99,16 @@
         <fasterxml.jackson-databind.version>2.10.2</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.10.2</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.10.2</fasterxml.jackson-annotations.version>
-        <kafka.version>2.5.0</kafka.version>
+        <kafka.version>2.6.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.10</scala-library.version>
-        <zookeeper.version>3.5.7</zookeeper.version>
+        <zookeeper.version>3.5.8</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.3.2</quartz.version>
-        <debezium.version>1.1.0.Final</debezium.version>
-        <jaeger.version>1.0.0</jaeger.version>
+        <debezium.version>1.2.1.Final</debezium.version>
+        <jaeger.version>1.1.0</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.4</opentracing-kafka.version>
         <strimzi-oauth.version>0.5.0</strimzi-oauth.version>
