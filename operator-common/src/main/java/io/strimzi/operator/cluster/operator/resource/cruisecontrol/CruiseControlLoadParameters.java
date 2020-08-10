@@ -22,10 +22,10 @@ public enum CruiseControlLoadParameters {
     CPU_PERCENTAGE("CpuPct", "cpuPercentage", "double"),
     DISK_PERCENTAGE("DiskPct", "diskUsedPercentage", "double"),
     DISK_MB("DiskMB", "diskUsedMB", "double"),
-    NETWORK_OUT_RATE("NwOutRate", "networkOutRate", "double"),
-    LEADER_NETWORK_IN_RATE("LeaderNwInRate", "leaderNetworkInRate", "double"),
-    FOLLOWER_NETWORK_IN_RATE("FollowerNwInRate", "followerNetworkInRate", "double"),
-    POTENTIAL_MAX_NETWORK_OUT_RATE("PnwOutRate", "potentialMaxNetworkOutRate", "double");
+    NETWORK_OUT_RATE("NwOutRate", "networkOutRateKB", "double"),
+    LEADER_NETWORK_IN_RATE("LeaderNwInRate", "leaderNetworkInRateKB", "double"),
+    FOLLOWER_NETWORK_IN_RATE("FollowerNwInRate", "followerNetworkInRateKB", "double"),
+    POTENTIAL_MAX_NETWORK_OUT_RATE("PnwOutRate", "potentialMaxNetworkOutRateKB", "double");
 
     /** The key used in the load JSON object returned by Cruise Control. */
     private String cruiseControlKey;
