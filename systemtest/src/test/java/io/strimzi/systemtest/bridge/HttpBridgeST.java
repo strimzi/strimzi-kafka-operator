@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -249,7 +250,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
-        assertThat(bridgeStatus.getConditions().get(0).getType(), is("Ready"));
+        assertThat(bridgeStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @Test

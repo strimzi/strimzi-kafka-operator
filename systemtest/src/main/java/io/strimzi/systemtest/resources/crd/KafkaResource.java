@@ -32,6 +32,7 @@ import io.strimzi.test.TestUtils;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaResource {
@@ -226,7 +227,7 @@ public class KafkaResource {
         if (kafka.getSpec().getCruiseControl() != null) {
             timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
         }
-        return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, "Ready", timeout);
+        return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, Ready, timeout);
     }
 
     private static Kafka deleteLater(Kafka kafka) {

@@ -78,7 +78,7 @@ public class KafkaRebalanceResource {
 
     private static KafkaRebalance waitFor(KafkaRebalance kafkaRebalance) {
         long timeout = ResourceOperation.getTimeoutForKafkaRebalanceState(KafkaRebalanceState.PendingProposal);
-        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, KafkaRebalanceState.PendingProposal.toString(), timeout);
+        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, KafkaRebalanceState.PendingProposal, timeout);
     }
 
     private static KafkaRebalance deleteLater(KafkaRebalance kafkaRebalance) {

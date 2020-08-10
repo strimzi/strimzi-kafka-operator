@@ -23,6 +23,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaConnectS2IResource {
@@ -102,7 +103,7 @@ public class KafkaConnectS2IResource {
     }
 
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectS2IClient(), kafkaConnectS2I, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaConnectS2IClient(), kafkaConnectS2I, Ready);
     }
 
     private static KafkaConnectS2I deleteLater(KafkaConnectS2I kafkaConnectS2I) {

@@ -68,6 +68,8 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRAVIS;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -901,7 +903,7 @@ class ConnectST extends AbstractST {
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
-        assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+        assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @Test
@@ -941,8 +943,8 @@ class ConnectST extends AbstractST {
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
-        assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
-        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 

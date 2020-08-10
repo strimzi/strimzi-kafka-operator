@@ -37,6 +37,7 @@ import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -140,7 +141,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
 
-        assertThat(kafkaCondition.getType(), is("Ready"));
+        assertThat(kafkaCondition.getType(), is(Ready.toString()));
 
         List<Secret> secretsOfSecondNamespace = kubeClient(SECOND_NAMESPACE).listSecrets();
 

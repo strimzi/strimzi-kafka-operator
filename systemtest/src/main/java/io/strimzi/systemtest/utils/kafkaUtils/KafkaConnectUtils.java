@@ -12,6 +12,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -26,17 +28,17 @@ public class KafkaConnectUtils {
      * @param clusterName name of KafkaConnect cluster
      * @param status desired state
      */
-    public static void waitForConnectStatus(String clusterName, String status) {
+    public static void waitForConnectStatus(String clusterName, Enum<?>  status) {
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaConnectResource.kafkaConnectClient(), kafkaConnect, status);
     }
 
     public static void waitForConnectReady(String clusterName) {
-        waitForConnectStatus(clusterName, "Ready");
+        waitForConnectStatus(clusterName, Ready);
     }
 
     public static void waitForConnectNotReady(String clusterName) {
-        waitForConnectStatus(clusterName, "NotReady");
+        waitForConnectStatus(clusterName, NotReady);
     }
 
     public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {

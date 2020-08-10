@@ -18,6 +18,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaBridgeResource {
@@ -126,7 +127,7 @@ public class KafkaBridgeResource {
     }
 
     private static KafkaBridge waitFor(KafkaBridge kafkaBridge) {
-        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, Ready);
     }
 
     private static KafkaBridge deleteLater(KafkaBridge kafkaBridge) {
