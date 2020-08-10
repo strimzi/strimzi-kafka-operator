@@ -3478,13 +3478,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private String getLoggingAppenders(String loggingConfiguration) {
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(loggingConfiguration);
-        String result = "";
+        StringBuilder result = new StringBuilder();
         for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
             if (entry.getKey().startsWith("log4j.appender")) {
-                result += entry.getKey() + "=" + entry.getValue();
+                result.append(entry.getKey()).append("=").append(entry.getValue());
             }
         }
-        return result;
+        return result.toString();
     }
 
     /* test */ Date dateSupplier() {

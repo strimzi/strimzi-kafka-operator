@@ -32,7 +32,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     private final Collection<AlterConfigOp> diff;
     private int brokerId;
 
-    public static final String VALID_LOGGER_LEVELS = "ERROR, WARN, TRACE, INFO, DEBUG, FATAL";
+    private static final String[] VALID_LOGGER_LEVELS = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
 
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
         this.brokerId = brokerId;
@@ -179,7 +179,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     }
 
     private static boolean isValidLoggerLevel(String level) {
-        return Arrays.stream(VALID_LOGGER_LEVELS.split(", ")).anyMatch(lev -> lev.equals(level));
+        return Arrays.stream(VALID_LOGGER_LEVELS).anyMatch(lev -> lev.equals(level));
     }
 
 }
