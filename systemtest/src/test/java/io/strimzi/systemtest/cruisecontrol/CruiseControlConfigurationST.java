@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlServerParameters;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -216,11 +216,11 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         LOGGER.info("Verifying that all configuration in the cruise control container matching the cruise control file {} properties", CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
         List<String> checkCCProperties = Arrays.asList(
-                CruiseControlServerParameters.PARTITION_METRICS_WINDOWS.getName(),
-                CruiseControlServerParameters.PARTITION_METRICS_WINDOW_MS.getName(),
-                CruiseControlServerParameters.BROKER_METRICS_WINDOWS.getName(),
-                CruiseControlServerParameters.BROKER_METRICS_WINDOW_MS.getName(),
-                CruiseControlServerParameters.COMPLETED_USER_TASK_RETENTION_MS.getName(),
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOWS.getName(),
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS.getName(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOWS.getName(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS.getName(),
+                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS.getName(),
                 "goals", "default.goals");
 
         for (String propertyName : checkCCProperties) {
@@ -242,20 +242,20 @@ public class CruiseControlConfigurationST extends AbstractST {
     @Order(6)
     @Test
     void testConfigurationPerformanceOptions() throws IOException {
-        Container cruiseControlContainer = null;
-        EnvVar cruiseControlConfiguration = null;
+        Container cruiseControlContainer;
+        EnvVar cruiseControlConfiguration;
 
         Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
         Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
-                put(CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
-                    CruiseControlServerParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getDefaultValue());
-                put(CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
-                    CruiseControlServerParameters.CONCURRENT_PARTITION_MOVEMENTS.getDefaultValue());
-                put(CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
-                    CruiseControlServerParameters.CONCURRENT_LEADER_MOVEMENTS.getDefaultValue());
-                put(CruiseControlServerParameters.REPLICATION_THROTTLE.getName(),
-                    CruiseControlServerParameters.REPLICATION_THROTTLE.getDefaultValue());
+                put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
+                    CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getDefaultValue());
+                put(CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
+                    CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getDefaultValue());
+                put(CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
+                    CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getDefaultValue());
+                put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getName(),
+                    CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getDefaultValue());
             }};
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {

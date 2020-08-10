@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import java.util.concurrent.TimeUnit;
 
-public enum CruiseControlServerParameters {
+public enum CruiseControlConfigurationParameters {
 
     // 'goals' and 'default.goals' are currently not defined, due to unnecessary dependency pulling for now
     CONCURRENT_PARTITION_MOVEMENTS("num.concurrent.partition.movements.per.broker", 5),
@@ -17,12 +17,17 @@ public enum CruiseControlServerParameters {
     BROKER_METRICS_WINDOW_MS("broker.metrics.window.ms", Integer.toString(300_000)),
     PARTITION_METRICS_WINDOWS("num.partition.metrics.windows", "1"),
     PARTITION_METRICS_WINDOW_MS("partition.metrics.window.ms", Integer.toString(300_000)),
-    COMPLETED_USER_TASK_RETENTION_MS("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
+    COMPLETED_USER_TASK_RETENTION_MS("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1))),
+    CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY("partition.metrics.window.ms", Integer.toString(300_000)),
+    CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY("num.partition.metrics.windows", "1"),
+    CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY("broker.metrics.window.ms", Integer.toString(300_000)),
+    CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY("num.broker.metrics.windows", "20"),
+    CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
 
     private final String name;
     private final Object defaultValue;
 
-    CruiseControlServerParameters(String name, Object defaultValue) {
+    CruiseControlConfigurationParameters(String name, Object defaultValue) {
         this.name = name;
         this.defaultValue = defaultValue;
     }
@@ -33,5 +38,10 @@ public enum CruiseControlServerParameters {
 
     public Object getDefaultValue() {
         return defaultValue;
+    }
+
+    @Override
+    public String toString(){
+        return name;
     }
 }
