@@ -244,7 +244,6 @@ public class TopicST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(isolatedKafkaCluster)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesPlain();
