@@ -690,7 +690,7 @@ public class KafkaClientsResource {
                         .withContainers()
                             .addNewContainer()
                                 .withName(consumerName)
-                                .withImage("imkonge/kafka-http-consumer:latest")
+                                .withImage("strimzi/kafka-http-consumer:latest")
                                 .addNewEnv()
                                     .withName("HOSTNAME")
                                     .withValue(bridgeHostname)
