@@ -43,8 +43,6 @@ spec:
               value: "300000"
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
               value: strimzi/kafka:latest-kafka-2.6.0
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-              value: strimzi/kafka:latest-kafka-2.6.0
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: strimzi/kafka:latest-kafka-2.6.0
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE

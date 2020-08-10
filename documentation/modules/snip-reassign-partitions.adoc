@@ -21,7 +21,7 @@ cat _reassignment.json_ | \
 [source,shell,subs=+quotes]
 ----
 kubectl exec _broker-pod_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
+  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
   --reassignment-json-file /tmp/reassignment.json \
   --execute
 ----
@@ -31,7 +31,7 @@ If you are going to throttle replication you can also pass the `--throttle` opti
 [source,shell,subs=+quotes]
 ----
 kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
+  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 5000000 \
   --execute
@@ -47,7 +47,7 @@ The second JSON object is the target reassignment you have passed in your reassi
 [source,shell,subs=+quotes]
 ----
 kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
+  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 10000000 \
   --execute
@@ -58,7 +58,7 @@ kubectl exec my-cluster-kafka-0 -c kafka -it -- \
 [source,shell,subs=+quotes]
 ----
 kubectl exec _broker-pod_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
+  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
   --reassignment-json-file /tmp/reassignment.json \
   --verify
 ----
@@ -68,7 +68,7 @@ For example,
 [source,shell,subs=+quotes]
 ----
 kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
+  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
   --reassignment-json-file /tmp/reassignment.json \
   --verify
 ----

@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
@@ -70,7 +69,6 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
@@ -118,6 +116,7 @@ import java.util.Set;
 
 import static java.util.Collections.addAll;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_METRIC_REPORTER;
 
@@ -157,7 +156,6 @@ public class KafkaCluster extends AbstractModel {
     protected static final String EXTERNAL_PORT_NAME = "tcp-external";
 
     protected static final int ROUTE_PORT = 443;
-    protected static final String ROUTE_PORT_NAME = "route";
 
     protected static final String KAFKA_NAME = "kafka";
     protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
@@ -167,9 +165,6 @@ public class KafkaCluster extends AbstractModel {
     protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
     protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
-    protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
-    protected static final String TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/kafka-brokers/";
-    protected static final String TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
 
     private static final String NAME_SUFFIX = "-kafka";
 
@@ -218,16 +213,14 @@ public class KafkaCluster extends AbstractModel {
     public static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
 
     // Kafka configuration
-    private String zookeeperConnect;
     private Rack rack;
     private String initImage;
-    private TlsSidecar tlsSidecar;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
     private KafkaVersion kafkaVersion;
     private CruiseControlSpec cruiseControlSpec;
-    private String kafkaDefaultNumPartitions = "1";
-    private String kafkaDefaultReplicationFactor = "1";
+    private final String kafkaDefaultNumPartitions = "1";
+    private final String kafkaDefaultReplicationFactor = "1";
     private String ccNumPartitions = null;
     private String ccReplicationFactor = null;
     private boolean isJmxEnabled;
@@ -250,11 +243,9 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
     protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
-    protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
     protected List<ContainerEnvVar> templateInitContainerEnvVars;
 
     protected SecurityContext templateKafkaContainerSecurityContext;
-    protected SecurityContext templateTlsSidecarContainerSecurityContext;
     protected SecurityContext templateInitContainerSecurityContext;
 
     protected ExternalTrafficPolicy templateExternalBootstrapServiceTrafficPolicy;
@@ -296,8 +287,6 @@ public class KafkaCluster extends AbstractModel {
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
-
-        setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT);
 
         this.mountPath = "/var/lib/kafka";
 
@@ -551,22 +540,6 @@ public class KafkaCluster extends AbstractModel {
 
         result.setResources(kafkaClusterSpec.getResources());
 
-        TlsSidecar tlsSidecar = kafkaClusterSpec.getTlsSidecar();
-        if (tlsSidecar == null) {
-            tlsSidecar = new TlsSidecar();
-        }
-
-        String tlsSideCarImage = tlsSidecar.getImage();
-        if (tlsSideCarImage == null) {
-            tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
-        }
-        tlsSidecar.setImage(tlsSideCarImage);
-
-        if (tlsSidecar.getImage() == null) {
-            tlsSidecar.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
-        }
-        result.setTlsSidecar(tlsSidecar);
-
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
         result.setListeners(listeners);
 
@@ -730,20 +703,12 @@ public class KafkaCluster extends AbstractModel {
                 result.templateKafkaContainerEnvVars = template.getKafkaContainer().getEnv();
             }
 
-            if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
-                result.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
-            }
-
             if (template.getInitContainer() != null && template.getInitContainer().getEnv() != null) {
                 result.templateInitContainerEnvVars = template.getInitContainer().getEnv();
             }
 
             if (template.getKafkaContainer() != null && template.getKafkaContainer().getSecurityContext() != null) {
                 result.templateKafkaContainerSecurityContext = template.getKafkaContainer().getSecurityContext();
-            }
-
-            if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
-                result.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
             }
 
             if (template.getInitContainer() != null && template.getInitContainer().getSecurityContext() != null) {
@@ -856,7 +821,7 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (isJmxEnabled) {
+        if (isJmxEnabled()) {
             ports.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
@@ -1738,9 +1703,6 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-
-        List<Container> containers = new ArrayList<>(2);
-
         Container container = new ContainerBuilder()
                 .withName(KAFKA_NAME)
                 .withImage(getImage())
@@ -1762,32 +1724,7 @@ public class KafkaCluster extends AbstractModel {
                 .withSecurityContext(templateKafkaContainerSecurityContext)
                 .build();
 
-        String tlsSidecarImage = getImage();
-        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
-            tlsSidecarImage = tlsSidecar.getImage();
-        }
-
-        Container tlsSidecarContainer = new ContainerBuilder()
-                .withName(TLS_SIDECAR_NAME)
-                .withImage(tlsSidecarImage)
-                .withCommand("/opt/stunnel/kafka_stunnel_run.sh")
-                .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
-                .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
-                .withEnv(getTlsSidevarEnvVars())
-                .withVolumeMounts(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
-                        VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop()
-                        .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh")
-                        .endExec().endPreStop().build())
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
-                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
-                .build();
-
-        containers.add(container);
-        containers.add(tlsSidecarContainer);
-
-        return containers;
+        return singletonList(container);
     }
 
     @Override
@@ -1849,7 +1786,7 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        if (isJmxEnabled) {
+        if (isJmxEnabled()) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
             if (isJmxAuthenticated) {
                 varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
@@ -1931,33 +1868,12 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
-    protected List<EnvVar> getTlsSidevarEnvVars() {
-        List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
-        varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
-
-        // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
-
-        addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
-
-        return varList;
-    }
-
-    protected void setZookeeperConnect(String zookeeperConnect) {
-        this.zookeeperConnect = zookeeperConnect;
-    }
-
     protected void setRack(Rack rack) {
         this.rack = rack;
     }
 
     protected void setInitImage(String initImage) {
         this.initImage = initImage;
-    }
-
-    protected void setTlsSidecar(TlsSidecar tlsSidecar) {
-        this.tlsSidecar = tlsSidecar;
     }
 
     @Override
@@ -2139,7 +2055,7 @@ public class KafkaCluster extends AbstractModel {
             rules.add(metricsRule);
         }
 
-        if (isJmxEnabled) {
+        if (isJmxEnabled()) {
             NetworkPolicyPort jmxPort = new NetworkPolicyPort();
             jmxPort.setPort(new IntOrString(JMX_PORT));
 
@@ -2499,7 +2415,7 @@ public class KafkaCluster extends AbstractModel {
         String result = new KafkaBrokerConfigurationBuilder()
                 .withBrokerId()
                 .withRackId(rack)
-                .withZookeeper()
+                .withZookeeper(cluster)
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)

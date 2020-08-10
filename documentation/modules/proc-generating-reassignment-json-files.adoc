@@ -61,7 +61,7 @@ cat _topics.json_ | kubectl exec -c kafka _<BrokerPod>_ -i -- \
 [source,subs=+quotes]
 ----
 kubectl exec _<BrokerPod>_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
+  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
   --topics-to-move-json-file /tmp/topics.json \
   --broker-list _<BrokerList>_ \
   --generate
@@ -72,7 +72,7 @@ For example, to move all the partitions of `topic-a` and `topic-b` to brokers `4
 [source,shell,subs=+quotes]
 ----
 kubectl exec _<BrokerPod>_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 \
+  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
   --topics-to-move-json-file /tmp/topics.json \
   --broker-list 4,7 \
   --generate

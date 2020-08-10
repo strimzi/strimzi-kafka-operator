@@ -124,11 +124,21 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the Zookeeper connection URL.
      *
+     * @param clusterName The name of the Kafka custom resource
+     *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withZookeeper()  {
+    public KafkaBrokerConfigurationBuilder withZookeeper(String clusterName)  {
         printSectionHeader("Zookeeper");
-        writer.println("zookeeper.connect=localhost:2181");
+        writer.println(String.format("zookeeper.connect=%s:%d", ZookeeperCluster.serviceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
+        writer.println("zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty");
+        writer.println("zookeeper.ssl.client.enable=true");
+        writer.println("zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("zookeeper.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("zookeeper.ssl.keystore.type=PKCS12");
+        writer.println("zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("zookeeper.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("zookeeper.ssl.truststore.type=PKCS12");
         writer.println();
 
         return this;
