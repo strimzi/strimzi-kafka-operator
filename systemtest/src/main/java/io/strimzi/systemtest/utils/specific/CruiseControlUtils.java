@@ -34,6 +34,9 @@ public class CruiseControlUtils {
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
+    private static final int CRUISE_CONTROL_METRICS_PORT = 9404;
+
+    private static final String CONTAINER_NAME = "cruise-control";
 
     private CruiseControlUtils() { }
 
@@ -45,15 +48,19 @@ public class CruiseControlUtils {
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
     public static String callApi(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
-        String ccPodName = PodUtils.getFirstPodNameContaining("cruise-control");
+        String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
 
-        return
-            cmdKubeClient().execInPodContainer(
-            ccPodName,
-            "cruise-control",
-            "/bin/bash",
-            "-c",
+        return cmdKubeClient().execInPodContainer(ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
+    }
+
+    @SuppressWarnings("Regexp")
+    @SuppressFBWarnings("DM_CONVERT_CASE")
+    public static String callApi(SupportedHttpMethods method, String endpoint) {
+        String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
+
+        return cmdKubeClient().execInPodContainer(ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_METRICS_PORT + endpoint).out();
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
