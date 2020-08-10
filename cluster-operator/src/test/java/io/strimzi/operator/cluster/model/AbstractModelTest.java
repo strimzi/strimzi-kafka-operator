@@ -232,9 +232,9 @@ public class AbstractModelTest {
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:tag"), is(ImagePullPolicy.NEVER.toString()));
-        assertThat(am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:latest-kafka-2.5.0"), is(ImagePullPolicy.NEVER.toString()));
+        assertThat(am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:latest-kafka-2.6.0"), is(ImagePullPolicy.NEVER.toString()));
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest"), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
-        assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest-kafka-2.5.0"), is(ImagePullPolicy.ALWAYS.toString()));
+        assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest-kafka-2.6.0"), is(ImagePullPolicy.ALWAYS.toString()));
     }
 }

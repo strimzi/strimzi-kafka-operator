@@ -17,13 +17,13 @@
 :KubernetesVersion: 1.11 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 2.5.0
-:KafkaVersionLower: 2.4.1
-:KafkaVersionHigher: 2.5.0
+:DefaultKafkaVersion: 2.6.0
+:KafkaVersionLower: 2.5.0
+:KafkaVersionHigher: 2.6.0
 
 //log message format version
-:LogMsgVersLower: 2.4
-:LogMsgVersHigher: 2.5
+:LogMsgVersLower: 2.5
+:LogMsgVersHigher: 2.4
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
@@ -159,7 +159,7 @@
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.18.0
+:ProductVersion: 0.20.0
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html

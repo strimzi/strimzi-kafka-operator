@@ -62,9 +62,6 @@ public class KafkaConnectApiTest {
         cluster.deleteDataUponShutdown(true);
         cluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
         cluster.startup();
-        cluster.createTopics(getClass().getSimpleName() + "-offsets",
-                getClass().getSimpleName() + "-config",
-                getClass().getSimpleName() + "-status");
 
         // Start a N node connect cluster
         Map<String, String> workerProps = new HashMap<>();

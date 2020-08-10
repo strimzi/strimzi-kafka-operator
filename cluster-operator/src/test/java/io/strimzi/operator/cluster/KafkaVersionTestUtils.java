@@ -21,48 +21,48 @@ public class KafkaVersionTestUtils {
     public static final String KAFKA_MIRROR_MAKER_IMAGE_STR = "strimzi/kafka-mirror-maker:latest-kafka-";
     public static final String KAFKA_MIRROR_MAKER_2_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
 
-    public static final String LATEST_KAFKA_VERSION = "2.5.0";
-    public static final String LATEST_FORMAT_VERSION = "2.5";
-    public static final String LATEST_PROTOCOL_VERSION = "2.5";
-    public static final String LATEST_ZOOKEEPER_VERSION = "3.5.7";
+    public static final String LATEST_KAFKA_VERSION = "2.6.0";
+    public static final String LATEST_FORMAT_VERSION = "2.6";
+    public static final String LATEST_PROTOCOL_VERSION = "2.6";
+    public static final String LATEST_ZOOKEEPER_VERSION = "3.5.8";
     public static final String LATEST_CHECKSUM = "ABCD1234";
-    public static final String LATEST_THIRD_PARTY_VERSION = "2.5.x";
+    public static final String LATEST_THIRD_PARTY_VERSION = "2.6.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_KAFKA_VERSION;
 
-    public static final String LATEST_MINOR_KAFKA_VERSION = "2.5.0";
-    public static final String LATEST_MINOR_FORMAT_VERSION = "2.5";
-    public static final String LATEST_MINOR_PROTOCOL_VERSION = "2.5";
-    public static final String LATEST_MINOR_ZOOKEEPER_VERSION = "3.5.7";
+    public static final String LATEST_MINOR_KAFKA_VERSION = "2.6.0";
+    public static final String LATEST_MINOR_FORMAT_VERSION = "2.6";
+    public static final String LATEST_MINOR_PROTOCOL_VERSION = "2.6";
+    public static final String LATEST_MINOR_ZOOKEEPER_VERSION = "3.5.8";
     public static final String LATEST_MINOR_CHECKSUM = "ABCD1234";
-    public static final String LATEST_MINOR_THIRD_PARTY_VERSION = "2.4.x";
+    public static final String LATEST_MINOR_THIRD_PARTY_VERSION = "2.6.x";
     public static final String LATEST_MINOR_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_MINOR_KAFKA_VERSION;
     public static final String LATEST_MINOR_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_MINOR_KAFKA_VERSION;
     public static final String LATEST_MINOR_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + LATEST_MINOR_KAFKA_VERSION;
     public static final String LATEST_MINOR_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_MINOR_KAFKA_VERSION;
     public static final String LATEST_MINOR_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_MINOR_KAFKA_VERSION;
 
-    public static final String PREVIOUS_KAFKA_VERSION = "2.4.1";
-    public static final String PREVIOUS_FORMAT_VERSION = "2.4";
-    public static final String PREVIOUS_PROTOCOL_VERSION = "2.4";
-    public static final String PREVIOUS_ZOOKEEPER_VERSION = "3.5.6";
+    public static final String PREVIOUS_KAFKA_VERSION = "2.5.0";
+    public static final String PREVIOUS_FORMAT_VERSION = "2.5";
+    public static final String PREVIOUS_PROTOCOL_VERSION = "2.5";
+    public static final String PREVIOUS_ZOOKEEPER_VERSION = "3.5.7";
     public static final String PREVIOUS_CHECKSUM = "ABCD1234";
-    public static final String PREVIOUS_THIRD_PARTY_VERSION = "2.4.x";
+    public static final String PREVIOUS_THIRD_PARTY_VERSION = "2.5.x";
     public static final String PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
 
-    public static final String PREVIOUS_MINOR_KAFKA_VERSION = "2.4.0";
-    public static final String PREVIOUS_MINOR_FORMAT_VERSION = "2.4";
-    public static final String PREVIOUS_MINOR_PROTOCOL_VERSION = "2.4";
-    public static final String PREVIOUS_MINOR_ZOOKEEPER_VERSION = "3.5.6";
+    public static final String PREVIOUS_MINOR_KAFKA_VERSION = "2.5.0";
+    public static final String PREVIOUS_MINOR_FORMAT_VERSION = "2.5";
+    public static final String PREVIOUS_MINOR_PROTOCOL_VERSION = "2.5";
+    public static final String PREVIOUS_MINOR_ZOOKEEPER_VERSION = "3.5.7";
     public static final String PREVIOUS_MINOR_CHECKSUM = "ABCD1234";
-    public static final String PREVIOUS_MINOR_THIRD_PARTY_VERSION = "2.4.x";
+    public static final String PREVIOUS_MINOR_THIRD_PARTY_VERSION = "2.5.x";
     public static final String PREVIOUS_MINOR_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_MINOR_KAFKA_VERSION;
     public static final String PREVIOUS_MINOR_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_MINOR_KAFKA_VERSION;
     public static final String PREVIOUS_MINOR_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + PREVIOUS_MINOR_KAFKA_VERSION;
@@ -139,9 +139,15 @@ public class KafkaVersionTestUtils {
      * Returns a kafka versions yaml string, with four entries, where the latest entry is the default.
      */
     public static String getKafkaVersionYaml() {
-        return getPreviousMinorVersionYaml(false) +
-                getPreviousVersionYaml(false) +
-                getLatestVersionYaml(true);
+        String kafkaVersionYaml = getPreviousMinorVersionYaml(false);
+
+        if (!PREVIOUS_MINOR_KAFKA_VERSION.equals(PREVIOUS_KAFKA_VERSION))   {
+            kafkaVersionYaml += getPreviousVersionYaml(false);
+        }
+
+        kafkaVersionYaml += getLatestVersionYaml(true);
+
+        return kafkaVersionYaml;
     }
 
     public static Map<String, String> getKafkaImageMap() {

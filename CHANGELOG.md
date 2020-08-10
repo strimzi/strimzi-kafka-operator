@@ -3,6 +3,7 @@
 
 ## 0.20.0
 
+* Add support for Kafka 2.6.0 and remove support for 2.4.0 and 2.4.1
 * Updated to Cruise Control 2.0.124, which fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
 * Cruise Control metrics integration:
   * enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
