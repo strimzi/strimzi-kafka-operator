@@ -22,10 +22,14 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(EXTERNAL_CLIENTS_USED)
 class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
+    private static final String NAMESPACE = "bridge-external-cluster-test";
 
     @Test
     void testScramShaAuthWithWeirdUsername() throws Exception {
@@ -179,6 +184,14 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
         }
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser), is(true));
+        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
+    }
+
+    @BeforeAll
+    void createClassResources(Vertx vertx) throws Exception {
+        deployClusterOperator(NAMESPACE);
+        // Create http client
+        client = WebClient.create(vertx, new WebClientOptions()
+            .setSsl(false));
     }
 }

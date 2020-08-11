@@ -30,6 +30,8 @@ import static org.hamcrest.CoreMatchers.hasItem;
 public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
+    private static final String NAMESPACE = "bridge-cors-cluster-test";
+
     private static final String CORS_ORIGIN = "https://strimzi.io";
 
     @Test
@@ -93,7 +95,8 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    static void beforeAll() {
+    void beforeAll() throws Exception {
+        deployClusterOperator(NAMESPACE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
         KafkaBridgeResource.kafkaBridgeWithCors(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME),

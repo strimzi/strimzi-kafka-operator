@@ -17,16 +17,12 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -836,9 +832,7 @@ public class TracingST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(BRIDGE)
     @Test
-    void testKafkaBridgeService(Vertx vertx) throws Exception {
-        WebClient client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
-
+    void testKafkaBridgeService() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         // Deploy http bridge
@@ -869,19 +863,15 @@ public class TracingST extends AbstractST {
             .endSpec()
             .done();
 
-        //String bridgeHost = StUtils.getHost();
+        String bridgeProducer = "bridge-producer";
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        String topicName = "topic-simple-send";
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        JsonObject records = BridgeUtils.generateHttpMessages(MESSAGE_COUNT);
-
-        //JsonObject response = BridgeUtils.sendMessagesHttpRequest(records, bridgeHost, HTTP_BRIDGE_INGRESS_PORT, topicName, client);
-        //KafkaBridgeUtils.checkSendResponse(response, MESSAGE_COUNT);
+        KafkaClientsResource.producerStrimziBridge(bridgeProducer, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        ClientUtils.waitForClientSuccess(bridgeProducer, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)

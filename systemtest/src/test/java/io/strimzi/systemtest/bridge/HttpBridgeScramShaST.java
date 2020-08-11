@@ -33,8 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
-
-    private String bridgeHost = "";
+    private static final String NAMESPACE = "bridge-scram-sha-cluster-test";
 
     private String kafkaClientsPodName;
 
@@ -80,7 +79,8 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
+        deployClusterOperator(NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka

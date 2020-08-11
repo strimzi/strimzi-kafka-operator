@@ -36,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 class HttpBridgeTlsST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
+    private static final String NAMESPACE = "bridge-tls-cluster-test";
 
     @Test
     void testSendSimpleMessageTls() {
@@ -81,7 +82,8 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void createClassResources() {
+    void createClassResources() throws Exception {
+        deployClusterOperator(NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
