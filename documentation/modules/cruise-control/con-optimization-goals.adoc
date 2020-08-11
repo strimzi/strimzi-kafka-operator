@@ -188,7 +188,7 @@ User-provided optimization goals must:
 * Include all configured xref:hard-soft-goals[hard goals], or an error occurs
 * Be a subset of the master optimization goals
 
-To ignore the configured hard goals when generating an optimization proposal, add the `skipHardGoalCheck: true` property to the `KafkaRebalance` custom resource.
+To ignore the configured hard goals when generating an optimization proposal, add the `skipHardGoalCheck: true` property to the `KafkaRebalance` custom resource. See xref:proc-generating-optimization-proposals-{context}[]. 
 
 .Additional resources
 
