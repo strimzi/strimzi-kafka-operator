@@ -4,9 +4,16 @@
 
 [id='proc-kafka-connect-mounting-volumes-{context}']
 
-= Mounting Secrets as volumes
+= Mounting Secrets as volumes for connector configuration
 
-You can create a Kubernetes Secret, mount it as a volume to Kafka Connect, and then use it to configure a Kafka Connect connector.
+You can create a Kubernetes Secret, mount it as a volume to Kafka Connect,
+and then use it to configure a Kafka Connect connector.
+
+Configuration providers allow you to load configuration values from the Secret.
+In this procedure, the configuration provider is named `file`.
+A Secret named `mysecret` is mounted to a volume named `connector-config`.
+The Kafka `FileConfigProvider` class is used to read and extract database _username_ and _password_ property values from the Secret
+to use in the connector configuration.
 
 .Prerequisites
 
@@ -15,6 +22,7 @@ You can create a Kubernetes Secret, mount it as a volume to Kafka Connect, and t
 .Procedure
 
 . Create a secret containing a properties file that defines the configuration options for your connector configuration.
++
 For example:
 +
 [source,yaml,subs=attributes+]
@@ -25,13 +33,17 @@ metadata:
   name: mysecret
 type: Opaque
 stringData:
-  connector.properties: |-
-    dbUsername: my-user
+  connector.properties: |- <1>
+    dbUsername: my-user <2>
     dbPassword: my-password
 ----
+<1> Properties file containing the connector configuration.
+<2> Database _username_ and _password_ properties used in the configuration.
 
 . Create or edit the Kafka Connect resource.
-Configure the `FileConfigProvider` in the `config` section and the `externalConfiguration` section of the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the secret.
++
+Configure the configuration provider in the `config` section and the `externalConfiguration` section of the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the secret.
++
 For example:
 +
 [source,yaml,subs="attributes+"]
@@ -43,21 +55,24 @@ metadata:
 spec:
   # ...
   config:
-    config.providers: file
-    config.providers.file.class: org.apache.kafka.common.config.provider.FileConfigProvider
+    config.providers: file <1>
+    config.providers.file.class: org.apache.kafka.common.config.provider.FileConfigProvider <2>
   #...
   externalConfiguration:
     volumes:
-      - name: connector-config
+      - name: connector-config <3>
         secret:
-          secretName: mysecret
+          secretName: mysecret <4>
 ----
+<1> The name of the configuration provider. Use a comma-separted list for more than one provider.
+<2> The `FileConfigProvider` class used by the configuration provider to access the properties file.
+<3> The name of the volume containing the Secret.
+<4> The name of the Secret.
 
 . Apply the changes to your Kafka Connect deployment.
 +
-Use `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
 
 . Configure your connector
 * If you are using the Kafka Connect HTTP REST interface, use the values from the mounted properties file in your JSON payload with connector configuration.
@@ -65,20 +80,23 @@ For example:
 +
 [source,json,subs="attributes+"]
 ----
-{  
+{
    "name":"my-connector",
    "config":{
       "connector.class":"MyDbConnector",
       "tasks.max":"3",
       "database": "my-postgresql:5432",
-      "username":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}",
-      "password":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}",
+      "username":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}", <1>
+      "password":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}", <2>
       # ...
    }
 }
 ----
+<1> Path to the username property value. The path takes the form `/opt/kafka/external-configuration/_SECRET-VOLUME-NAME_/_PROPERTIES-FILENAME:USERNAME-VALUE_`.
+<2> Path to the password property value. The path takes the form `/opt/kafka/external-configuration/_SECRET-VOLUME-NAME_/_PROPERTIES-FILENAME:PASSWORD-VALUE_`.
 
 * If you are using a `KafkaConnector` resource, use the values from the mounted properties file in the `spec.config` section of your custom resource.
++
 For example:
 +
 [source,yaml,subs="attributes+"]
