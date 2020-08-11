@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 public enum CruiseControlConfigurationParameters {
 
-    // 'goals' and 'default.goals' are currently not defined, due to unnecessary dependency pulling for now
     CONCURRENT_PARTITION_MOVEMENTS("num.concurrent.partition.movements.per.broker", 5),
     CONCURRENT_INTRA_PARTITION_MOVEMENTS("num.concurrent.intra.broker.partition.movements", 2),
     CONCURRENT_LEADER_MOVEMENTS("num.concurrent.leader.movements", 1000),
@@ -22,7 +21,14 @@ public enum CruiseControlConfigurationParameters {
     CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY("num.partition.metrics.windows", "1"),
     CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY("broker.metrics.window.ms", Integer.toString(300_000)),
     CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY("num.broker.metrics.windows", "20"),
-    CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
+    CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1))),
+
+    // Goals String lists
+    CRUISE_CONTROL_GOALS_CONFIG_KEY("goals", ""),
+    CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY("default.goals", ""),
+    CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY("hard.goals", ""),
+    CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY("self.healing.goals", ""),
+    CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY("anomaly.detection.goals", "");
 
     private final String name;
     private final Object defaultValue;

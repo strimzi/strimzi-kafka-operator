@@ -75,12 +75,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     public static final String CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS =
             String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
 
-    public static final String CRUISE_CONTROL_GOALS_CONFIG_KEY = "goals";
-    public static final String CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY = "default.goals";
-    public static final String CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY = "hard.goals";
-    public static final String CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY = "self.healing.goals";
-    public static final String CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY = "anomaly.detection.goals";
-   /*
+    /*
     * Map containing default values for required configuration properties
     */
     private static final Map<String, String> CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP;
@@ -100,9 +95,9 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
                 CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getDefaultValue().toString());
         config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getName(),
                 CruiseControlConfigurationParameters.CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getDefaultValue().toString());
-        config.put(CRUISE_CONTROL_GOALS_CONFIG_KEY, CRUISE_CONTROL_GOALS);
-        config.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY, CRUISE_CONTROL_GOALS);
-        config.put(CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY, CRUISE_CONTROL_HARD_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_HARD_GOALS);
         CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableMap(config);
 
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
