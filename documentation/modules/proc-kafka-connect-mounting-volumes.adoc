@@ -9,11 +9,11 @@
 You can create a Kubernetes Secret, mount it as a volume to Kafka Connect,
 and then use it to configure a Kafka Connect connector.
 
-Configuration providers allow you to load configuration values from the Secret.
-In this procedure, the configuration provider is named `file`.
-A Secret named `mysecret` is mounted to a volume named `connector-config`.
-The Kafka `FileConfigProvider` class is used to read and extract database _username_ and _password_ property values from the Secret
-to use in the connector configuration.
+Configuration providers allow you to load configuration values from external sources.
+
+In this procedure, a Secret named `mysecret` is mounted to a volume named `connector-config`.
+The Kafka `FileConfigProvider` is given the alias `file`,
+and used to read and extract database _username_ and _password_ property values from the file to use in the connector configuration.
 
 .Prerequisites
 
@@ -21,7 +21,7 @@ to use in the connector configuration.
 
 .Procedure
 
-. Create a secret containing a properties file that defines the configuration options for your connector configuration.
+. Create a secret containing properties that define the configuration options for your connector configuration.
 +
 For example:
 +
@@ -37,7 +37,7 @@ stringData:
     dbUsername: my-user <2>
     dbPassword: my-password
 ----
-<1> Properties file containing the connector configuration.
+<1> The connector configuration in properties file format.
 <2> Database _username_ and _password_ properties used in the configuration.
 
 . Create or edit the Kafka Connect resource.
@@ -64,8 +64,8 @@ spec:
         secret:
           secretName: mysecret <4>
 ----
-<1> The name of the configuration provider. Use a comma-separted list for more than one provider.
-<2> The `FileConfigProvider` class used by the configuration provider to access the properties file.
+<1> The alias for the configuration provider. Use a comma-separated list if you want to add more than one provider.
+<2> The `FileConfigProvider` is the configuration provider that provides values from properties files.
 <3> The name of the volume containing the Secret.
 <4> The name of the Secret.
 
@@ -92,8 +92,8 @@ For example:
    }
 }
 ----
-<1> Path to the username property value. The path takes the form `/opt/kafka/external-configuration/_SECRET-VOLUME-NAME_/_PROPERTIES-FILENAME:USERNAME-VALUE_`.
-<2> Path to the password property value. The path takes the form `/opt/kafka/external-configuration/_SECRET-VOLUME-NAME_/_PROPERTIES-FILENAME:PASSWORD-VALUE_`.
+<1> Path to the username property value. The path takes the form `/opt/kafka/external-configuration/_SECRET-VOLUME-NAME_/_PROPERTIES-FILENAME:USERNAME-PROPERTY_`.
+<2> Path to the password property value. The path takes the form `/opt/kafka/external-configuration/_SECRET-VOLUME-NAME_/_PROPERTIES-FILENAME:PASSWORD-PROPERTY_`.
 
 * If you are using a `KafkaConnector` resource, use the values from the mounted properties file in the `spec.config` section of your custom resource.
 +
