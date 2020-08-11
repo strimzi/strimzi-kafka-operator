@@ -156,6 +156,4 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     public static Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
         return kafkaVersions.stream().collect(Collectors.toMap(TestKafkaVersion::version, i -> i));
     }
-
-
 }
