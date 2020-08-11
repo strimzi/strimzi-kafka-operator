@@ -7,22 +7,23 @@
 
 == ZooKeeper communication
 
-ZooKeeper does not support TLS itself. 
-By deploying a TLS sidecar within every ZooKeeper pod, the Cluster Operator is able to provide data encryption and authentication between ZooKeeper nodes in a cluster.
-ZooKeeper only communicates with the TLS sidecar over the loopback interface.
-The TLS sidecar then proxies all ZooKeeper traffic, TLS decrypting data upon entry into a ZooKeeper pod, and TLS encrypting data upon departure from a ZooKeeper pod.
-
-This TLS encrypting `stunnel` proxy is instantiated from the `spec.zookeeper.stunnelImage` specified in the Kafka resource.
+Communication between the ZooKeeper nodes on all ports as well as between clients and ZooKeeper is encrypted.
 
 == Kafka interbroker communication
 
 Communication between Kafka brokers is done through an internal listener on port 9091, which is encrypted by default and not accessible to Kafka clients.
 
-Communication between Kafka brokers and ZooKeeper nodes uses a TLS sidecar, as described above.
+Communication between Kafka brokers and ZooKeeper nodes is also encrypted.
 
 == Topic and User Operators
 
-Like the Cluster Operator, the Topic and User Operators each use a TLS sidecar when communicating with ZooKeeper. The Topic Operator connects to Kafka brokers on port 9091.
+All Operators use encryption for communication with both Kafka and ZooKeeper.
+In Topic and User Operators, a TLS sidecar is used when communicating with ZooKeeper.
+
+== Cruise Control
+
+Cruise Control uses encryption for communication with both Kafka and ZooKeeper.
+A TLS sidecar is used when communicating with ZooKeeper.
 
 == Kafka Client connections
 

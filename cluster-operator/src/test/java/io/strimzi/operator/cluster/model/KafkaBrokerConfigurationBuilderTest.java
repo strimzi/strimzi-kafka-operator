@@ -120,10 +120,18 @@ public class KafkaBrokerConfigurationBuilderTest {
     @Test
     public void testZookeeperConfig()  {
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withZookeeper()
+                .withZookeeper("my-cluster")
                 .build();
 
-        assertThat(configuration, isEquivalent("zookeeper.connect=localhost:2181"));
+        assertThat(configuration, isEquivalent(String.format("zookeeper.connect=%s:%d\n", ZookeeperCluster.serviceName("my-cluster"), ZookeeperCluster.CLIENT_TLS_PORT) +
+                "zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty\n" +
+                "zookeeper.ssl.client.enable=true\n" +
+                "zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12\n" +
+                "zookeeper.ssl.keystore.password=${CERTS_STORE_PASSWORD}\n" +
+                "zookeeper.ssl.keystore.type=PKCS12\n" +
+                "zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12\n" +
+                "zookeeper.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+                "zookeeper.ssl.truststore.type=PKCS12"));
     }
 
     @Test

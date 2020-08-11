@@ -4,6 +4,7 @@
 ## 0.20.0
 
 * Add support for Kafka 2.6.0 and remove support for 2.4.0 and 2.4.1
+* Remove TLS sidecars from Kafka pods => Kafka now uses native TLS to connect to ZooKeeper
 * Updated to Cruise Control 2.0.124, which fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
 * Cruise Control metrics integration:
   * enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
@@ -21,6 +22,12 @@ It was already deprecated in the previous 0.19.0 release.
 Together with it we have also removed the Prometheus annotations from the services. If you want to add them, you can use the templates.
 See here https://strimzi.io/docs/operators/master/using.html#assembly-customizing-kubernetes-resources-str for more details about templates usage.
 Finally, the Kafka Exporter service was has been removed because it was used just for the monitoring port.
+
+#### Deprecation of Kafka TLS sidecar configuration
+
+Since the Kafka TLS sidecar has been removed, the related configuration options in the Kafka custom resource are now deprecated:
+* `.spec.kafka.tlsSidecar`
+* `.spec.kafka.template.tlsSidecar`
 
 ## 0.19.0
 

@@ -81,14 +81,6 @@ spec:
       annotations:
         summary: 'All `kafka` containers down or in CrashLookBackOff status'
         description: 'All `kafka` containers have been down or in CrashLookBackOff status for 3 minutes'
-    - alert: KafkaTlsSidecarContainersDown
-      expr: absent(container_last_seen{container="tls-sidecar",kubernetes_pod_name=~".+-kafka-[0-9]+"})
-      for: 3m
-      labels:
-        severity: major
-      annotations:
-        summary: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status'
-        description: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status for 3 minutes'
     - alert: KafkaContainerRestartedInTheLast5Minutes
       expr: count(count_over_time(container_last_seen{container="kafka"}[5m])) > 2 * count(container_last_seen{container="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
       for: 5m
