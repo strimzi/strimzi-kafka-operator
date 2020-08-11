@@ -2,7 +2,7 @@
 //
 // assembly-management-tasks.adoc
 
-[id="resource-status-access_{context}"]
+[id="working-with-resources-{context}"]
 = Working with custom resources
 
 You can use `kubectl` commands to retrieve information and perform other operations on Strimzi custom resources.

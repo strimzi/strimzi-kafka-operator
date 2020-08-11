@@ -2,7 +2,7 @@
 //
 // assembly-management-tasks.adoc
 
-[id="cluster-recovery_{context}"]
+[id="cluster-recovery-{context}"]
 = Recovering a cluster from persistent volumes
 
 You can recover a Kafka cluster from persistent volumes (PVs) if they are still present.

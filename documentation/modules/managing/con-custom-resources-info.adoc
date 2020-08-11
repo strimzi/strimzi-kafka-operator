@@ -6,14 +6,14 @@
 = Performing `kubectl` operations on custom resources
 
 Use `kubectl` commands, such as `get`, `describe`, `edit`, or `delete`, to perform operations on resource types.
-For example, `kubectl get kafkatopics` retrieves a list of all Kafka topics and `kubectl get kafkas` retrieves all Kafka clusters.
+For example, `kubectl get kafkatopics` retrieves a list of all Kafka topics and `kubectl get kafkas` retrieves all deployed Kafka clusters.
 
-When referencing resource types, you can use both singular and plural naming:
+When referencing resource types, you can use both singular and plural names:
 `kubectl get kafkas` gets the same results as `kubectl get kafka`.
 
 You can also use the _short name_ of the resource.
-Learning short names can save time when managing Strimzi.
-The _short name_ for `Kafka` is `k`, so you can run `kubectl get k` to list all your deployed Kafka clusters.
+Learning short names can save you time when managing Strimzi.
+The short name for `Kafka` is `k`, so you can also run `kubectl get k` to list all Kafka clusters.
 
 [source,shell]
 ----
@@ -48,7 +48,7 @@ Categories of custom resources can also be used in `kubectl` commands.
 
 All Strimzi custom resources belong to the category `strimzi`, so you can use `strimzi` to get all the Strimzi resources with one command.
 
-For example running `kubectl get strimzi` lists all Strimzi custom resources in a given namespace.
+For example, running `kubectl get strimzi` lists all Strimzi custom resources in a given namespace.
 
 [source,shell]
 ----
@@ -76,7 +76,7 @@ kafkatopic.kafka.strimzi.io/kafka-apps
 kafkauser.kafka.strimzi.io/my-user
 ----
 
-You can combine this `strimzi` command with others commands.
+You can combine this `strimzi` command with other commands.
 For example, you can pass it into a `kubectl delete` command to delete all resources in a single command.
 
 [source,shell]
@@ -89,7 +89,7 @@ kafkauser.kafka.strimzi.io "my-user" deleted
 ----
 
 Deleting all resources in a single operation might be useful, for example,
-when your testing new Strimzi features.
+when you are testing new Strimzi features.
 
 == Querying the status of sub-resources
 
@@ -99,7 +99,7 @@ Usng `-o json` will return it as JSON.
 
 You can see all the options in `kubectl get --help`.
 
-One of the most useful options is `jsonpath`, which allows you to pass JSONPath expressions to query the Kubernetes API.
+One of the most useful options is the {K8SJsonPath}, which allows you to pass JSONPath expressions to query the Kubernetes API.
 A JSONPath expression can extract or navigate specific parts of any resource.
 
 For example, you can use the JSONPath expression `{.status.listeners[?(@.type=="tls")].bootstrapServers}`
