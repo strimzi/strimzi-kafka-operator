@@ -74,7 +74,7 @@ spec:
         summary: 'Cluster Operator down'
         description: 'The Cluster Operator has been down for longer than 90 seconds'
     - alert: KafkaBrokerContainersDown
-      expr: absent(container_last_seen{container="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      expr: absent(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
       for: 3m
       labels:
         severity: major
@@ -82,7 +82,7 @@ spec:
         summary: 'All `kafka` containers down or in CrashLookBackOff status'
         description: 'All `kafka` containers have been down or in CrashLookBackOff status for 3 minutes'
     - alert: KafkaTlsSidecarContainersDown
-      expr: absent(container_last_seen{container="tls-sidecar",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      expr: absent(container_last_seen{container="tls-sidecar",pod=~".+-kafka-[0-9]+"})
       for: 3m
       labels:
         severity: major
@@ -90,7 +90,7 @@ spec:
         summary: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status'
         description: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status for 3 minutes'
     - alert: KafkaContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container="kafka"}[5m])) > 2 * count(container_last_seen{container="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      expr: count(count_over_time(container_last_seen{container="kafka"}[5m])) > 2 * count(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
       for: 5m
       labels:
         severity: warning
@@ -124,7 +124,7 @@ spec:
         summary: 'Zookeeper is running out of free disk space'
         description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
     - alert: ZookeeperContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container="zookeeper"}[5m])) > 2 * count(container_last_seen{container="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      expr: count(count_over_time(container_last_seen{container="zookeeper"}[5m])) > 2 * count(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
       for: 5m
       labels:
         severity: warning
@@ -132,7 +132,7 @@ spec:
         summary: 'One or more Zookeeper containers were restarted too often'
         description: 'One or more Zookeeper containers were restarted too often within the last 5 minutes. This alert can be ignored when the Zookeeper cluster is scaling up'
     - alert: ZookeeperContainersDown
-      expr: absent(container_last_seen{container="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      expr: absent(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
       for: 3m
       labels:
         severity: major
@@ -142,7 +142,7 @@ spec:
   - name: entityOperator
     rules:
     - alert: TopicOperatorContainerDown
-      expr: absent(container_last_seen{container="topic-operator",kubernetes_pod_name=~".+-entity-operator-.+"})
+      expr: absent(container_last_seen{container="topic-operator",pod=~".+-entity-operator-.+"})
       for: 3m
       labels:
         severity: major
@@ -150,7 +150,7 @@ spec:
         summary: 'Container topic-operator in Entity Operator pod down or in CrashLookBackOff status'
         description: 'Container topic-operator in Entity Operator pod has been or in CrashLookBackOff status for 3 minutes'
     - alert: UserOperatorContainerDown
-      expr: absent(container_last_seen{container="user-operator",kubernetes_pod_name=~".+-entity-operator-.+"})
+      expr: absent(container_last_seen{container="user-operator",pod=~".+-entity-operator-.+"})
       for: 3m
       labels:
         severity: major
@@ -158,7 +158,7 @@ spec:
         summary: 'Container user-operator in Entity Operator pod down or in CrashLookBackOff status'
         description: 'Container user-operator in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes'
     - alert: EntityOperatorTlsSidecarContainerDown
-      expr: absent(container_last_seen{container="tls-sidecar",kubernetes_pod_name=~".+-entity-operator-.+"})
+      expr: absent(container_last_seen{container="tls-sidecar",pod=~".+-entity-operator-.+"})
       for: 3m
       labels:
         severity: major
@@ -168,7 +168,7 @@ spec:
   - name: connect
     rules:
     - alert: ConnectContainersDown
-      expr: absent(container_last_seen{container=~".+-connect",kubernetes_pod_name=~".+-connect-.+"})
+      expr: absent(container_last_seen{container=~".+-connect",pod=~".+-connect-.+"})
       for: 3m
       labels:
         severity: major
@@ -178,7 +178,7 @@ spec:
   - name: bridge
     rules:
     - alert: BridgeContainersDown
-      expr: absent(container_last_seen{container=~".+-bridge",kubernetes_pod_name=~".+-bridge-.+"})
+      expr: absent(container_last_seen{container=~".+-bridge",pod=~".+-bridge-.+"})
       for: 3m
       labels:
         severity: major
@@ -188,7 +188,7 @@ spec:
   - name: mirrorMaker
     rules:
     - alert: MirrorMakerContainerDown
-      expr: absent(container_last_seen{container=~".+-mirror-maker",kubernetes_pod_name=~".+-mirror-maker-.+"})
+      expr: absent(container_last_seen{container=~".+-mirror-maker",pod=~".+-mirror-maker-.+"})
       for: 3m
       labels:
         severity: major
