@@ -6,6 +6,7 @@ package io.strimzi;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.ContainerNetwork;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
@@ -22,6 +23,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+// "Redundant NullCheck because the InputStreamReader is inside the try catch block"
+@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
 public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContainer> {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainer.class);
