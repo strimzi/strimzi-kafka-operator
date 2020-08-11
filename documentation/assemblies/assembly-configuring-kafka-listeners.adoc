@@ -22,10 +22,6 @@ For more information on listener configuration, see xref:type-KafkaListeners-ref
 You can configure listeners for secure connection using authentication.
 For more information on securing access to Kafka brokers, see xref:assembly-securing-kafka-str[Managing access to Kafka].
 
-.OAuth 2.0
-If you are using OAuth 2.0 token-based authentication, you can configure the listeners to connect to your authorization server.
-For more information, see xref:assembly-oauth-authentication_str[Using OAuth 2.0 token-based authentication].
-
 .Listener certificates
 You can provide your own server certificates, called _Kafka listener certificates_, for TLS listeners or external listeners which have TLS encryption enabled.
 For more information, see xref:kafka-listener-certificates-str[].

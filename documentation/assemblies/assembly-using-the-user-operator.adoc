@@ -16,7 +16,8 @@ The _Deploying Strimzi_ guide provides instructions to deploy the User Operator:
 For more information about the schema, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].
 
 .Authenticating and authorizing access to Kafka
-You configure `KafkaUser` properties to set up authentication and authorization mechanisms to manage client access to Kafka.
+Use `KafkaUser` to enable the authentication and authorization mechanisms that a specific client uses to access Kafka.
+
 For more information on using `KafkUser` to manage users and secure access to Kafka brokers, see xref:assembly-securing-kafka-{context}[Securing access to Kafka brokers].
 
 include::../modules/proc-user-operator-with-resource-requests-limits.adoc[leveloffset=+1]

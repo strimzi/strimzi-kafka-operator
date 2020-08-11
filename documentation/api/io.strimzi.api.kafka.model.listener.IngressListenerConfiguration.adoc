@@ -5,6 +5,9 @@ Use `IngressListenerConfiguration` properties to add configuration to external i
 
 The Ingress controller does not assign any hostnames automatically.
 Use the `configuration` property to specify the hostnames used by the bootstrap and per-broker services.
+
+The `host` property values are mandatory for ingress listener configuration.
+
 Make sure that the hostnames resolve to the Ingress endpoints.
 Strimzi will not perform any validation that the requested hosts are available and properly routed to the Ingress endpoints.
 

@@ -26,7 +26,7 @@ The address type used is based on the first type found in the following order of
 . InternalDNS
 . InternalIP
 
-You must enable access to the ports on the Kubernetes nodes for each client (for example, in firewalls or security groups).
+You must enable access to the ports on the Kubernetes nodes for each node port (for example, in firewalls or security groups).
 Each Kafka broker pod is then accessible on a separate port.
 
 [id='property-nodeport-listener-tls-{context}']
@@ -34,5 +34,16 @@ Each Kafka broker pod is then accessible on a separate port.
 
 By default, TLS encryption is enabled.
 To disable it, set the `tls` property to `false`.
+
+.Example of an external listener of type `nodeport` and disabled TLS encryption
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: nodeport
+    tls: false
+# ...
+----
 
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.

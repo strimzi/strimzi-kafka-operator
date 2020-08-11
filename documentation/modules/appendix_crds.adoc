@@ -739,6 +739,7 @@ Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfig
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationSimple.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationSimple` from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.

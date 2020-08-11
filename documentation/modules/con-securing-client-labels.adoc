@@ -19,4 +19,4 @@ metadata:
 
 The label is used by the User Operator to identify the `KafkaUser` resource and create a new user, and also in subsequent handling of the user.
 
-If the label does not match the Kafka cluster, the User Operator cannot identify the `kafkaUser` and the user is not created.
+If the label does not match the Kafka cluster, the User Operator cannot identify the `KafkaUser` and the user is not created.

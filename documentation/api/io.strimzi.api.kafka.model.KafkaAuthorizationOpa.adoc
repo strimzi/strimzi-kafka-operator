@@ -26,7 +26,7 @@ Defaults to `3600000` milliseconds (1 hour).
 
 .`superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying the open Policy Agent policy.
-For more information see xref:assembly-securing-kafka-brokers-str[Super users].
+For more information see xref:con-securing-kafka-authorization-str[Kafka authorization].
 
 .An example of Open Policy Agent authorizer configuration
 [source,yaml,subs=attributes+]

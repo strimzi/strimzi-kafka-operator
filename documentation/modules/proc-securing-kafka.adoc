@@ -15,8 +15,8 @@ The security implemented for Kafka brokers must be compatible with the security 
 The steps show the configuration for simple authorization and a listener using TLS authentication.
 For more information about listener configuration, see the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
 
-Alternatively, you can use OAuth 2.0 for token-based xref:assembly-oauth-authentication_str[authentication] and xref:assembly-oauth-authorization_str[authorization],
-or xref:type-KafkaAuthorizationOpa-reference[Open Policy Agent authorization].
+Alternatively, you can use SCRAM-SHA or OAuth 2.0 for xref:con-securing-kafka-authentication-{context}[listener authentication],
+and OAuth 2.0 or OPA for xref:con-securing-kafka-authorization-{context}[Kafka authorization].
 
 .Procedure
 
