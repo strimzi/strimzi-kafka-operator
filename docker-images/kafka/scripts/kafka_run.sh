@@ -2,9 +2,6 @@
 set -e
 set -x
 
-# Wait for the TLS sidecar to be ready and listen on port 2181
-./kafka_pre_start.sh
-
 STRIMZI_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
 export STRIMZI_BROKER_ID
 echo "STRIMZI_BROKER_ID=${STRIMZI_BROKER_ID}"
