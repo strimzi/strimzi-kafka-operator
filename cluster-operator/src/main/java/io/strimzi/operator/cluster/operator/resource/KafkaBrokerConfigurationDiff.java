@@ -64,6 +64,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
             + "|.*-909[1-4]\\.sasl\\.enabled\\.mechanisms"
             + "|advertised\\.listeners"
             + "|zookeeper\\.connect"
+            + "|zookeeper\\.ssl\\..*"
+            + "|zookeeper\\.clientCnxnSocket"
             + "|broker\\.rack)$");
 
     public KafkaBrokerConfigurationDiff(Config brokerConfigs, String desired, KafkaVersion kafkaVersion, int brokerId) {

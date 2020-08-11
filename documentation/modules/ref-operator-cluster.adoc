@@ -36,10 +36,6 @@ This is used when a `Kafka.spec.kafka.version` property is specified but not the
 `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
 The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
-`STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `{DockerKafkaStunnel}`.
-The image name to use as the default when deploying the sidecar container which provides TLS support for Kafka,
-if no image is specified as the `Kafka.spec.kafka.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
-
 `STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
