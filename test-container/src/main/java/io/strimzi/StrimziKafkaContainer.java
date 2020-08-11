@@ -6,7 +6,6 @@ package io.strimzi;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.ContainerNetwork;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
@@ -23,8 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-// "Redundant NullCheck because the InputStreamReader is inside the try catch block"
-@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
 public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContainer> {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainer.class);
@@ -39,20 +36,27 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private static List<String> supportedKafkaVersions = new ArrayList<>(3);
 
     static {
-        try (
-            InputStream inputStream = StrimziKafkaContainer.class.getResourceAsStream("/kafka-versions.txt");
-            InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-            BufferedReader bufferedReader = new BufferedReader(streamReader)) {
+        InputStream inputStream = StrimziKafkaContainer.class.getResourceAsStream("/kafka-versions.txt");
+        InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        BufferedReader bufferedReader = new BufferedReader(streamReader);
 
-            String kafkaVersion;
+        String kafkaVersion = null;
 
+        try {
             while ((kafkaVersion = bufferedReader.readLine()) != null) {
                 supportedKafkaVersions.add(kafkaVersion);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                bufferedReader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+
+        supportedKafkaVersions.add(kafkaVersion);
 
         LOGGER.info("This is all supported Kafka versions {}", supportedKafkaVersions.toString());
 
