@@ -154,8 +154,8 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         // Create consumer
-        JsonObject response = BridgeUtils.createHttpConsumer(config, bridgeHost, bridgePort, groupId, client);
-        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(aliceUser));
+//        JsonObject response = BridgeUtils.createHttpConsumer(config, bridgeHost, bridgePort, groupId, client);
+//        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(aliceUser));
 
         // Create topics json
         JsonArray topic = new JsonArray();

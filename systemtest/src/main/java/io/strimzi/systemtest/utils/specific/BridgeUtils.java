@@ -9,6 +9,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -24,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 
 public class BridgeUtils {
 
@@ -136,9 +139,8 @@ public class BridgeUtils {
         return subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client, Collections.emptyMap());
     }
 
-    public static JsonObject createHttpConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
-                                                  WebClient client, Map<String, String> additionalHeaders) throws InterruptedException, ExecutionException, TimeoutException {
-
+    public static void createHttpConsumer(String podName, JsonObject config, int bridgePort, String groupId, Map<String, String> additionalHeaders) {
+        String url = "localhost:" + bridgePort + "/consumers/" + groupId;
         MultiMap headers = MultiMap.caseInsensitiveMultiMap()
             .add("Content-length", String.valueOf(config.toBuffer().length()))
             .add("Content-type", Constants.KAFKA_BRIDGE_JSON);
@@ -148,35 +150,7 @@ public class BridgeUtils {
             headers.add(header.getKey(), header.getValue());
         }
 
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        client.post(bridgePort, bridgeHost, "/consumers/" + groupId)
-            .putHeaders(headers)
-            .as(BodyCodec.jsonObject())
-            .sendJsonObject(config, ar -> {
-                if (ar.succeeded()) {
-                    HttpResponse<JsonObject> response = ar.result();
-                    JsonObject bridgeResponse = response.body();
-                    String consumerInstanceId = bridgeResponse.getString("instance_id");
-                    String consumerBaseUri = bridgeResponse.getString("base_uri");
-                    LOGGER.debug("ConsumerInstanceId: {}", consumerInstanceId);
-                    LOGGER.debug("ConsumerBaseUri: {}", consumerBaseUri);
-                    future.complete(response.body());
-                } else {
-                    LOGGER.error("Cannot create consumer", ar.cause());
-                    future.completeExceptionally(ar.cause());
-                }
-            });
-        return future.get(1, TimeUnit.MINUTES);
-    }
-
-    public static JsonObject createHttpConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
-                                                  WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
-        return createHttpConsumer(config, bridgeHost, bridgePort, groupId, webClient, Collections.emptyMap());
-    }
-
-    public static JsonObject createHttpConsumer(JsonObject config, String bridgeHost, String groupId,
-                                                  WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
-        return createHttpConsumer(config, bridgeHost, 80, groupId, webClient, Collections.emptyMap());
+        String response = cmdKubeClient().execInPod(podName, "/bin/bash -c", "curl -X", HttpMethod.POST.toString(), "-D -", url, "-H", headers.toString(), "-d", config.toString()).out();
     }
 
     public static boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
@@ -206,4 +180,8 @@ public class BridgeUtils {
         InputStream bridgeVersionInputStream = BridgeUtils.class.getResourceAsStream("/bridge.version");
         return TestUtils.readResource(bridgeVersionInputStream).replace("\n", "");
     }
+//
+//    public static String httpRequest(String podName, String bridgePort, HttpMethod method, Map<String, String> headers) {
+//        cmdKubeClient().execInPod(podName, "curl -X", method.toString(), "-D - localhost:" + bridgePort, )
+//    }
 }

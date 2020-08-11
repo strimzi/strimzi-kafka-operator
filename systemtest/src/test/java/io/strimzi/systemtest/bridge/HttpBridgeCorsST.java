@@ -51,6 +51,8 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         JsonObject topics = new JsonObject();
         topics.put("topics", topic);
 
+        //curl -X OPTIONS -D - localhost:8080/consumers/my-consumer-group-389852629/instances/bridge-user-example/subscription -H "Origin: https://strimzi.io" -H "Access-Control-Request-Method: POST" -H "Content-length: 35" -H "Content-type: application/vnd.kafka.v2+json" -d '{"name":"bridge-user-example","format":"json","auto.offset.reset":"earliest"}'
+
         client.request(HttpMethod.OPTIONS, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
             .putHeader("Origin", CORS_ORIGIN)
             .putHeader("Access-Control-Request-Method", "POST")
