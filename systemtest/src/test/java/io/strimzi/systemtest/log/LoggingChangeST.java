@@ -514,9 +514,9 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled it's pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
 
-        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL * 2);
+        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL);
         // wait some time and check whether logs after this time are empty
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+        Thread.sleep(LOGGING_RELOADING_INTERVAL);
 
         LOGGER.info("Asserting if log will contain no records");
         assertThat(StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(emptyString()));
@@ -540,12 +540,14 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled it's pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
 
-        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL * 2);
-        // wait some time and check whether logs after this time are empty
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+        LOGGER.info("Waiting {} ms log not to be empty", LOGGING_RELOADING_INTERVAL);
+        // wait some time and check whether logs after this time are not empty
+        Thread.sleep(LOGGING_RELOADING_INTERVAL);
 
         LOGGER.info("Asserting if log will contain no records");
-        assertThat(StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(not(emptyString())));
+        String coLog = StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+        assertThat(coLog, is(not(emptyString())));
+        assertThat(coLog.contains("INFO"), is(true));
     }
 
     @BeforeAll
