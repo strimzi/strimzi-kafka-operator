@@ -29,7 +29,7 @@ public class Kubernetes implements KubeCluster {
         try {
             return Exec.exec(CMD, "cluster-info").exitStatus() && !Exec.exec(CMD, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
-            e.printStackTrace();
+            LOGGER.debug("Error:", e);
             return false;
         }
     }

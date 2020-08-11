@@ -26,6 +26,7 @@ public class Minishift implements KubeCluster {
             return output.contains("Minishift:  Running")
                     && output.contains("OpenShift:  Running");
         } catch (KubeClusterException e) {
+            LOGGER.debug("Error:", e);
             return false;
         }
     }

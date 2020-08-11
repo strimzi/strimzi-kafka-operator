@@ -24,7 +24,7 @@ public class OpenShift implements KubeCluster {
         try {
             return Exec.exec(OC, "status").exitStatus() && Exec.exec(OC, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
-            e.printStackTrace();
+            LOGGER.debug("Error:", e);
             return false;
         }
     }
