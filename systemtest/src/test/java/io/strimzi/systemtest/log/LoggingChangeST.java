@@ -511,7 +511,7 @@ class LoggingChangeST extends AbstractST {
         String podLogConfig = cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
-        LOGGER.info("Checking if CO rolled it's pod");
+        LOGGER.info("Checking if CO rolled its pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
 
         LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL);
@@ -537,7 +537,7 @@ class LoggingChangeST extends AbstractST {
         podLogConfig = cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
-        LOGGER.info("Checking if CO rolled it's pod");
+        LOGGER.info("Checking if CO rolled its pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
 
         LOGGER.info("Waiting {} ms log not to be empty", LOGGING_RELOADING_INTERVAL);
