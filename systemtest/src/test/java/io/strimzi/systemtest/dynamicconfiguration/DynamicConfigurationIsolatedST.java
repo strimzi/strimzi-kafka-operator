@@ -43,6 +43,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * DynamicConfigurationIsolatedST is responsible for verify that if we change dynamic Kafka configuration it will not
+ * trigger rolling update.
+ * Isolated -> for each test case we have different configuration of Kafka resource
+ */
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
 public class DynamicConfigurationIsolatedST extends AbstractST {
@@ -305,7 +310,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
         kafkaConfig.put("transaction.state.log.replication.factor", "1");
-        kafkaConfig.put("log.message.format.version", "2.5");
+        kafkaConfig.put("log.message.format.version", TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion());
     }
 
     @BeforeAll

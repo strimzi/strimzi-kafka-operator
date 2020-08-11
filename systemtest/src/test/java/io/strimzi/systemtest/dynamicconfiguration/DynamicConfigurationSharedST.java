@@ -21,6 +21,11 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
+/**
+ * DynamicConfigurationSharedST is responsible for verify that if we change dynamic Kafka configuration it will not
+ * trigger rolling update
+ * Shared -> for each test case we same configuration of Kafka resource
+ */
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
 public class DynamicConfigurationSharedST extends AbstractST {
