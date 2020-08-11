@@ -43,7 +43,7 @@ The heartbeat topic makes it easy to check that the remote cluster is available 
 If things go wrong, the heartbeat topic offset positions and time stamps can help with recovery and diagnosis.
 
 .Replication across two clusters
-image::mirrormaker.png[MirrorMaker 2.0 replication]
+image::mirrormaker.png[MirrorMaker 2.0 replication between a Kafka cluster in Region 1 and a Kafka cluster in Region 2]
 
 [discrete]
 === Bidirectional replication across two clusters
