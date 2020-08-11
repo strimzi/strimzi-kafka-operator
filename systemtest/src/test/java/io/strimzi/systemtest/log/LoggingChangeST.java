@@ -458,9 +458,10 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
-    void testDynamicallySetClusterOperatorLoggingLevels() {
+    void testDynamicallySetClusterOperatorLoggingLevels() throws InterruptedException {
         Map<String, String> coPod = DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME);
         String coPodName = kubeClient().listPodsByPrefixInName(STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+        String command = "cat /opt/strimzi/custom-config/log4j2.properties";
 
         String log4jConfig =
             "name = COConfig\n" +
@@ -471,19 +472,19 @@ class LoggingChangeST extends AbstractST {
             "    appender.console.layout.type = PatternLayout\n" +
             "    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n\n" +
             "\n" +
-            "    rootLogger.level = INFO\n" +
+            "    rootLogger.level = OFF\n" +
             "    rootLogger.appenderRefs = stdout\n" +
             "    rootLogger.appenderRef.console.ref = STDOUT\n" +
             "    rootLogger.additivity = false\n" +
             "\n" +
             "    # Kafka AdminClient logging is a bit noisy at INFO level\n" +
             "    logger.kafka.name = org.apache.kafka\n" +
-            "    logger.kafka.level = WARN\n" +
+            "    logger.kafka.level = OFF\n" +
             "    logger.kafka.additivity = false\n" +
             "\n" +
             "    # Zookeeper is very verbose even on INFO level -> We set it to WARN by default\n" +
             "    logger.zookeepertrustmanager.name = org.apache.zookeeper\n" +
-            "    logger.zookeepertrustmanager.level = WARN\n" +
+            "    logger.zookeepertrustmanager.level = OFF\n" +
             "    logger.zookeepertrustmanager.additivity = false";
 
         ConfigMap coMap = new ConfigMapBuilder()
@@ -495,13 +496,15 @@ class LoggingChangeST extends AbstractST {
             .withData(Collections.singletonMap("log4j2.properties", log4jConfig))
             .build();
 
+        LOGGER.info("Checking that original logging config is different from the new one");
+        assertThat(log4jConfig, not(equalTo(cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
+
         LOGGER.info("Changing logging for cluster-operator");
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(coMap);
 
-        String command = "cat /opt/strimzi/custom-config/log4j2.properties";
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().contains(log4jConfig)
+            () -> cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
         );
 
         LOGGER.info("Checking log4j2.properties in CO pod");
@@ -510,6 +513,39 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Checking if CO rolled it's pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
+
+        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL * 2);
+        // wait some time and check whether logs after this time are empty
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log will contain no records");
+        assertThat(StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(emptyString()));
+
+        LOGGER.info("Changing all levels from OFF to INFO/WARN");
+        log4jConfig = log4jConfig.replaceAll("OFF", "INFO");
+        coMap.setData(Collections.singletonMap("log4j2.properties", log4jConfig));
+
+        LOGGER.info("Changing logging for cluster-operator");
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(coMap);
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
+        );
+
+        LOGGER.info("Checking log4j2.properties in CO pod");
+        podLogConfig = cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        assertThat(podLogConfig, equalTo(log4jConfig));
+
+        LOGGER.info("Checking if CO rolled it's pod");
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
+
+        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL * 2);
+        // wait some time and check whether logs after this time are empty
+        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
+
+        LOGGER.info("Asserting if log will contain no records");
+        assertThat(StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(not(emptyString())));
     }
 
     @BeforeAll
