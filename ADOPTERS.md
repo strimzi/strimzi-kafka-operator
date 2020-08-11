@@ -7,6 +7,7 @@
 * [IBM](https://www.ibm.com/cloud/event-streams)
 * [Lightbend](https://www.lightbend.com/)
 * [Red Hat](https://www.redhat.com/en)
+* [SBB CFF FFS](https://www.sbb.ch/en/home.html)
 
 Are you currently using Strimzi in production?
 Please let us know by adding your company name and, if you want, a description of your use case to this document!
