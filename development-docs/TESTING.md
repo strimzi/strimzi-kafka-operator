@@ -230,7 +230,7 @@ To set the log level of Strimzi for system tests you need to set the environment
 
 ## Using private registries
 
-If you want use private registries, before executing the tests you have to create secret with the name `pull-secret` to be able pull image.
+If you want use private registries, before executing the tests you have to create secret with the name `pull-secret` with the container registry credentials to be able pull images.
 
 ## Use Remote Cluster
 
