@@ -228,6 +228,10 @@ To set custom Kafka version in system tests you need to set the environment vari
 
 To set the log level of Strimzi for system tests you need to set the environment variable `STRIMZI_DEFAULT_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
 
+## Using private registries
+
+If you want use private registries, before executing the tests you have to create secret with the name `pull-secret` to be able pull image.
+
 ## Use Remote Cluster
 
 The integration and system tests are ran against a cluster specified in the environment variable `TEST_CLUSTER_CONTEXT`.
