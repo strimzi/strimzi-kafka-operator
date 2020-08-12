@@ -40,7 +40,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
         BufferedReader bufferedReader = new BufferedReader(streamReader);
 
-        String kafkaVersion = null;
+        String kafkaVersion;
 
         try {
             while ((kafkaVersion = bufferedReader.readLine()) != null) {
@@ -55,8 +55,6 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
                 e.printStackTrace();
             }
         }
-
-        supportedKafkaVersions.add(kafkaVersion);
 
         LOGGER.info("This is all supported Kafka versions {}", supportedKafkaVersions.toString());
 
