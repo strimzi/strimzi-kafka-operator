@@ -158,6 +158,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectorLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
 
@@ -185,7 +186,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 DeploymentConfig dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                annotations.put(Annotations.STRIMZI_LOGGING_APPENDERS_ANNOTATION, ops.getLoggingAppenders(LOGGING_CONFIG));
                 assertThat(dc, is(connect.generateDeploymentConfig(annotations, true, null, null)));
 
                 // Verify Build Config
@@ -338,6 +339,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectorLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
@@ -474,6 +476,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectorLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
@@ -497,7 +500,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 DeploymentConfig dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                annotations.put(Annotations.STRIMZI_LOGGING_APPENDERS_ANNOTATION, ops.getLoggingAppenders(LOGGING_CONFIG));
                 assertThat(dc, is(compareTo.generateDeploymentConfig(annotations, true, null, null)));
 
                 // Verify Build Config
@@ -671,6 +674,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectorLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
@@ -747,6 +751,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectorLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
@@ -932,6 +937,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectorLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
 
@@ -958,7 +964,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 DeploymentConfig dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                annotations.put(Annotations.STRIMZI_LOGGING_APPENDERS_ANNOTATION, ops.getLoggingAppenders(LOGGING_CONFIG));
                 assertThat(dc, is(connect.generateDeploymentConfig(annotations, true, null, null)));
 
                 // Verify Build Config
