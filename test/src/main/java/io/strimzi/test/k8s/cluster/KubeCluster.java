@@ -22,8 +22,6 @@ public interface KubeCluster {
 
     String ENV_VAR_TEST_CLUSTER = "TEST_CLUSTER";
     Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
-    Logger LOGGER = LogManager.getLogger(KubeCluster.class);
-
 
     /** Return true iff this kind of cluster installed on the local machine. */
     boolean isAvailable();
