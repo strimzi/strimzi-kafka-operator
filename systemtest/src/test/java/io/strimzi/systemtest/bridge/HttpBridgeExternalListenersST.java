@@ -33,6 +33,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -154,8 +156,8 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         // Create consumer
-//        JsonObject response = BridgeUtils.createHttpConsumer(config, bridgeHost, bridgePort, groupId, client);
-//        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(aliceUser));
+        String podName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName();
+        BridgeUtils.createHttpConsumer(podName, config, bridgePort, groupId, Collections.emptyMap());
 
         // Create topics json
         JsonArray topic = new JsonArray();

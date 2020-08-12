@@ -139,18 +139,24 @@ public class BridgeUtils {
         return subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client, Collections.emptyMap());
     }
 
-    public static void createHttpConsumer(String podName, JsonObject config, int bridgePort, String groupId, Map<String, String> additionalHeaders) {
+    public static String createHttpConsumer(String podName, JsonObject config, int bridgePort, String groupId, Map<String, String> additionalHeaders) {
         String url = "localhost:" + bridgePort + "/consumers/" + groupId;
-        MultiMap headers = MultiMap.caseInsensitiveMultiMap()
-            .add("Content-length", String.valueOf(config.toBuffer().length()))
-            .add("Content-type", Constants.KAFKA_BRIDGE_JSON);
+        String headers = addHeadersToString(additionalHeaders, config, Constants.KAFKA_BRIDGE_JSON);
+
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", "curl", "-X", HttpMethod.POST.toString(), "-D -", url, headers, "-d", "'" + config.toString() + "'").out();
+    }
+
+    private static String addHeadersToString(Map<String, String> additionalHeaders, JsonObject content, String contentType) {
+        StringBuilder headerString = new StringBuilder("-H 'Content-length: " + content.toBuffer().length() + "; Content-type: " + contentType);
 
         for (Map.Entry<String, String> header : additionalHeaders.entrySet()) {
             LOGGER.info("Adding header {} -> {}", header.getKey(), header.getValue());
-            headers.add(header.getKey(), header.getValue());
+            headerString.append("; ").append(header.getKey()).append(": ").append(header.getValue());
         }
 
-        String response = cmdKubeClient().execInPod(podName, "/bin/bash -c", "curl -X", HttpMethod.POST.toString(), "-D -", url, "-H", headers.toString(), "-d", config.toString()).out();
+        headerString.append("'");
+
+        return headerString.toString();
     }
 
     public static boolean deleteConsumer(String bridgeHost, int bridgePort, String groupId, String name, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
