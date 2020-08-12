@@ -5,14 +5,18 @@
 [id='con-securing-kafka-authentication-{context}']
 = Listener authentication
 
-You can create `plain` (without encryption) or `tls` listener types.
+For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` listener types.
+
 For clients outside the Kubernetes cluster, you create `external` listeners and specify a connection mechanism, which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+For more information on the configuration options for connecting an external client, see xref:assembly-configuring-external-listeners-str[Configuring external listeners].
 
 Supported authentication options:
 
-. Mutual TLS authentication (only on the listeners with TLS encryption)
-. SCRAM-SHA authentication
+. Mutual TLS authentication (only on the listeners with TLS enabled encryption)
+. SCRAM-SHA-512 authentication
 . xref:assembly-oauth-authentication_str[OAuth 2.0 token based authentication]
+
+The authentication option you choose depends on how you wish to authenticate client access to Kafka brokers.
 
 .Kafka listener authentication options
 image::listener-config-options.png[options for listener authentication configuration]
@@ -27,7 +31,7 @@ Authentication must be configured when using the User Operator to manage `KafkaU
 
 The following example shows:
 
-* A `plain` listener configured for SCRAM-SHA authentication
+* A `plain` listener configured for SCRAM-SHA-512 authentication
 * A `tls` listener with mutual TLS authentication
 * An `external` listener with mutual TLS authentication
 
@@ -56,24 +60,21 @@ listeners:
 Mutual TLS authentication is always used for the communication between Kafka brokers and ZooKeeper pods.
 
 For mutual authentication or two-way authentication, both the server and the client present certificates.
-Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication. When you configure mutual authentication, the broker authenticates the client and the client authenticates the broker.
+Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication.
+When you configure mutual authentication, the broker authenticates the client (client authentication) and the client authenticates the broker (server authentication).
 
-NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another. For example, when HTTPS is used between a web browser and a web server, the server obtains proof of the identity of the browser.
-
-.When to use mutual TLS authentication for clients
-
-Mutual TLS authentication is recommended for authenticating Kafka clients when:
-
-* The client supports authentication using mutual TLS authentication
-* It is necessary to use the TLS certificates rather than passwords
-* You can reconfigure and restart client applications periodically so that they do not use expired certificates.
+NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another.
+For example, when HTTPS is used between a web browser and a web server, the browser obtains proof of the identity of the web server.
 
 [id='con-scram-sha-authentication-{context}']
-== SCRAM-SHA authentication
+== SCRAM-SHA-512 authentication
 
-SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords. Strimzi can configure Kafka to use SASL (Simple Authentication and Security Layer) SCRAM-SHA-512 to provide authentication on both unencrypted and TLS-encrypted client connections. TLS authentication is always used internally between Kafka brokers and ZooKeeper nodes. When used with a TLS client connection, the TLS protocol provides encryption, but is not used for authentication.
+SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords.
+Strimzi can configure Kafka to use SASL (Simple Authentication and Security Layer) SCRAM-SHA-512 to provide authentication on both unencrypted and encrypted client connections.
+TLS authentication is always used internally between Kafka brokers and ZooKeeper nodes.
+When used with a TLS client connection, the TLS protocol provides encryption, but is not used for authentication.
 
-The following properties of SCRAM make it safe to use SCRAM-SHA even on unencrypted connections:
+The following properties of SCRAM make it safe to use SCRAM-SHA-512 even on unencrypted connections:
 
 * The passwords are not sent in the clear over the communication channel.
 Instead the client and the server are each challenged by the other to offer proof that they know the password of the authenticating user.
@@ -85,14 +86,6 @@ This means that the exchange is resilient against replay attacks.
 
 Strimzi supports SCRAM-SHA-512 only.
 When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12 character password consisting of upper and lowercase ASCII letters and numbers.
-
-.When to use SCRAM-SHA authentication for clients
-
-SCRAM-SHA is recommended for authenticating Kafka clients when:
-
-* The client supports authentication using SCRAM-SHA-512
-* It is necessary to use passwords rather than the TLS certificates
-* Authentication for unencrypted communication is required
 
 .Additional resources
 

@@ -17,7 +17,6 @@ This chapter explains how to set up secure connections, with sections describing
 
 * Security options for Kafka clusters and clients
 * How to secure Kafka brokers
-* How to configure external listeners
 * How to use an authorization server for OAuth 2.0 token-based authentication and authorization
 
 //Config options for securing Kafka
@@ -28,9 +27,6 @@ include::assembly-securing-kafka-clients.adoc[leveloffset=+1]
 
 //Config to secure access
 include::assembly-securing-kafka.adoc[leveloffset=+1]
-
-//Kafka config for external listeners
-include::assembly-securing-external-listeners.adoc[leveloffset=+1]
 
 //oauth options
 include::oauth/assembly-oauth-authentication.adoc[leveloffset=+1]

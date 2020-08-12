@@ -9,6 +9,8 @@ include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
 include::assemblies/assembly-deployment-configuration.adoc[leveloffset=+1]
 
+include::assemblies/assembly-securing-external-listeners.adoc[leveloffset=+1]
+
 include::assemblies/assembly-securing-access.adoc[leveloffset=+1]
 
 include::assemblies/assembly-operators.adoc[leveloffset=+1]

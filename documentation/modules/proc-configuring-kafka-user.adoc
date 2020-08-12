@@ -11,8 +11,8 @@ You can use `kubectl apply` to create or modify users, and `kubectl delete` to d
 
 For example:
 
-* `kubectl apply -f _<user-config-file>_`
-* `kubectl delete KafkaUser _<user-name>_`
+* `kubectl apply -f _USER-CONFIG-FILE_`
+* `kubectl delete KafkaUser _USER-NAME_`
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent `Kafka` configuration:
 
@@ -32,7 +32,7 @@ For example, it is not possible to authenticate a user with TLS if it is not als
 * A running Kafka cluster xref:con-mutual-tls-authentication-{context}[configured with a Kafka broker listener using TLS authentication and encryption].
 * A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
 
-If you are using SCRAM-SHA authentication, you need a running Kafka cluster xref:con-scram-sha-authentication-{context}[configured with a Kafka broker listener using SCRAM-SHA authentication].
+The authentication type in `KafkaUser` should match the authentication configured in `Kafka` brokers.
 
 .Procedure
 

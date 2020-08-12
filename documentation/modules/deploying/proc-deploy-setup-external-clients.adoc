@@ -102,7 +102,7 @@ Validation is not performed on overrides.
 The override configuration differs according to the external listener type,
 so you can override hosts for `route`, DNS names or IP addresses for `loadbalancer`, and node ports (shown) for `nodeport`.
 Refer to the link:{BookURLUsing}#type-KafkaListeners-reference[Kafka listeners schema reference^] for more information on external listener `overrides`.
-<7> Authorization link:{BookURLUsing}#con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin^].
+<7> Authorization link:{BookURLUsing}#con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `AclAuthorizer` Kafka plugin^].
 <8> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
 
 . Create or update the `Kafka` resource.

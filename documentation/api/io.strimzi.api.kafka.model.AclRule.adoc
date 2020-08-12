@@ -82,7 +82,7 @@ The following operations are supported:
 
 Only certain operations work with each resource.
 
-For more details about `SimpleAclAuthorizer`, ACLs and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
+For more details about `AclAuthorizer`, ACLs and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
 
 [id='property-acl-host-{context}']
 .`host`

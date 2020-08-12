@@ -7,7 +7,9 @@
 
 To establish secure access to Kafka brokers, you configure and apply:
 
-* A `Kafka` resource to create listeners with a specified authentication type
+* A `Kafka` resource to:
+** Create listeners with a specified authentication type
+** Configure authorization for the whole Kafka cluster
 * A `KafkaUser` resource to access the Kafka brokers securely through the listeners
 
 Configure the `Kafka` resource to set up:
@@ -28,7 +30,7 @@ Certificates are available in PKCS #12 format (.p12) and PEM (.crt) formats.
 
 Use `KafkaUser` to enable the authentication and authorization mechanisms that a specific client uses to access Kafka.
 
-Configure a `KafkaUser` resource to set up:
+Configure the `KafkaUser` resource to set up:
 
 * Authentication to match the enabled listener authentication
 * Authorization to match the enabled Kafka authorization

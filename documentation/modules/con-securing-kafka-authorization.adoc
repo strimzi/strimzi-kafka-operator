@@ -6,7 +6,7 @@
 = Kafka authorization
 
 You can configure authorization for Kafka brokers using the `authorization` property in the `Kafka.spec.kafka` resource.
-If the `authorization` property is missing, no authorization is enabled.
+If the `authorization` property is missing, no authorization is enabled and clients have no restrictions.
 When enabled, authorization is applied to all enabled listeners.
 The authorization method is defined in the `type` field.
 
