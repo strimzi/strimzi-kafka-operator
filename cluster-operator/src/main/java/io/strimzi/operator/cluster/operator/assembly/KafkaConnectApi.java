@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.BackOff;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -23,7 +24,9 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,6 +136,18 @@ public interface KafkaConnectApi {
      * this returns the list of connector plugins.
      */
     Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port);
+
+    /**
+     * Make a {@code GET} request to {@code /admin/loggers}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param desiredLogging Desired logging.
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns the list of connector loggers.
+     */
+    Future<Void> updateConnectorLoggers(String host, int port, String desiredLogging);
+
+    Future<Map<String, Map<String, String>>> listConnectorLoggers(String host, int port);
 }
 
 class ConnectRestException extends RuntimeException {
@@ -468,5 +483,133 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .putHeader("Accept", "application/json")
                 .end();
         return result.future();
+    }
+
+    private Future<Void> updateConnectorLogger(String host, int port, String logger, String level) {
+        Promise<Void> result = Promise.promise();
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
+        String path = "/admin/loggers/" + logger;
+        JsonObject levelJO = new JsonObject();
+        levelJO.put("level", level);
+        log.debug("Making PUT request to {} with body {}", path, levelJO);
+        vertx.createHttpClient(options)
+                .put(port, host, path, response -> {
+                    response.exceptionHandler(error -> {
+                        result.fail(error);
+                    });
+                    response.bodyHandler(body -> {
+                    });
+                    if (response.statusCode() == 200) {
+                        log.debug("Logger {} updated to level {}", logger, level);
+                        result.complete();
+                    } else {
+                        log.debug("Logger {} did not update to level {} (http code {})", logger, level, response.statusCode());
+                        result.fail(new ConnectRestException(response, "Unexpected status code"));
+                    }
+                })
+                .exceptionHandler(result::fail)
+                .putHeader("Content-Type", "application/json")
+                .putHeader("Content-Length", String.valueOf(levelJO.toBuffer().length()))
+                .setFollowRedirects(true)
+                .write(levelJO.toBuffer())
+                .end();
+
+        return result.future();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Future<Map<String, Map<String, String>>> listConnectorLoggers(String host, int port) {
+        Promise<Map<String, Map<String, String>>> result = Promise.promise();
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
+        String path = "/admin/loggers/";
+        vertx.createHttpClient(options)
+                .get(port, host, path, response -> {
+                    response.exceptionHandler(error -> {
+                        result.fail(error);
+                    });
+                    if (response.statusCode() == 200) {
+                        response.bodyHandler(buffer -> {
+                            ObjectMapper mapper = new ObjectMapper();
+
+                            try {
+                                Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), Map.class);
+                                result.complete(fetchedLoggers);
+                            } catch (IOException e)  {
+                                log.warn("Failed to get list of connector loggers", e);
+                                result.fail(new ConnectRestException(response, "Failed to get connector loggers", e));
+                            }
+                        });
+                    } else {
+                        result.fail(new ConnectRestException(response, "Unexpected status code"));
+                    }
+                })
+                .exceptionHandler(result::fail)
+                .setFollowRedirects(true)
+                .putHeader("Accept", "application/json")
+                .end();
+        return result.future();
+    }
+
+    private Future updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers) {
+        Map<String, String> updateLoggers = new LinkedHashMap<>();
+        fetchedLoggers.entrySet().forEach(entry -> {
+            // set all logger levels to ERROR
+            updateLoggers.put(entry.getKey(), "ERROR");
+        });
+
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(desiredLogging);
+        ops.asMap().entrySet().forEach(entry -> {
+            // set desired loggers to desired levels
+            if (entry.getKey().equals("log4j.rootLogger")) {
+                updateLoggers.put("root", entry.getValue());
+            } else if (!entry.getKey().startsWith("log4j.appender")) {
+                updateLoggers.put(entry.getKey().replace("log4j.logger.", ""), entry.getValue());
+            }
+        });
+
+        LinkedHashMap<String, String> updateSortedLoggers = sortLoggers(updateLoggers);
+        Future<Void> result = Future.succeededFuture();
+        for (Map.Entry<String, String> logger: updateSortedLoggers.entrySet()) {
+            result = result.compose(previous -> updateConnectorLogger(host, port, logger.getKey(), logger.getValue().split(",")[0].replaceAll("\\s", "")));
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Future<Void> updateConnectorLoggers(String host, int port, String desiredLogging) {
+        return listConnectorLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers));
+    }
+
+    private int numberOfDotsInString(String tested) {
+        return tested.length() - tested.replaceAll("\\.", "").length();
+    }
+
+    /**
+     * To apply loggers correctly, we need to sort them. The sorting is performed on base of logger generality.
+     * Logger "abc.company" is more general than "abc.company.name"
+     * @param loggers map of loggers to be sorted
+     * @return map of sorted loggers
+     */
+    private LinkedHashMap<String, String> sortLoggers(Map<String, String> loggers) {
+        Comparator<Map.Entry<String, String>> loggerComparator = (e1, e2) -> {
+            String k1 = e1.getKey();
+            String k2 = e2.getKey();
+            if (k1.equals("root")) {
+                // we need root logger always to be the first logger to be set via REST API
+                return Integer.MIN_VALUE;
+            }
+            return numberOfDotsInString(k1) - numberOfDotsInString(k2);
+        };
+        List<Map.Entry<String, String>> listOfEntries = new ArrayList<>(loggers.entrySet());
+        Collections.sort(listOfEntries, loggerComparator);
+
+        LinkedHashMap<String, String> sortedLoggers = new LinkedHashMap<>(listOfEntries.size());
+        for (Map.Entry<String, String> entry : listOfEntries) {
+            sortedLoggers.put(entry.getKey(), entry.getValue());
+        }
+        return sortedLoggers;
     }
 }

@@ -14,6 +14,7 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.NamespaceAndName;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
@@ -26,6 +27,7 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -338,5 +340,17 @@ public abstract class AbstractOperator<
 
     public AtomicInteger getResourceCounter() {
         return resourceCounter;
+    }
+
+    public String getLoggingAppenders(String loggingConfiguration) {
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(loggingConfiguration);
+        StringBuilder result = new StringBuilder();
+        for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
+            if (entry.getKey().startsWith("log4j.appender")) {
+                result.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+        }
+        return result.toString();
     }
 }

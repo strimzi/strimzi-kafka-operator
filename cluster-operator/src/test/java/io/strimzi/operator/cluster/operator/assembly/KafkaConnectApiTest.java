@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -43,6 +44,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
@@ -248,5 +251,59 @@ public class KafkaConnectApiTest {
                         containsString("Connector never-existed not found"));
                 async.flag();
             }));
+    }
+
+    @Test
+    public void testChangeLoggers(VertxTestContext context) throws InterruptedException {
+        String desired = "log4j.rootLogger=INFO, CONSOLE\n" +
+                "log4j.logger.org.apache.zookeeper=WARN\n" +
+                "log4j.logger.org.I0Itec.zkclient=WARN\n" +
+                "log4j.logger.org.reflections=WARN";
+
+        KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
+        Checkpoint async = context.checkpoint(2);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        client.updateConnectorLoggers("localhost", PORT, desired)
+                .onComplete(connectorLoggers -> context.verify(() -> {
+                    client.listConnectorLoggers("localhost", PORT)
+                        .onComplete(map -> {
+                            context.verify(() -> {
+                                assertThat(map.result().get("org.apache.zookeeper").get("level"), is("WARN"));
+                                assertThat(map.result().get("org.I0Itec.zkclient").get("level"), is("WARN"));
+                                assertThat(map.result().get("org.reflections").get("level"), is("WARN"));
+                                assertThat(map.result().get("root").get("level"), is("INFO"));
+                                assertThat(map.result().get("io.debezium").get("level"), is("ERROR"));
+                                assertThat(map.result().get("unknown"), is(nullValue()));
+                                async.flag();
+                                latch.countDown();
+                            });
+                        });
+                }));
+        latch.await(30, TimeUnit.SECONDS);
+
+        desired = "log4j.rootLogger=INFO, CONSOLE\n" +
+                "log4j.logger.org.apache.zookeeper=FATAL\n" +
+                "log4j.logger.org.I0Itec.zkclient=FATAL\n" +
+                "log4j.logger.unknown=DEBUG\n" +
+                "log4j.logger.org.reflections=FATAL";
+
+        CountDownLatch latch2 = new CountDownLatch(1);
+        client.updateConnectorLoggers("localhost", PORT, desired)
+                .onComplete(connectorLoggers -> context.verify(() -> {
+                    client.listConnectorLoggers("localhost", PORT).onComplete(map -> {
+                        context.verify(() -> {
+                            assertThat(map.result().get("org.reflections").get("level"), is("FATAL"));
+                            assertThat(map.result().get("org.apache.zookeeper").get("level"), is("FATAL"));
+                            assertThat(map.result().get("org.I0Itec.zkclient").get("level"), is("FATAL"));
+                            assertThat(map.result().get("root").get("level"), is("INFO"));
+                            assertThat(map.result().get("unknown"), is(notNullValue()));
+                            assertThat(map.result().get("unknown").get("level"), is("DEBUG"));
+                            async.flag();
+                            latch2.countDown();
+                        });
+                    });
+                }));
+        latch2.await(30, TimeUnit.SECONDS);
     }
 }

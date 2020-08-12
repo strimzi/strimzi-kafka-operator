@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -94,7 +95,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
         try {
             if (kafkaConnect.getSpec() == null) {
-                log.error("{}: Resource lacks spec property", reconciliation, kafkaConnect.getMetadata().getName());
+                log.error("{}: Resource {} lacks spec property", reconciliation, kafkaConnect.getMetadata().getName());
                 throw new InvalidResourceException("spec property is required");
             }
             connect = KafkaConnectCluster.fromCrd(kafkaConnect, versions);
@@ -102,9 +103,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, Future.failedFuture(e));
             return this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation,
                     kafkaConnectStatus,
-                (connect1, status) -> {
-                    return new KafkaConnectBuilder(connect1).withStatus(status).build();
-                });
+                (connect1, status) ->
+                    new KafkaConnectBuilder(connect1).withStatus(status).build()
+                );
         }
 
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
@@ -112,7 +113,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 null);
 
         Map<String, String> annotations = new HashMap<>(1);
-        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(Annotations.STRIMZI_LOGGING_APPENDERS_ANNOTATION, getLoggingAppenders(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG)));
+
+        String desiredLogging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation);
 
@@ -146,7 +149,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
 
