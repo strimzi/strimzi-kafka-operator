@@ -113,6 +113,7 @@ public class Environment {
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "v0.18.0";
     private static final String DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = "true";
     private static final String CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = "bundle";
+    
 
     private static String config;
     public static final String STRIMZI_ORG = getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
