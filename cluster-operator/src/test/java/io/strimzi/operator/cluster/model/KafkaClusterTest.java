@@ -3259,7 +3259,6 @@ public class KafkaClusterTest {
                                         .withValidIssuerUri("http://valid-issuer")
                                         .withIntrospectionEndpointUri("http://introspection")
                                         .withMaxSecondsWithoutReauthentication(3600)
-                                        .withJwksMinRefreshPauseSeconds(5)
                                         .withNewClientSecret()
                                             .withSecretName("my-secret-secret")
                                             .withKey("my-secret-key")
