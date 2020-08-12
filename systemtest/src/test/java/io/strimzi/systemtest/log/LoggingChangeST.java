@@ -560,6 +560,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testDynamicallySetConnectLoggingLevels() throws InterruptedException {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -635,23 +636,6 @@ class LoggingChangeST extends AbstractST {
         );
 
         assertThat("Connect pod should not roll", DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME)), equalTo(connectSnapshot));
-    }
-
-    @BeforeAll
-    void setup() throws Exception {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
-    }
-
-    @Override
-    protected void tearDownEnvironmentAfterAll() {
-        teardownEnvForOperator();
-    }
-
-
-    @Override
-    protected void assertNoCoErrorsLogged(long sinceSeconds) {
-        LOGGER.info("Skipping assertion if CO has some unexpected errors");
     }
 
     @Test
@@ -860,5 +844,22 @@ class LoggingChangeST extends AbstractST {
             () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
                         "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                         .contains("kafka.authorizer.logger=DEBUG"));
+    }
+
+    @BeforeAll
+    void setup() throws Exception {
+        ResourceManager.setClassResources();
+        installClusterOperator(NAMESPACE);
+    }
+
+    @Override
+    protected void tearDownEnvironmentAfterAll() {
+        teardownEnvForOperator();
+    }
+
+
+    @Override
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
+        LOGGER.info("Skipping assertion if CO has some unexpected errors");
     }
 }
