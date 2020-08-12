@@ -787,7 +787,7 @@ class ConnectS2IST extends AbstractST {
 
             LOGGER.info("Link existing pull-secret {} with associate builder service account", pullSecretName);
 
-            ResourceManager.cmdKubeClient().exec("secrets link builder" + pullSecretName);
+            ResourceManager.cmdKubeClient().exec("secrets", "link", "builder", pullSecretName);
         }
     }
 }
