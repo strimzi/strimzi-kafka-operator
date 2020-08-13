@@ -38,16 +38,16 @@ m¦kubectl annotate secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert strimzi.io/force
 m¦kubectl annotate secret _KAFKA-CLUSTER-NAME_-clients-ca-cert strimzi.io/force-renew=true
 
 |===
++
+At the next reconciliation the Cluster Operator will generate a new CA certificate for the `Secret` that you annotated.
+If maintenance time windows are configured, the Cluster Operator will generate the new CA certificate at the first reconciliation within the next maintenance time window.
++
+Client applications must reload the cluster and clients CA certificates that were renewed by the Cluster Operator.
 
 . Delete old certificates from the Secret.
 +
 When components are using the new certificates, older certificates might still be active.
 Delete the old certificates to remove any potential security risk.
-
-At the next reconciliation the Cluster Operator will generate a new CA certificate for the `Secret` that you annotated.
-If maintenance time windows are configured, the Cluster Operator will generate the new CA certificate at the first reconciliation within the next maintenance time window.
-
-Client applications must reload the cluster and clients CA certificates that were renewed by the Cluster Operator.
 
 .Additional resources
 
