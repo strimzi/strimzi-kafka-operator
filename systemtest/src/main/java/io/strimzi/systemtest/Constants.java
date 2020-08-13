@@ -101,7 +101,6 @@ public interface Constants {
     String DEFAULT_SINK_FILE_PATH = "/tmp/test-file-sink.txt";
 
     int HTTP_BRIDGE_DEFAULT_PORT = 8080;
-    int HTTP_BRIDGE_INGRESS_PORT = 80;
     int HTTP_JAEGER_DEFAULT_TCP_PORT = 5778;
     int HTTP_JAEGER_DEFAULT_NODE_PORT = 32480;
     int HTTPS_KEYCLOAK_DEFAULT_NODE_PORT = 32481;

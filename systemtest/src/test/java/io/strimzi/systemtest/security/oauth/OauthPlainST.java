@@ -17,7 +17,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -312,6 +311,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .endSpec()
                 .done();
 
+        String bridgePodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName();
         Service bridgeService = KubernetesResource.deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE, CLUSTER_NAME);
         KubernetesResource.createServiceResource(bridgeService, NAMESPACE);
 
@@ -341,8 +341,7 @@ public class OauthPlainST extends OauthAbstractST {
         JsonObject root = new JsonObject();
         root.put("records", records);
 
-        JsonObject response = BridgeUtils.sendMessagesHttpRequest(root, clusterHost,
-                KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
+        JsonObject response = BridgeUtils.sendMessagesHttpRequest(root, TOPIC_NAME, bridgePodName);
 
         response.getJsonArray("offsets").forEach(object -> {
             if (object instanceof JsonObject) {

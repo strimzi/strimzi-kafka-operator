@@ -33,8 +33,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -144,6 +142,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
             .endSpec()
             .done();
 
+        String podName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName();
         Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
 
@@ -156,8 +155,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         // Create consumer
-        String podName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName();
-        BridgeUtils.createHttpConsumer(podName, config, bridgePort, groupId, Collections.emptyMap());
+        BridgeUtils.createHttpConsumer(podName, config, groupId);
 
         // Create topics json
         JsonArray topic = new JsonArray();
@@ -166,7 +164,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
         topics.put("topics", topic);
 
         // Subscribe
-        assertThat(BridgeUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
+        assertThat(BridgeUtils.subscribeHttpConsumer(podName, topics, groupId, aliceUser), is(true));
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -179,14 +177,10 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         // Try to consume messages
-        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
-        if (bridgeResponse.size() == 0) {
-            // Real consuming
-            bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, aliceUser, client);
-        }
+        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(podName, groupId, aliceUser);
         assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
         // Delete consumer
-        assertThat(BridgeUtils.deleteConsumer(bridgeHost, bridgePort, groupId, aliceUser, client), is(true));
+        assertThat(BridgeUtils.deleteConsumer(podName, groupId, aliceUser), is(true));
     }
 
     @BeforeAll
