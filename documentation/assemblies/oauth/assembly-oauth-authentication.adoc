@@ -11,7 +11,7 @@ OAuth 2.0 enables standardized token-based authentication and authorization betw
 
 You can configure OAuth 2.0 authentication, then xref:assembly-oauth-authorization_{context}[OAuth 2.0 authorization].
 
-OAuth 2.0 authentication can also be used in conjunction with ACL or OPA-based xref:con-securing-kafka-authorization-str[Kafka authorization].
+OAuth 2.0 authentication can also be used in conjunction with `simple` or OPA-based xref:con-securing-kafka-authorization-str[Kafka authorization].
 
 Using OAuth 2.0 token-based authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
 
