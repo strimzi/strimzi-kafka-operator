@@ -42,7 +42,7 @@ spec:
   logging:
     type: inline
     loggers:
-      connect.root.logger.level: "INFO"
+      log4j.rootLogger: "INFO"
   readinessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5

@@ -554,8 +554,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     private Future updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers) {
         Map<String, String> updateLoggers = new LinkedHashMap<>();
         fetchedLoggers.entrySet().forEach(entry -> {
-            // set all logger levels to ERROR
-            updateLoggers.put(entry.getKey(), "ERROR");
+            // set all logger levels to OFF
+            updateLoggers.put(entry.getKey(), "OFF");
         });
 
         OrderedProperties ops = new OrderedProperties();
