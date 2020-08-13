@@ -8,6 +8,7 @@
 * [Lightbend](https://www.lightbend.com/)
 * [Red Hat](https://www.redhat.com/en)
 * [SBB CFF FFS](https://www.sbb.ch/en/home.html)
+* [Marlow Navigation](https://marlow-navigation.com/)
 
 Are you currently using Strimzi in production?
 Please let us know by adding your company name and, if you want, a description of your use case to this document!
