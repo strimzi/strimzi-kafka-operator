@@ -7,7 +7,7 @@
 
 You can use `kubectl` commands to retrieve information and perform other operations on Strimzi custom resources.
 
-Using `kubectl` with the `status` property of a custom resource allows you to publish information about the resource to users and tools that need it.
+Using `kubectl` with the `status` subresource of a custom resource allows you to get the information about the resource.
 
 //accessing resource information
 include::modules/con-custom-resources-info.adoc[leveloffset=+1]
