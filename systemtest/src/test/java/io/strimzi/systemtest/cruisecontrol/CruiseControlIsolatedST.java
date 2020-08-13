@@ -19,21 +19,23 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.FLAKY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-@Tag(FLAKY)
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+//until fix of CC for Kafka version 2.6.0 and new version of CC will be released, these tests will be disabled
+//TODO: enable these tests when all issues with CC and Kafka version 2.6.0 will be resolved
+@Disabled
 public class CruiseControlIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlIsolatedST.class);
