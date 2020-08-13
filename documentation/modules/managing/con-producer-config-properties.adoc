@@ -5,18 +5,18 @@
 [id='con-producer-config-properties-{context}']
 = Kafka producer configuration tuning
 
-Use a minimum producer configuration with optional properties that are tailored to specific uses cases.
+Use a basic producer configuration with optional properties that are tailored to specific uses cases.
 
 Adjusting your configuration to maximize throughput might increase latency or vice versa.
 You will need to experiment and tune your producer configuration to get the balance you need.
 
-== Minimum producer configuration
+== Basic producer configuration
 
 Connection and serializer properties are required for every producer.
 Generally, it is good practice to add a client id for tracking,
 and use compression on the producer to reduce batch sizes in requests.
 
-In this minimal configuration:
+In this basic configuration:
 
 * The order of messages in a partition is not guaranteed
 * The acknowledgment of messages reaching the broker does not guarantee durability
@@ -34,11 +34,11 @@ compression.type=gzip <5>
 <1> (Required) Tells the producer to connect to a Kafka cluster using a _host:port_ bootstrap server address for a Kafka broker.
 The producer uses the address to discover and connect to all brokers in the cluster.
 Use a comma-separated list to specify two or three addresses in case a server is down, but it’s not necessary to provide a list of all the brokers in the cluster.
-<2> (Required) Serializer to transform the message keys to bytes prior to them being sent to a broker.
-<3> (Required) Serializer to transform message values to bytes prior to them being sent to a broker.
+<2> (Required) Serializer to transform the key of each message to bytes prior to them being sent to a broker.
+<3> (Required) Serializer to transform the value of each message to bytes prior to them being sent to a broker.
 <4> (Optional) The logical name for the client, which is used in logs and metrics to identify the source of a request.
-<5> (Optional) The codec for compressing messages, which are sent and stored in compressed format and then decompressed when reaching a consumer.
-Compression is useful for improving throughput and reducing the load on storage, but might not be suitable for low latency applications where the cost of compression or decompression is prohibitive.
+<5> (Optional) The codec for compressing messages, which are sent and might be stored in compressed format and then decompressed when reaching a consumer.
+Compression is useful for improving throughput and reducing the load on storage, but might not be suitable for low latency applications where the cost of compression or decompression could be prohibitive.
 
 == Data durability
 
@@ -50,11 +50,11 @@ acks=all <1>
 # ...
 ----
 
-<1> Specifying `acks=all` forces a partition leader to replicate messages to all followers before
+<1> Specifying `acks=all` forces a partition leader to replicate messages to a certain number of followers before
 acknowledging that the message request was successfully received.
 Because of the additional checks, `acks=all` increases the latency between the producer sending a message and receiving acknowledgment.
 
-In addition to using `acks=all`, you must configure the topics receiving the messages to have more than one in-sync replica.
+The number of brokers which need to have appended the messages to their logs before the acknowledgment is sent to the producer is determined by the topic's `min.insync.replicas` configuration.
 A typical starting point is to have a topic replication factor of 3, with two in-sync replicas on other brokers.
 In this configuration, the producer can continue unaffected if a single broker is unavailable.
 If a second broker becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
@@ -66,6 +66,8 @@ min.insync.replicas=2 <1>
 # ...
 ----
 <1> Use `2` in-sync replicas. The default is `1`.
+
+NOTE: If the system fails, there is a risk of unsent data in the buffer being lost.
 
 == Ordered delivery
 
@@ -82,12 +84,12 @@ acks=all <3>
 retries=2147483647 <4>
 # ...
 ----
-<1> Set to `true`.
-<2> Specify the number of allowed in-flight requests to a maximum of 5.
-<3> Set to `all`.
+<1> Set to `true` to enable the idempotent producer.
+<2> With idempotent delivery the number of in-flight requests may be greater than 1 while still providing the message ordering guarantee. The default is 5 in-flight requests.
+<3> Set `acks` to `all`.
 <4> Set the number of attempts to resend a failed message request.
 
-If the performance cost is too great, and you are not using `acks=all`,
+If you are not using `acks=all` and idempotency because of the performance cost,
 set the number of in-flight (unacknowledged) requests to 1 to preserve ordering.
 Otherwise, a situation is possible where _Message-A_ fails only to succeed after _Message-B_ was already written to the broker.
 
@@ -99,12 +101,12 @@ max.in.flight.requests.per.connection=1 <2>
 retries=2147483647
 # ...
 ----
-<1> Set to `false`.
+<1> Set to `false` to disable the idempotent producer.
 <2> Set the number of in-flight requests to exactly `1`.
 
 == Reliability guarantees
 
-Idempotence is useful for exactly once writes from a single partition.
+Idempotence is useful for exactly once writes to a single partition.
 Transactions, when used with idempotence, allow exactly once writes across multiple partitions.
 
 Transactions guarantee that messages using the same transactional ID are produced once,
@@ -163,16 +165,33 @@ such as worse batching, start to counteract the effect on throughput.
 
 .Lowering latency
 
-Producers scaled to produce a high rate of requests might cause queues in the Kafka cluster and increase latency.
+When your application calls `KafkaProducer.send()` the messages are:
 
-Use a buffer and add a small delay to reduce the number of requests to topics from producers that are not contributing a large number of messages.
-You can set the delay in conjunction with a maximum batch size, so the delay only applies if the batch size is not reached earlier.
+* Processed by any interceptors
+* Serialized
+* Assigned to a partition
+* Compressed
+* Added to a batch of messages in a per-partition queue
 
-NOTE: If the system fails, there is a risk of unsent data in the buffer being lost.
+At which point the `send()` method returns.
+So the time `send()` is blocked is determined by:
+
+* The time spent in the interceptors, serializers and partitioner
+* The compression algorithm used
+* The time spent waiting for a buffer to use for compression
+
+Batches will remain in the queue until one of the following occurs:
+
+* The batch is full (according to `batch.size`)
+* The delay introduced by `linger.ms` has passed
+* The sender is about to send message batches for other partitions to the same broker, and it's possible to add this batch too
+* The producer is being flushed or closed
+
+Look at the configuration for batching and buffering to mitigate the impact of `send()` blocking on latency.
 
 ----
 # ...
-linger.ms=0 <1>
+linger.ms=100 <1>
 batch.size=16384 <2>
 buffer.memory=33554432 <3>
 # ...
@@ -185,19 +204,16 @@ Adding the delay allows batches to accumulate messages up to the batch size.
 .Increasing throughput
 
 Improve throughput of your message requests by adjusting the maximum time to wait before a message is delivered and completes a send request.
-If you have a large number of topics to write to, you can also lower the time it takes to pick up topic metadata changes and reduce the time to discover new brokers or partitions.
 
 You can also direct messages to a specified partition by writing a custom partitioner to replace the default.
 
 ----
 # ...
 delivery.timeout.ms=120000 <1>
-metadata.max.age.ms=300000 <2>
-partitioner.class=my-custom-partitioner <3>
+partitioner.class=my-custom-partitioner <2>
 
 # ...
 ----
 <1> The maximum time in milliseconds to wait for a complete send request. You can set the value to `MAX_LONG` to delegate to Kafka an indefinite number of retries.
 The default is `120000` or 2 minutes.
-<2> Time in milliseconds before the next refresh of topic metadata. The default is `300000` or 5 minutes.
-<3> Specify the class name of the custom partitioner.
+<2> Specify the class name of the custom partitioner.
