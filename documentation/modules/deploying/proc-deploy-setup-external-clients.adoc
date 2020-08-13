@@ -137,7 +137,7 @@ kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.
 +
 Use the certificate and password in your Kafka client to connect to the Kafka cluster with TLS encryption.
 +
-NOTE: Cluster CA certificates renew automatically by default. If your are using your own Kafka listener certificates,
+NOTE: Cluster CA certificates renew automatically by default. If you are using your own Kafka listener certificates,
 you will need to link:{BookURLUsing}#renewing-your-own-ca-certificates-str[renew the certificates manually^].
 
 . Create or modify a user representing the client that requires access to the Kafka cluster.

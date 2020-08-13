@@ -59,8 +59,8 @@ listeners:
 
 Mutual TLS authentication is always used for the communication between Kafka brokers and ZooKeeper pods.
 
-For mutual authentication or two-way authentication, both the server and the client present certificates.
 Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication.
+For mutual, or two-way, authentication, both the server and the client present certificates.
 When you configure mutual authentication, the broker authenticates the client (client authentication) and the client authenticates the broker (server authentication).
 
 NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another.
@@ -71,8 +71,8 @@ For example, when HTTPS is used between a web browser and a web server, the brow
 
 SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords.
 Strimzi can configure Kafka to use SASL (Simple Authentication and Security Layer) SCRAM-SHA-512 to provide authentication on both unencrypted and encrypted client connections.
-TLS authentication is always used internally between Kafka brokers and ZooKeeper nodes.
-When used with a TLS client connection, the TLS protocol provides encryption, but is not used for authentication.
+
+When SCRAM-SHA-512 authentication is used with a TLS client connection, the TLS protocol provides the encryption, but is not used for authentication.
 
 The following properties of SCRAM make it safe to use SCRAM-SHA-512 even on unencrypted connections:
 
@@ -82,14 +82,7 @@ Instead the client and the server are each challenged by the other to offer proo
 * The server and client each generate a new challenge for each authentication exchange.
 This means that the exchange is resilient against replay attacks.
 
-.Supported SCRAM credentials
-
-Strimzi supports SCRAM-SHA-512 only.
-When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12 character password consisting of upper and lowercase ASCII letters and numbers.
-
-.Additional resources
-
-* {Externallisteners}
+When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12-character password consisting of upper and lowercase ASCII letters and numbers.
 
 [id='assembly-kafka-broker-listener-network-policies-{context}']
 == Network policies

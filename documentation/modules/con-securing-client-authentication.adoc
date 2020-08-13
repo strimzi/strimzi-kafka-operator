@@ -69,7 +69,7 @@ data:
 
 == SCRAM-SHA-512 Authentication
 
-To use SCRAM-SHA-512 authentication mechanism, you set the `type` field to `scram-sha-512`.
+To use the SCRAM-SHA-512 authentication mechanism, you set the `type` field to `scram-sha-512`.
 
 .An example `KafkaUser` with SCRAM-SHA-512 authentication enabled
 [source,yaml,subs="attributes+"]

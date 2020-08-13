@@ -18,6 +18,10 @@ For more information about listener configuration, see the xref:type-KafkaListen
 
 NOTE: `route` is only supported on OpenShift
 
+.Additional resources
+
+* {Externallisteners}
+
 include::../modules/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
 include::../modules/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
 include::../modules/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]

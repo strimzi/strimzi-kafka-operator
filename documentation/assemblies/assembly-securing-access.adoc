@@ -5,7 +5,7 @@
 [id='assembly-securing-access-{context}']
 = Managing secure access to Kafka
 
-You can secure Kafka by managing the access each client has to the Kafka brokers.
+You can secure your Kafka cluster by managing the access each client has to the Kafka brokers.
 
 A secure connection between Kafka brokers and clients can encompass:
 
@@ -13,7 +13,7 @@ A secure connection between Kafka brokers and clients can encompass:
 * Authentication to prove identity
 * Authorization to allow or decline actions executed by users
 
-This chapter explains how to set up secure connections, with sections describing:
+This chapter explains how to set up secure connections between Kafka brokers and clients, with sections describing:
 
 * Security options for Kafka clusters and clients
 * How to secure Kafka brokers
