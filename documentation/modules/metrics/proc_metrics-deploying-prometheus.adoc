@@ -37,7 +37,7 @@ sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 . The provided Grafana dashboards show metrics about CPU, memory and volume disks usage.
 These metrics come from cadvisor and kubelet directly on the nodes.
 In order to have Prometheus scraping for these metrics, an additional configuration is needed.
-This is because the Prometheus operator doesn't have a corresponding of `PodMonitor` for scraping metrics coming from nodes directly.
+This is because the Prometheus operator does not have a corresponding of `PodMonitor` for scraping metrics coming from nodes directly.
 
 .. Create a `Secret` resource:
 +
