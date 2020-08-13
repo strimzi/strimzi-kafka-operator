@@ -13,6 +13,7 @@ import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -30,6 +31,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+//until fix of CC for Kafka version 2.6.0 and new version of CC will be released, these tests will be disabled
+//TODO: enable these tests when all issues with CC and Kafka version 2.6.0 will be resolved
+@Disabled
 public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
