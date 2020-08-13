@@ -248,14 +248,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
         Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
-                put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(),
-                    CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getDefaultValue());
-                put(CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(),
-                    CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getDefaultValue());
-                put(CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getName(),
-                    CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getDefaultValue());
-                put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getName(),
-                    CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getDefaultValue());
+                put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(), 2);
+                put(CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(), 5);
+                put(CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getName(), 1000);
+                put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getName(), -1);
             }};
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
