@@ -6,6 +6,7 @@
 * [Helvetia](https://helvetia.com/)
 * [IBM](https://www.ibm.com/cloud/event-streams)
 * [Lightbend](https://www.lightbend.com/)
+* [Marlow Navigation](https://marlow-navigation.com/)
 * [Red Hat](https://www.redhat.com/en)
 * [SBB CFF FFS](https://www.sbb.ch/en/home.html)
 
