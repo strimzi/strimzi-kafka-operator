@@ -24,12 +24,14 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.FLAKY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
+@Tag(FLAKY)
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 public class CruiseControlIsolatedST extends AbstractST {

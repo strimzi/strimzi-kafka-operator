@@ -39,6 +39,7 @@ import java.util.Properties;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.FLAKY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -48,6 +49,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Tag(FLAKY)
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

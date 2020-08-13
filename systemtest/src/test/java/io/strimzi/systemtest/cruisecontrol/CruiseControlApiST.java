@@ -21,12 +21,14 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.FLAKY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag(FLAKY)
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
