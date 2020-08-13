@@ -7,9 +7,9 @@ Kafka Connect has its own configurable loggers:
 * `log4j.rootLogger`
 * `log4j.logger.org.reflections`
 
-Further loggers are added dependently on running Kafka Connect plugins.
+Further loggers are added depending on the Kafka Connect plugins running.
 
-To get complete list of connect loggers run from any Kafka broker pod:
+Use a curl request to get a complete list of Kafka Connect loggers running from any Kafka broker pod:
 
 [source,curl,subs=attributes+]
 ----
@@ -53,11 +53,11 @@ spec:
   # ...
 ----
 
-All loggers which are available and are not configured have level set to `OFF`.
+Any available loggers that are not configured have their level set to `OFF`.
 
-Changes in Kafka Connect logging levels are applied dynamically.
+Changes to Kafka Connect logging levels are applied dynamically.
 
-If you use external logging and logging appenders are changed the rolling update is triggered.
+If you use external logging, a rolling update is triggered when logging appenders are changed.
 
 .Garbage collector (GC)
 
