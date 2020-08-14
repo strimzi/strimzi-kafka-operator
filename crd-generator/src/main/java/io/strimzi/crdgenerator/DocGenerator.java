@@ -425,10 +425,11 @@ public class DocGenerator {
 
         if (deprecatedType != null || langDeprecated != null) {
             if (deprecatedType == null || langDeprecated == null) {
-                err(cls.getCanonicalName() + " must be annotated with both @" + Deprecated.class.getName()
+                err(cls.getName() + " must be annotated with both @" + Deprecated.class.getName()
                         + " and @" + DeprecatedProperty.class.getName());
             }
-            if (deprecatedType.replacedWithType() != null
+            if (deprecatedType != null
+                    && deprecatedType.replacedWithType() != null
                     && !deprecatedType.replacedWithType().isEmpty()) {
                 Class<?> replacementClss;
 
