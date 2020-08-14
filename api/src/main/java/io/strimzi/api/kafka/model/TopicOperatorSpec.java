@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
@@ -16,6 +17,7 @@ import lombok.EqualsAndHashCode;
  * Representation of a Strimzi-managed Topic Operator deployment.
  */
 @Deprecated
+@DeprecatedType(replacedWithType = "io.strimzi.api.kafka.model.EntityTopicOperatorSpec")
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

@@ -7,6 +7,7 @@ package io.strimzi.crdgenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -151,6 +152,7 @@ public class DocGenerator {
     }
 
     private void appendCommonTypeDoc(Crd crd, Class<?> cls) throws IOException {
+        appendTypeDeprecation(crd, cls);
         appendUsedIn(crd, cls);
         appendDescription(cls);
         appendDiscriminator(crd, cls);
@@ -415,6 +417,34 @@ public class DocGenerator {
         out.append(NL).append("|");
         out.append(String.join(" or ", alternativeTypes));
         out.append(NL);
+    }
+
+    private void appendTypeDeprecation(Crd crd, Class<?> cls) throws IOException {
+        DeprecatedType deprecatedType = cls.getAnnotation(DeprecatedType.class);
+        Deprecated langDeprecated = cls.getAnnotation(Deprecated.class);
+
+        if (deprecatedType != null || langDeprecated != null) {
+            if (deprecatedType == null || langDeprecated == null) {
+                err(cls.getCanonicalName() + " must be annotated with both @" + Deprecated.class.getName()
+                        + " and @" + DeprecatedProperty.class.getName());
+            }
+            if (deprecatedType.replacedWithType() != null
+                    && !deprecatedType.replacedWithType().isEmpty()) {
+                Class<?> replacementClss;
+
+                try {
+                    replacementClss = Class.forName(deprecatedType.replacedWithType());
+                } catch (ClassNotFoundException e)  {
+                    throw new RuntimeException("Replacement class for deprecated class " + cls.getName() + " not found");
+                }
+
+                out.append("*The type `" + cls.getSimpleName() + "` has been deprecated.*").append(NL);
+                out.append("Please use ");
+                typeLink(crd, out, replacementClss);
+                out.append(" instead.").append(NL);
+                out.append(NL);
+            }
+        }
     }
 
     private void appendDescription(Class<?> cls) throws IOException {

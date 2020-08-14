@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.strimzi.api.annotations.DeprecatedType;
 
 import java.io.IOException;
 
@@ -85,6 +86,8 @@ public class Type1OrType2 {
         }
     }
 
+    @Deprecated
+    @DeprecatedType(replacedWithType = "io.strimzi.crdgenerator.Type1OrType2$Type2")
     public class Type1 {
         private String key1;
 
