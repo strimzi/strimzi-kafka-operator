@@ -177,19 +177,21 @@ public class DocGenerator {
             out.append(gunk);
             out.append("|");
 
-            DeprecatedProperty strimziDeprecated = property.getAnnotation(DeprecatedProperty.class);
-            Deprecated langDeprecated = property.getAnnotation(Deprecated.class);
-            addDeprecationWarning(property, strimziDeprecated, langDeprecated);
+            // Set warning message for deprecated fields
+            addDeprecationWarning(property);
 
-            Description description2 = property.getAnnotation(Description.class);
-            addDescription(cls, property, description2);
+            // Set the field description
+            addDescription(cls, property);
 
+            // Set the external link to Kubernetes docs or the link for fields distinguished by `type`
             KubeLink kubeLink = property.getAnnotation(KubeLink.class);
             String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
             addExternalUrl(property, kubeLink, externalUrl);
 
+            // Get the OneOfType alternatives
             List<Property> alternatives = getAlternatives(property);
 
+            // Add the types to the `types` array to also generate the docs for the type itself
             if (alternatives.size() > 0) {
                 addTypesFromAlternatives(alternatives, types);
             } else {
@@ -205,6 +207,7 @@ public class DocGenerator {
 
             // TODO Minimum?, Maximum?, Pattern?
 
+            // Add the property type description
             if (alternatives.size() > 0) {
                 appendPropertyTypeWithAlternatives(crd, alternatives);
             } else {
@@ -216,7 +219,17 @@ public class DocGenerator {
         appendNestedTypes(crd, types);
     }
 
-    private void addDeprecationWarning(Property property, DeprecatedProperty strimziDeprecated, Deprecated langDeprecated) throws IOException {
+    /**
+     * Sets warning message for deprecated fields
+     *
+     * @param property  The property which will be checked for deprecation
+     *
+     * @throws IOException
+     */
+    private void addDeprecationWarning(Property property) throws IOException {
+        DeprecatedProperty strimziDeprecated = property.getAnnotation(DeprecatedProperty.class);
+        Deprecated langDeprecated = property.getAnnotation(Deprecated.class);
+
         if (strimziDeprecated != null || langDeprecated != null) {
             if (strimziDeprecated == null || langDeprecated == null) {
                 err(property + " must be annotated with both @" + Deprecated.class.getName()
@@ -228,7 +241,17 @@ public class DocGenerator {
         }
     }
 
-    private void addDescription(Class<?> cls, Property property, Description description) throws IOException {
+    /**
+     * Sets the description for given property
+     *
+     * @param cls   The Class (type) which is being documented
+     * @param property  The property for which the description should be added
+     *
+     * @throws IOException
+     */
+    private void addDescription(Class<?> cls, Property property) throws IOException {
+        Description description = property.getAnnotation(Description.class);
+
         if (description == null) {
             if (cls.getName().startsWith("io.strimzi")) {
                 err(property + " is not documented");
@@ -238,6 +261,15 @@ public class DocGenerator {
         }
     }
 
+    /**
+     * Sets the external link to Kubernetes docs or the link for fields distinguished by `type`
+     *
+     * @param property  The property for which the description should be added
+     * @param kubeLink  The value of the KubeLink annotation or null if not set
+     * @param externalUrl   The URL to the Kubernetes documentation
+     *
+     * @throws IOException
+     */
     private void addExternalUrl(Property property, KubeLink kubeLink, String externalUrl) throws IOException {
         if (externalUrl != null) {
             out.append(" See external documentation of ").append(externalUrl)
@@ -249,6 +281,12 @@ public class DocGenerator {
         }
     }
 
+    /**
+     * Adds all the alternative types for having them later documented
+     *
+     * @param alternatives  Alternative properties
+     * @param types     The list of types which will be later documented
+     */
     private void addTypesFromAlternatives(List<Property> alternatives, LinkedHashSet<Class<?>> types) {
         for (Property property : alternatives) {
             Class<?> documentedType = property.getType().isArray() ? property.getType().arrayBase() : property.getType().getType();
@@ -261,6 +299,13 @@ public class DocGenerator {
         }
     }
 
+    /**
+     * Checks if the property has any OneOfType annotations. If yes, returns all the alternative fields. Otherwise an empty list is returned.
+     *
+     * @param property  The property which should be checked for alternative types
+     *
+     * @return  List with alternative properties
+     */
     private List<Property> getAlternatives(Property property)   {
         OneOfType oneOfType = property.getAnnotation(OneOfType.class);
         List<Property> alternatives = new ArrayList<>(0);
