@@ -38,6 +38,7 @@ class Property implements AnnotatedElement {
     private AnnotatedElement a;
     private Member m;
     private PropertyType type;
+
     public Property(Method method) {
         name = propertyName(method);
         owner = method.getDeclaringClass();

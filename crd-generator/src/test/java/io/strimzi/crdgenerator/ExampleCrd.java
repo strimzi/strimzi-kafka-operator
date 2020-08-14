@@ -16,6 +16,7 @@ import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.OneOf;
+import io.strimzi.crdgenerator.annotations.OneOfType;
 import io.strimzi.crdgenerator.annotations.Pattern;
 
 import java.util.List;
@@ -115,6 +116,8 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     private String either;
     private String or;
 
+    private MapOrList alternatives;
+    private Type1OrType2 typedAlternatives;
 
     @Description("Example of complex type.")
     public static class ObjectProperty {
@@ -276,5 +279,23 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
+    }
+
+    @OneOfType({@OneOfType.Alternative(@OneOfType.Alternative.Field("mapValue")), @OneOfType.Alternative(@OneOfType.Alternative.Field("listValue"))})
+    public MapOrList getAlternatives() {
+        return alternatives;
+    }
+
+    public void setAlternatives(MapOrList alternatives) {
+        this.alternatives = alternatives;
+    }
+
+    @OneOfType({@OneOfType.Alternative(@OneOfType.Alternative.Field("type1Value")), @OneOfType.Alternative(@OneOfType.Alternative.Field("type2Value"))})
+    public Type1OrType2 getTypedAlternatives() {
+        return typedAlternatives;
+    }
+
+    public void setTypedAlternatives(Type1OrType2 alternatives) {
+        this.typedAlternatives = typedAlternatives;
     }
 }

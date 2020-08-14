@@ -25,6 +25,6 @@ public class DocGeneratorTest {
         DocGenerator crdGenerator = new DocGenerator(1, singletonList(ExampleCrd.class), w, new KubeLinker("{KubeApiReferenceBase}"));
         crdGenerator.generate(ExampleCrd.class);
         String s = w.toString();
-        assertThat(CrdTestUtils.readResource("simpleTest.adoc"), is(s));
+        assertThat(s, is(CrdTestUtils.readResource("simpleTest.adoc")));
     }
 }

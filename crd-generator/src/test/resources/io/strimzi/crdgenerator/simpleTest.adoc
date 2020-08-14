@@ -9,6 +9,8 @@
 
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
+|alternatives            1.2+<.<|
+|map or string array
 |arrayOfBoundTypeVar     1.2+<.<|
 |xref:type-Number-{context}[`Number`] array
 |arrayOfBoundTypeVar2    1.2+<.<|
@@ -73,6 +75,8 @@
 |object array
 |stringProperty          1.2+<.<|
 |string
+|typedAlternatives       1.2+<.<|
+|xref:type-Type1-{context}[`Type1`] or xref:type-Type2-{context}[`Type2`]
 |====
 
 [id='type-Number-{context}']
@@ -137,6 +141,32 @@ It must have the value `right` for the type `PolymorphicRight`.
 |discrim         1.2+<.<|
 |string
 |rightProperty   1.2+<.<|when descrim=right, the right-hand property.
+|string
+|====
+
+[id='type-Type1-{context}']
+# `Type1` schema reference
+
+Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
+
+
+[options="header"]
+|====
+|Property     |Description
+|key1  1.2+<.<|
+|string
+|====
+
+[id='type-Type2-{context}']
+# `Type2` schema reference
+
+Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
+
+
+[options="header"]
+|====
+|Property     |Description
+|key2  1.2+<.<|
 |string
 |====
 
