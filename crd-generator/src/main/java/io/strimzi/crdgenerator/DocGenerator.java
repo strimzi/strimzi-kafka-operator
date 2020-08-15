@@ -127,7 +127,7 @@ public class DocGenerator {
         Set<Class<?>> classes = usedIn.get(c);
 
         if (classes == null) {
-            classes = new HashSet<>(2);
+            classes = new HashSet<>(1);
             usedIn.put(c, classes);
         }
 
