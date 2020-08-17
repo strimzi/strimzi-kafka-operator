@@ -26,24 +26,7 @@ public enum CruiseControlConfigurationParameters {
     CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY("default.goals"),
     CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY("hard.goals"),
     CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY("self.healing.goals"),
-    CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY("anomaly.detection.goals"),
-
-    RACK_AWARENESS_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal"),
-    REPLICA_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal"),
-    DISK_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal"),
-    NETWORK_INBOUND_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal"),
-    NETWORK_OUTBOUND_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal"),
-    CPU_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuCapacityGoal"),
-    REPLICA_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaDistributionGoal"),
-    POTENTIAL_NETWORK_OUTAGE_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.PotentialNwOutGoal"),
-    DISK_USAGE_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskUsageDistributionGoal"),
-    NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundUsageDistributionGoal"),
-    NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundUsageDistributionGoal"),
-    CPU_USAGE_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuUsageDistributionGoal"),
-    TOPIC_REPLICA_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.TopicReplicaDistributionGoal"),
-    LEADER_REPLICA_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderReplicaDistributionGoal"),
-    LEADER_BYTES_IN_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderBytesInDistributionGoal"),
-    PREFERRED_LEADER_ELECTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.PreferredLeaderElectionGoal");
+    CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY("anomaly.detection.goals");
 
     private final String name;
 

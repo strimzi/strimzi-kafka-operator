@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.CruiseControlSpec;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlGoals;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.util.Arrays;
@@ -26,22 +27,22 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      */
     protected static final List<String> CRUISE_CONTROL_GOALS_LIST = Collections.unmodifiableList(
         Arrays.asList(
-                CruiseControlConfigurationParameters.RACK_AWARENESS_GOAL.toString(),
-                CruiseControlConfigurationParameters.REPLICA_CAPACITY_GOAL.toString(),
-                CruiseControlConfigurationParameters.DISK_CAPACITY_GOAL.toString(),
-                CruiseControlConfigurationParameters.NETWORK_INBOUND_CAPACITY_GOAL.toString(),
-                CruiseControlConfigurationParameters.NETWORK_OUTBOUND_CAPACITY_GOAL.toString(),
-                CruiseControlConfigurationParameters.CPU_CAPACITY_GOAL.toString(),
-                CruiseControlConfigurationParameters.REPLICA_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.POTENTIAL_NETWORK_OUTAGE_GOAL.toString(),
-                CruiseControlConfigurationParameters.DISK_USAGE_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.CPU_USAGE_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.TOPIC_REPLICA_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.LEADER_REPLICA_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.LEADER_BYTES_IN_DISTRIBUTION_GOAL.toString(),
-                CruiseControlConfigurationParameters.PREFERRED_LEADER_ELECTION_GOAL.toString()
+                CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.DISK_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.NETWORK_INBOUND_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.NETWORK_OUTBOUND_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.CPU_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.REPLICA_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.POTENTIAL_NETWORK_OUTAGE_GOAL.toString(),
+                CruiseControlGoals.DISK_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.CPU_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.TOPIC_REPLICA_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.LEADER_REPLICA_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.LEADER_BYTES_IN_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.PREFERRED_LEADER_ELECTION_GOAL.toString()
         )
      );
 
@@ -53,12 +54,12 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      */
     protected static final List<String> CRUISE_CONTROL_HARD_GOALS_LIST = Collections.unmodifiableList(
             Arrays.asList(
-                    CruiseControlConfigurationParameters.RACK_AWARENESS_GOAL.toString(),
-                    CruiseControlConfigurationParameters.REPLICA_CAPACITY_GOAL.toString(),
-                    CruiseControlConfigurationParameters.DISK_CAPACITY_GOAL.toString(),
-                    CruiseControlConfigurationParameters.NETWORK_INBOUND_CAPACITY_GOAL.toString(),
-                    CruiseControlConfigurationParameters.NETWORK_OUTBOUND_CAPACITY_GOAL.toString(),
-                    CruiseControlConfigurationParameters.CPU_CAPACITY_GOAL.toString()
+                    CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                    CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.DISK_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.NETWORK_INBOUND_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.NETWORK_OUTBOUND_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.CPU_CAPACITY_GOAL.toString()
             )
     );
 
@@ -66,9 +67,9 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
 
     protected static final List<String> CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST = Collections.unmodifiableList(
         Arrays.asList(
-                CruiseControlConfigurationParameters.RACK_AWARENESS_GOAL.toString(),
-                CruiseControlConfigurationParameters.REPLICA_CAPACITY_GOAL.toString(),
-                CruiseControlConfigurationParameters.DISK_CAPACITY_GOAL.toString()
+                CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.DISK_CAPACITY_GOAL.toString()
         )
     );
 
