@@ -601,6 +601,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 // we need root logger always to be the first logger to be set via REST API
                 return Integer.MIN_VALUE;
             }
+            if (k2.equals("root")) {
+                return Integer.MAX_VALUE;
+            }
             return numberOfDotsInString(k1) - numberOfDotsInString(k2);
         };
         List<Map.Entry<String, String>> listOfEntries = new ArrayList<>(loggers.entrySet());
