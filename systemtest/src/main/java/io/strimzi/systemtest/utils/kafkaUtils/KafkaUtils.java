@@ -286,7 +286,7 @@ public class KafkaUtils {
      * @param kafkaVersion specific kafka version
      * @return Map<String, Object> all dynamic properties for specific kafka version
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:BooleanExpressionComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:BooleanExpressionComplexity", "unchecked"})
     public static Map<String, Object> getDynamicConfigurationProperties(String kafkaVersion)  {
 
         JsonObject kafkaConfig = KafkaUtils.loadSupportedKafkaConfigs(kafkaVersion);
