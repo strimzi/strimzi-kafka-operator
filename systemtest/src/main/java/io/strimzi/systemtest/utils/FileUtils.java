@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -140,5 +141,18 @@ public class FileUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Method, which creates the CSV file
+     * @param fileName concrete name of the file to be created
+     * @param data specific data which will be in the CSV file
+     */
+    public static void createCsvFile(String fileName, String data) {
+        try (PrintWriter writer = new PrintWriter("../systemtest/src/test/resources/dynamic-configuration/dynamic-configuration-test-cases.csv", StandardCharsets.UTF_8)) {
+            writer.write(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

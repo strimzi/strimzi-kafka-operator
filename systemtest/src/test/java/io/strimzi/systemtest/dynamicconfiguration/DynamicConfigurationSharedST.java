@@ -6,15 +6,24 @@ package io.strimzi.systemtest.dynamicconfiguration;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.CsvFileSource;
+
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -34,32 +43,7 @@ public class DynamicConfigurationSharedST extends AbstractST {
     private static final String NAMESPACE = "kafka-configuration-shared-cluster-test";
 
     @ParameterizedTest
-    @CsvSource({
-        "background.threads, " + 12,
-        "compression.type,  snappy",
-        "compression.type,  gzip",
-        "compression.type,  lz4",
-        "compression.type,  zstd",
-        "log.flush.interval.ms, " + 20,
-        "log.retention.ms,  " + 20,
-        "log.retention.bytes, " + 250,
-        "log.segment.bytes,   " + 1_100,
-        "log.segment.delete.delay.ms,  " + 400,
-        "log.roll.jitter.ms, " + 500,
-        "log.roll.ms, " + 300,
-        "log.cleaner.dedupe.buffer.size, " + 4_000_000,
-        "log.cleaner.delete.retention.ms, " + 1_000,
-        "log.cleaner.io.buffer.load.factor, " + 12,
-        "log.cleaner.io.buffer.size, " + 10_000,
-        "log.cleaner.io.max.bytes.per.second, " + 1.523,
-        "log.cleaner.max.compaction.lag.ms, " + 32_000,
-        "log.cleaner.min.compaction.lag.ms, " + 1_000,
-        "log.preallocate, " + true,
-        "max.connections, " + 10,
-        "max.connections.per.ip, " + 20,
-        "unclean.leader.election.enable, " + true,
-        "message.max.bytes, " + 2048,
-    })
+    @CsvFileSource(resources = "/dynamic-configuration/dynamic-configuration-test-cases.csv")
     void testLogDynamicKafkaConfigurationProperties(String kafkaDynamicConfigurationKey, Object kafkaDynamicConfigurationValue) {
         // exercise phase
         KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, kafkaDynamicConfigurationKey, kafkaDynamicConfigurationValue);
@@ -69,6 +53,73 @@ public class DynamicConfigurationSharedST extends AbstractST {
         assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaDynamicConfigurationKey, kafkaDynamicConfigurationValue), is(true));
     }
 
+    /**
+     * Method, which dynamically generate test cases based on Kafka version
+     * @param kafkaVersion specific kafka version
+     * @return String generated test cases
+     */
+    private static String generateTestCases(String kafkaVersion) {
+
+        StringBuilder testCases = new StringBuilder();
+
+        Map<String, Object> dynamicProperties = KafkaUtils.getDynamicConfigurationProperties(kafkaVersion);
+
+        dynamicProperties.forEach((key, value) -> {
+            testCases.append(key);
+            testCases.append(", ");
+
+            String type = ((LinkedHashMap<String, String>) value).get("type");
+            Object stochasticChosenValue;
+
+            switch (type) {
+                case "STRING":
+                    if (key.equals("compression.type")) {
+                        List<String> compressionTypes = Arrays.asList("snappy", "gzip", "lz4", "zstd");
+
+                        stochasticChosenValue = compressionTypes.get(ThreadLocalRandom.current().nextInt(0, compressionTypes.size() - 1));
+                        testCases.append(stochasticChosenValue);
+                    } else {
+                        testCases.append(" ");
+                    }
+                    break;
+                case "INT":
+                case "LONG":
+                    if (key.equals("background.threads") || key.equals("log.cleaner.io.buffer.load.factor") ||
+                        key.equals("log.retention.ms") || key.equals("max.connections") ||
+                        key.equals("max.connections.per.ip")) {
+                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(1, 20);
+                    } else {
+                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(100, 50_000);
+                    }
+                    testCases.append(stochasticChosenValue);
+                    break;
+                case "DOUBLE":
+                    stochasticChosenValue = ThreadLocalRandom.current().nextDouble(1, 20);
+                    testCases.append(stochasticChosenValue);
+                    break;
+                case "BOOLEAN":
+                    stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0 ? true : false;
+                    testCases.append(stochasticChosenValue);
+                    break;
+                case "LIST":
+                    // metric.reporters has default empty '""'
+                    // log.cleanup.policy = [delete, compact] -> default delete
+
+                    if (key.equals("log.cleanup.policy")) {
+                        stochasticChosenValue = "[delete]";
+                    } else {
+                        stochasticChosenValue = " ";
+                    }
+
+                    testCases.append(stochasticChosenValue);
+            }
+            testCases.append(",");
+            testCases.append("\n");
+        });
+
+        return testCases.toString();
+    }
+
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
@@ -76,5 +127,8 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+
+        String testCases = generateTestCases(TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version());
+        FileUtils.createCsvFile("../systemtest/src/test/resources/dynamic-configuration/dynamic-configuration-test-cases.csv", testCases);
     }
 }
