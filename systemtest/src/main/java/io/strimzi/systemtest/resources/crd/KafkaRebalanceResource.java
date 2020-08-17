@@ -39,6 +39,7 @@ public class KafkaRebalanceResource {
             .editMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .addToLabels("type", KafkaRebalance.RESOURCE_KIND)
             .endMetadata()
             .build();
     }

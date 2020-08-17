@@ -7,7 +7,9 @@ package io.strimzi.systemtest.tracing;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
@@ -205,7 +207,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        String kafkaConnectPodName = kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(CLUSTER_NAME + "-connect")).findFirst().get().getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
         String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
 
@@ -679,7 +681,7 @@ public class TracingST extends AbstractST {
                 .done();
 
 
-        String kafkaConnectPodName = kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(CLUSTER_NAME + "-connect")).findFirst().get().getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
         String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
 
@@ -775,9 +777,6 @@ public class TracingST extends AbstractST {
 
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
-                .editMetadata()
-                    .addToLabels("type", "kafka-connect-s2i")
-                .endMetadata()
                 .editSpec()
                     .withConfig(configOfKafkaConnectS2I)
                     .withNewJaegerTracing()
@@ -805,7 +804,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String kafkaConnectS2IPodName = kubeClient().listPods("type", KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
         String execPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
 
         LOGGER.info("Creating FileSink connect via Pod:{}", execPodName);

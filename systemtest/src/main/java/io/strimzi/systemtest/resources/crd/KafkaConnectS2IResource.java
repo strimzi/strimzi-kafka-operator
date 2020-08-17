@@ -49,7 +49,7 @@ public class KafkaConnectS2IResource {
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
-                .addToLabels("type", "kafka-connect-s2i")
+                .addToLabels("type", KafkaConnectS2I.RESOURCE_KIND)
             .endMetadata()
             .editSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)

@@ -7,6 +7,8 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
@@ -98,7 +100,7 @@ class AllNamespaceST extends AbstractNamespaceST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, "kafka-connect");
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND);
 
         cluster.setNamespace(previousNamespace);
     }
@@ -117,7 +119,7 @@ class AllNamespaceST extends AbstractNamespaceST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, "kafka-connect-s2i");
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND);
 
         cluster.setNamespace(previousNamespace);
     }

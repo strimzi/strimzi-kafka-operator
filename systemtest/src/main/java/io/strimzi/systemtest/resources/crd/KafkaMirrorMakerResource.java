@@ -58,6 +58,7 @@ public class KafkaMirrorMakerResource {
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .addToLabels("type", KafkaMirrorMaker.RESOURCE_KIND)
             .endMetadata()
             .editSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)

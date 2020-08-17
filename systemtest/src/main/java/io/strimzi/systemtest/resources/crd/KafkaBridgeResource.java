@@ -83,6 +83,7 @@ public class KafkaBridgeResource {
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
+                .addToLabels("type", KafkaBridge.RESOURCE_KIND)
             .endMetadata()
             .editSpec()
                 .withBootstrapServers(bootstrap)

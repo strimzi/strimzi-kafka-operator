@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -93,9 +94,6 @@ public class OauthPlainST extends OauthAbstractST {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
-                .editMetadata()
-                    .addToLabels("type", "kafka-connect")
-                .endMetadata()
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
@@ -115,7 +113,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .endSpec()
                 .done();
 
-        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
