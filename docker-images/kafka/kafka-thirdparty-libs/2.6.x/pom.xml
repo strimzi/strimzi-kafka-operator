@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.5.0</strimzi-oauth.version>
-        <cruise-control.version>2.0.124</cruise-control.version>
+        <cruise-control.version>2.5.11</cruise-control.version>
         <opa-authorizer.version>0.4.1</opa-authorizer.version>
     </properties>
 
@@ -161,24 +161,12 @@
             <version>${cruise-control.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.11</artifactId>
+                    <artifactId>kafka_2.12</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-math3</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
