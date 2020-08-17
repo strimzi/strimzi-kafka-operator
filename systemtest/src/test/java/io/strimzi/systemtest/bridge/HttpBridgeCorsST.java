@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
@@ -36,8 +37,6 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
 
-    private static String podName = "";
-
     @Test
     void testCorsOriginAllowed() {
         final String kafkaBridgeUser = "bridge-user-example";
@@ -52,9 +51,9 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         additionalHeaders.put("Origin", ALLOWED_ORIGIN);
         additionalHeaders.put("Access-Control-Request-Method", HttpMethod.POST.toString());
 
-        String url = BridgeUtils.DEFAULT_BRIDGE_HOST + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
+        String url = bridgeHost + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders, Constants.KAFKA_BRIDGE_JSON_JSON, config.toString());
-        String response = BridgeUtils.executeCurlCommand(HttpMethod.OPTIONS, podName, config.toString(), url, headers);
+        String response = BridgeUtils.executeCurlCommand(HttpMethod.OPTIONS, kafkaClientsPodName, config.toString(), url, headers);
         String allowedHeaders = "access-control-allow-origin,origin,x-requested-with,content-type,access-control-allow-methods,accept";
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -63,9 +62,9 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         assertThat(BridgeUtils.getHeaderValue("access-control-allow-headers", response), is(allowedHeaders));
         assertThat(BridgeUtils.getHeaderValue("access-control-allow-methods", response), containsString(HttpMethod.POST.toString()));
 
-        url = BridgeUtils.DEFAULT_BRIDGE_HOST + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
+        url = bridgeHost + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         headers = BridgeUtils.addHeadersToString(Collections.singletonMap("Origin", ALLOWED_ORIGIN));
-        response = BridgeUtils.executeCurlCommand(HttpMethod.POST, podName, config.toString(), url, headers);
+        response = BridgeUtils.executeCurlCommand(HttpMethod.POST, kafkaClientsPodName, config.toString(), url, headers);
 
         assertThat(response.contains("404"), is(true));
     }
@@ -79,9 +78,9 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         additionalHeaders.put("Origin", NOT_ALLOWED_ORIGIN);
         additionalHeaders.put("Access-Control-Request-Method", HttpMethod.POST.toString());
 
-        String url = BridgeUtils.DEFAULT_BRIDGE_HOST + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
+        String url = bridgeHost + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        String response = BridgeUtils.executeCurlCommand(HttpMethod.OPTIONS, podName, url, headers);
+        String response = BridgeUtils.executeCurlCommand(HttpMethod.OPTIONS, kafkaClientsPodName, url, headers);
 
         LOGGER.info("Checking if response from Bridge is correct");
         assertThat(response, containsString("403"));
@@ -89,7 +88,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
         additionalHeaders.remove("Access-Control-Request-Method", HttpMethod.POST.toString());
         headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        response = BridgeUtils.executeCurlCommand(HttpMethod.POST, podName, url, headers);
+        response = BridgeUtils.executeCurlCommand(HttpMethod.POST, kafkaClientsPodName, url, headers);
 
         LOGGER.info("Checking if response from Bridge is correct");
         assertThat(response, containsString("403"));
@@ -101,12 +100,15 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         deployClusterOperator(NAMESPACE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+
         KafkaBridgeResource.kafkaBridgeWithCors(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME),
             1, ALLOWED_ORIGIN, null).done();
 
         KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
-        podName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName();
+        bridgeHost = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getUrl();
     }
 }

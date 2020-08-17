@@ -15,7 +15,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.vertx.junit5.VertxExtension;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -33,7 +31,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(ACCEPTANCE)
 @Tag(INTERNAL_CLIENTS_USED)
-@ExtendWith(VertxExtension.class)
 class HttpBridgeTlsST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
     private static final String NAMESPACE = "bridge-tls-cluster-test";

@@ -14,8 +14,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
 /**
@@ -24,8 +22,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @ExtendWith(VertxExtension.class)
 @Tag(BRIDGE)
 @Tag(REGRESSION)
-@Tag(NODEPORT_SUPPORTED)
-@Tag(EXTERNAL_CLIENTS_USED)
 public class HttpBridgeAbstractST extends AbstractST {
     public static int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
     public static String bridgeHost = "";

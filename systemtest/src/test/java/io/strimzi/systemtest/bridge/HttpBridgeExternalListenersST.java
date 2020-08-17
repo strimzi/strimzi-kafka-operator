@@ -17,16 +17,12 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.specific.BridgeUtils;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -101,7 +96,6 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
 
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) throws Exception {
         String aliceUser = "alice";
-        String groupId = "my-group-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -134,37 +128,17 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
             .withNewSpecLike(spec)
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
-                .withReplicas(1)
-                .withNewInlineLogging()
-                    .addToLoggers("bridge.root.logger", "DEBUG")
-                .endInlineLogging()
                 .withNewHttp(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+                .withNewConsumer()
+                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                .endConsumer()
             .endSpec()
             .done();
 
-        String podName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName();
         Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
 
-        bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
-        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
-
-        JsonObject config = new JsonObject();
-        config.put("name", aliceUser);
-        config.put("format", "json");
-        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        // Create consumer
-        BridgeUtils.createHttpConsumer(podName, config, groupId);
-
-        // Create topics json
-        JsonArray topic = new JsonArray();
-        topic.add(TOPIC_NAME);
-        JsonObject topics = new JsonObject();
-        topics.put("topics", topic);
-
-        // Subscribe
-        assertThat(BridgeUtils.subscribeHttpConsumer(podName, topics, groupId, aliceUser), is(true));
+        KafkaClientsResource.consumerStrimziBridge(consumerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -176,18 +150,11 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
-        // Try to consume messages
-        JsonArray bridgeResponse = BridgeUtils.receiveMessagesHttpRequest(podName, groupId, aliceUser);
-        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
-        // Delete consumer
-        assertThat(BridgeUtils.deleteConsumer(podName, groupId, aliceUser), is(true));
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @BeforeAll
-    void createClassResources(Vertx vertx) throws Exception {
+    void createClassResources() throws Exception {
         deployClusterOperator(NAMESPACE);
-        // Create http client
-        client = WebClient.create(vertx, new WebClientOptions()
-            .setSsl(false));
     }
 }
