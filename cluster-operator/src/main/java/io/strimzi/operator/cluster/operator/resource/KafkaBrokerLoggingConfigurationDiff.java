@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     private final Collection<AlterConfigOp> diff;
     private int brokerId;
 
-    private static final String[] VALID_LOGGER_LEVELS = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
+    private static final List VALID_LOGGER_LEVELS = Arrays.asList("INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF");
 
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
         this.brokerId = brokerId;
@@ -179,7 +180,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
     }
 
     private static boolean isValidLoggerLevel(String level) {
-        return Arrays.stream(VALID_LOGGER_LEVELS).anyMatch(lev -> lev.equals(level));
+        return VALID_LOGGER_LEVELS.contains(level);
     }
 
 }
