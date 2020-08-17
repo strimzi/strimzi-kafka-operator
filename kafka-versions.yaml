@@ -25,6 +25,14 @@
   zookeeper: 3.5.7
   third-party-libs: 2.5.x
   default: false
+- version: 2.5.1
+  format: 2.5
+  protocol: 2.5
+  url: https://archive.apache.org/dist/kafka/2.5.1/kafka_2.12-2.5.1.tgz
+  checksum: 91F96F28C016BDAA3FE025F87ACE188417A1E594C8E32B7D23A104AA390BC25F5DB5897E23CCCF00EA7EDE3AC20B3028C10363EBE99DCBD7DB2CF6237EE7553A
+  zookeeper: 3.5.8
+  third-party-libs: 2.5.x
+  default: false
 - version: 2.6.0
   format: 2.6
   protocol: 2.6
