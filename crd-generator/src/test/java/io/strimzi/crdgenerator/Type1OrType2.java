@@ -63,19 +63,20 @@ public class Type1OrType2 {
     }
 
     public static class Deserializer extends JsonDeserializer<Type1OrType2> {
+        private static ObjectMapper mapper = new ObjectMapper();
+
         @Override
         public Type1OrType2 deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
-            ObjectMapper objectMapper = new ObjectMapper();
             ObjectCodec oc = jsonParser.getCodec();
             JsonNode node = oc.readTree(jsonParser);
             Type1OrType2 type1OrType2;
 
             if (node.isObject() && node.fieldNames().hasNext() && node.fieldNames().next().equals("key1")) {
-                ObjectReader reader = objectMapper.readerFor(new TypeReference<Type1>() { });
+                ObjectReader reader = mapper.readerFor(new TypeReference<Type1>() { });
                 Type1 value = reader.readValue(node);
                 type1OrType2 = new Type1OrType2(value);
             } else if (node.isObject() && node.fieldNames().hasNext() && node.fieldNames().next().equals("key2")) {
-                ObjectReader reader = objectMapper.readerFor(new TypeReference<Type2>() { });
+                ObjectReader reader = mapper.readerFor(new TypeReference<Type2>() { });
                 Type2 value = reader.readValue(node);
                 type1OrType2 = new Type1OrType2(value);
             } else {
