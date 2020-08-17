@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -262,6 +263,7 @@ public class KafkaUtils {
      * @param kafkaVersion specific kafka version
      * @return JsonObject all supported kafka properties
      */
+    @SuppressFBWarnings("RR_NOT_CHECKED")
     public static JsonObject loadSupportedKafkaConfigs(String kafkaVersion) {
 
         File file = new File("../cluster-operator/src/main/resources/kafka-" + kafkaVersion + "-config-model.json");
