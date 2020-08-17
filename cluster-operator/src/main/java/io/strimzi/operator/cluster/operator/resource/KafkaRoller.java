@@ -438,7 +438,7 @@ public class KafkaRoller {
     }
 
     /**
-     * Returns a Future which completes with the config of the given broker.
+     * Returns a config of the given broker.
      * @param ac The admin client
      * @param brokerId The id of the broker.
      * @return a Future which completes with the config of the given broker.
@@ -452,7 +452,7 @@ public class KafkaRoller {
     }
 
     /**
-     * Returns a Future which completes with the logging of the given broker.
+     * Returns logging of the given broker.
      * @param ac The admin client
      * @param brokerId The id of the broker.
      * @return a Future which completes with the logging of the given broker.

@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.cluster.model.OrderedProperties;
@@ -30,6 +31,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
     private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
+    private static final ObjectMapper MAPPER = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     private final Collection<AlterConfigOp> diff;
     private int brokerId;
 
@@ -76,11 +78,12 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
         OrderedProperties orderedProperties = new OrderedProperties();
         desired = desired.replaceAll("log4j\\.logger\\.", "");
+        desired = desired.replaceAll("log4j\\.rootLogger", "root");
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
 
-        JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(currentMap);
-        JsonNode target = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(desiredMap);
+        JsonNode source = MAPPER.valueToTree(currentMap);
+        JsonNode target = MAPPER.valueToTree(desiredMap);
         JsonNode jsonDiff = JsonDiff.asJson(source, target);
 
         for (JsonNode d : jsonDiff) {
@@ -109,15 +112,8 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                 }
             } else {
                 if ("add".equals(op)) {
-                    if (pathValueWithoutSlash.equals("log4j.rootLogger")) {
-                        String level = parseLogLevelFromAppenderCouple(desiredMap.get(pathValueWithoutSlash));
-                        if (!level.equals(currentMap.get("root"))) {
-                            updateOrAddRoot(level, updatedCE);
-                        }
-                    } else {
-                        // entry is not in the current, it is added
-                        updateOrAdd(pathValueWithoutSlash, desiredMap, updatedCE);
-                    }
+                    // entry is not in the current, it is added
+                    updateOrAdd(pathValueWithoutSlash, desiredMap, updatedCE);
                 }
             }
 
@@ -128,19 +124,12 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         return updatedCE;
     }
 
-    private static String parseLogLevelFromAppenderCouple(String lev) {
-        String[] arr = lev.split(",");
-        String level = arr[0].replaceAll("\\s", "");
-        return level;
-    }
-
-    private static void updateOrAddRoot(String level, Collection<AlterConfigOp> updatedCE) {
-        level = parseLogLevelFromAppenderCouple(level);
-        if (isValidLoggerLevel(level)) {
-            updatedCE.add(new AlterConfigOp(new ConfigEntry("root", level), AlterConfigOp.OpType.SET));
-            log.trace("{} not set in current or has deprecated value. Setting to {}", "root", level);
+    private static String parseLogLevelFromAppenderCouple(String level) {
+        int index = level.indexOf(",");
+        if (index > 0) {
+            return level.substring(0, index).trim();
         } else {
-            log.warn("Level {} is not valid logging level", level);
+            return level.trim();
         }
     }
 

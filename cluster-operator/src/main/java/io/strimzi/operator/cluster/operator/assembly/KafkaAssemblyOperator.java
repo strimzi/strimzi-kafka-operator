@@ -3480,7 +3480,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         ops.addStringPairs(loggingConfiguration);
         StringBuilder result = new StringBuilder();
         for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
-            if (entry.getKey().startsWith("log4j.appender")) {
+            if (entry.getKey().startsWith("log4j.appender.")) {
                 result.append(entry.getKey()).append("=").append(entry.getValue());
             }
         }
