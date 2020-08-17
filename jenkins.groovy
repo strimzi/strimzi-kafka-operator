@@ -163,7 +163,7 @@ def installYq(String workspace) {
 }
 
 def buildStrimziImages() {
-    sh(script: "MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make docker_build")
+    sh(script: "MVN_ARGS='-DskipSurefire=true -Dfailsafe.rerunFailingTestsCount=2' make docker_build")
     sh(script: "make docker_tag")
     // Login to internal registries
     sh(script: "docker login ${env.DOCKER_REGISTRY} -u \$(oc whoami) -p \$(oc whoami -t)")
