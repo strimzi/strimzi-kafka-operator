@@ -186,7 +186,7 @@ spec:
         summary: 'Kafka Bridge average consumer fetch latency'
         description: 'The average fetch latency is {{ $value }} on {{ $labels.clientId }}'
     - alert: AvgConsumerFetchLatency
-      expr: strimzi_bridge_kafka_consumer_fetch_latency_avg > 10
+      expr: strimzi_bridge_kafka_consumer_fetch_latency_avg > 500
       for: 10s
       labels:
         severity: warning
@@ -194,7 +194,7 @@ spec:
         summary: 'Kafka Bridge consumer average fetch latency'
         description: 'The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}'
     - alert: AvgConsumerCommitLatency
-      expr: strimzi_bridge_kafka_consumer_commit_latency_avg > 10
+      expr: strimzi_bridge_kafka_consumer_commit_latency_avg > 200
       for: 10s
       labels:
         severity: warning
