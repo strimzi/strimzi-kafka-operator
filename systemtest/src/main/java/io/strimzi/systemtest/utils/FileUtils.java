@@ -149,7 +149,7 @@ public class FileUtils {
      * @param data specific data which will be in the CSV file
      */
     public static void createCsvFile(String fileName, String data) {
-        try (PrintWriter writer = new PrintWriter("../systemtest/src/test/resources/dynamic-configuration/dynamic-configuration-test-cases.csv", StandardCharsets.UTF_8)) {
+        try (PrintWriter writer = new PrintWriter(fileName)) {
             writer.write(data);
         } catch (IOException e) {
             e.printStackTrace();
