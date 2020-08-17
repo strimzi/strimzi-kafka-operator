@@ -9,17 +9,18 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvFileSource;
+import org.junit.jupiter.api.TestFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,15 +43,27 @@ public class DynamicConfigurationSharedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfigurationSharedST.class);
     private static final String NAMESPACE = "kafka-configuration-shared-cluster-test";
 
-    @ParameterizedTest
-    @CsvFileSource(resources = "/dynamic-configuration/dynamic-configuration-test-cases.csv")
-    void testLogDynamicKafkaConfigurationProperties(String kafkaDynamicConfigurationKey, Object kafkaDynamicConfigurationValue) {
-        // exercise phase
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, kafkaDynamicConfigurationKey, kafkaDynamicConfigurationValue);
+    @TestFactory
+    Iterator<DynamicTest> testDynConfiguration() {
 
-        // verify phase
-        assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, kafkaDynamicConfigurationKey, kafkaDynamicConfigurationValue), is(true));
-        assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaDynamicConfigurationKey, kafkaDynamicConfigurationValue), is(true));
+        List<DynamicTest> dynamicTests = new ArrayList<>(40);
+
+        String generatedTestCases = generateTestCases(TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version());
+        String[] testCases = generatedTestCases.split("\n");
+
+        for (String testCaseLine : testCases) {
+            String[] testCase = testCaseLine.split(",");
+            dynamicTests.add(DynamicTest.dynamicTest("Test " + testCase[0] + "->" + testCase[1], () -> {
+                // exercise phase
+                KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, testCase[0], testCase[1]);
+
+                // verify phase
+                assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, testCase[0], testCase[1]), is(true));
+                assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), testCase[0], testCase[1]), is(true));
+            }));
+        }
+
+        return dynamicTests.iterator();
     }
 
     /**
@@ -127,8 +140,5 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-
-        String testCases = generateTestCases(TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version());
-        FileUtils.createCsvFile("../systemtest/src/test/resources/dynamic-configuration/dynamic-configuration-test-cases.csv", testCases);
     }
 }
