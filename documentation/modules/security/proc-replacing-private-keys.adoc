@@ -17,8 +17,8 @@ When a private key is replaced, the Cluster Operator generates a new CA certific
 .Procedure
 
 * Apply the `strimzi.io/force-replace` annotation to the `Secret` that contains the private key that you want to renew.
-
 +
+.Commands for replacing private keys
 [cols="3*",options="header",stripes="none",separator=¦]
 |===
 

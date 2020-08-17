@@ -51,6 +51,7 @@ _<cluster-name>_-kafka-bootstrap._<namespace>_.svc
 
 For external listeners which have TLS encryption enabled, the hostnames you need to specify in certificates depends on the external listener `type`.
 
+.SANs for each type of external listener
 [cols="2*",options="header",stripes="none",separator=¦]
 |===
 

@@ -19,6 +19,7 @@ A renewed certificate uses the same private key as the old certificate.
 
 * Apply the `strimzi.io/force-renew` annotation to the `Secret` that contains the CA certificate that you want to renew.
 +
+.Commands for renewing CA certificates
 [cols="3*",options="header",stripes="none",separator=¦]
 |===
 
