@@ -15,5 +15,5 @@ public @interface DeprecatedType {
     /**
      * @return The type which should be used as replacement
      */
-    String replacedWithType();
+    Class<?> replacedWithType();
 }

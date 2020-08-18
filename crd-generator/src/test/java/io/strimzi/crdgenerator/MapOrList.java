@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.strimzi.crdgenerator.annotations.Alternation;
+import io.strimzi.crdgenerator.annotations.Alternative;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.Map;
 
 @JsonDeserialize(using = MapOrList.Deserializer.class)
 @JsonSerialize(using = MapOrList.Serializer.class)
+@Alternation
 public class MapOrList {
     private Map<String, String> mapValue;
     private List<String> listValue;
@@ -38,10 +41,12 @@ public class MapOrList {
         listValue = list;
     }
 
+    @Alternative
     public Map<String, String> getMapValue()    {
         return mapValue;
     }
 
+    @Alternative
     public List<String> getListValue()    {
         return listValue;
     }

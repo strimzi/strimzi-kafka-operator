@@ -18,11 +18,14 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.strimzi.api.annotations.DeprecatedType;
+import io.strimzi.crdgenerator.annotations.Alternation;
+import io.strimzi.crdgenerator.annotations.Alternative;
 
 import java.io.IOException;
 
 @JsonDeserialize(using = Type1OrType2.Deserializer.class)
 @JsonSerialize(using = Type1OrType2.Serializer.class)
+@Alternation
 public class Type1OrType2 {
     private Type1 type1Value;
     private Type2 type2Value;
@@ -37,10 +40,12 @@ public class Type1OrType2 {
         type2Value = type2Value;
     }
 
+    @Alternative
     public Type1 getMapValue()    {
         return type1Value;
     }
 
+    @Alternative
     public Type2 getListValue()    {
         return type2Value;
     }
@@ -88,7 +93,7 @@ public class Type1OrType2 {
     }
 
     @Deprecated
-    @DeprecatedType(replacedWithType = "io.strimzi.crdgenerator.Type1OrType2$Type2")
+    @DeprecatedType(replacedWithType = io.strimzi.crdgenerator.Type1OrType2.Type2.class)
     public class Type1 {
         private String key1;
 

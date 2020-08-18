@@ -16,7 +16,6 @@ import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.OneOf;
-import io.strimzi.crdgenerator.annotations.OneOfType;
 import io.strimzi.crdgenerator.annotations.Pattern;
 
 import java.util.List;
@@ -281,7 +280,6 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         this.affinity = affinity;
     }
 
-    @OneOfType({@OneOfType.Alternative(@OneOfType.Alternative.Field("mapValue")), @OneOfType.Alternative(@OneOfType.Alternative.Field("listValue"))})
     public MapOrList getAlternatives() {
         return alternatives;
     }
@@ -290,7 +288,6 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         this.alternatives = alternatives;
     }
 
-    @OneOfType({@OneOfType.Alternative(@OneOfType.Alternative.Field("type1Value")), @OneOfType.Alternative(@OneOfType.Alternative.Field("type2Value"))})
     public Type1OrType2 getTypedAlternatives() {
         return typedAlternatives;
     }

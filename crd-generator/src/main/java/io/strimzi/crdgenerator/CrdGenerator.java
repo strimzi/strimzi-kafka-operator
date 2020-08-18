@@ -17,13 +17,14 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.crdgenerator.annotations.Alternation;
+import io.strimzi.crdgenerator.annotations.Alternative;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.OneOf;
-import io.strimzi.crdgenerator.annotations.OneOfType;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
 
@@ -36,7 +37,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -468,18 +468,12 @@ public class CrdGenerator {
     private ObjectNode buildSchemaProperties(Class<?> crdClass) {
         ObjectNode properties = nf.objectNode();
         for (Property property : unionOfSubclassProperties(crdClass)) {
-            OneOfType oneOfType = property.getAnnotation(OneOfType.class);
-            if (oneOfType != null && oneOfType.value().length > 0)    {
-                List<Property> alternatives = new ArrayList<>(0);
-
-                for (OneOfType.Alternative alt : oneOfType.value()) {
-                    for (OneOfType.Alternative.Field field : alt.value()) {
-                        try {
-                            alternatives.add(new Property(property.getType().getType().getDeclaredField(field.value())));
-                        } catch (NoSuchFieldException e) {
-                            throw new RuntimeException("Failed to find field used in OneOfType annotation", e);
-                        }
-                    }
+            if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
+                List<Property> alternatives = property.getAlternatives();
+                if (alternatives.size() < 2) {
+                    err("Class " + property.getType().getType().getName() + " is annotated with " +
+                            "@" + Alternation.class.getSimpleName() + " but has less than two " +
+                            "@" + Alternative.class.getSimpleName() + "-annotated properties");
                 }
                 buildMultiTypeProperty(properties, property, alternatives);
             } else {
@@ -488,6 +482,8 @@ public class CrdGenerator {
         }
         return properties;
     }
+
+
 
     private void buildMultiTypeProperty(ObjectNode properties, Property property, List<Property> alternatives) {
         ArrayNode oneOfAlternatives = nf.arrayNode(alternatives.size());

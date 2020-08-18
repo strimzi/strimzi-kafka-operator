@@ -238,10 +238,10 @@ spec:
                         type: "string"
         alternatives:
           oneOf:
-          - type: "object"
           - type: "array"
             items:
               type: "string"
+          - type: "object"
         arrayOfBoundTypeVar:
           type: "array"
           items:
@@ -437,11 +437,11 @@ spec:
           oneOf:
           - type: "object"
             properties:
-              key1:
+              key2:
                 type: "string"
           - type: "object"
             properties:
-              key2:
+              key1:
                 type: "string"
       oneOf:
       - properties:

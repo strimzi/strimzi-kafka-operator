@@ -8,11 +8,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
+import io.strimzi.crdgenerator.annotations.Alternation;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
-import io.strimzi.crdgenerator.annotations.OneOfType;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -90,17 +90,8 @@ public class DocGenerator {
                 continue;
             }
 
-            OneOfType oneOfType = property.getAnnotation(OneOfType.class);
-            if (oneOfType != null && oneOfType.value().length > 0) {
-                for (OneOfType.Alternative alt : oneOfType.value()) {
-                    for (OneOfType.Alternative.Field field : alt.value()) {
-                        try {
-                            memorableProperties.add(new Property(property.getType().getType().getDeclaredField(field.value())));
-                        } catch (NoSuchFieldException e) {
-                            throw new RuntimeException("Failed to find field used in OneOfType annotation", e);
-                        }
-                    }
-                }
+            if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
+                memorableProperties.addAll(property.getAlternatives());
             } else {
                 memorableProperties.add(property);
             }
@@ -124,14 +115,7 @@ public class DocGenerator {
     }
 
     private Set<Class<?>> getOrCreateClassesSet(Class<?> c, Map<Class<?>, Set<Class<?>>> usedIn)   {
-        Set<Class<?>> classes = usedIn.get(c);
-
-        if (classes == null) {
-            classes = new HashSet<>(1);
-            usedIn.put(c, classes);
-        }
-
-        return classes;
+        return usedIn.computeIfAbsent(c, cls -> new HashSet<>(1));
     }
 
     private List<? extends Class<?>> subtypesOrSelf(Class<?> returnType) {
@@ -191,7 +175,7 @@ public class DocGenerator {
             addExternalUrl(property, kubeLink, externalUrl);
 
             // Get the OneOfType alternatives
-            List<Property> alternatives = getAlternatives(property);
+            List<Property> alternatives = property.getAlternatives();
 
             // Add the types to the `types` array to also generate the docs for the type itself
             if (alternatives.size() > 0) {
@@ -301,31 +285,6 @@ public class DocGenerator {
         }
     }
 
-    /**
-     * Checks if the property has any OneOfType annotations. If yes, returns all the alternative fields. Otherwise an empty list is returned.
-     *
-     * @param property  The property which should be checked for alternative types
-     *
-     * @return  List with alternative properties
-     */
-    private List<Property> getAlternatives(Property property)   {
-        OneOfType oneOfType = property.getAnnotation(OneOfType.class);
-        List<Property> alternatives = new ArrayList<>(0);
-        if (oneOfType != null && oneOfType.value().length > 0)  {
-            for (OneOfType.Alternative alt : oneOfType.value()) {
-                for (OneOfType.Alternative.Field field : alt.value()) {
-                    try {
-                        alternatives.add(new Property(property.getType().getType().getDeclaredField(field.value())));
-                    } catch (NoSuchFieldException e) {
-                        throw new RuntimeException("Failed to find field used in OneOfType annotation", e);
-                    }
-                }
-            }
-        }
-
-        return alternatives;
-    }
-
     private String getDeprecation(Property property, DeprecatedProperty deprecated) {
         String msg = String.format("*The property `%s` has been deprecated.",
                 property.getName());
@@ -429,15 +388,8 @@ public class DocGenerator {
                         + " and @" + DeprecatedProperty.class.getName());
             }
             if (deprecatedType != null
-                    && deprecatedType.replacedWithType() != null
-                    && !deprecatedType.replacedWithType().isEmpty()) {
-                Class<?> replacementClss;
-
-                try {
-                    replacementClss = Class.forName(deprecatedType.replacedWithType());
-                } catch (ClassNotFoundException e)  {
-                    throw new RuntimeException("Replacement class for deprecated class " + cls.getName() + " not found");
-                }
+                    && deprecatedType.replacedWithType() != null) {
+                Class<?> replacementClss = deprecatedType.replacedWithType();
 
                 out.append("*The type `" + cls.getSimpleName() + "` has been deprecated.*").append(NL);
                 out.append("Please use ");
