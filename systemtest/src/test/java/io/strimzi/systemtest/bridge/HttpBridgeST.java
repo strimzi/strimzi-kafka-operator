@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -185,7 +186,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(kubeClient().listPods("type", KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -228,7 +229,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
 
-        List<String> bridgePods = kubeClient().listPodNames("type", KafkaBridge.RESOURCE_KIND);
+        List<String> bridgePods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND);
         String deploymentName = KafkaBridgeResources.deploymentName(bridgeName);
 
         assertThat(bridgePods.size(), is(1));
@@ -239,7 +240,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         KafkaBridgeUtils.waitForKafkaBridgeReady(CLUSTER_NAME);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), 0, true);
 
-        bridgePods = kubeClient().listPodNames("type", KafkaBridge.RESOURCE_KIND);
+        bridgePods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND);
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
@@ -254,7 +255,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         int scaleTo = 4;
         long bridgeObsGen = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration();
-        String bridgeGenName = kubeClient().listPods("type", KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
+        String bridgeGenName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaBridge subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
@@ -262,7 +263,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaBridgeResources.deploymentName(bridgeName), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        List<String> bridgePods = kubeClient().listPodNames("type", KafkaBridge.RESOURCE_KIND);
+        List<String> bridgePods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND);
         assertThat(bridgePods.size(), is(4));
         assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getReplicas(), is(4));

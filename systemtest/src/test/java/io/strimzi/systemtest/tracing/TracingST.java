@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -207,7 +208,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
         String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
 
@@ -681,7 +682,7 @@ public class TracingST extends AbstractST {
                 .done();
 
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
         String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
 
@@ -804,7 +805,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        String kafkaConnectS2IPodName = kubeClient().listPods("type", KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
         String execPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
 
         LOGGER.info("Creating FileSink connect via Pod:{}", execPodName);

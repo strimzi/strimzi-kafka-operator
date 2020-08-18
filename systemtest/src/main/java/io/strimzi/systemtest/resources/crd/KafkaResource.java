@@ -55,11 +55,7 @@ public class KafkaResource {
 
     public static DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_EPHEMERAL_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
-            .editMetadata()
-                .addToLabels("type", Kafka.RESOURCE_KIND + "Ephemeral")
-            .endMetadata()
-            .build());
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
     }
 
     public static DoneableKafka kafkaPersistent(String name, int kafkaReplicas) {
@@ -69,9 +65,6 @@ public class KafkaResource {
     public static DoneableKafka kafkaPersistent(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG);
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
-            .editMetadata()
-                .addToLabels("type", Kafka.RESOURCE_KIND + "Persistent")
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -95,9 +88,6 @@ public class KafkaResource {
     public static DoneableKafka kafkaJBOD(String name, int kafkaReplicas, int zookeeperReplicas, JbodStorage jbodStorage) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG);
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
-            .editMetadata()
-                .addToLabels("type", Kafka.RESOURCE_KIND + "JBOD")
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withStorage(jbodStorage)

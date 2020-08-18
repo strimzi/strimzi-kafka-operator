@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -847,7 +848,7 @@ class SecurityST extends AbstractST {
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-connect");
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         PodUtils.waitUntilPodIsInCrashLoopBackOff(kafkaConnectPodName);
 
@@ -909,7 +910,7 @@ class SecurityST extends AbstractST {
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-mirror-maker");
 
-        String kafkaMirrorMakerPodName = kubeClient().listPods("type", KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaMirrorMakerPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
 
         PodUtils.waitUntilPodIsInCrashLoopBackOff(kafkaMirrorMakerPodName);
 

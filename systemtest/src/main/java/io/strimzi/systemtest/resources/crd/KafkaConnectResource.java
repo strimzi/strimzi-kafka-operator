@@ -63,7 +63,6 @@ public class KafkaConnectResource {
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
-                .addToLabels("type", KafkaConnect.RESOURCE_KIND)
             .endMetadata()
             .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)

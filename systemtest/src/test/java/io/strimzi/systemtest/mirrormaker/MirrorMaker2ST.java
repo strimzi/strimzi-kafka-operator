@@ -579,7 +579,7 @@ class MirrorMaker2ST extends AbstractST {
 
         int scaleTo = 4;
         long mm2ObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
-        String mm2GenName = kubeClient().listPods("type", KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
+        String mm2GenName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaMirrorMaker2 subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
@@ -587,7 +587,7 @@ class MirrorMaker2ST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        List<String> mm2Pods = kubeClient().listPodNames("type", KafkaMirrorMaker2.RESOURCE_KIND);
+        List<String> mm2Pods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
         assertThat(mm2Pods.size(), is(4));
         assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
@@ -655,7 +655,7 @@ class MirrorMaker2ST extends AbstractST {
 
         long oldObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
         String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME);
-        List<String> mm2Pods = kubeClient().listPodNames("type", KafkaMirrorMaker2.RESOURCE_KIND);
+        List<String> mm2Pods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
         assertThat(mm2Pods.size(), is(3));
 
         LOGGER.info("Scaling MirrorMaker2 to zero");
@@ -663,7 +663,7 @@ class MirrorMaker2ST extends AbstractST {
 
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(mm2DepName), 0, true);
 
-        mm2Pods = kubeClient().listPodNames("type", KafkaMirrorMaker2.RESOURCE_KIND);
+        mm2Pods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
         KafkaMirrorMaker2Status mm2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         long actualObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getMetadata().getGeneration();
 

@@ -151,7 +151,7 @@ class ConnectST extends AbstractST {
             .endSpec().done();
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
@@ -216,7 +216,7 @@ class ConnectST extends AbstractST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
@@ -400,7 +400,7 @@ class ConnectST extends AbstractST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
@@ -479,7 +479,7 @@ class ConnectST extends AbstractST {
 
         KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
 
         LOGGER.info("Verifying that KafkaConnect pod logs don't contain ERRORs");
@@ -578,7 +578,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
                 CoreMatchers.is(CoreMatchers.not("test.value"))
         );
 
@@ -649,7 +649,7 @@ class ConnectST extends AbstractST {
             .endSpec().done();
 
         // Check that KafkaConnect contains created connector
-        String connectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String connectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectorUtils.waitForConnectorCreation(connectPodName, CLUSTER_NAME);
 
         KafkaConnectS2IUtils.waitForConnectS2INotReady(CLUSTER_NAME);
@@ -720,7 +720,7 @@ class ConnectST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
-        String execConnectPod =  kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String execConnectPod =  kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         JsonObject connectStatus = new JsonObject(cmdKubeClient().execInPod(
                 execConnectPod,
                 "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/status").out()
@@ -867,7 +867,7 @@ class ConnectST extends AbstractST {
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 2).done();
 
         String connectDeploymentName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
-        List<String> connectPods = kubeClient().listPodNames("type", KafkaConnect.RESOURCE_KIND);
+        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
 
         assertThat(connectPods.size(), is(2));
         //scale down
@@ -877,7 +877,7 @@ class ConnectST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(connectDeploymentName), 0, true);
 
-        connectPods = kubeClient().listPodNames("type", KafkaConnect.RESOURCE_KIND);
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
@@ -905,7 +905,7 @@ class ConnectST extends AbstractST {
             .done();
 
         String connectDeploymentName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
-        List<String> connectPods = kubeClient().listPodNames("type", KafkaConnect.RESOURCE_KIND);
+        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
 
         assertThat(connectPods.size(), is(2));
         //scale down
@@ -915,7 +915,7 @@ class ConnectST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(connectDeploymentName), 0, true);
 
-        connectPods = kubeClient().listPodNames("type", KafkaConnect.RESOURCE_KIND);
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
@@ -947,7 +947,7 @@ class ConnectST extends AbstractST {
 
         int scaleTo = 4;
         long connectObsGen = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
-        String connectGenName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
+        String connectGenName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaConnect subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
@@ -955,7 +955,7 @@ class ConnectST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaConnectResources.deploymentName(CLUSTER_NAME), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, observed generation is higher - for spec and status - naming prefix should be same", scaleTo);
-        List<String> connectPods = kubeClient().listPodNames("type", KafkaConnect.RESOURCE_KIND);
+        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         assertThat(connectPods.size(), is(4));
         assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));

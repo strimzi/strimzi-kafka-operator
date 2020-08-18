@@ -53,7 +53,6 @@ public class KafkaConnectorResource {
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaConnectClusterName)
-                .addToLabels("type", KafkaConnector.RESOURCE_KIND)
             .endMetadata()
             .editOrNewSpec()
                 .withTasksMax(maxTasks)

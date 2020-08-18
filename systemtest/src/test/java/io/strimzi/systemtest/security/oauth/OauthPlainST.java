@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlainBuilder;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -113,7 +114,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .endSpec()
                 .done();
 
-        String kafkaConnectPodName = kubeClient().listPods("type", KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
