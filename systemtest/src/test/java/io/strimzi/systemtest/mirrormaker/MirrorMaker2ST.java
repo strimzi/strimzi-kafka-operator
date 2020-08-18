@@ -48,7 +48,7 @@ import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SCALE;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -570,7 +570,7 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @Test
-    @Tag(SCALE)
+    @Tag(SCALABILITY)
     void testScaleMirrorMaker2Subresource() {
         // Deploy source kafka
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
@@ -647,7 +647,7 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @Test
-    @Tag(SCALE)
+    @Tag(SCALABILITY)
     void testScaleMirrorMaker2ToZero() {
         // Deploy source kafka
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();

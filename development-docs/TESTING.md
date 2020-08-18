@@ -151,7 +151,7 @@ The following table shows currently used tags:
 | acceptance         | Acceptance tests, which guarantee, that basic functionality of Strimzi is working. |
 | regression         | Regression tests, which contains all non-flaky tests.                              |
 | upgrade            | Upgrade tests for specific versions of the Strimzi.                                |
-| travis             | Marks tests executed on Travis                                                     |
+| smoke              | Marks tests executed on Travis                                                     |
 | flaky              | Execute all flaky tests (tests, which are failing from time to time)               |
 | scalability        | Execute scalability tests                                                          |
 | specific           | Specific tests, which cannot be easily added to other categories                   |
@@ -172,12 +172,10 @@ The following table shows currently used tags:
 | bridge             | Execute tests which use Kafka Bridge                                               |
 | internalclients    | Execute tests which use internal (from pod) kafka clients in tests                 |
 | externalclients    | Execute tests which use external (from code) kafka clients in tests                |
-| olm                | Execute tests which use OLM for deploy cluster operator                            |
+| olm                | Execute tests which test examples from Strimzi manifests                          |
 | metrics            | Execute tests where metrics are used                                               |
 | cruisecontrol      | Execute tests which deploy CruiseControl resource                                  |
-| scale              | Execute tests where are resources (its pods) scaled up/down                        |
 | rollingupdate      | Execute tests where is rolling update triggered                                    |
-| norollingupdate    | Execute tests where resource (and its pods) should not roll                        |
 
 If your Kubernetes cluster doesn't support for example, Network Policies or NodePort services, you can easily skip those tests with `-DexcludeGroups=networkpolicies,nodeport`.
 

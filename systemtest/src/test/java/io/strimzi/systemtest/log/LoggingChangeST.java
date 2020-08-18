@@ -35,8 +35,8 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
-import static io.strimzi.systemtest.Constants.NO_ROLLING_UPDATE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -190,7 +190,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
-    @Tag(NO_ROLLING_UPDATE)
+    @Tag(ROLLING_UPDATE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicallySetEOloggingLevels() throws InterruptedException {
         InlineLogging ilOff = new InlineLogging();
@@ -357,7 +357,7 @@ class LoggingChangeST extends AbstractST {
 
     @Test
     @Tag(BRIDGE)
-    @Tag(NO_ROLLING_UPDATE)
+    @Tag(ROLLING_UPDATE)
     void testDynamicallySetBridgeLoggingLevels() throws InterruptedException {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -463,7 +463,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
-    @Tag(NO_ROLLING_UPDATE)
+    @Tag(ROLLING_UPDATE)
     void testDynamicallySetClusterOperatorLoggingLevels() throws InterruptedException {
         Map<String, String> coPod = DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME);
         String coPodName = kubeClient().listPodsByPrefixInName(STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();

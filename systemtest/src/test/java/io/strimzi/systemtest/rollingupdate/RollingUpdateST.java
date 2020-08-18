@@ -55,10 +55,9 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NO_ROLLING_UPDATE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
-import static io.strimzi.systemtest.Constants.SCALE;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -238,7 +237,7 @@ class RollingUpdateST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(SCALE)
+    @Tag(SCALABILITY)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -350,7 +349,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
-    @Tag(SCALE)
+    @Tag(SCALABILITY)
     void testZookeeperScaleUpScaleDown() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -470,7 +469,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
-    @Tag(NO_ROLLING_UPDATE)
+    @Tag(ROLLING_UPDATE)
     void testManualKafkaConfigMapChangeDontTriggerRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
