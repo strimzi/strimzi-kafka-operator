@@ -54,6 +54,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         String url = bridgeHost + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders, Constants.KAFKA_BRIDGE_JSON_JSON, config.toString());
         String response = BridgeUtils.executeCurlCommand(HttpMethod.OPTIONS, kafkaClientsPodName, config.toString(), url, headers);
+        LOGGER.info("Response from Bridge: {}", response);
         String allowedHeaders = "access-control-allow-origin,origin,x-requested-with,content-type,access-control-allow-methods,accept";
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -65,8 +66,9 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         url = bridgeHost + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         headers = BridgeUtils.addHeadersToString(Collections.singletonMap("Origin", ALLOWED_ORIGIN));
         response = BridgeUtils.executeCurlCommand(HttpMethod.POST, kafkaClientsPodName, config.toString(), url, headers);
+        LOGGER.info("Response from Bridge: {}", response);
 
-        assertThat(response.contains("404"), is(true));
+        assertThat(response, containsString("404"));
     }
 
     @Test
@@ -81,6 +83,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         String url = bridgeHost + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders);
         String response = BridgeUtils.executeCurlCommand(HttpMethod.OPTIONS, kafkaClientsPodName, url, headers);
+        LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
         assertThat(response, containsString("403"));
@@ -89,6 +92,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         additionalHeaders.remove("Access-Control-Request-Method", HttpMethod.POST.toString());
         headers = BridgeUtils.addHeadersToString(additionalHeaders);
         response = BridgeUtils.executeCurlCommand(HttpMethod.POST, kafkaClientsPodName, url, headers);
+        LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
         assertThat(response, containsString("403"));
