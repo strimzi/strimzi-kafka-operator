@@ -286,7 +286,7 @@ public class KafkaUtils {
     /**
      * Method, which process all supported configs by Kafka and filter all which are not dynamic
      * @param kafkaVersion specific kafka version
-     * @return Map<String, Object> all dynamic properties for specific kafka version
+     * @return all dynamic properties for specific kafka version
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:BooleanExpressionComplexity", "unchecked"})
     public static Map<String, Object> getDynamicConfigurationProperties(String kafkaVersion)  {
