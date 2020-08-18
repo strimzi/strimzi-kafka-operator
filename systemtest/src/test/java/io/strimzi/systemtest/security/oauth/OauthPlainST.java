@@ -281,11 +281,13 @@ public class OauthPlainST extends OauthAbstractST {
     @Description("As a oauth bridge, I should be able to send messages to bridge endpoint.")
     @Test
     @Tag(BRIDGE)
-    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException {
+    void testProducerConsumerBridge() {
         oauthExternalKafkaClient.verifyProducedAndConsumedMessages(
             oauthExternalKafkaClient.sendMessagesPlain(),
             oauthExternalKafkaClient.receiveMessagesPlain()
         );
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
@@ -300,46 +302,10 @@ public class OauthPlainST extends OauthAbstractST {
                 .endSpec()
                 .done();
 
-        String bridgePodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-bridge").get(0).getMetadata().getName();
-        Service bridgeService = KubernetesResource.deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE, CLUSTER_NAME);
-        KubernetesResource.createServiceResource(bridgeService, NAMESPACE);
+        String producerName = "bridge-producer";
 
-        ServiceUtils.waitForNodePortService(bridgeService.getMetadata().getName());
-
-        client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
-
-        JsonObject obj = new JsonObject();
-        obj.put("key", "my-key");
-
-        JsonArray records = new JsonArray();
-
-        JsonObject firstLead = new JsonObject();
-        firstLead.put("key", "my-key");
-        firstLead.put("value", "sales-lead-0001");
-
-        JsonObject secondLead = new JsonObject();
-        secondLead.put("value", "sales-lead-0002");
-
-        JsonObject thirdLead = new JsonObject();
-        thirdLead.put("value", "sales-lead-0003");
-
-        records.add(firstLead);
-        records.add(secondLead);
-        records.add(thirdLead);
-
-        JsonObject root = new JsonObject();
-        root.put("records", records);
-
-        JsonObject response = BridgeUtils.sendMessagesHttpRequest(root, TOPIC_NAME, bridgePodName);
-
-        response.getJsonArray("offsets").forEach(object -> {
-            if (object instanceof JsonObject) {
-                JsonObject item = (JsonObject) object;
-                LOGGER.info("Offset number is {}", item.getInteger("offset"));
-                int exceptedValue = 0;
-                assertThat("Offset is not zero", item.getInteger("offset"), greaterThan(exceptedValue));
-            }
-        });
+        KafkaClientsResource.producerStrimziBridge(producerName, KafkaBridgeResources.serviceName(CLUSTER_NAME), HTTP_BRIDGE_DEFAULT_PORT, TOPIC_NAME, MESSAGE_COUNT).done();
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @Test

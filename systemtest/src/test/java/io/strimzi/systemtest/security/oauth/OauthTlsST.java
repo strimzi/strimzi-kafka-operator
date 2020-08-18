@@ -133,6 +133,8 @@ public class OauthTlsST extends OauthAbstractST {
             oauthExternalKafkaClientTls.receiveMessagesTls()
         );
 
+        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME).done();
+
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
                     .withNewTls()
