@@ -29,19 +29,23 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag(REGRESSION)
+@Tag(BRIDGE)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
+class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
     private static final String NAMESPACE = "bridge-external-cluster-test";
 
     @Test
-    void testScramShaAuthWithWeirdUsername() throws Exception {
+    void testScramShaAuthWithWeirdUsername() {
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
 
@@ -69,7 +73,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
     }
 
     @Test
-    void testTlsAuthWithWeirdUsername() throws Exception {
+    void testTlsAuthWithWeirdUsername() {
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
 
@@ -94,7 +98,7 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
         testWeirdUsername(weirdUserName, new KafkaListenerAuthenticationTls(), bridgeSpec, SecurityProtocol.SSL);
     }
 
-    private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) throws Exception {
+    private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
         String aliceUser = "alice";
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
@@ -123,6 +127,8 @@ class HttpBridgeExternalListenersST extends HttpBridgeAbstractST {
             KafkaUserResource.scramShaUser(CLUSTER_NAME, weirdUserName).done();
             KafkaUserResource.scramShaUser(CLUSTER_NAME, aliceUser).done();
         }
+
+        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME).done();
 
         // Deploy http bridge
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)

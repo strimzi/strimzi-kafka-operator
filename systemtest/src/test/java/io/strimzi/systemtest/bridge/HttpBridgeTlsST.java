@@ -24,11 +24,15 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag(REGRESSION)
+@Tag(BRIDGE)
 @Tag(ACCEPTANCE)
 @Tag(INTERNAL_CLIENTS_USED)
 class HttpBridgeTlsST extends HttpBridgeAbstractST {
@@ -88,7 +92,9 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewTls().withAuth(new KafkaListenerAuthenticationTls()).endTls()
+                        .withNewTls()
+                            .withAuth(new KafkaListenerAuthenticationTls())
+                        .endTls()
                     .endListeners()
                 .endKafka()
             .endSpec()

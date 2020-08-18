@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -16,18 +17,23 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(INTERNAL_CLIENTS_USED)
+@Tag(BRIDGE)
+@Tag(REGRESSION)
 class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private static final String NAMESPACE = "bridge-scram-sha-cluster-test";
@@ -49,9 +55,10 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .build();
 
-        assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
 
     @Test
@@ -68,9 +75,10 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
             .build();
 
-        assertThat(internalKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
+        assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
@@ -85,7 +93,9 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewPlain().withAuth(new KafkaListenerAuthenticationScramSha512()).endPlain()
+                        .withNewTls()
+                            .withAuth(new KafkaListenerAuthenticationScramSha512())
+                        .endTls()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -93,7 +103,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         // Create Kafka user
         KafkaUser scramShaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME, scramShaUser).done();
+        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME, scramShaUser).done();
 
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
 
@@ -102,8 +112,14 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         passwordSecret.setSecretName(USER_NAME);
         passwordSecret.setPassword("password");
 
+        // Initialize CertSecretSource with certificate and secret names for consumer
+        CertSecretSource certSecret = new CertSecretSource();
+        certSecret.setCertificate("ca.crt");
+        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+
+
         // Deploy http bridge
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
                 .withNewConsumer()
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
@@ -112,6 +128,9 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                     .withNewUsername(USER_NAME)
                     .withPasswordSecret(passwordSecret)
                 .endKafkaClientAuthenticationScramSha512()
+                .withNewTls()
+                    .withTrustedCertificates(certSecret)
+                .endTls()
             .endSpec()
             .done();
     }

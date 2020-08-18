@@ -15,44 +15,38 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
-
 public class BridgeUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpUtils.class);
 
     private BridgeUtils() { }
 
-    public static String getCurlCommand(HttpMethod httpMethod, String url, String headers, String data) {
+    public static String buildCurlCommand(HttpMethod httpMethod, String url, String headers, String data) {
         String command = "curl -X " + httpMethod.toString() + " -D - " + url + " " + headers;
 
-        if (!data.equals("")) {
+        if (!data.isEmpty() && (httpMethod == HttpMethod.POST || httpMethod == HttpMethod.PUT)) {
             command += " -d " + "'" + data + "'";
         }
 
         return command;
     }
 
-    public static String executeCurlCommand(HttpMethod httpMethod, String podName, String url, String headers) {
-        return executeCurlCommand(httpMethod, podName, "", url, headers);
-    }
-
-    public static String executeCurlCommand(HttpMethod httpMethod, String podName, String data, String url, String headers) {
-        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", getCurlCommand(httpMethod, url, headers, data)).out().trim();
-    }
-
     public static String addHeadersToString(Map<String, String> additionalHeaders) {
         return addHeadersToString(additionalHeaders, "",  "");
+    }
+
+    public static String addHeadersToString(Map<String, String> additionalHeaders, String contentType) {
+        return addHeadersToString(additionalHeaders, contentType,  "");
     }
 
     public static String addHeadersToString(Map<String, String> additionalHeaders,  String contentType, String content) {
         StringBuilder headerString = new StringBuilder();
 
-        if (!content.equals("")) {
+        if (!content.isEmpty()) {
             headerString.append(" -H 'Content-length: ").append(content.length()).append("'");
         }
 
-        if (!contentType.equals("")) {
+        if (!contentType.isEmpty()) {
             headerString.append(" -H 'Content-type: ").append(contentType).append("'");
         }
 

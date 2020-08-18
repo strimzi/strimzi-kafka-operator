@@ -61,7 +61,7 @@ public class ClientUtils {
     }
 
     private static long timeoutForClientFinishJob(int messagesCount) {
-        // need to add at least 1-2minutes for finishing the job
+        // need to add at least 3minutes for finishing the job
         return (long) messagesCount * 1000 + Duration.ofMinutes(3).toMillis();
     }
 
