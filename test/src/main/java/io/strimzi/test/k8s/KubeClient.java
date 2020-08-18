@@ -124,6 +124,12 @@ public class KubeClient {
         return client.configMaps().inNamespace(getNamespace()).list().getItems();
     }
 
+    public List<ConfigMap> listConfigMaps(String namePrefix) {
+        return listConfigMaps().stream()
+                .filter(cm -> cm.getMetadata().getName().startsWith(namePrefix))
+                .collect(Collectors.toList());
+    }
+
     public String execInPod(String podName, String container, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
