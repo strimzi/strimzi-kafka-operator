@@ -45,10 +45,10 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_MINOR_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_MINOR_KAFKA_VERSION;
     public static final String LATEST_MINOR_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_MINOR_KAFKA_VERSION;
 
-    public static final String PREVIOUS_KAFKA_VERSION = "2.5.0";
+    public static final String PREVIOUS_KAFKA_VERSION = "2.5.1";
     public static final String PREVIOUS_FORMAT_VERSION = "2.5";
     public static final String PREVIOUS_PROTOCOL_VERSION = "2.5";
-    public static final String PREVIOUS_ZOOKEEPER_VERSION = "3.5.7";
+    public static final String PREVIOUS_ZOOKEEPER_VERSION = "3.5.8";
     public static final String PREVIOUS_CHECKSUM = "ABCD1234";
     public static final String PREVIOUS_THIRD_PARTY_VERSION = "2.5.x";
     public static final String PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_KAFKA_VERSION;

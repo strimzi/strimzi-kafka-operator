@@ -3,7 +3,7 @@
 
 ## 0.20.0
 
-* Add support for Kafka 2.6.0 and remove support for 2.4.0 and 2.4.1
+* Add support for Kafka 2.5.1 and 2.6.0. Remove support for 2.4.0 and 2.4.1
 * Remove TLS sidecars from Kafka pods => Kafka now uses native TLS to connect to ZooKeeper
 * Updated to Cruise Control 2.5.11, which adds Kafka 2.6.0 support and fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
 * Cruise Control metrics integration:
