@@ -227,7 +227,7 @@ To set custom Kafka version in system tests you need to set the environment vari
 #### Using private registries
 
 If you want use private registries, before executing the tests you have to create secret and then specify name of the created secret in env variable called
-`STRIMZI_IMAGE_PULL_SECRETS` with the container registry credentials to be able pull images. Note that secret has to be created in `default` namespace.
+`STRIMZI_IMAGE_PULL_SECRET` with the container registry credentials to be able pull images. Note that secret has to be created in `default` namespace.
 
 ##### Cluster Operator Log level
 
