@@ -34,6 +34,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SPECIFIC;
@@ -57,6 +58,7 @@ public class SpecificST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testRackAware() {
         String rackKey = "rack-key";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
@@ -112,6 +114,7 @@ public class SpecificST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerIpOverride() {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
@@ -180,6 +183,7 @@ public class SpecificST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerSourceRanges() {
         String networkInterfaces = Exec.exec("ip", "route").out();
         Pattern ipv4InterfacesPattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");

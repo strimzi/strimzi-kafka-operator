@@ -67,6 +67,7 @@ import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SCALE;
 import static io.strimzi.systemtest.Constants.TRAVIS;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -330,6 +331,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALE)
     void testKafkaConnectScaleUpScaleDown() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
@@ -861,6 +863,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALE)
     void testScaleConnectWithoutConnectorToZero() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -885,6 +888,8 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALE)
+    @Tag(CONNECTOR_OPERATOR)
     void testScaleConnectWithConnectorToZero() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -926,6 +931,8 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALE)
+    @Tag(CONNECTOR_OPERATOR)
     void testScaleConnectAndConnectorSubresource() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 

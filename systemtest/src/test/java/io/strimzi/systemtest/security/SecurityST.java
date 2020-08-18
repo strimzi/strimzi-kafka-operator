@@ -78,6 +78,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -267,6 +268,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
     void testAutoRenewClusterCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME)),
@@ -280,6 +282,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
     void testAutoRenewClientsCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clientsCaCertificateSecretName(CLUSTER_NAME)),
@@ -294,6 +297,7 @@ class SecurityST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
     void testAutoRenewAllCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(asList(
                 clusterCaCertificateSecretName(CLUSTER_NAME),
@@ -434,6 +438,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
     void testAutoReplaceClusterCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME)),
                 true,
@@ -443,6 +448,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
     void testAutoReplaceClientsCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clientsCaKeySecretName(CLUSTER_NAME)),
                 false,
@@ -452,6 +458,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
     void testAutoReplaceAllCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(asList(clusterCaKeySecretName(CLUSTER_NAME),
                 clientsCaKeySecretName(CLUSTER_NAME)),
@@ -534,6 +541,7 @@ class SecurityST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceWindow() {
         String secretName = CLUSTER_NAME + "-cluster-ca-cert";
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);

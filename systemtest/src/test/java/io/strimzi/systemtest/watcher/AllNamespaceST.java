@@ -38,6 +38,7 @@ import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -82,6 +83,7 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when MirrorMaker will be deployed in different namespace than CO when CO watches all namespaces
      */
     @Test
+    @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(SECOND_CLUSTER_NAME);

@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -176,6 +177,7 @@ public class TopicST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testSendingMessagesToNonExistingTopic() {
         int sent = 0;
 
@@ -220,6 +222,7 @@ public class TopicST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
         String isolatedKafkaCluster = CLUSTER_NAME + "-isolated";

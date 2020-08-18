@@ -240,4 +240,19 @@ public interface Constants {
      * Tag for tests where cruise control used
      */
     String CRUISE_CONTROL = "cruisecontrol";
+
+    /**
+     * Tag for tests which contains scaling of specific resource
+     */
+    String SCALE = "scale";
+
+    /**
+     * Tag for tests which contains rolling update of resource
+     */
+    String ROLLING_UPDATE = "rollingupdate";
+
+    /**
+     * Tag for tests where resource should not roll
+     */
+    String NO_ROLLING_UPDATE = "norollingupdate";
 }

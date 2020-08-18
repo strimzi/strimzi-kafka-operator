@@ -55,7 +55,10 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.NO_ROLLING_UPDATE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.Constants.SCALE;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -76,6 +79,7 @@ class RollingUpdateST extends AbstractST {
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testRecoveryDuringZookeeperRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -154,6 +158,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testRecoveryDuringKafkaRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -233,6 +238,7 @@ class RollingUpdateST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(SCALE)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -344,6 +350,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALE)
     void testZookeeperScaleUpScaleDown() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -447,6 +454,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testBrokerConfigurationChangeTriggerRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -462,6 +470,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(NO_ROLLING_UPDATE)
     void testManualKafkaConfigMapChangeDontTriggerRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -479,6 +488,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate() {
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
@@ -536,6 +546,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testClusterOperatorFinishAllRollingUpdates() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -572,6 +583,7 @@ class RollingUpdateST extends AbstractST {
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
             " new bootstrap DNS is appended inside certificate in subject alternative names property.")
     @Test
+    @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
@@ -618,6 +630,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testMetricsChange() {
         //Kafka
         Map<String, Object> kafkaRule = new HashMap<>();

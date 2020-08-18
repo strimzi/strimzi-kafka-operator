@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -55,6 +56,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      * Test the case when MirrorMaker will be deployed in different namespace across multiple namespaces
      */
     @Test
+    @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(CLUSTER_NAME);
