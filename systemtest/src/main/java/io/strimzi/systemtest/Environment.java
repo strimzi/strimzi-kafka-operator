@@ -32,6 +32,10 @@ public class Environment {
      */
     private static final String CONFIG_FILE_PATH_ENVAR = "ST_CONFIG_PATH";
     /**
+     * Specify secret name of private registries, with the container registry credentials to be able pull images.
+     */
+    private static final String STRIMZI_IMAGE_PULL_SECRETS_ENV = "STRIMZI_IMAGE_PULL_SECRETS";
+    /**
      * Specify organization which owns image used in system tests.
      */
     private static final String STRIMZI_ORG_ENV = "DOCKER_ORG";
@@ -115,6 +119,7 @@ public class Environment {
     private static final String CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = "bundle";
 
     private static String config;
+    public static final String STRIMZI_IMAGE_PULL_SECRETS = getOrDefault(STRIMZI_IMAGE_PULL_SECRETS_ENV, "");
     public static final String STRIMZI_ORG = getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     public static final String STRIMZI_REGISTRY = getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
@@ -142,9 +147,7 @@ public class Environment {
     // ClusterOperator installation type variable
     public static final String CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
 
-
-    private Environment() {
-    }
+    private Environment() { }
 
     static {
         String debugFormat = "{}: {}";

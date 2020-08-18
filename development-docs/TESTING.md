@@ -224,13 +224,14 @@ If you want to use your own images with a different tag or from a different repo
 
 To set custom Kafka version in system tests you need to set the environment variable `ST_KAFKA_VERSION` to one of the values in [kafka-versions](kafka-versions.yaml).
 
+#### Using private registries
+
+If you want use private registries, before executing the tests you have to create secret and then specify name of the created secret in env variable called
+`STRIMZI_IMAGE_PULL_SECRETS` with the container registry credentials to be able pull images. Note that secret has to be created in `default` namespace.
+
 ##### Cluster Operator Log level
 
 To set the log level of Strimzi for system tests you need to set the environment variable `STRIMZI_DEFAULT_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
-
-## Using private registries
-
-If you want use private registries, before executing the tests you have to create secret with the name `pull-secret` with the container registry credentials to be able pull images.
 
 ## Use Remote Cluster
 
