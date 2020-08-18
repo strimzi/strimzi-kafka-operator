@@ -22,6 +22,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -108,7 +110,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
         KafkaResource.kafkaWithCruiseControlWithoutWait(CLUSTER_NAME, 1, 1);
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, errMessage);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, errMessage, Duration.ofMinutes(6).toMillis());
 
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
