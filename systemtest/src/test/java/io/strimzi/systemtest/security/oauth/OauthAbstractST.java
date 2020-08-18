@@ -27,7 +27,6 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
@@ -55,15 +54,6 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_KEY = "clientSecret";
 
     protected KeycloakInstance keycloakInstance;
-
-    protected static String oauthTokenEndpointUri;
-    protected static String validIssuerUri;
-    protected static String jwksEndpointUri;
-    protected static String introspectionEndpointUri;
-    protected static String userNameClaim;
-    protected static final int JWKS_EXPIRE_SECONDS = 500;
-    protected static final int JWKS_REFRESH_SECONDS = 400;
-    protected static final int MESSAGE_COUNT = 100;
 
     protected static final String CERTIFICATE_OF_KEYCLOAK = "tls.crt";
     protected static final String SECRET_OF_KEYCLOAK = "x509-https-secret";
