@@ -20,8 +20,10 @@ import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Constants.OLM;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag(OLM)
 public class SingleNamespaceST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";

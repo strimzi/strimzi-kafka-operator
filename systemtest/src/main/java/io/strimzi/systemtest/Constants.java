@@ -255,4 +255,9 @@ public interface Constants {
      * Tag for tests where resource should not roll
      */
     String NO_ROLLING_UPDATE = "norollingupdate";
+
+    /**
+     * Tag for tests where OLM is used for deploying CO
+     */
+    String OLM = "olm";
 }
