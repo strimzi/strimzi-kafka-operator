@@ -15,6 +15,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
+
 public class KeycloakResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KeycloakResource.class);
@@ -46,7 +48,7 @@ public class KeycloakResource {
 
         ResourceManager.cmdKubeClient().namespace(namespace).apply(KeycloakResource.class.getResource("/keycloak/operator.yaml").getFile());
 
-        TestUtils.waitFor("Keycloak Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+        TestUtils.waitFor("Keycloak Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
             () -> ResourceManager.kubeClient().getDeployment(KEYCLOAK_OPERATOR_DEPLOYMENT_NAME) != null);
         String deploymentName = ResourceManager.kubeClient().getDeployment(KEYCLOAK_OPERATOR_DEPLOYMENT_NAME).getMetadata().getName();
 
