@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -59,6 +61,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,6 +74,7 @@ import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -738,11 +742,32 @@ class ConnectS2IST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
-        deployKafkaClients();
-    }
-
-    private void deployKafkaClients() {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+
+        if (SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+
+            LOGGER.info("Checking if secret {} is in the default namespace", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+
+            if (kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
+                throw new RuntimeException(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default namespace!");
+            }
+
+            Secret pullSecret = kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+
+            kubeClient(NAMESPACE).createSecret(new SecretBuilder()
+                .withNewApiVersion("v1")
+                .withNewKind("Secret")
+                .withNewMetadata()
+                .withName(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
+                .endMetadata()
+                .withNewType("kubernetes.io/dockerconfigjson")
+                .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
+                .build());
+
+            LOGGER.info("Link existing pull-secret {} with associate builder service account", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+
+            ResourceManager.cmdKubeClient().exec("secrets", "link", "builder", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+        }
     }
 }
