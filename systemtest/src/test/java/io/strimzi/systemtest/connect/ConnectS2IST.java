@@ -74,7 +74,7 @@ import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Environment.STRIMZI_IMAGE_PULL_SECRET;
+import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -768,29 +768,29 @@ class ConnectS2IST extends AbstractST {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
 
-        if (STRIMZI_IMAGE_PULL_SECRET != null && !STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+        if (SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
 
-            LOGGER.info("Checking if secret {} is in the default namespace", STRIMZI_IMAGE_PULL_SECRET);
+            LOGGER.info("Checking if secret {} is in the default namespace", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
 
-            if (kubeClient("default").getSecret(STRIMZI_IMAGE_PULL_SECRET) == null) {
-                throw new RuntimeException(STRIMZI_IMAGE_PULL_SECRET + " is not in the default namespace!");
+            if (kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
+                throw new RuntimeException(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default namespace!");
             }
 
-            Secret pullSecret = kubeClient("default").getSecret(STRIMZI_IMAGE_PULL_SECRET);
+            Secret pullSecret = kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
 
             kubeClient(NAMESPACE).createSecret(new SecretBuilder()
                 .withNewApiVersion("v1")
                 .withNewKind("Secret")
                 .withNewMetadata()
-                .withName(STRIMZI_IMAGE_PULL_SECRET)
+                .withName(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
                 .endMetadata()
                 .withNewType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
                 .build());
 
-            LOGGER.info("Link existing pull-secret {} with associate builder service account", STRIMZI_IMAGE_PULL_SECRET);
+            LOGGER.info("Link existing pull-secret {} with associate builder service account", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
 
-            ResourceManager.cmdKubeClient().exec("secrets", "link", "builder", STRIMZI_IMAGE_PULL_SECRET);
+            ResourceManager.cmdKubeClient().exec("secrets", "link", "builder", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
         }
     }
 }
