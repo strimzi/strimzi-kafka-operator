@@ -12,11 +12,14 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -832,9 +835,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect")
-            .endMetadata()
             .editSpec()
                 .withNewTls()
                     .addNewTrustedCertificate()
@@ -848,7 +848,7 @@ class SecurityST extends AbstractST {
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-connect");
 
-        String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         PodUtils.waitUntilPodIsInCrashLoopBackOff(kafkaConnectPodName);
 
@@ -886,9 +886,6 @@ class SecurityST extends AbstractST {
 
         KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.defaultKafkaMirrorMaker(CLUSTER_NAME, sourceKafkaCluster, targetKafkaCluster,
             ClientUtils.generateRandomConsumerGroup(), 1, true)
-            .editMetadata()
-                .addToLabels("type", "kafka-mirror-maker")
-            .endMetadata()
             .editSpec()
                 .editConsumer()
                     .withNewTls()
@@ -913,7 +910,7 @@ class SecurityST extends AbstractST {
 
         PodUtils.waitUntilPodIsPresent(CLUSTER_NAME + "-mirror-maker");
 
-        String kafkaMirrorMakerPodName = kubeClient().listPods("type", "kafka-mirror-maker").get(0).getMetadata().getName();
+        String kafkaMirrorMakerPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
 
         PodUtils.waitUntilPodIsInCrashLoopBackOff(kafkaMirrorMakerPodName);
 
@@ -946,9 +943,6 @@ class SecurityST extends AbstractST {
         final String consumerGroupName = "consumer-group-name-1";
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-ephemeral")
-            .endMetadata()
             .editSpec()
                 .editKafka()
                 .withNewKafkaAuthorizationSimple()
@@ -1036,11 +1030,8 @@ class SecurityST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testAclWithSuperUser() throws Exception {
+    void testAclWithSuperUser() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-ephemeral")
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
