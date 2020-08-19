@@ -87,6 +87,13 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
 
+    protected static final String CRUISE_CONTROL_NAME = "Cruise Control";
+    protected static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
+    protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
+    protected static final String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
+    protected static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
+    protected static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
+
     protected String testClass;
     protected String testName;
 

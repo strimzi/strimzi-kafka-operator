@@ -63,14 +63,6 @@ public class CruiseControlConfigurationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
     private static final String NAMESPACE = "cruise-control-configuration-test";
 
-    private static final String CRUISE_CONTROL_NAME = "Cruise Control";
-    private static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
-    private static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
-    private static final String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
-
-    private static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
-    private static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
-
     @Order(1)
     @Test
     void testCapacityFile() {
