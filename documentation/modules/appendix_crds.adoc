@@ -1213,6 +1213,9 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 [id='type-TopicOperatorSpec-{context}']
 ### `TopicOperatorSpec` schema reference
 
+*The type `TopicOperatorSpec` has been deprecated.*
+Please use xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`] instead.
+
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
