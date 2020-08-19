@@ -67,7 +67,8 @@ import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.TRAVIS;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
+import static io.strimzi.systemtest.Constants.SMOKE;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -137,7 +138,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag(TRAVIS)
+    @Tag(SMOKE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectWithFileSinkPlugin() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -330,6 +331,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALABILITY)
     void testKafkaConnectScaleUpScaleDown() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
@@ -341,7 +343,7 @@ class ConnectST extends AbstractST {
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         int initialReplicas = connectPods.size();
         assertThat(initialReplicas, is(1));
-        final int scaleTo = initialReplicas + 1;
+        final int scaleTo = initialReplicas + 3;
 
         LOGGER.info("Scaling up to {}", scaleTo);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(scaleTo));
@@ -861,6 +863,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALABILITY)
     void testScaleConnectWithoutConnectorToZero() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -885,6 +888,8 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALABILITY)
+    @Tag(CONNECTOR_OPERATOR)
     void testScaleConnectWithConnectorToZero() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -926,6 +931,8 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALABILITY)
+    @Tag(CONNECTOR_OPERATOR)
     void testScaleConnectAndConnectorSubresource() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 

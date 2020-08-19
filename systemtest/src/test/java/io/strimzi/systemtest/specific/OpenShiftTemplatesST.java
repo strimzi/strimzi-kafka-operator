@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -153,6 +155,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
+    @Tag(CONNECT)
     void testConnect() {
         String clusterName = "test-connect";
         oc.createResourceAndApply("strimzi-connect", map("CLUSTER_NAME", clusterName,
@@ -164,7 +167,8 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    void testS2i() {
+    @Tag(CONNECT_S2I)
+    void testConnectS2I() {
         String clusterName = "test-s2i";
         oc.createResourceAndApply("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));

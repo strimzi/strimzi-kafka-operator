@@ -64,10 +64,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -93,6 +95,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testKafkaStatus() {
         LOGGER.info("Checking status of deployed kafka cluster");
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
@@ -199,6 +202,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
+    @Tag(BRIDGE)
     void testKafkaBridgeStatus() {
         String bridgeUrl = KafkaBridgeResources.url(CLUSTER_NAME, NAMESPACE, 8080);
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
@@ -299,6 +303,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectorWithoutClusterConfig() {
         // This test check NPE when connect cluster is not specified in labels
         // Check for NPE in CO logs is performed after every test in BaseST
@@ -362,6 +367,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER2)
     void testKafkaMirrorMaker2WrongBootstrap() {
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithoutWait(
                 KafkaMirrorMaker2Resource.defaultKafkaMirrorMaker2(CLUSTER_NAME,
