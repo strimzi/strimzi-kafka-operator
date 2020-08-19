@@ -281,7 +281,7 @@ public class KubernetesResource {
                 .build();
 
         if (kubeClient().listPods(labelSelector).size() == 0) {
-            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the Kafka Connect");
+            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
         }
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", deploymentName, labelSelector);

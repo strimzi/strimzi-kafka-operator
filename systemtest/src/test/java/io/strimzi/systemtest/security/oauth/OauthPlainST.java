@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
-import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
@@ -17,18 +17,10 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -36,7 +28,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
@@ -45,22 +36,19 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
@@ -293,11 +281,13 @@ public class OauthPlainST extends OauthAbstractST {
     @Description("As a oauth bridge, I should be able to send messages to bridge endpoint.")
     @Test
     @Tag(BRIDGE)
-    void testProducerConsumerBridge(Vertx vertx) throws InterruptedException, ExecutionException, TimeoutException {
+    void testProducerConsumerBridge() {
         oauthExternalKafkaClient.verifyProducedAndConsumedMessages(
             oauthExternalKafkaClient.sendMessagesPlain(),
             oauthExternalKafkaClient.receiveMessagesPlain()
         );
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
@@ -312,46 +302,10 @@ public class OauthPlainST extends OauthAbstractST {
                 .endSpec()
                 .done();
 
-        Service bridgeService = KubernetesResource.deployBridgeNodePortService(BRIDGE_EXTERNAL_SERVICE, NAMESPACE, CLUSTER_NAME);
-        KubernetesResource.createServiceResource(bridgeService, NAMESPACE);
+        String producerName = "bridge-producer";
 
-        ServiceUtils.waitForNodePortService(bridgeService.getMetadata().getName());
-
-        client = WebClient.create(vertx, new WebClientOptions().setSsl(false));
-
-        JsonObject obj = new JsonObject();
-        obj.put("key", "my-key");
-
-        JsonArray records = new JsonArray();
-
-        JsonObject firstLead = new JsonObject();
-        firstLead.put("key", "my-key");
-        firstLead.put("value", "sales-lead-0001");
-
-        JsonObject secondLead = new JsonObject();
-        secondLead.put("value", "sales-lead-0002");
-
-        JsonObject thirdLead = new JsonObject();
-        thirdLead.put("value", "sales-lead-0003");
-
-        records.add(firstLead);
-        records.add(secondLead);
-        records.add(thirdLead);
-
-        JsonObject root = new JsonObject();
-        root.put("records", records);
-
-        JsonObject response = BridgeUtils.sendMessagesHttpRequest(root, clusterHost,
-                KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, BRIDGE_EXTERNAL_SERVICE), TOPIC_NAME, client);
-
-        response.getJsonArray("offsets").forEach(object -> {
-            if (object instanceof JsonObject) {
-                JsonObject item = (JsonObject) object;
-                LOGGER.info("Offset number is {}", item.getInteger("offset"));
-                int exceptedValue = 0;
-                assertThat("Offset is not zero", item.getInteger("offset"), greaterThan(exceptedValue));
-            }
-        });
+        KafkaClientsResource.producerStrimziBridge(producerName, KafkaBridgeResources.serviceName(CLUSTER_NAME), HTTP_BRIDGE_DEFAULT_PORT, TOPIC_NAME, MESSAGE_COUNT).done();
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @Test
