@@ -1453,7 +1453,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
-            Annotations.annotations(zkSts.getSpec().getTemplate()).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
+            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
         }
 
@@ -2456,7 +2456,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
 
-            Annotations.annotations(template).put(AbstractModel.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, kafkaLoggingAppendersHash);
+            Annotations.annotations(template).put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, kafkaLoggingAppendersHash);
             Annotations.annotations(template).put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash);
 
             // Annotations with custom cert thumbprints to help with rolling updates when they change
