@@ -236,6 +236,12 @@ spec:
                           type: "string"
                       topologyKey:
                         type: "string"
+        alternatives:
+          oneOf:
+          - type: "array"
+            items:
+              type: "string"
+          - type: "object"
         arrayOfBoundTypeVar:
           type: "array"
           items:
@@ -427,6 +433,16 @@ spec:
         stringProperty:
           type: "string"
           pattern: ".*"
+        typedAlternatives:
+          oneOf:
+          - type: "object"
+            properties:
+              key2:
+                type: "string"
+          - type: "object"
+            properties:
+              key1:
+                type: "string"
       oneOf:
       - properties:
           either: {}
