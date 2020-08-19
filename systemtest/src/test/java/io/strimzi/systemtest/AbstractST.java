@@ -421,12 +421,10 @@ public abstract class AbstractST implements TestSeparator {
 
     void verifyLabelsForCRDs() {
         LOGGER.info("Verifying labels for CRDs");
-        kubeClient().listCustomResourceDefinition().stream()
-            .filter(crd -> crd.getMetadata().getName().startsWith("kafka"))
-            .forEach(crd -> {
-                LOGGER.info("Verifying labels for custom resource {}", crd.getMetadata().getName());
-                assertThat(crd.getMetadata().getLabels().get("app"), is("strimzi"));
-            });
+        String crds = cmdKubeClient().exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
+        crds = crds.replace(" ", "\n").trim();
+        assertThat(crds.split("\n").length, is(Crds.getCrdsCount()));
+
     }
 
     void verifyLabelsForKafkaAndZKServices(String clusterName, String appName) {
