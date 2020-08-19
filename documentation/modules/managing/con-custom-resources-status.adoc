@@ -8,6 +8,7 @@
 
 Several resources have a `status` property, as described in the following table.
 
+.Custom resource status properties
 [cols="3*",options="header",stripes="none",separator=¦]
 |===
 

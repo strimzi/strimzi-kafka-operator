@@ -12,7 +12,7 @@ Messages are delivered in batches, and batches and records contain headers and m
 
 .Producers and consumers
 
-image:overview/kafka-concepts-producer-consumer.png[Producers and consumers]
+image:overview/kafka-concepts-producer-consumer.png[A producer sends messages through a broker to a topic containing three partitions. Three consumers in a consumer group read the messages from the partitions]
 
 Producer:: A producer sends messages to a broker topic to be written to the end offset of a partition.
 Messages are written to partitions by a producer on a round robin basis, or to a specific partition based on the message key.
@@ -28,4 +28,4 @@ A `__consumer_offsets` topic stores information on committed offsets, the positi
 
 .Producing and consuming data
 
-image:overview/kafka-concepts-partitions.png[Partitions]
+image:overview/kafka-concepts-partitions.png[A producer sends a message to a broker topic; the message is written to the end offset (7). A consumer reads messages from offset 5]
