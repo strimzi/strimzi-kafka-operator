@@ -7,7 +7,7 @@
 
 Knowledge of the key concepts of Kafka is important in understanding how Strimzi works.
 
-A Kafka cluster comprises multiple brokers
+A Kafka cluster comprises multiple brokers.
 Topics are used to receive and store data in a Kafka cluster.
 Topics are split by partitions, where the data is written.
 Partitions are replicated across topics for fault tolerance.

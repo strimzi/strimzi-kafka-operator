@@ -216,16 +216,6 @@ class KafkaST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 2)
             .editSpec()
                 .editKafka()
-                    .withNewTlsSidecar()
-                        .withNewReadinessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                        .endReadinessProbe()
-                        .withNewLivenessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                        .endLivenessProbe()
-                    .endTlsSidecar()
                     .withNewReadinessProbe()
                         .withInitialDelaySeconds(initialDelaySeconds)
                         .withTimeoutSeconds(timeoutSeconds)
@@ -245,9 +235,6 @@ class KafkaST extends AbstractST {
                         .withNewKafkaContainer()
                             .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
                         .endKafkaContainer()
-                        .withNewTlsSidecarContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endTlsSidecarContainer()
                     .endTemplate()
                 .endKafka()
                 .editZookeeper()
@@ -340,9 +327,6 @@ class KafkaST extends AbstractST {
                 periodSeconds, successThreshold, failureThreshold);
         checkKafkaConfiguration(kafkaStatefulSetName(CLUSTER_NAME), kafkaConfig, CLUSTER_NAME);
         checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "kafka", envVarGeneral);
-        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarGeneral);
 
         String kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).getData().get("server.config");
         assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
@@ -384,16 +368,7 @@ class KafkaST extends AbstractST {
             kafkaClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.setConfig(updatedKafkaConfig);
-            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             kafkaClusterSpec.getTemplate().getKafkaContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
-            kafkaClusterSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
             zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
@@ -446,9 +421,6 @@ class KafkaST extends AbstractST {
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkKafkaConfiguration(kafkaStatefulSetName(CLUSTER_NAME), updatedKafkaConfig, CLUSTER_NAME);
         checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "kafka", envVarUpdated);
-        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkSpecificVariablesInContainer(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", envVarUpdated);
 
         kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).getData().get("server.config");
         assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=2"));
@@ -1258,7 +1230,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> CONFIG MAPS <---");
 
-        List<ConfigMap> configMaps = kubeClient().listConfigMaps();
+        List<ConfigMap> configMaps = kubeClient().listConfigMaps(CLUSTER_NAME);
 
         for (ConfigMap configMap : configMaps) {
             LOGGER.info("Getting labels from {} config map", configMap.getMetadata().getName());
@@ -1981,15 +1953,15 @@ class KafkaST extends AbstractST {
 
     void verifyAppLabels(Map<String, String> labels) {
         LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
-        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
-        assertThat("Label " + Labels.STRIMZI_NAME_LABEL + " is present", labels.containsKey(Labels.STRIMZI_NAME_LABEL));
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is not present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is not present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
+        assertThat("Label " + Labels.STRIMZI_NAME_LABEL + " is not present", labels.containsKey(Labels.STRIMZI_NAME_LABEL));
     }
 
     void verifyAppLabelsForSecretsAndConfigMaps(Map<String, String> labels) {
         LOGGER.info("Verifying labels {}", labels);
-        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
-        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
+        assertThat("Label " + Labels.STRIMZI_CLUSTER_LABEL + " is not present", labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL));
+        assertThat("Label " + Labels.STRIMZI_KIND_LABEL + " is not present", labels.containsKey(Labels.STRIMZI_KIND_LABEL));
     }
 
     @BeforeAll

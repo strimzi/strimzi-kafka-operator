@@ -57,11 +57,6 @@ kafkaInit:
     repository: strimzi
     name: operator
     tag: latest
-tlsSidecarKafka:
-  image:
-    repository: strimzi
-    name: kafka
-    tagPrefix: latest
 tlsSidecarEntityOperator:
   image:
     repository: strimzi

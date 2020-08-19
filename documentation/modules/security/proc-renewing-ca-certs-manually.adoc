@@ -6,8 +6,10 @@
 
 = Renewing CA certificates manually
 
-Unless the `Kafka.spec.clusterCa.generateCertificateAuthority` and `Kafka.spec.clientsCa.generateCertificateAuthority` objects are set to `false`, the cluster and clients CA certificates will auto-renew at the start of their respective certificate renewal periods. 
-You can manually renew one or both of these certificates before the certificate renewal period starts, if required for security reasons. 
+Unless the `Kafka.spec.clusterCa.generateCertificateAuthority` and `Kafka.spec.clientsCa.generateCertificateAuthority` objects are set to `false`,
+the cluster and clients CA certificates will auto-renew at the start of their respective certificate renewal periods.
+
+You can manually renew one or both of these certificates before the certificate renewal period starts, if required for security reasons.
 A renewed certificate uses the same private key as the old certificate.
 
 .Prerequisites
@@ -17,9 +19,9 @@ A renewed certificate uses the same private key as the old certificate.
 
 .Procedure
 
-* Apply the `strimzi.io/force-renew` annotation to the `Secret` that contains the CA certificate that you want to renew.
+. Apply the `strimzi.io/force-renew` annotation to the `Secret` that contains the CA certificate that you want to renew.
 +
-.Commands for renewing CA certificates
+.Annotation for Secret that forces renewal of certificates
 [cols="3*",options="header",stripes="none",separator=¦]
 |===
 
@@ -28,19 +30,24 @@ A renewed certificate uses the same private key as the old certificate.
 ¦Annotate command
 
 ¦Cluster CA
-¦_<cluster-name>_-cluster-ca-cert
-m¦kubectl annotate secret _<cluster-name>_-cluster-ca-cert strimzi.io/force-renew=true
+¦_KAFKA-CLUSTER-NAME_-cluster-ca-cert
+m¦kubectl annotate secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert strimzi.io/force-renew=true
 
 ¦Clients CA
-¦_<cluster-name>_-clients-ca-cert
-m¦kubectl annotate secret _<cluster-name>_-clients-ca-cert strimzi.io/force-renew=true
+¦_KAFKA-CLUSTER-NAME_-clients-ca-cert
+m¦kubectl annotate secret _KAFKA-CLUSTER-NAME_-clients-ca-cert strimzi.io/force-renew=true
 
 |===
-
-At the next reconciliation the Cluster Operator will generate a new CA certificate for the `Secret` that you annotated. 
++
+At the next reconciliation the Cluster Operator will generate a new CA certificate for the `Secret` that you annotated.
 If maintenance time windows are configured, the Cluster Operator will generate the new CA certificate at the first reconciliation within the next maintenance time window.
-
++
 Client applications must reload the cluster and clients CA certificates that were renewed by the Cluster Operator.
+
+. Delete old certificates from the Secret.
++
+When components are using the new certificates, older certificates might still be active.
+Delete the old certificates to remove any potential security risk.
 
 .Additional resources
 

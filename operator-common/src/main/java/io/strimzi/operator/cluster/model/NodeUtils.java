@@ -5,12 +5,16 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.NodeAddress;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class NodeUtils {
+    private static final Logger log = LogManager.getLogger(NodeUtils.class);
+
     /**
      * Tries to find the right address of the node. The different addresses has different prioprities:
      *      1. ExternalDNS
@@ -29,7 +33,11 @@ public class NodeUtils {
             return null;
         }
 
-        Map<String, String> addressMap = addresses.stream().collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress));
+        Map<String, String> addressMap = addresses.stream()
+                .collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress, (address1, address2) -> {
+                    log.warn("Found multiple addresses with the same type. Only the first address '{}' will be used.", address1);
+                    return address1;
+                }));
 
         // If user set preferred address type, we should check it first
         if (preferredAddressType != null && addressMap.containsKey(preferredAddressType)) {
