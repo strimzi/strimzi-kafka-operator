@@ -105,9 +105,6 @@ public class OpaIntegrationST extends AbstractST {
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-ephemeral")
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()
