@@ -14,7 +14,7 @@ Each of the other Kafka components interact with the Kafka cluster to perform sp
 
 .Kafka component interaction
 
-image:overview/kafka-concepts-supporting-components.png[Data flows between several Kafka components and the Kafka cluster]
+image:overview/kafka-concepts-supporting-components.png[Data flows between several Kafka components and the Kafka cluster. See the component descriptions after this image.]
 
 Apache ZooKeeper:: Apache ZooKeeper is a core dependency for Kafka as it provides a cluster coordination service, storing and tracking the status of brokers and consumers. ZooKeeper is also used for leader election of partitions.
 Kafka Connect:: Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems using _Connector_ plugins.
