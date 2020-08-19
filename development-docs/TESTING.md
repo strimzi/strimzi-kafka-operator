@@ -151,7 +151,7 @@ The following table shows currently used tags:
 | acceptance         | Acceptance tests, which guarantee, that basic functionality of Strimzi is working. |
 | regression         | Regression tests, which contains all non-flaky tests.                              |
 | upgrade            | Upgrade tests for specific versions of the Strimzi.                                |
-| smoke              | Marks tests executed on Travis                                                     |
+| smoke              | Execute all smoke tests                                                            |
 | flaky              | Execute all flaky tests (tests, which are failing from time to time)               |
 | scalability        | Execute scalability tests                                                          |
 | specific           | Specific tests, which cannot be easily added to other categories                   |

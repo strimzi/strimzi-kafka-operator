@@ -343,7 +343,7 @@ class ConnectST extends AbstractST {
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         int initialReplicas = connectPods.size();
         assertThat(initialReplicas, is(1));
-        final int scaleTo = initialReplicas + 1;
+        final int scaleTo = initialReplicas + 3;
 
         LOGGER.info("Scaling up to {}", scaleTo);
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, c -> c.getSpec().setReplicas(scaleTo));

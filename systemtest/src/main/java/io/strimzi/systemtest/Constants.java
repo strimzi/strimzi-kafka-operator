@@ -127,7 +127,7 @@ public interface Constants {
     String UPGRADE = "upgrade";
 
     /**
-     * Tag for acceptance tests executed during Travis builds.
+     * Tag for smoke tests
      */
     String SMOKE = "smoke";
 
