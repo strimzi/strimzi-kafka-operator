@@ -517,7 +517,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         return result.future();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Future<Map<String, Map<String, String>>> listConnectorLoggers(String host, int port) {
         Promise<Map<String, Map<String, String>>> result = Promise.promise();
@@ -533,7 +532,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             ObjectMapper mapper = new ObjectMapper();
 
                             try {
-                                Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), Map.class);
+                                Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), new TypeReference<Map<String, Map<String, String>>>() { });
                                 result.complete(fetchedLoggers);
                             } catch (IOException e)  {
                                 log.warn("Failed to get list of connector loggers", e);
@@ -551,7 +550,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         return result.future();
     }
 
-    private Future updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers) {
+    private Future<Void> updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers) {
         Map<String, String> updateLoggers = new LinkedHashMap<>();
         fetchedLoggers.entrySet().forEach(entry -> {
             // set all logger levels to OFF
@@ -577,7 +576,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging) {
         return listConnectorLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers));
