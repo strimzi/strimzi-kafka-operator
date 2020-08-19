@@ -22,8 +22,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -368,5 +370,25 @@ public class Util {
 
     public static ConfigResource getBrokersConfig(String podId) {
         return new ConfigResource(ConfigResource.Type.BROKER, podId);
+    }
+
+    public static String getStringHash(String toBeHashed)  {
+        try {
+            MessageDigest hashFunc = MessageDigest.getInstance("SHA-512");
+
+            byte[] hash = hashFunc.digest(toBeHashed.getBytes(StandardCharsets.UTF_8));
+
+            StringBuffer stringHash = new StringBuffer();
+
+            for (int i = 0; i < hash.length; i++) {
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if (hex.length() == 1) stringHash.append('0');
+                stringHash.append(hex);
+            }
+
+            return stringHash.toString();
+        } catch (NoSuchAlgorithmException e)    {
+            throw new RuntimeException("Failed to create SHA-512 MessageDigest instance");
+        }
     }
 }

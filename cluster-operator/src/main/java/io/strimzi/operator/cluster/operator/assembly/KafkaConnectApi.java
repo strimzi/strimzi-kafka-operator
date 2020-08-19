@@ -145,7 +145,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connector loggers.
      */
-    Future<Void> updateConnectorLoggers(String host, int port, String desiredLogging);
+    Future<Void> updateConnectLoggers(String host, int port, String desiredLogging);
 
     Future<Map<String, Map<String, String>>> listConnectorLoggers(String host, int port);
 }
@@ -579,7 +579,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Future<Void> updateConnectorLoggers(String host, int port, String desiredLogging) {
+    public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging) {
         return listConnectorLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers));
     }
 

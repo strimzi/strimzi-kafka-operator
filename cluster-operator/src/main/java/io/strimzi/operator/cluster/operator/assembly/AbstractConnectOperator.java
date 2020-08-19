@@ -344,7 +344,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 apiClient.list(host, port),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
                 apiClient.listConnectorPlugins(host, port),
-                apiClient.updateConnectorLoggers(host, port, desiredLogging)
+                apiClient.updateConnectLoggers(host, port, desiredLogging)
         ).compose(cf -> {
             List<String> runningConnectorNames = cf.resultAt(0);
             List<KafkaConnector> desiredConnectors = cf.resultAt(1);

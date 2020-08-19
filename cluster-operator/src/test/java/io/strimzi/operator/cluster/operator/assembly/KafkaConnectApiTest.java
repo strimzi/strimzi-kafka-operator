@@ -262,7 +262,7 @@ public class KafkaConnectApiTest {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         Checkpoint async = context.checkpoint();
 
-        client.updateConnectorLoggers("localhost", PORT, desired)
+        client.updateConnectLoggers("localhost", PORT, desired)
                 .onComplete(context.succeeding())
                 .compose(a -> client.listConnectorLoggers("localhost", PORT)
                         .onComplete(context.succeeding(map -> context.verify(() -> {

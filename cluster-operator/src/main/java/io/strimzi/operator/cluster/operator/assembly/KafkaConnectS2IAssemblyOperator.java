@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
@@ -119,7 +120,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                 null);
 
         Map<String, String> annotations = new HashMap<>(1);
-        annotations.put(Annotations.STRIMZI_LOGGING_APPENDERS_ANNOTATION, getLoggingAppenders(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG)));
+        annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH,
+                Util.getStringHash(getLoggingAppenders(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
 
         String desiredLogging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
 
