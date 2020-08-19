@@ -455,6 +455,10 @@ public class KafkaBrokerConfigurationBuilder {
         if (!value) options.add(String.format("%s=\"%s\"", option, value));
     }
 
+    static void addOption(PrintWriter writer, String name, Object value) {
+        if (value != null) writer.println(name + "=" + value);
+    }
+
     /**
      * Configures authorization for the Kafka cluster.
      *
@@ -521,8 +525,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("strimzi.authorization.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
             writer.println("strimzi.authorization.client.id=" + keycloakAuthz.getClientId());
             writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
-            writer.println("strimzi.authorization.grants.refresh.period.seconds=" + keycloakAuthz.getGrantsRefreshPeriodSeconds());
-            writer.println("strimzi.authorization.grants.refresh.pool.size=" + keycloakAuthz.getGrantsRefreshPoolSize());
+            addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", keycloakAuthz.getGrantsRefreshPeriodSeconds());
+            addOption(writer, "strimzi.authorization.grants.refresh.pool.size", keycloakAuthz.getGrantsRefreshPoolSize());
             writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {

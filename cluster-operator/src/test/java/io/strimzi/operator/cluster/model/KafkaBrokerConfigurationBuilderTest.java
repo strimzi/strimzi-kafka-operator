@@ -209,6 +209,37 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
+    public void testKeycloakAuthorizationWithDefaults() {
+        CertSecretSource cert = new CertSecretSourceBuilder()
+                .withNewSecretName("my-secret")
+                .withNewCertificate("my.crt")
+                .build();
+
+        KafkaAuthorization auth = new KafkaAuthorizationKeycloakBuilder()
+                .withTokenEndpointUri("http://token-endpoint-uri")
+                .withClientId("my-client-id")
+                .withTlsTrustedCertificates(cert)
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder()
+                .withAuthorization("my-cluster", auth)
+                .build();
+
+        assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
+                "principal.builder.class=io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder\n" +
+                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
+                "strimzi.authorization.client.id=my-client-id\n" +
+                "strimzi.authorization.delegate.to.kafka.acl=false\n" +
+                "strimzi.authorization.kafka.cluster.name=my-cluster\n" +
+                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
+                "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+                "strimzi.authorization.ssl.truststore.type=PKCS12\n" +
+                "strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG\n" +
+                "strimzi.authorization.ssl.endpoint.identification.algorithm=HTTPS\n" +
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
+    }
+
+    @Test
     public void testOpaAuthorizationWithDefaults() {
         KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
                 .withUrl("http://opa:8181/v1/data/kafka/allow")
