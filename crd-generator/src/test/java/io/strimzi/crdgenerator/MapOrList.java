@@ -6,14 +6,12 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -71,19 +69,14 @@ public class MapOrList {
     public static class Deserializer extends JsonDeserializer<MapOrList> {
         @Override
         public MapOrList deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
-            ObjectMapper objectMapper = new ObjectMapper();
-            ObjectCodec oc = jsonParser.getCodec();
-            JsonNode node = oc.readTree(jsonParser);
             MapOrList mapOrList;
-
-            if (node.isArray()) {
-                ObjectReader reader = objectMapper.readerFor(new TypeReference<List<String>>() { });
-                List<String> list = reader.readValue(node);
-                mapOrList = new MapOrList(list);
+            ObjectCodec oc = jsonParser.getCodec();
+            if (jsonParser.currentToken() == JsonToken.START_ARRAY) {
+                mapOrList = new MapOrList(oc.readValue(jsonParser, new TypeReference<List<String>>() { }));
+            } else if (jsonParser.currentToken() == JsonToken.START_OBJECT) {
+                mapOrList = new MapOrList(oc.readValue(jsonParser, new TypeReference<Map<String, String>>() { }));
             } else {
-                ObjectReader reader = objectMapper.readerFor(new TypeReference<Map<String, String>>() { });
-                Map<String, String> map = reader.readValue(node);
-                mapOrList = new MapOrList(map);
+                throw new RuntimeException();
             }
             return mapOrList;
         }
