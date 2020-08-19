@@ -21,7 +21,7 @@ Jaeger is a tracing system for microservices-based distributed systems.
 
 * The Jaeger user interface allows you to query, filter, and analyze trace data
 
-image:image_con-overview-distributed-tracing.png[Simple Jaeger query]
+image:image_con-overview-distributed-tracing.png[The Jaeger user interface showing a simple query]
 
 .Additional resources
 
