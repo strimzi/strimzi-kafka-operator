@@ -127,9 +127,9 @@ public interface Constants {
     String UPGRADE = "upgrade";
 
     /**
-     * Tag for acceptance tests executed during Travis builds.
+     * Tag for smoke tests
      */
-    String TRAVIS = "travis";
+    String SMOKE = "smoke";
 
     /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
@@ -240,4 +240,14 @@ public interface Constants {
      * Tag for tests where cruise control used
      */
     String CRUISE_CONTROL = "cruisecontrol";
+
+    /**
+     * Tag for tests which contains rolling update of resource
+     */
+    String ROLLING_UPDATE = "rollingupdate";
+
+    /**
+     * Tag for tests where OLM is used for deploying CO
+     */
+    String OLM = "olm";
 }

@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -62,6 +63,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(MIRROR_MAKER)
 @Tag(MIRROR_MAKER2)
 @Tag(BRIDGE)
+@Tag(CONNECT_S2I)
 @Tag(CONNECT_COMPONENTS)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends AbstractST {

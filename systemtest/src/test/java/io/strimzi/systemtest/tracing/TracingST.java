@@ -59,12 +59,13 @@ import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -837,6 +838,7 @@ public class TracingST extends AbstractST {
     }
 
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(BRIDGE)
     @Test
     void testKafkaBridgeService(Vertx vertx) throws Exception {
         WebClient client = WebClient.create(vertx, new WebClientOptions().setSsl(false));

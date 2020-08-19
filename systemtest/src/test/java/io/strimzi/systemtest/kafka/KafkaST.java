@@ -885,7 +885,6 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsTrue() {
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
@@ -909,7 +908,6 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsFalse() {
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
@@ -1160,6 +1158,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAppDomainLabels() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();

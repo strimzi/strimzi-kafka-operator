@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -48,6 +49,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private String storageClassName = "retain";
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -104,6 +106,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testTopicNotAvailable() throws InterruptedException {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 

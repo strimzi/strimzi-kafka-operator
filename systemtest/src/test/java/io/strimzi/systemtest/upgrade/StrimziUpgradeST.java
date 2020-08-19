@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -88,6 +89,7 @@ public class StrimziUpgradeST extends AbstractST {
 
     @ParameterizedTest()
     @JsonFileSource(resources = "/StrimziUpgradeST.json")
+    @Tag(INTERNAL_CLIENTS_USED)
     void testUpgradeStrimziVersion(JsonObject parameters) throws Exception {
 
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
@@ -122,6 +124,7 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testChainUpgrade() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
         InputStream inputStream = classLoader.getResourceAsStream("StrimziUpgradeST.json");
