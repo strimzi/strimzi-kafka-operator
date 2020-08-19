@@ -32,12 +32,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
+import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
@@ -549,9 +551,10 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled its pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
 
-        LOGGER.info("Waiting {} ms log not to be empty", LOGGING_RELOADING_INTERVAL);
-        // wait some time and check whether logs after this time are not empty
-        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+        long reconciliationSleep = RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis();
+        LOGGER.info("Waiting {} ms log not to be empty", reconciliationSleep);
+        // wait enough time (at least for reconciliation time + 10) and check whether logs after this time are not empty
+        Thread.sleep(reconciliationSleep);
 
         LOGGER.info("Asserting if log will contain no records");
         String coLog = StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
