@@ -168,12 +168,6 @@
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
-            <artifactId>vertx-web-common</artifactId>
-            <version>${vertx.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
             <version>${vertx.version}</version>
             <scope>test</scope>
@@ -187,11 +181,6 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
-            <version>${netty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
