@@ -45,6 +45,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     public static final TypeReference<Map<String, Map<String, String>>> MAP_OF_MAP_OF_STRINGS = new TypeReference<Map<String, Map<String, String>>>() {
 
     };
+    private final ObjectMapper mapper = new ObjectMapper();
     private final Vertx vertx;
 
     public KafkaConnectApiImpl(Vertx vertx) {
@@ -68,7 +69,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
                         response.bodyHandler(buffer -> {
-                            ObjectMapper mapper = new ObjectMapper();
                             try {
                                 Map t = mapper.readValue(buffer.getBytes(), Map.class);
                                 log.debug("Got {} response to PUT request to {}: {}", response.statusCode(), path, t);
@@ -117,7 +117,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                     if (okStatusCodes.contains(response.statusCode())) {
                         response.bodyHandler(buffer -> {
-                            ObjectMapper mapper = new ObjectMapper();
                             try {
                                 T t = mapper.readValue(buffer.getBytes(), type);
                                 log.debug("Got {} response to GET request to {}: {}", response.statusCode(), path, t);
@@ -327,8 +326,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
-                            ObjectMapper mapper = new ObjectMapper();
-
                             try {
                                 result.complete(asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
                             } catch (IOException e) {
@@ -391,8 +388,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
-                            ObjectMapper mapper = new ObjectMapper();
-
                             try {
                                 Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
                                 result.complete(fetchedLoggers);
@@ -425,26 +420,36 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             // set desired loggers to desired levels
             if (entry.getKey().equals("log4j.rootLogger")) {
                 updateLoggers.put("root", entry.getValue());
-            } else if (!entry.getKey().startsWith("log4j.appender")) {
-                updateLoggers.put(entry.getKey().replace("log4j.logger.", ""), entry.getValue());
+            } else if (!entry.getKey().startsWith("log4j.appender.")) {
+                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
             }
         });
 
         LinkedHashMap<String, String> updateSortedLoggers = sortLoggers(updateLoggers);
         Future<Void> result = Future.succeededFuture();
         for (Map.Entry<String, String> logger : updateSortedLoggers.entrySet()) {
-            result = result.compose(previous -> updateConnectorLogger(host, port, logger.getKey(), logger.getValue().split(",")[0].replaceAll("\\s", "")));
+            result = result.compose(previous -> updateConnectorLogger(host, port, logger.getKey(), getLoggerLevelFromAppenderCouple(logger.getValue())));
         }
         return result;
+    }
+
+    /**
+     * Parses logger level from couple LEVEL, APPENDER
+     * @param couple tested input
+     * @return logger Level
+     */
+    private String getLoggerLevelFromAppenderCouple(String couple) {
+        int index = couple.indexOf(",");
+        if (index > 0) {
+            return couple.substring(0, index).trim();
+        } else {
+            return couple.trim();
+        }
     }
 
     @Override
     public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging) {
         return listConnectorLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers));
-    }
-
-    private int numberOfDotsInString(String tested) {
-        return tested.length() - tested.replaceAll("\\.", "").length();
     }
 
     /**
@@ -464,7 +469,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             if (k2.equals("root")) {
                 return Integer.MAX_VALUE;
             }
-            return numberOfDotsInString(k1) - numberOfDotsInString(k2);
+            return k1.compareTo(k2);
         };
         List<Map.Entry<String, String>> listOfEntries = new ArrayList<>(loggers.entrySet());
         Collections.sort(listOfEntries, loggerComparator);

@@ -7,6 +7,7 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -372,9 +373,9 @@ public class Util {
         return new ConfigResource(ConfigResource.Type.BROKER, podId);
     }
 
-    public static String getStringHash(String toBeHashed)  {
+    public static String stringHash(String toBeHashed)  {
         try {
-            MessageDigest hashFunc = MessageDigest.getInstance("SHA-512");
+            MessageDigest hashFunc = MessageDigest.getInstance("SHA");
 
             byte[] hash = hashFunc.digest(toBeHashed.getBytes(StandardCharsets.UTF_8));
 
@@ -388,7 +389,19 @@ public class Util {
 
             return stringHash.toString();
         } catch (NoSuchAlgorithmException e)    {
-            throw new RuntimeException("Failed to create SHA-512 MessageDigest instance");
+            throw new RuntimeException("Failed to create SHA MessageDigest instance");
         }
+    }
+
+    public static String getLoggingAppenders(String loggingConfiguration) {
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(loggingConfiguration);
+        StringBuilder result = new StringBuilder();
+        for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
+            if (entry.getKey().startsWith("log4j.appender")) {
+                result.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+        }
+        return result.toString();
     }
 }

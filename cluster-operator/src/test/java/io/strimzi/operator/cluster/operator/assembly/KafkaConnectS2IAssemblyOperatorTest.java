@@ -187,7 +187,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 DeploymentConfig dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.getStringHash(ops.getLoggingAppenders(LOGGING_CONFIG)));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.stringHash(Util.getLoggingAppenders(LOGGING_CONFIG)));
                 assertThat(dc, is(connect.generateDeploymentConfig(annotations, true, null, null)));
 
                 // Verify Build Config
@@ -501,7 +501,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 DeploymentConfig dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.getStringHash(ops.getLoggingAppenders(LOGGING_CONFIG)));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.stringHash(Util.getLoggingAppenders(LOGGING_CONFIG)));
                 assertThat(dc, is(compareTo.generateDeploymentConfig(annotations, true, null, null)));
 
                 // Verify Build Config
@@ -965,7 +965,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 DeploymentConfig dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.getStringHash(ops.getLoggingAppenders(LOGGING_CONFIG)));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.stringHash(Util.getLoggingAppenders(LOGGING_CONFIG)));
                 assertThat(dc, is(connect.generateDeploymentConfig(annotations, true, null, null)));
 
                 // Verify Build Config

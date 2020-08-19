@@ -121,7 +121,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
         Map<String, String> annotations = new HashMap<>(1);
         annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH,
-                Util.getStringHash(getLoggingAppenders(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
+                Util.stringHash(Util.getLoggingAppenders(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
 
         String desiredLogging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
 
