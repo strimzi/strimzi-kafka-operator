@@ -69,8 +69,12 @@ do
   fi
 done
 
+if [[ -n "${ENV_VARIABLES}" ]]; then
+  COMMAND="${COMMAND::-1} env=${ENV_VARIABLES}"
+fi
+
 echo "Re-run command:"
-echo ${COMMAND::-1}
+echo ${COMMAND}
 
 
 if [ -n "${FAILED_TESTS}" ]
