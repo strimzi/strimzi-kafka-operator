@@ -111,8 +111,8 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         this.grantsRefreshPeriodSeconds = grantsRefreshPeriodSeconds;
     }
 
-    @Description("The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, the sooner the job completes," +
-        " but also the heavier the load on the authorization server. The default value is 5.")
+    @Description("The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism," +
+            " so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.")
     @Minimum(1)
     @DefaultValue("5")
     public Integer getGrantsRefreshPoolSize() {

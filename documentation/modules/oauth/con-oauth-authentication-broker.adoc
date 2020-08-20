@@ -25,7 +25,7 @@ The credentials are not typically required when using public authorization serve
 
 == OAuth 2.0 authentication configuration in the Kafka cluster
 
-To use OAuth 2.0 authentication in the Kafka cluster, you specify for example a TLS listener configuration for your Kafka cluster custom resource with the authentication method `oauth`:
+To use OAuth 2.0 authentication in the Kafka cluster, you specify, for example, a TLS listener configuration for your Kafka cluster custom resource with the authentication method `oauth`:
 
 .Assigining the authentication method type for OAuth 2.0
 [source,yaml,subs="+quotes, attributes"]
@@ -64,7 +64,7 @@ listeners:
 
 The `tls` property is _true_ by default, so it can be left out.
 
-When you've defined the type of authentication as OAuth 2.0, you add configuration based on the type of validation, either as xref:con-oauth-authentication-broker-fast-local[fast local JWT validation] or xref:con-oauth-authentication-broker-intro-local[token validation using an introspection endpoint].
+When you have defined the type of authentication as OAuth 2.0, you add configuration based on the type of validation, either as xref:con-oauth-authentication-broker-fast-local[fast local JWT validation] or xref:con-oauth-authentication-broker-intro-local[token validation using an introspection endpoint].
 
 The procedure to configure OAuth 2.0 for listeners, with descriptions and examples, is described in xref:proc-oauth-authentication-broker-config-{context}[Configuring OAuth 2.0 support for Kafka brokers].
 

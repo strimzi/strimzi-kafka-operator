@@ -102,7 +102,7 @@ external:
 <2> Client ID to identify the client.
 <3> Client Secret and client ID is used for authentication.
 <4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authorization server used.
-<5> (Optional) Setting this option activates the re-authentication mechanism which enforces session expiry to that of the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when access token expires, and the client attempts no re-authentication.
+<5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
 +
