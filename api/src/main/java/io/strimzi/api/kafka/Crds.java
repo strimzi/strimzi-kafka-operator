@@ -373,4 +373,8 @@ public class Crds {
             throw new RuntimeException(e);
         }
     }
+
+    public static int getNumCrds() {
+        return CRDS.length;
+    }
 }
