@@ -171,6 +171,11 @@ def buildStrimziImages() {
     sh(script: "oc create namespace ${env.DOCKER_ORG}")
     sh(script: "make docker_push")
 }
+def exportEnvVarsForTests(String envVars) {
+    for (env in envVars.split(",")) {
+        sh "export ${env}"
+    }
+}
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
     withMaven(mavenOpts: '-Djansi.force=true') {
