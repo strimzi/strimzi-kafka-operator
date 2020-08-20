@@ -239,20 +239,7 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>acceptance</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>acceptance</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>regression</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression</groups>
-            </properties>
-        </profile>
+
         <profile>
             <id>all</id>
             <properties>
@@ -262,96 +249,30 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
         </profile>
+
         <profile>
-            <id>flaky</id>
+            <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>flaky</groups>
+                <groups>acceptance</groups>
             </properties>
         </profile>
+
         <profile>
-            <id>upgrade</id>
+            <id>regression</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>upgrade &amp; !flaky</groups>
+                <groups>regression</groups>
             </properties>
         </profile>
+
         <profile>
-            <id>travis</id>
+            <id>smoke</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>travis</groups>
+                <groups>smoke</groups>
             </properties>
         </profile>
-        <profile>
-            <id>bridge</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>bridge</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>scalability</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>scalability &amp; !flaky</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>specific</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>specific</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>nodeport</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>nodeport</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>loadbalancer</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>loadbalancer</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>networkpolicies</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>networkpolicies</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>prometheus</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>prometheus</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>tracing</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>tracing</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>oauth</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>oauth</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>cruisecontrol</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>cruisecontrol</groups>
-            </properties>
-        </profile>
+
     </profiles>
 </project>
