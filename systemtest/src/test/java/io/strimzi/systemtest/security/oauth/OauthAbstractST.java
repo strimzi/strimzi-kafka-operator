@@ -4,12 +4,13 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.KeycloakResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.ext.web.client.WebClient;
@@ -25,13 +26,11 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(OAUTH)
@@ -56,7 +55,7 @@ public class OauthAbstractST extends AbstractST {
     protected KeycloakInstance keycloakInstance;
 
     protected static final String CERTIFICATE_OF_KEYCLOAK = "tls.crt";
-    protected static final String SECRET_OF_KEYCLOAK = "x509-https-secret";
+    protected static final String SECRET_OF_KEYCLOAK = "sso-x509-https-secret";
 
     protected static String clusterHost;
     protected static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
@@ -68,12 +67,11 @@ public class OauthAbstractST extends AbstractST {
         installClusterOperator(NAMESPACE);
         KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
 
-        deployTestSpecificResources();
-    }
+        KeycloakResource.keycloakOperator(NAMESPACE);
 
-    private void deployTestSpecificResources() throws InterruptedException {
         LOGGER.info("Deploying keycloak...");
-        KafkaClientsResource.deployKeycloak().done();
+
+        KeycloakResource.deployKeycloak(NAMESPACE);
 
         // https
         Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
@@ -85,7 +83,11 @@ public class OauthAbstractST extends AbstractST {
         KubernetesResource.createServiceResource(keycloakHttpService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakHttpService.getMetadata().getName());
 
-        keycloakInstance = new KeycloakInstance("admin", "admin");
+        Secret keycloakCredentials = kubeClient().getSecret("credential-example-keycloak");
+
+        keycloakInstance = new KeycloakInstance(
+            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_USERNAME"))),
+            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_PASSWORD"))));
         clusterHost = kubeClient().getNodeAddress();
 
         LOGGER.info("Importing basic realm");
@@ -93,13 +95,6 @@ public class OauthAbstractST extends AbstractST {
 
         LOGGER.info("Importing authorization realm");
         keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
-
-        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
-
-        String pubKey = cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-            "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
-
-        SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
