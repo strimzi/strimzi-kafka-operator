@@ -1049,8 +1049,9 @@ spec:
                       minimum: 1
                       description: The number of threads to use to refresh grants
                         for active sessions. The more threads, the more parallelism,
-                        the sooner the job completes, but also the heavier the load
-                        on the authorization server. The default value is 5.
+                        so the sooner the job completes. However, using more threads
+                        places a heavier load on the authorization server. The default
+                        value is 5.
                     initialCacheCapacity:
                       type: integer
                       description: Initial capacity of the local cache used by the

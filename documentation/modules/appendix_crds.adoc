@@ -797,7 +797,7 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |boolean
 |grantsRefreshPeriodSeconds      1.2+<.<|The time between two consecutive grants refresh runs in seconds. The default value is 60.
 |integer
-|grantsRefreshPoolSize           1.2+<.<|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, the sooner the job completes, but also the heavier the load on the authorization server. The default value is 5.
+|grantsRefreshPoolSize           1.2+<.<|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
 |integer
 |superUsers                      1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
 |string array
