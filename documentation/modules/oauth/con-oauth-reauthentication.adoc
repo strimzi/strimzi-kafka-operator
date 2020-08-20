@@ -5,7 +5,7 @@
 [id='con-oauth-reauthentication-{context}']
 = Session re-authentication for Kafka brokers
 
-The Kafka _SASL OAUTHBEARER_ mechanism supports a Kafka feature called the _re-authentication_ mechanism.
+The Kafka _SASL OAUTHBEARER_ mechanism, which is used for OAuth 2.0 authentication in Strimzi, supports a Kafka feature called the _re-authentication_ mechanism.
 OAuth 2.0 authentication in Strimzi provides support for the re-authentication mechanism.
 
 When the re-authentication mechanism is enabled in the configuration of an `oauth` type listener, the broker's authenticated session expires when the access token expires.
