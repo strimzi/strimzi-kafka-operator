@@ -26,6 +26,9 @@ ZooKeeper also has a configurable logger:
 
 Kafka and ZooKeeper use the Apache `log4j` logger implementation.
 
+Operators use the Apache `log4j2` logger implementation, so the logging configuration is described inside the ConfigMap using `log4j2.properties`.
+For more information, see xref:con-entity-operator-logging-{context}[].
+
 Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
@@ -85,10 +88,7 @@ spec:
   # ...
 ----
 
-Both external and inline logging changes in Kafka brokers are configured dynamically.
-
-Operators use the Apache `log4j2` logger implementation, so the logging configuration is described inside the ConfigMap using `log4j2.properties`.
-For more information, see xref:con-entity-operator-logging-{context}[].
+Changes to both external and inline logging levels will be applied to Kafka brokers without a restart.
 
 .Additional resources
 

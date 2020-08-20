@@ -474,8 +474,8 @@ public class KafkaRoller {
         log.info("{}: Altering broker {} with {}", reconciliation, podId, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
-        KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(podId)));
-        KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(new ConfigResource(ConfigResource.Type.BROKER_LOGGER, Integer.toString(podId)));
+        KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
+        KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
         await(Util.kafkaFutureToVertxFuture(vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error doing dynamic update", error));
         await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,

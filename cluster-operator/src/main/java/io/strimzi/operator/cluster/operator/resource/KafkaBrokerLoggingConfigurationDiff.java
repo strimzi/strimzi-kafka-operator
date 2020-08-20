@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,11 +31,10 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
     private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
-    private static final ObjectMapper MAPPER = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     private final Collection<AlterConfigOp> diff;
     private int brokerId;
 
-    private static final List VALID_LOGGER_LEVELS = Arrays.asList("INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF");
+    private static final HashSet VALID_LOGGER_LEVELS = new HashSet<>(Arrays.asList("INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF"));
 
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
         this.brokerId = brokerId;
@@ -82,8 +81,10 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
 
-        JsonNode source = MAPPER.valueToTree(currentMap);
-        JsonNode target = MAPPER.valueToTree(desiredMap);
+        ObjectMapper orderedMapper = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+
+        JsonNode source = orderedMapper.valueToTree(currentMap);
+        JsonNode target = orderedMapper.valueToTree(desiredMap);
         JsonNode jsonDiff = JsonDiff.asJson(source, target);
 
         for (JsonNode d : jsonDiff) {
