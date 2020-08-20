@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
@@ -99,6 +101,8 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     }
 
     @Description("The time between two consecutive grants refresh runs in seconds. The default value is 60.")
+    @Minimum(0)
+    @DefaultValue("60")
     public Integer getGrantsRefreshPeriodSeconds() {
         return grantsRefreshPeriodSeconds;
     }
@@ -109,6 +113,8 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     @Description("The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, the sooner the job completes," +
         " but also the heavier the load on the authorization server. The default value is 5.")
+    @Minimum(1)
+    @DefaultValue("5")
     public Integer getGrantsRefreshPoolSize() {
         return grantsRefreshPoolSize;
     }

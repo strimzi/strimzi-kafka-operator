@@ -765,9 +765,11 @@ spec:
                       description: The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
                     grantsRefreshPeriodSeconds:
                       type: integer
+                      minimum: 0
                       description: The time between two consecutive grants refresh runs in seconds. The default value is 60.
                     grantsRefreshPoolSize:
                       type: integer
+                      minimum: 1
                       description: The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, the sooner the job completes, but also the heavier the load on the authorization server. The default value is 5.
                     initialCacheCapacity:
                       type: integer

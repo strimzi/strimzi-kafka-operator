@@ -1041,10 +1041,12 @@ spec:
                         to `3600000`.
                     grantsRefreshPeriodSeconds:
                       type: integer
+                      minimum: 0
                       description: The time between two consecutive grants refresh
                         runs in seconds. The default value is 60.
                     grantsRefreshPoolSize:
                       type: integer
+                      minimum: 1
                       description: The number of threads to use to refresh grants
                         for active sessions. The more threads, the more parallelism,
                         the sooner the job completes, but also the heavier the load
