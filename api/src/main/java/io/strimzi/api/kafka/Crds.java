@@ -374,7 +374,7 @@ public class Crds {
         }
     }
 
-    public static int getCrdsCount() {
+    public static int getNumCrds() {
         return CRDS.length;
     }
 }

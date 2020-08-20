@@ -423,7 +423,7 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Verifying labels for CRDs");
         String crds = cmdKubeClient().exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
         crds = crds.replace(" ", "\n").trim();
-        assertThat(crds.split("\n").length, is(Crds.getCrdsCount()));
+        assertThat(crds.split("\n").length, is(Crds.getNumCrds()));
 
     }
 
