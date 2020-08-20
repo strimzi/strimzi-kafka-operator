@@ -23,7 +23,7 @@ NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Sup
 
 * Strimzi must be configured to use OAuth 2.0 with Keycloak for xref:assembly-oauth-authentication_str[token-based authentication].
 You use the same Keycloak server endpoint when you set up authorization.
-* OAuth 2.0 authentication has to be configured with `maxSecondsWithoutReauthentication` option to enable re-authentication.
+* OAuth 2.0 authentication must be configured with the `maxSecondsWithoutReauthentication` option to enable re-authentication.
 * You need to understand how to manage policies and permissions for Keycloak Authorization Services, as described in the {keycloak-server-doc}.
 
 .Procedure
