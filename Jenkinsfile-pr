@@ -9,7 +9,7 @@ node('master') {
         echo "Github PR comment: ${env.ghprbCommentBody}"
         if (env.ghprbCommentBody.contains('crc') || env.ghprbCommentBody.contains('ocp4')) {
             NODE_LABEL = "strimzi-crc"
-            DEFAULT_EXCLUDED_GROUPS = ""
+            DEFAULT_EXCLUDED_GROUPS = "loadbalancer"
         } else {
             NODE_LABEL = 'strimzi-pr'
             DEFAULT_EXCLUDED_GROUPS = "networkpolicies"
@@ -193,7 +193,7 @@ pipeline {
     post {
         always {
             script {
-                sh "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.OC_VERSION} ${env.TEST_ONLY} ${env.EXCLUDE_GROUPS}"
+                sh "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.OC_VERSION} ${env.TEST_ONLY} ${env.EXCLUDE_GROUPS} ${env.ENV_VARS}"
                 lib.postGithubPrComment("results.json")
                 lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
             }
