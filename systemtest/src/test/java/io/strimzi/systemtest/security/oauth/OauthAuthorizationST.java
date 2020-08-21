@@ -220,13 +220,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @BeforeAll
     void setUp()  {
-        LOGGER.info("Replacing validIssuerUri: {} to pointing to kafka-authz realm", validIssuerUri);
-        LOGGER.info("Replacing jwksEndpointUri: {} to pointing to kafka-authz realm", jwksEndpointUri);
-        LOGGER.info("Replacing oauthTokenEndpointUri: {} to pointing to kafka-authz realm", oauthTokenEndpointUri);
-
-        validIssuerUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/kafka-authz";
-        jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/kafka-authz/protocol/openid-connect/certs";
-        oauthTokenEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/kafka-authz/protocol/openid-connect/token";
+        keycloakInstance.setRealm("kafka-authz", true);
 
         LOGGER.info("Setting producer and consumer properties");
 
@@ -246,7 +240,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withConsumerGroupName("a_consumer_group")
             .withOauthClientId(TEAM_A_CLIENT)
             .withClientSecretName(TEAM_A_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         teamBOauthKafkaClient = new OauthExternalKafkaClient.Builder()
@@ -259,7 +253,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withConsumerGroupName("x_" + ClientUtils.generateRandomConsumerGroup())
             .withOauthClientId(TEAM_B_CLIENT)
             .withClientSecretName(TEAM_B_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -268,11 +262,11 @@ public class OauthAuthorizationST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().setExternal(
                 new KafkaListenerExternalNodePortBuilder()
                     .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(validIssuerUri)
-                        .withJwksEndpointUri(jwksEndpointUri)
-                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                        .withUserNameClaim(userNameClaim)
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
                         .withTlsTrustedCertificates(
                             new CertSecretSourceBuilder()
                                 .withSecretName(SECRET_OF_KEYCLOAK)
@@ -294,7 +288,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
                             .withCertificate(CERTIFICATE_OF_KEYCLOAK)
                             .build()
                     )
-                    .withTokenEndpointUri(oauthTokenEndpointUri)
+                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .build());
         });
 

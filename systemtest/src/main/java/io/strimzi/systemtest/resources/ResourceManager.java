@@ -231,7 +231,7 @@ public class ResourceManager {
                     kubeClient().deleteIngress((Ingress) resource);
                 });
                 break;
-            default :
+            default:
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
