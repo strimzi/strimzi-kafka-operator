@@ -113,7 +113,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         assertThrows(WaitException.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
-        teamAOauthKafkaClient.setConsumerGroup("a_correct_consumer_group");
+        teamAOauthKafkaClient.setConsumerGroup("a-correct_consumer_group");
 
         assertThat(teamAOauthKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
@@ -136,7 +136,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         );
     }
 
-    @Disabled("Will be fixed in the new PR.")
+//    @Disabled("Will be fixed in the new PR.")
     @Description("As a member of team A, I can write to topics starting with 'x-' and " +
             "as a member of team B can read from topics starting with 'x-'")
     @Test
@@ -152,13 +152,14 @@ public class OauthAuthorizationST extends OauthAbstractST {
         assertThat(teamAOauthKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         teamBOauthKafkaClient.setTopicName(topicName);
-        teamBOauthKafkaClient.setConsumerGroup("x_consumer_group_b");
+        teamBOauthKafkaClient.setConsumerGroup("x-consumer_group_b");
 
         assertThat(teamBOauthKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
 
     @Description("As a superuser of team A and team B, i am able to break defined authorization rules")
     @Test
+    @Order(6)
     void testSuperUserWithOauthAuthorization() {
 
         LOGGER.info("Verifying that team B is not able write to topic starting with 'x-' because in kafka cluster" +
@@ -176,7 +177,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         teamAOauthKafkaClient.setTopicName(TOPIC_X);
         teamAOauthKafkaClient.setKafkaUsername(USER_NAME);
-        teamAOauthKafkaClient.setConsumerGroup("x_consumer_group_b1");
+        teamAOauthKafkaClient.setConsumerGroup("x-consumer_group_b1");
 
         assertThrows(WaitException.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
@@ -206,14 +207,14 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @Disabled("Will be implemented in next PR")
     @Test
-    @Order(6)
+    @Order(7)
     void testListTopics() {
         // TODO: in the new PR add AdminClient support with operations listTopics(), etc.
     }
 
     @Disabled("Will be implemented in next PR")
     @Test
-    @Order(7)
+    @Order(8)
     void testClusterVerification() {
         // TODO: create more examples via cluster wide stuff
     }
@@ -237,7 +238,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withKafkaUsername(TEAM_A_CLIENT)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withConsumerGroupName("a_consumer_group")
+            .withConsumerGroupName("a-consumer_group")
             .withOauthClientId(TEAM_A_CLIENT)
             .withClientSecretName(TEAM_A_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
@@ -250,7 +251,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withKafkaUsername(TEAM_A_CLIENT)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withConsumerGroupName("x_" + ClientUtils.generateRandomConsumerGroup())
+            .withConsumerGroupName("x-" + ClientUtils.generateRandomConsumerGroup())
             .withOauthClientId(TEAM_B_CLIENT)
             .withClientSecretName(TEAM_B_CLIENT_SECRET)
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())

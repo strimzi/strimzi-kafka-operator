@@ -216,14 +216,17 @@ public class KubernetesResource {
 
         Map<String, String> keycloakLabels = new HashMap<>();
         keycloakLabels.put("app", keycloakName);
+        keycloakLabels.put("component", keycloakName);
 
         return getSystemtestsServiceResource(keycloakName + "service-http",
                 Constants.HTTP_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
                 .editSpec()
+                    .withType("ClusterIP")
+                    .withSelector(keycloakLabels)
                     .withType("NodePort")
                     .withSelector(keycloakLabels)
                     .editFirstPort()
-                        .withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
+                    .   withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
                     .endPort()
                 .endSpec().build();
     }
@@ -233,6 +236,7 @@ public class KubernetesResource {
 
         Map<String, String> keycloakLabels = new HashMap<>();
         keycloakLabels.put("app", keycloakName);
+        keycloakLabels.put("component", keycloakName);
 
         return getSystemtestsServiceResource(keycloakName + "service-https",
             Constants.HTTPS_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
