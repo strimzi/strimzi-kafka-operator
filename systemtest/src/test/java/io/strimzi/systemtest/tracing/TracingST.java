@@ -17,6 +17,8 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaTracingClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -34,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
@@ -90,7 +92,9 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-connect";
     private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
     private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
-    private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
+
+    protected static final String PRODUCER_JOB_NAME = "hello-world-producer";
+    protected static final String CONSUMER_JOB_NAME = "hello-world-consumer";
 
     private static final String JAEGER_AGENT_NAME = "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE = "const";
@@ -102,6 +106,8 @@ public class TracingST extends AbstractST {
     private Stack<String> jaegerConfigs = new Stack<>();
 
     private String kafkaClientsPodName;
+
+    private static KafkaTracingClientsResource kafkaTracingClient;
 
     @Test
     void testProducerService() {
@@ -134,7 +140,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.producerWithTracing().done();
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
@@ -270,11 +276,11 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.producerWithTracing().done();
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
-        KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.kafkaStreamsWithTracing().done();
 
         TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
@@ -319,11 +325,11 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.producerWithTracing().done();
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
-        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.consumerWithTracing().done();
 
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
@@ -373,15 +379,15 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.producerWithTracing().done();
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
-        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.consumerWithTracing().done();
 
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
-        KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.kafkaStreamsWithTracing().done();
 
         TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
@@ -450,10 +456,13 @@ public class TracingST extends AbstractST {
                 .done();
 
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+
+        KafkaTracingClientsResource sourceKafkaTracingClient = new KafkaTracingClientsResource(kafkaTracingClient, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        sourceKafkaTracingClient.producerWithTracing().done();
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
-        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), kafkaClusterSourceName + "." + TOPIC_NAME).done();
+        KafkaTracingClientsResource targetKafkaTracingClient = new KafkaTracingClientsResource(kafkaTracingClient, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), kafkaClusterSourceName + "." + TOPIC_NAME);
+        targetKafkaTracingClient.consumerWithTracing().done();
 
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                 .editMetadata()
@@ -548,10 +557,14 @@ public class TracingST extends AbstractST {
                 .done();
 
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+
+        KafkaTracingClientsResource sourceKafkaTracingClient = new KafkaTracingClientsResource(kafkaTracingClient, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        sourceKafkaTracingClient.producerWithTracing().done();
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
-        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
+
+        KafkaTracingClientsResource targetKafkaTracingClient = new KafkaTracingClientsResource(kafkaTracingClient, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        targetKafkaTracingClient.consumerWithTracing().done();
 
         KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
             ClientUtils.generateRandomConsumerGroup(), 1, false)
@@ -633,9 +646,13 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
-        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName)).done();
-        KafkaClientsResource.kafkaStreamsWithTracing(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName)).done();
+        KafkaTracingClientsResource sourceKafkaTracingClient = new KafkaTracingClientsResource(kafkaTracingClient, KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        sourceKafkaTracingClient.producerWithTracing().done();
+
+        KafkaTracingClientsResource targetKafkaTracingClient = new KafkaTracingClientsResource(kafkaTracingClient, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        targetKafkaTracingClient.consumerWithTracing().done();
+
+        sourceKafkaTracingClient.kafkaStreamsWithTracing().done();
 
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
@@ -758,8 +775,8 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaClientsResource.producerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
-        KafkaClientsResource.consumerWithTracing(KafkaResources.plainBootstrapAddress(CLUSTER_NAME)).done();
+        kafkaTracingClient.producerWithTracing().done();
+        kafkaTracingClient.consumerWithTracing().done();
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
 
@@ -868,7 +885,10 @@ public class TracingST extends AbstractST {
         String bridgeProducer = "bridge-producer";
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaClientsResource.producerStrimziBridge(bridgeProducer, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        KafkaBridgeClientsResource kafkaBridgeClientJob = new KafkaBridgeClientsResource(bridgeProducer, "", bridgeServiceName,
+            TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), bridgePort, 1000, 1000);
+
+        kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(bridgeProducer, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -963,5 +983,9 @@ public class TracingST extends AbstractST {
     void setup() throws Exception {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
+
+        kafkaTracingClient = new KafkaTracingClientsResource(PRODUCER_JOB_NAME, CONSUMER_JOB_NAME,
+            KafkaResources.plainBootstrapAddress(CLUSTER_NAME), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(),
+            JAEGER_PRODUCER_SERVICE, JAEGER_CONSUMER_SERVICE, JAEGER_KAFKA_STREAMS_SERVICE);
     }
 }

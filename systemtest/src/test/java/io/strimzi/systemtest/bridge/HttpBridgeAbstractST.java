@@ -7,6 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
 import io.vertx.ext.web.client.WebClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -23,6 +24,7 @@ public class HttpBridgeAbstractST extends AbstractST {
     public static String consumerName = "bridge-consumer";
 
     protected WebClient client;
+    protected static KafkaBridgeClientsResource kafkaBridgeClientJob;
 
     void deployClusterOperator(String namespace) throws Exception {
         ResourceManager.setClassResources();

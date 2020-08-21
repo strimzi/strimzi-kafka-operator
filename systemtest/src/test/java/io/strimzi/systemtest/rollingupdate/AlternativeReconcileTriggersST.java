@@ -12,7 +12,8 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -69,8 +70,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
         KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
-        KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
-        KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount).done();
+
+        KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
+            KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, ClientUtils.generateRandomConsumerGroup());
+
+        kafkaBasicClientJob.producerStrimzi().done();
+        kafkaBasicClientJob.consumerStrimzi().done();
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();

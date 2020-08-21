@@ -11,7 +11,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
@@ -55,7 +56,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaClientsResource.producerStrimziBridge(producerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -78,7 +79,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void testReceiveSimpleMessage() {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaClientsResource.consumerStrimziBridge(consumerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        kafkaBridgeClientJob.consumerStrimziBridge().done();
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -272,5 +273,8 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .endConsumer()
             .endSpec()
             .done();
+
+        kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(CLUSTER_NAME),
+            TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), bridgePort, 1000, 1000);
     }
 }

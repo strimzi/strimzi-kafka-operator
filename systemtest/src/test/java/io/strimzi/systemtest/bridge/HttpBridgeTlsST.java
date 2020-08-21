@@ -5,12 +5,14 @@
 package io.strimzi.systemtest.bridge;
 
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -44,7 +46,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaClientsResource.producerStrimziBridge(producerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -64,7 +66,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
     void testReceiveSimpleMessageTls() {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaClientsResource.consumerStrimziBridge(consumerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        kafkaBridgeClientJob.consumerStrimziBridge().done();
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -130,5 +132,8 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
                 .endTls()
             .endSpec()
             .done();
+
+        kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(CLUSTER_NAME),
+           TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), bridgePort, 1000, 1000);
     }
 }

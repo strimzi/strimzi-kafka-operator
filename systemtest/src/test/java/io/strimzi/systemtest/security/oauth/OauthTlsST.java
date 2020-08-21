@@ -15,7 +15,8 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -161,7 +162,10 @@ public class OauthTlsST extends OauthAbstractST {
 
         String producerName = "bridge-producer";
 
-        KafkaClientsResource.producerStrimziBridge(producerName, KafkaBridgeResources.serviceName(CLUSTER_NAME), HTTP_BRIDGE_DEFAULT_PORT, TOPIC_NAME, MESSAGE_COUNT).done();
+        KafkaBridgeClientsResource kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, "", KafkaBridgeResources.serviceName(CLUSTER_NAME),
+            TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), HTTP_BRIDGE_DEFAULT_PORT, 1000, 1000);
+
+        kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
     }
 

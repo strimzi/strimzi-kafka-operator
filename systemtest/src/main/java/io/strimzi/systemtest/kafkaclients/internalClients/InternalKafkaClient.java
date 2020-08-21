@@ -40,6 +40,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
 
         @Override
         public InternalKafkaClient build() {
+
             return new InternalKafkaClient(this);
         }
 
