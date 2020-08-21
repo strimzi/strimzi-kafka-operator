@@ -69,8 +69,10 @@ do
   fi
 done
 
+COMMAND="${COMMAND::-1}"
+
 if [[ -n "${ENV_VARIABLES}" ]]; then
-  COMMAND="${COMMAND::-1} env=${ENV_VARIABLES}"
+  COMMAND="${COMMAND} env=${ENV_VARIABLES}"
 fi
 
 echo "Re-run command:"
@@ -96,7 +98,7 @@ else
   then
     BODY="{\"body\":\"### :heavy_check_mark: Test Summary :heavy_check_mark:\n${SUMMARY}${FAILED_TEST_BODY}\"}"
   else
-    BODY="{\"body\":\"### :x: Test Summary :x:\n${SUMMARY}${FAILED_TEST_BODY}\n\n**Re-run command**:\n${COMMAND::-1}\"}"
+    BODY="{\"body\":\"### :x: Test Summary :x:\n${SUMMARY}${FAILED_TEST_BODY}\n\n**Re-run command**:\n${COMMAND}\"}"
   fi
 fi
 
