@@ -88,13 +88,13 @@ public class OauthAbstractST extends AbstractST {
         keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
 
         LOGGER.info("Importing authorization realm");
+
         keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
 
-        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
+        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
 
         String pubKey = ResourceManager.cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-            "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key",
-            "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
+            "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
 
         SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 

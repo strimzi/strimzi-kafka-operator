@@ -91,7 +91,7 @@ public class KeycloakInstance {
     }
 
     public String getKeystorePassword() {
-        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
+        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
         String inputFile = ResourceManager.cmdKubeClient().execInPod(keycloakPodName,
             "cat", "/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml").out().trim();
 
