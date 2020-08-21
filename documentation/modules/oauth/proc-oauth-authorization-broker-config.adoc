@@ -23,6 +23,7 @@ NOTE: xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[Sup
 
 * Strimzi must be configured to use OAuth 2.0 with Keycloak for xref:assembly-oauth-authentication_str[token-based authentication].
 You use the same Keycloak server endpoint when you set up authorization.
+* OAuth 2.0 authentication must be configured with the `maxSecondsWithoutReauthentication` option to enable re-authentication.
 * You need to understand how to manage policies and permissions for Keycloak Authorization Services, as described in the {keycloak-server-doc}.
 
 .Procedure
@@ -63,6 +64,8 @@ spec:
     tlsTrustedCertificates: <7>
     - secretName: oauth-server-cert
       certificate: ca.crt
+    grantsRefreshPeriodSeconds: 60 <8>
+    grantsRefreshPoolSize: 5 <9>
   #...
 ----
 <1> Type `keycloak` enables Keycloak authorization.
@@ -73,6 +76,8 @@ The default is `false`.
 <5> (Optional) Disable TLS hostname verification. Default is `false`.
 <6> (Optional) Designated xref:ref-kafka-authorization-super-user-deployment-configuration-kafka[super users].
 <7> (Optional) Trusted certificates for TLS connection to the authorization server.
+<8> (Optional) The time between two consecutive grants refresh runs. That is the maximum time for active sessions to detect any permissions changes for the user on Keycloak. The default value is 60.
+<9> (Optional) The number of threads to use to refresh (in parallel) the grants for the active sessions. The default value is 5.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 

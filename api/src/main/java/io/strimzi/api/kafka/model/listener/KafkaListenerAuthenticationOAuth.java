@@ -38,6 +38,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean checkIssuer = true;
     private String jwksEndpointUri;
     private Integer jwksRefreshSeconds;
+    private Integer jwksMinRefreshPauseSeconds;
     private Integer jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
@@ -50,6 +51,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
     private boolean enableECDSA = false;
+    private Integer maxSecondsWithoutReauthentication;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -120,6 +122,18 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setJwksRefreshSeconds(Integer jwksRefreshSeconds) {
         this.jwksRefreshSeconds = jwksRefreshSeconds;
+    }
+
+    @Description("The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.")
+    @Minimum(0)
+    @DefaultValue("1")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getJwksMinRefreshPauseSeconds() {
+        return jwksMinRefreshPauseSeconds;
+    }
+
+    public void setJwksMinRefreshPauseSeconds(Integer jwksMinRefreshPauseSeconds) {
+        this.jwksMinRefreshPauseSeconds = jwksMinRefreshPauseSeconds;
     }
 
     @Description("Configures how often are the JWKS certificates considered valid. " +
@@ -252,5 +266,17 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setUserInfoEndpointUri(String userInfoEndpointUri) {
         this.userInfoEndpointUri = userInfoEndpointUri;
+    }
+
+    @Description("Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. " +
+            "If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. " +
+            "Not set by default - the authenticated session does not expire when the access token expires.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getMaxSecondsWithoutReauthentication() {
+        return maxSecondsWithoutReauthentication;
+    }
+
+    public void setMaxSecondsWithoutReauthentication(Integer maxSecondsWithoutReauthentication) {
+        this.maxSecondsWithoutReauthentication = maxSecondsWithoutReauthentication;
     }
 }

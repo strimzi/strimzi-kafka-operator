@@ -254,44 +254,48 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 [options="header"]
 |====
-|Property                               |Description
-|accessTokenIsJwt                1.2+<.<|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+|Property                                  |Description
+|accessTokenIsJwt                   1.2+<.<|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
 |boolean
-|checkAccessTokenType            1.2+<.<|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+|checkAccessTokenType               1.2+<.<|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
 |boolean
-|checkIssuer                     1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
+|checkIssuer                        1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
 |boolean
-|clientId                        1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|clientId                           1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |string
-|clientSecret                    1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|clientSecret                       1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
+|disableTlsHostnameVerification     1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|enableECDSA                     1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+|enableECDSA                        1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
 |boolean
-|fallbackUserNameClaim           1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
+|fallbackUserNameClaim              1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string
-|fallbackUserNamePrefix          1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
+|fallbackUserNamePrefix             1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
 |string
-|introspectionEndpointUri        1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
+|introspectionEndpointUri           1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
-|jwksEndpointUri                 1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
+|jwksEndpointUri                    1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
 |string
-|jwksExpirySeconds               1.2+<.<|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+|jwksExpirySeconds                  1.2+<.<|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
 |integer
-|jwksRefreshSeconds              1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+|jwksMinRefreshPauseSeconds         1.2+<.<|The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
 |integer
-|tlsTrustedCertificates          1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
+|jwksRefreshSeconds                 1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+|integer
+|maxSecondsWithoutReauthentication  1.2+<.<|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+|integer
+|tlsTrustedCertificates             1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|type                            1.2+<.<|Must be `oauth`.
+|type                               1.2+<.<|Must be `oauth`.
 |string
-|userInfoEndpointUri             1.2+<.<|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
+|userInfoEndpointUri                1.2+<.<|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
 |string
-|userNameClaim                   1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
+|userNameClaim                      1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
 |string
-|validIssuerUri                  1.2+<.<|URI of the token issuer used for authentication.
+|validIssuerUri                     1.2+<.<|URI of the token issuer used for authentication.
 |string
-|validTokenType                  1.2+<.<|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
+|validTokenType                     1.2+<.<|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
 |string
 |====
 
@@ -789,8 +793,12 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|delegateToKafkaAcls             1.2+<.<|Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies.Default value is `false`.
+|delegateToKafkaAcls             1.2+<.<|Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
 |boolean
+|grantsRefreshPeriodSeconds      1.2+<.<|The time between two consecutive grants refresh runs in seconds. The default value is 60.
+|integer
+|grantsRefreshPoolSize           1.2+<.<|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
+|integer
 |superUsers                      1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
 |string array
 |====
