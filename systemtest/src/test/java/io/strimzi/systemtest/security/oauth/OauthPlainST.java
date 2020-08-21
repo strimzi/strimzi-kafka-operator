@@ -92,7 +92,7 @@ public class OauthPlainST extends OauthAbstractST {
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewKafkaClientAuthenticationOAuth()
-                        .withTokenEndpointUri(oauthTokenEndpointUri)
+                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                         .withClientId("kafka-connect")
                         .withNewClientSecret()
                             .withSecretName(CONNECT_OAUTH_SECRET)
@@ -129,20 +129,20 @@ public class OauthPlainST extends OauthAbstractST {
                     .editListeners()
                         .withNewPlain()
                             .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(validIssuerUri)
-                                .withJwksEndpointUri(jwksEndpointUri)
-                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                .withUserNameClaim(userNameClaim)
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
                             .endKafkaListenerAuthenticationOAuth()
                         .endPlain()
                         .withNewKafkaListenerExternalNodePort()
                             .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(validIssuerUri)
-                                .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                .withJwksEndpointUri(jwksEndpointUri)
-                                .withUserNameClaim(userNameClaim)
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
                             .endKafkaListenerAuthenticationOAuth()
                             .withTls(false)
                         .endKafkaListenerExternalNodePort()
@@ -159,7 +159,7 @@ public class OauthPlainST extends OauthAbstractST {
                         .withGroupId(ClientUtils.generateRandomConsumerGroup())
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                         .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                             .withClientId("kafka-mirror-maker")
                             .withNewClientSecret()
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
@@ -171,7 +171,7 @@ public class OauthPlainST extends OauthAbstractST {
                     .withNewProducer()
                         .withBootstrapServers(KafkaResources.plainBootstrapAddress(targetKafkaCluster))
                         .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                            .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                             .withClientId("kafka-mirror-maker")
                             .withNewClientSecret()
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
@@ -212,20 +212,20 @@ public class OauthPlainST extends OauthAbstractST {
                         .editListeners()
                             .withNewPlain()
                                 .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(validIssuerUri)
-                                    .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                    .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                    .withJwksEndpointUri(jwksEndpointUri)
-                                    .withUserNameClaim(userNameClaim)
+                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .endKafkaListenerAuthenticationOAuth()
                             .endPlain()
                             .withNewKafkaListenerExternalNodePort()
                                 .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(validIssuerUri)
-                                    .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                                    .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                                    .withJwksEndpointUri(jwksEndpointUri)
-                                    .withUserNameClaim(userNameClaim)
+                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .endKafkaListenerAuthenticationOAuth()
                                 .withTls(false)
                             .endKafkaListenerExternalNodePort()
@@ -239,7 +239,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .withAlias(kafkaSourceClusterName)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaSourceClusterName))
                 .withNewKafkaClientAuthenticationOAuth()
-                    .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                    .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .withClientId("kafka-mirror-maker-2")
                     .withNewClientSecret()
                         .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
@@ -252,7 +252,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .withAlias(kafkaTargetClusterName)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
                 .withNewKafkaClientAuthenticationOAuth()
-                    .withNewTokenEndpointUri(oauthTokenEndpointUri)
+                    .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .withClientId("kafka-mirror-maker-2")
                     .withNewClientSecret()
                         .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
@@ -292,7 +292,7 @@ public class OauthPlainST extends OauthAbstractST {
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
                     .withNewKafkaClientAuthenticationOAuth()
-                        .withTokenEndpointUri(oauthTokenEndpointUri)
+                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                         .withClientId("kafka-bridge")
                         .withNewClientSecret()
                             .withSecretName(BRIDGE_OAUTH_SECRET)
@@ -312,6 +312,7 @@ public class OauthPlainST extends OauthAbstractST {
     void testIntrospectionEndpointWithPlainCommunication() {
         LOGGER.info("Deploying kafka...");
 
+        keycloakInstance.setIntrospectionEndpointUri("http://" + keycloakInstance.getHttpUri() + "/auth/realms/internal/protocol/openid-connect/token/introspect");
         String introspectionKafka = CLUSTER_NAME + "-intro";
 
         KafkaResource.kafkaEphemeral(introspectionKafka, 1)
@@ -326,8 +327,8 @@ public class OauthPlainST extends OauthAbstractST {
                                     .withKey(OAUTH_KEY)
                                 .endClientSecret()
                                 .withAccessTokenIsJwt(false)
-                                .withValidIssuerUri(validIssuerUri)
-                                .withIntrospectionEndpointUri(introspectionEndpointUri)
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withIntrospectionEndpointUri(keycloakInstance.getIntrospectionEndpointUri())
                             .endKafkaListenerAuthenticationOAuth()
                             .withTls(false)
                         .endKafkaListenerExternalNodePort()
@@ -350,14 +351,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @BeforeAll
     void setUp() {
-        LOGGER.info("Replacing validIssuerUri: {} to pointing to internal realm", validIssuerUri);
-        LOGGER.info("Replacing jwksEndpointUri: {} to pointing to internal realm", jwksEndpointUri);
-        LOGGER.info("Replacing oauthTokenEndpointUri: {} to pointing to internal realm", oauthTokenEndpointUri);
-
-        validIssuerUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal";
-        jwksEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/certs";
-        oauthTokenEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/token";
-        introspectionEndpointUri = "http://" + keycloakIpWithPortHttp + "/auth/realms/internal/protocol/openid-connect/token/introspect";
+        keycloakInstance.setRealm("internal", false);
 
         LOGGER.info("Setting producer and consumer properties");
 
@@ -368,7 +362,7 @@ public class OauthPlainST extends OauthAbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withClientSecretName(OAUTH_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         LOGGER.info("Oauth kafka client has following settings {}", oauthExternalKafkaClient.toString());
@@ -381,11 +375,11 @@ public class OauthPlainST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().setPlain(
                 new KafkaListenerPlainBuilder()
                     .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(validIssuerUri)
-                        .withJwksEndpointUri(jwksEndpointUri)
-                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                        .withUserNameClaim(userNameClaim)
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
                     .endKafkaListenerAuthenticationOAuth()
                     .build());
 
@@ -393,11 +387,11 @@ public class OauthPlainST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().setExternal(
                 new KafkaListenerExternalNodePortBuilder()
                     .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(validIssuerUri)
-                        .withJwksEndpointUri(jwksEndpointUri)
-                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                        .withUserNameClaim(userNameClaim)
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
                     .endKafkaListenerAuthenticationOAuth()
                     .build());
 
