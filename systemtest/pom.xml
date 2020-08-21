@@ -240,10 +240,6 @@
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
-            <artifactId>config-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.strimzi</groupId>
             <artifactId>cluster-operator</artifactId>
             <version>0.20.0-SNAPSHOT</version>
             <scope>compile</scope>

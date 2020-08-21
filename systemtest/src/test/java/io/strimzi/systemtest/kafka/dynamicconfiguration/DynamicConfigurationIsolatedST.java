@@ -36,6 +36,7 @@ import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -92,6 +93,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     }
 
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(ROLLING_UPDATE)
     @Test
     void testUpdateToExternalListenerCausesRollingRestart() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
@@ -186,6 +188,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
             .editSpec()
