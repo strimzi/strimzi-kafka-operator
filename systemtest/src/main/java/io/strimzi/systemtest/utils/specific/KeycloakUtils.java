@@ -4,11 +4,16 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.strimzi.systemtest.Constants;
+import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class KeycloakUtils {
 
@@ -16,29 +21,56 @@ public class KeycloakUtils {
 
     private KeycloakUtils() {}
 
-    public static void waitUntilKeycloakCustomResourceReady(String namespace, String customResourceName, String readyStatus) {
-        TestUtils.waitFor("Keycloak CR will be ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+    public static DoneableDeployment deployKeycloak() {
+        String keycloakName = "keycloak";
 
-            LOGGER.info("Keycloak logs: {}", ResourceManager.cmdKubeClient().namespace(namespace).get("keycloak", customResourceName));
+        Map<String, String> keycloakLabels = new HashMap<>();
+        keycloakLabels.put("app", keycloakName);
 
-            if (ResourceManager.cmdKubeClient().namespace(namespace).get("keycloak", customResourceName).contains(readyStatus)) {
-                LOGGER.info("Keycloak custom resource is ready");
-                return true;
-            }
-            LOGGER.error("Keycloak custom resource is still not ready");
-            return false;
-        });
-    }
-
-    public static void waitUntilKeycloakCustomResourceDeletion(String namespace, String customResourceName) {
-        TestUtils.waitFor("Wait for Keycloak CR will be deleted", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-
-            if (ResourceManager.cmdKubeClient().namespace(namespace).get("keycloak", customResourceName) == null) {
-                LOGGER.info("Keycloak custom resource is successfully deleted");
-                return true;
-            }
-            LOGGER.error("Keycloak custom resource is still up");
-            return false;
-        });
+        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
+            .withNewMetadata()
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withLabels(keycloakLabels)
+                .withName(keycloakName)
+            .endMetadata()
+            .withNewSpec()
+                .withNewSelector()
+                    .withMatchLabels(keycloakLabels)
+                .endSelector()
+                .withReplicas(1)
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withLabels(keycloakLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withContainers()
+                        .addNewContainer()
+                            .withName(keycloakName + "pod")
+                            .withImage("jboss/keycloak:8.0.1")
+                            .withPorts(
+                                new ContainerPortBuilder()
+                                    .withName("http")
+                                    .withContainerPort(8080)
+                                    .build(),
+                                new ContainerPortBuilder()
+                                    .withName("https")
+                                    .withContainerPort(8443)
+                                    .build()
+                            )
+                            .addNewEnv()
+                                .withName("KEYCLOAK_USER")
+                                .withValue("admin")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("KEYCLOAK_PASSWORD")
+                                .withValue("admin")
+                            .endEnv()
+                            // for enabling importing authorization script
+                            .withArgs("-Dkeycloak.profile.feature.upload_scripts=enabled")
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build());
     }
 }

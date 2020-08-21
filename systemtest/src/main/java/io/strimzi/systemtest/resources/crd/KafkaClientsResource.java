@@ -436,59 +436,6 @@ public class KafkaClientsResource {
             .build());
     }
 
-    public static DoneableDeployment deployKeycloak() {
-        String keycloakName = "keycloak";
-
-        Map<String, String> keycloakLabels = new HashMap<>();
-        keycloakLabels.put("app", keycloakName);
-
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withLabels(keycloakLabels)
-                .withName(keycloakName)
-            .endMetadata()
-            .withNewSpec()
-                .withNewSelector()
-                    .withMatchLabels(keycloakLabels)
-                .endSelector()
-                .withReplicas(1)
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(keycloakLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers()
-                        .addNewContainer()
-                            .withName(keycloakName + "pod")
-                            .withImage("jboss/keycloak:8.0.1")
-                            .withPorts(
-                                new ContainerPortBuilder()
-                                    .withName("http")
-                                    .withContainerPort(8080)
-                                    .build(),
-                                new ContainerPortBuilder()
-                                    .withName("https")
-                                    .withContainerPort(8443)
-                                    .build()
-                            )
-                            .addNewEnv()
-                                .withName("KEYCLOAK_USER")
-                                .withValue("admin")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("KEYCLOAK_PASSWORD")
-                                .withValue("admin")
-                            .endEnv()
-                            // for enabling importing authorization script
-                            .withArgs("-Dkeycloak.profile.feature.upload_scripts=enabled")
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
-    }
-
     public static DoneableJob producerStrimzi(String producerName, String bootstrapServer, String topicName, int messageCount) {
         return producerStrimzi(producerName, bootstrapServer, topicName, messageCount, "");
     }

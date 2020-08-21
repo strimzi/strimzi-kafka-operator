@@ -10,9 +10,10 @@ import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.KeycloakResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +27,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -67,11 +69,9 @@ public class OauthAbstractST extends AbstractST {
         installClusterOperator(NAMESPACE);
         KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
 
-        KeycloakResource.keycloakOperator(NAMESPACE);
-
         LOGGER.info("Deploying keycloak...");
 
-        KeycloakResource.deployKeycloak(NAMESPACE);
+        KeycloakUtils.deployKeycloak().done();
 
         // https
         Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
@@ -83,11 +83,7 @@ public class OauthAbstractST extends AbstractST {
         KubernetesResource.createServiceResource(keycloakHttpService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakHttpService.getMetadata().getName());
 
-        Secret keycloakCredentials = kubeClient().getSecret("credential-example-keycloak");
-
-        keycloakInstance = new KeycloakInstance(
-            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_USERNAME"))),
-            new String(Base64.getDecoder().decode(keycloakCredentials.getData().get("ADMIN_PASSWORD"))));
+        keycloakInstance = new KeycloakInstance("admin", "admin");
         clusterHost = kubeClient().getNodeAddress();
 
         LOGGER.info("Importing basic realm");
@@ -95,6 +91,14 @@ public class OauthAbstractST extends AbstractST {
 
         LOGGER.info("Importing authorization realm");
         keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
+
+        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
+
+        String pubKey = ResourceManager.cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
+            "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key"
+            , "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
+
+        SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
