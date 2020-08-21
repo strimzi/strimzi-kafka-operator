@@ -274,5 +274,13 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>bridge</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>bridge</groups>
+            </properties>
+        </profile>
+
     </profiles>
 </project>
