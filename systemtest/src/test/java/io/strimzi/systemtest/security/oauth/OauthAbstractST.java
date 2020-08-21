@@ -4,13 +4,11 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
@@ -95,8 +93,8 @@ public class OauthAbstractST extends AbstractST {
         String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-0").get(0).getMetadata().getName();
 
         String pubKey = ResourceManager.cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-            "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key"
-            , "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
+            "/opt/jboss/keycloak/standalone/configuration/keystores/https-keystore.jks", "-alias", "keycloak-https-key",
+            "-storepass", keycloakInstance.getKeystorePassword(), "-rfc").out();
 
         SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
