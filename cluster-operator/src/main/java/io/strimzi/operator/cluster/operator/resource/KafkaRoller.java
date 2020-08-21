@@ -318,22 +318,26 @@ public class KafkaRoller {
         try (RestartPlan restartPlan = restartPlan(podId, pod)) {
             if (restartPlan.needsRestart || restartPlan.needsReconfig) {
                 if (deferController(podId, restartContext, restartPlan)) {
-                    log.debug("{}: Pod {} is controller and there are other pods to roll", reconciliation, podId);
-                    throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
-                } else {
-                    if (canRoll(restartPlan.adminClient(), podId, 60_000, TimeUnit.MILLISECONDS)) {
-                        // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                        if (!maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
-                            log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
-                            restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                        } else {
-                            // TODO do we need some check here that the broker is still OK?
-                            awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                        }
+                    if (!restartContext.backOff.done()) {
+                        log.debug("{}: Pod {} is controller and there are other pods to roll, so we wait a bit longer", reconciliation, podId);
+                        throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                     } else {
-                        log.debug("{}: Pod {} cannot be rolled right now", reconciliation, podId);
-                        throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
+                        log.debug("{}: Pod {} is controller and there are other pods to roll, but we are running out of time so we try if we can roll", reconciliation, podId);
                     }
+                }
+
+                if (canRoll(restartPlan.adminClient(), podId, 60_000, TimeUnit.MILLISECONDS)) {
+                    // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
+                    if (!maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
+                        log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
+                        restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                    } else {
+                        // TODO do we need some check here that the broker is still OK?
+                        awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                    }
+                } else {
+                    log.debug("{}: Pod {} cannot be rolled right now", reconciliation, podId);
+                    throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
                 }
             } else {
                 // By testing even pods which don't need needsRestart for readiness we prevent successive reconciliations

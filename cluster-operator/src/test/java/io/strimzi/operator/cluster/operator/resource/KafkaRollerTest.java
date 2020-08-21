@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -57,7 +56,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 
 @ExtendWith(VertxExtension.class)
 public class KafkaRollerTest {
@@ -345,6 +343,22 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testControllerAndOneMoreNeverRollable(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        StatefulSet sts = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null,
+                podOps,
+                null, null, null, null, null,
+            brokerId -> brokerId == 2 || brokerId == 3 ? succeededFuture(false) : succeededFuture(true),
+                2);
+        doFailingRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 is currently not rollable",
+                // We expect all non-controller pods to be rolled
+                asList(0, 1, 4));
+    }
+
+    @Test
     public void testRollHandlesErrorWhenGettingConfig(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -433,7 +447,8 @@ public class KafkaRollerTest {
                                  Collection<Integer> podsToRestart,
                                  Class<? extends Throwable> exception, String message,
                                  List<Integer> expectedRestart) throws InterruptedException {
-        CountDownLatch async = new CountDownLatch(1);
+        Checkpoint async = testContext.checkpoint();
+
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
                 return singletonList("roll");
@@ -444,12 +459,14 @@ public class KafkaRollerTest {
             .onComplete(testContext.failing(e -> testContext.verify(() -> {
                 assertThat(e.getClass() + " is not a subclass of " + exception.getName(), e, instanceOf(exception));
                 assertThat("The exception message was not as expected", e.getMessage(), is(message));
-                assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
+                assertThat("The restarted pods were not as expected => brokers or order differs", restarted(), is(expectedRestart));
                 assertNoUnclosedAdminClient(testContext, kafkaRoller);
-                testContext.completeNow();
-                async.countDown();
+                async.flag();
             })));
-        async.await();
+
+        if (!testContext.awaitCompletion(60, TimeUnit.SECONDS)) {
+            testContext.failNow(new Throwable("Test timeout"));
+        }
     }
 
     public List<Integer> restarted() {
