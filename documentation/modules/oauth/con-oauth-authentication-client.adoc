@@ -4,6 +4,7 @@
 
 [id='con-oauth-authentication-client-{context}']
 = OAuth 2.0 Kafka client configuration
+
 A Kafka client is configured with either:
 
 * The credentials required to obtain a valid access token from an authorization server (client ID and Secret)

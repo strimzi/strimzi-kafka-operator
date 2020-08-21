@@ -204,10 +204,17 @@ spec:
                               type: integer
                               minimum: 1
                               description: Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+                            jwksMinRefreshPauseSeconds:
+                              type: integer
+                              minimum: 0
+                              description: The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
                               description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            maxSecondsWithoutReauthentication:
+                              type: integer
+                              description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -350,10 +357,17 @@ spec:
                               type: integer
                               minimum: 1
                               description: Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+                            jwksMinRefreshPauseSeconds:
+                              type: integer
+                              minimum: 0
+                              description: The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
                               description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            maxSecondsWithoutReauthentication:
+                              type: integer
+                              description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -517,10 +531,17 @@ spec:
                               type: integer
                               minimum: 1
                               description: Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+                            jwksMinRefreshPauseSeconds:
+                              type: integer
+                              minimum: 0
+                              description: The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
                               description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            maxSecondsWithoutReauthentication:
+                              type: integer
+                              description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -735,13 +756,21 @@ spec:
                       description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
                     delegateToKafkaAcls:
                       type: boolean
-                      description: Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies.Default value is `false`.
+                      description: Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
                     disableTlsHostnameVerification:
                       type: boolean
                       description: Enable or disable TLS hostname verification. Default value is `false`.
                     expireAfterMs:
                       type: integer
                       description: The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
+                    grantsRefreshPeriodSeconds:
+                      type: integer
+                      minimum: 0
+                      description: The time between two consecutive grants refresh runs in seconds. The default value is 60.
+                    grantsRefreshPoolSize:
+                      type: integer
+                      minimum: 1
+                      description: The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
                     initialCacheCapacity:
                       type: integer
                       description: Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.
