@@ -393,12 +393,12 @@ public class Util {
         }
     }
 
-    public static String getLoggingAppenders(String loggingConfiguration) {
+    public static String getLoggingDynamicallyUnmodifiableEntries(String loggingConfiguration) {
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(loggingConfiguration);
         StringBuilder result = new StringBuilder();
         for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
-            if (entry.getKey().startsWith("log4j.appender")) {
+            if (!entry.getKey().startsWith("log4j.logger.")) {
                 result.append(entry.getKey()).append("=").append(entry.getValue());
             }
         }

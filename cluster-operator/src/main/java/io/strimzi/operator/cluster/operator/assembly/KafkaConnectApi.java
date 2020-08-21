@@ -116,7 +116,7 @@ public interface KafkaConnectApi {
     Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port);
 
     /**
-     * Make a {@code GET} request to {@code /admin/loggers}.
+     * Make a {@code GET} request to {@code /admin/loggers/$logger}.
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param desiredLogging Desired logging.
@@ -125,7 +125,15 @@ public interface KafkaConnectApi {
      */
     Future<Void> updateConnectLoggers(String host, int port, String desiredLogging);
 
-    Future<Map<String, Map<String, String>>> listConnectorLoggers(String host, int port);
+
+    /**
+     * Make a {@code GET} request to {@code /admin/loggers}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns the list of connect loggers.
+     */
+    Future<Map<String, Map<String, String>>> listConnectLoggers(String host, int port);
 }
 
 class ConnectRestException extends RuntimeException {

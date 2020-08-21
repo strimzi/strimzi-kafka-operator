@@ -377,7 +377,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<Map<String, Map<String, String>>> listConnectorLoggers(String host, int port) {
+    public Future<Map<String, Map<String, String>>> listConnectLoggers(String host, int port) {
         Promise<Map<String, Map<String, String>>> result = Promise.promise();
         HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
         String path = "/admin/loggers/";
@@ -449,7 +449,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @Override
     public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging) {
-        return listConnectorLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers));
+        return listConnectLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers));
     }
 
     /**

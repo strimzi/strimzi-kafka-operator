@@ -264,7 +264,7 @@ public class KafkaConnectApiTest {
 
         client.updateConnectLoggers("localhost", PORT, desired)
                 .onComplete(context.succeeding())
-                .compose(a -> client.listConnectorLoggers("localhost", PORT)
+                .compose(a -> client.listConnectLoggers("localhost", PORT)
                         .onComplete(context.succeeding(map -> context.verify(() -> {
                             assertThat(map.get("org.apache.zookeeper").get("level"), is("WARN"));
                             assertThat(map.get("org.I0Itec.zkclient").get("level"), is("INFO"));

@@ -177,7 +177,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.stringHash(Util.getLoggingAppenders(LOGGING_CONFIG)));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
                 assertThat(dc, is(connect.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -433,7 +433,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
                 Map<String, String> annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.stringHash(Util.getLoggingAppenders(loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG))));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG))));
                 assertThat(dc, is(compareTo.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -845,7 +845,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.stringHash(Util.getLoggingAppenders(LOGGING_CONFIG)));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
                 assertThat(dc, is(connect.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
