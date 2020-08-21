@@ -93,7 +93,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @Test
-    void testDynamicConfigurationWithExternalListeners() {
+    void testUpdateToExternalListenerCausesRollingRestart() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
@@ -186,7 +186,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testDynamicConfigurationExternalTls() {
+    void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()

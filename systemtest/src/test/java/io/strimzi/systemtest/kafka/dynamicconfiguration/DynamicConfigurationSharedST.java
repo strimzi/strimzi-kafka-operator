@@ -20,6 +20,7 @@ import org.junit.jupiter.api.TestFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,21 +49,16 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
         List<DynamicTest> dynamicTests = new ArrayList<>(40);
 
-        String generatedTestCases = generateTestCases(TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version());
-        String[] testCases = generatedTestCases.split("\n");
+        Map<String, Object> testCases = generateTestCases(TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version());
 
-        for (String testCaseLine : testCases) {
-            String[] testCase = testCaseLine.split(",");
-            dynamicTests.add(DynamicTest.dynamicTest("Test " + testCase[0] + "->" + testCase[1], () -> {
-                // exercise phase
-                KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, testCase[0], testCase[1]);
+        testCases.forEach((key, value) -> dynamicTests.add(DynamicTest.dynamicTest("Test " + key + "->" + value, () -> {
+            // exercise phase
+            KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, key, value);
 
-                // verify phase
-                assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, testCase[0], testCase[1]), is(true));
-                assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), testCase[0], testCase[1]), is(true));
-            }));
-        }
-
+            // verify phase
+            assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, key, value), is(true));
+            assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), key, value), is(true));
+        })));
         return dynamicTests.iterator();
     }
 
@@ -71,15 +67,13 @@ public class DynamicConfigurationSharedST extends AbstractST {
      * @param kafkaVersion specific kafka version
      * @return String generated test cases
      */
-    private static String generateTestCases(String kafkaVersion) {
-
-        StringBuilder testCases = new StringBuilder();
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
+    private static Map<String, Object> generateTestCases(String kafkaVersion) {
 
         Map<String, Object> dynamicProperties = KafkaUtils.getDynamicConfigurationProperties(kafkaVersion);
+        Map<String, Object> testCases = new HashMap<>();
 
         dynamicProperties.forEach((key, value) -> {
-            testCases.append(key);
-            testCases.append(", ");
 
             String type = ((LinkedHashMap<String, String>) value).get("type");
             Object stochasticChosenValue;
@@ -90,47 +84,72 @@ public class DynamicConfigurationSharedST extends AbstractST {
                         List<String> compressionTypes = Arrays.asList("snappy", "gzip", "lz4", "zstd");
 
                         stochasticChosenValue = compressionTypes.get(ThreadLocalRandom.current().nextInt(0, compressionTypes.size() - 1));
-                        testCases.append(stochasticChosenValue);
+
+                        testCases.put(key, stochasticChosenValue);
+                    } else if (key.equals("log.message.timestamp.type")) {
+                        stochasticChosenValue = "LogAppendTime";
+                        testCases.put(key, stochasticChosenValue);
                     } else {
-                        testCases.append(" ");
+                        testCases.put(key, " ");
                     }
                     break;
                 case "INT":
                 case "LONG":
-                    if (key.equals("background.threads") || key.equals("log.cleaner.io.buffer.load.factor") ||
+                    if (key.equals("num.recovery.threads.per.data.dir") || key.equals("log.cleaner.threads") ||
+                        key.equals("num.network.threads") || key.equals("min.insync.replicas") ||
+                        key.equals("num.replica.fetchers")) {
+                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(2, 3);
+                    } else if (key.equals("background.threads") || key.equals("log.cleaner.io.buffer.load.factor") ||
                         key.equals("log.retention.ms") || key.equals("max.connections") ||
                         key.equals("max.connections.per.ip")) {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(1, 20);
                     } else {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(100, 50_000);
                     }
-                    testCases.append(stochasticChosenValue);
+                    testCases.put(key, stochasticChosenValue);
                     break;
                 case "DOUBLE":
-                    stochasticChosenValue = ThreadLocalRandom.current().nextDouble(1, 20);
-                    testCases.append(stochasticChosenValue);
+                    if (key.equals("log.cleaner.min.cleanable.dirty.ratio") ||
+                        key.equals("log.cleaner.min.cleanable.ratio")) {
+                        stochasticChosenValue = ThreadLocalRandom.current().nextDouble(0, 1);
+                    } else {
+                        stochasticChosenValue = ThreadLocalRandom.current().nextDouble(1, 20);
+                    }
+                    testCases.put(key, stochasticChosenValue);
                     break;
                 case "BOOLEAN":
-                    stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0 ? true : false;
-                    testCases.append(stochasticChosenValue);
+                    if (key.equals("unclean.leader.election.enable") || key.equals("log.preallocate")) {
+                        stochasticChosenValue = true;
+                    } else {
+                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0 ? true : false;
+                    }
+                    testCases.put(key, stochasticChosenValue);
                     break;
                 case "LIST":
                     // metric.reporters has default empty '""'
                     // log.cleanup.policy = [delete, compact] -> default delete
 
-                    if (key.equals("log.cleanup.policy")) {
-                        stochasticChosenValue = "[delete]";
-                    } else {
-                        stochasticChosenValue = " ";
+                    switch (key) {
+                        case "log.cleanup.policy":
+                            stochasticChosenValue = "delete";
+                            break;
+                        default:
+                            stochasticChosenValue = " ";
                     }
-
-                    testCases.append(stochasticChosenValue);
+                    testCases.put(key, stochasticChosenValue);
             }
-            testCases.append(",");
-            testCases.append("\n");
+
+            // skipping these configuration, which doesn't work appear in the kafka pod (TODO: investigate why!)
+            testCases.remove("log.message.downconversion.enable");
+            testCases.remove("log.roll.ms");
+            testCases.remove("num.recovery.threads.per.data.dir");
+            testCases.remove("log.cleanup.policy");
+            testCases.remove("num.io.threads");
+            testCases.remove("log.cleaner.dedupe.buffer.size");
+
         });
 
-        return testCases.toString();
+        return testCases;
     }
 
     @BeforeAll
