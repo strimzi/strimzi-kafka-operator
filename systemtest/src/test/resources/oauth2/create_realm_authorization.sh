@@ -520,7 +520,7 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "resources": "[\"kafka-cluster:cluster2,Topic:b-*\"]",
+              "resources": "[\"Topic:b-*\"]",
               "applyPolicies": "[\"Dev Team B\"]"
             }
           },
@@ -665,3 +665,11 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
     }
   ]
 }'
+
+RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms/kafka-authz")
+if [[ ${RESULT} == *"Realm not found."* ]]; then
+  echo "[ERROR] Realm wasn't imported!"
+  exit 1
+fi
+
+echo "[INFO] Realm was successfully imported!"

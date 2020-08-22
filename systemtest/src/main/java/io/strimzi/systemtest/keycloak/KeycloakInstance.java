@@ -6,9 +6,6 @@ package io.strimzi.systemtest.keycloak;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,27 +45,6 @@ public class KeycloakInstance {
         this.oauthTokenEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/token";
         this.introspectionEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/token/introspect";
         this.userNameClaim = "preferred_username";
-    }
-
-    public void importRealm(String pathToScript) {
-        TestUtils.waitFor("Verify that kafka contains cruise control topics with related configuration.",
-            Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_TIMEOUT, () -> {
-
-                ExecResult result = Exec.exec(true, "/bin/bash", pathToScript, username, password, httpsUri);
-
-                LOGGER.info("This is out: {}", result.out());
-                LOGGER.info("This is err: {}", result.err());
-
-                if (result.err().contains("HTTP/2 201") && result.out().isEmpty()) {
-                    LOGGER.debug("Importing of realm succeed with code HTTP/2 201");
-                    return true;
-                } else if (result.err().contains("409 Conflict")) {
-                    LOGGER.debug("The Realm is already present!");
-                    return true;
-                }
-                LOGGER.error("Importing of realm failed gonna try it again.");
-                return false;
-            });
     }
 
     public void setRealm(String realmName, boolean tlsEnabled) {

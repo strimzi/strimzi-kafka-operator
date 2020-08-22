@@ -372,3 +372,11 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
         }
     ]
 }'
+
+RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms/internal")
+if [[ ${RESULT} == *"Realm not found."* ]]; then
+  echo "[ERROR] Realm wasn't imported!"
+  exit 1
+fi
+
+echo "[INFO] Realm was successfully imported!"
