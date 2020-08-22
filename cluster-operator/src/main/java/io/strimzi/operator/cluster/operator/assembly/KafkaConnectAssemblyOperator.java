@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -142,6 +143,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     }
                 })
                 .compose(i -> connectServiceAccount(namespace, connect))
+                .compose(i -> connectInitServiceAccount(namespace, connect))
+                .compose(i -> connectInitClusterRoleBinding(namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnect))))
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
@@ -183,5 +186,16 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return serviceAccountOperations.reconcile(namespace,
                 KafkaConnectResources.serviceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
+    }
+
+    private Future<ReconcileResult<ServiceAccount>> connectInitServiceAccount(String namespace, KafkaConnectCluster connectCluster) {
+        return serviceAccountOperations.reconcile(namespace,
+                KafkaConnectCluster.initContainerServiceAccountName(connectCluster.getCluster()),
+                connectCluster.generateServiceAccount());
+    }
+
+    Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connectCluster) {
+        ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding(namespace);
+        return clusterRoleBindingOperations.reconcile(KafkaConnectCluster.initContainerClusterRoleBindingName(namespace, name), desired);
     }
 }
