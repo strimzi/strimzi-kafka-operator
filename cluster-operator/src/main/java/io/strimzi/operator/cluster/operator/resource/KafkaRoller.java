@@ -661,9 +661,7 @@ public class KafkaRoller {
                 KafkaFuture<Node> controller = describeClusterResult.controller();
                 controllerNode = controller.get(timeout, unit);
                 restartContext.clearConnectionError();
-            } catch (ExecutionException e) {
-                maybeTcpProbe(podId, e, restartContext);
-            } catch (TimeoutException e) {
+            } catch (ExecutionException | TimeoutException e) {
                 maybeTcpProbe(podId, e, restartContext);
             }
             int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
