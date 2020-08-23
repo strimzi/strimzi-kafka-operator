@@ -424,8 +424,10 @@ public class KafkaRoller {
         } catch (ForceableProblem e) {
             if (restartContext.backOff.done()) {
                 needsRestart = true;
+                brokerConfig = null;
+            } else {
+                throw e;
             }
-            brokerConfig = null;
         }
         if (!needsRestart) {
             log.trace("{}: Broker {}: description {}", reconciliation, podId, brokerConfig);
