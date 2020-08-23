@@ -92,7 +92,7 @@ public class KafkaRollerTest {
         return "ns";
     }
 
-    private static <E extends Throwable> Function<Integer, E> noException() {
+    private static <X, E extends Throwable> Function<X, E> noException() {
         return podId -> null;
     }
 
@@ -225,7 +225,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-            null, null,
+                noException(), null,
             podId -> new RuntimeException("Test Exception"), noException(), noException(),
             brokerId -> succeededFuture(true),
             2);
@@ -241,7 +241,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-            null,
+            noException(),
             new RuntimeException("Test Exception"), noException(), noException(), noException(),
             brokerId -> succeededFuture(true),
             2);
@@ -258,7 +258,7 @@ public class KafkaRollerTest {
         StatefulSet sts = buildStatefulSet();
         AtomicInteger count = new AtomicInteger(3);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-            null, null, noException(), noException(), noException(),
+                noException(), null, noException(), noException(), noException(),
             brokerId ->
                     brokerId == 1 ? succeededFuture(count.getAndDecrement() == 0)
                             : succeededFuture(true),
@@ -276,7 +276,7 @@ public class KafkaRollerTest {
         StatefulSet sts = buildStatefulSet();
         AtomicInteger count = new AtomicInteger(2);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-            null, null, noException(), noException(), noException(),
+                noException(), null, noException(), noException(), noException(),
             brokerId -> {
                 if (brokerId == 2) {
                     boolean b = count.getAndDecrement() == 0;
@@ -297,7 +297,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-            null, null, noException(), noException(), noException(),
+                noException(), null, noException(), noException(), noException(),
             brokerId ->
                     brokerId == 1 ? succeededFuture(false)
                             : succeededFuture(true),
@@ -309,7 +309,7 @@ public class KafkaRollerTest {
                 asList(0, 3, 4, 2));
         // TODO assert subsequent rolls
         kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-            null, null, noException(), noException(), noException(),
+                noException(), null, noException(), noException(), noException(),
             brokerId -> succeededFuture(brokerId != 1),
             2);
         clearRestarted();
@@ -326,7 +326,7 @@ public class KafkaRollerTest {
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null,
                 podOps,
-            null, null, noException(), noException(), noException(),
+                noException(), null, noException(), noException(), noException(),
             brokerId ->
                     brokerId == 2 ? succeededFuture(false)
                             : succeededFuture(true),
@@ -339,7 +339,7 @@ public class KafkaRollerTest {
         clearRestarted();
         kafkaRoller = new TestingKafkaRoller(sts, null, null,
             podOps,
-            null, null, noException(), noException(), noException(),
+                noException(), null, noException(), noException(), noException(),
             brokerId -> succeededFuture(brokerId != 2),
             2);
         doFailingRollingRestart(testContext, kafkaRoller,
@@ -354,7 +354,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-                null, null,
+                noException(), null,
                 noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
             brokerId -> succeededFuture(true), 2);
         // The algorithm should carry on rolling the pods
@@ -368,7 +368,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-                null, null,
+                noException(), null,
                 noException(), podId -> new KafkaRoller.ForceableProblem("could not get alter exception"), noException(),
             brokerId -> succeededFuture(true), 2);
         // The algorithm should carry on rolling the pods
@@ -382,7 +382,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-                null, null,
+                noException(), null,
                 noException(), noException(), noException(),
             brokerId -> succeededFuture(true), 2);
         // The algorithm should carry on rolling the pods
@@ -392,7 +392,7 @@ public class KafkaRollerTest {
 
     private TestingKafkaRoller rollerWithControllers(StatefulSet sts, PodOperator podOps, int... controllers) {
         return new TestingKafkaRoller(sts, null, null, podOps,
-            null, null, noException(), noException(), noException(),
+                noException(), null, noException(), noException(), noException(),
             brokerId -> succeededFuture(true),
             controllers);
     }
