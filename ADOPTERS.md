@@ -7,7 +7,8 @@
 * [IBM](https://www.ibm.com/cloud/event-streams)
 * [Lightbend](https://www.lightbend.com/)
 * [Marlow Navigation](https://marlow-navigation.com/)
-* [Red Hat](https://www.redhat.com/en/resources/amq-streams-datasheet)
+* [Red Hat](https://www.redhat.com/en/)
+    * [AMQ Streams](https://www.redhat.com/en/resources/amq-streams-datasheet)
 * [SBB CFF FFS](https://www.sbb.ch/en/home.html)
 
 Are you currently using Strimzi in production?
