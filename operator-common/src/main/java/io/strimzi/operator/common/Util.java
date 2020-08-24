@@ -373,6 +373,11 @@ public class Util {
         return new ConfigResource(ConfigResource.Type.BROKER, podId);
     }
 
+    /**
+     * Computes and returns a hash from the String
+     * @param toBeHashed String to be hashed
+     * @return hash
+     */
     public static String stringHash(String toBeHashed)  {
         try {
             MessageDigest hashFunc = MessageDigest.getInstance("SHA");
@@ -393,6 +398,11 @@ public class Util {
         }
     }
 
+    /**
+     * Method parses all dynamically unchangeable entries from the logging configuration.
+     * @param loggingConfiguration logging configuration to be parsed
+     * @return String containing all unmodifiable entries.
+     */
     public static String getLoggingDynamicallyUnmodifiableEntries(String loggingConfiguration) {
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(loggingConfiguration);
