@@ -12,11 +12,14 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
@@ -548,6 +551,84 @@ class LoggingChangeST extends AbstractST {
         String coLog = StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
         assertThat(coLog, is(not(emptyString())));
         assertThat(coLog.contains("INFO"), is(true));
+    }
+
+    @Test
+    void testDynamicallySetConnectLoggingLevels() throws InterruptedException {
+        InlineLogging ilOff = new InlineLogging();
+        Map<String, String> loggers = new HashMap<>();
+        loggers.put("log4j.rootLogger", "OFF");
+        ilOff.setLoggers(loggers);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+                .editSpec()
+                .withInlineLogging(ilOff)
+                .endSpec()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .endMetadata()
+                .done();
+
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+
+        LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+        InlineLogging ilDebug = new InlineLogging();
+        loggers.put("log4j.rootLogger", "DEBUG");
+        ilDebug.setLoggers(loggers);
+
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, conn -> {
+            conn.getSpec().setLogging(ilDebug);
+        });
+
+        cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+                + ":8083/admin/loggers/root").out().contains("DEBUG");
+
+        LOGGER.info("Waiting for log4j.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+                        + ":8083/admin/loggers/root").out().contains("DEBUG")
+        );
+
+        String log4jConfig =
+                "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=OFF, CONSOLE\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
+                        "log4j.logger.org.reflections=ERROR";
+
+        String externalCmName = "external-cm";
+
+        ConfigMap connectLoggingMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .addToLabels("app", "strimzi")
+                .withName(externalCmName)
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", log4jConfig))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(connectLoggingMap);
+
+        ExternalLogging connectXternalLogging = new ExternalLoggingBuilder()
+                .withName(externalCmName)
+                .build();
+
+        LOGGER.info("Setting log level of Bridge to OFF - records should not appear in the log");
+        // change to the external logging
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, conn -> {
+            conn.getSpec().setLogging(connectXternalLogging);
+        });
+
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+                        + ":8083/admin/loggers/root").out().contains("OFF")
+        );
+
+        assertThat("Connect pod should not roll", DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME)), equalTo(connectSnapshot));
     }
 
     @BeforeAll

@@ -398,7 +398,7 @@ public class Util {
         ops.addStringPairs(loggingConfiguration);
         StringBuilder result = new StringBuilder();
         for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
-            if (!entry.getKey().startsWith("log4j.logger.") && !entry.getKey().equals("log4j.rootLogger")) {
+            if (!entry.getKey().startsWith("log4j.logger.") && !entry.getKey().equals("log4j.rootLogger") && !entry.getKey().equals("monitorInterval")) {
                 result.append(entry.getKey()).append("=").append(entry.getValue());
             }
         }

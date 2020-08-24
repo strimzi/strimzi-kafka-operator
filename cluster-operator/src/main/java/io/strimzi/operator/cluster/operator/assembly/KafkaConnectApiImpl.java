@@ -411,7 +411,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         Map<String, String> updateLoggers = new LinkedHashMap<>();
         fetchedLoggers.entrySet().forEach(entry -> {
             // set all logger levels to OFF
-            updateLoggers.put(entry.getKey(), "OFF");
+            if (entry.getKey().startsWith("log4j.logger.")) {
+                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), "OFF");
+            } else {
+                updateLoggers.put(entry.getKey(), "OFF");
+            }
         });
 
         OrderedProperties ops = new OrderedProperties();
@@ -420,7 +424,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             // set desired loggers to desired levels
             if (entry.getKey().equals("log4j.rootLogger")) {
                 updateLoggers.put("root", entry.getValue());
-            } else if (!entry.getKey().startsWith("log4j.appender.")) {
+            } else if (entry.getKey().startsWith("log4j.logger.")) {
                 updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
             }
         });
