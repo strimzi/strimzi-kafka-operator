@@ -429,18 +429,16 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null,
-                podOps,
-                noException(), null, noException(), noException(), noException(),
-                brokerId -> brokerId == 2 || brokerId == 3 ? succeededFuture(false) : succeededFuture(true),
-                2);
+            podOps,
+            noException(), null, noException(), noException(), noException(),
+            brokerId -> brokerId == 2 || brokerId == 3 ? succeededFuture(false) : succeededFuture(true),
+            2);
         doFailingRollingRestart(testContext, kafkaRoller,
-                asList(0, 1, 2, 3, 4),
-                KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is currently the controller and there are other pods still to roll",
-                // We expect all non-controller pods to be rolled
-                asList(0, 1, 4));
+            asList(0, 1, 2, 3, 4),
+            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is currently the controller and there are other pods still to roll",
+            // We expect all non-controller pods to be rolled
+            asList(0, 1, 4));
     }
-
-
 
     private TestingKafkaRoller rollerWithControllers(StatefulSet sts, PodOperator podOps, int... controllers) {
         return new TestingKafkaRoller(sts, null, null, podOps,
