@@ -244,10 +244,10 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-                noException(), null,
-                podId -> podId == controller ? new RuntimeException("Test Exception") : null, noException(), noException(),
-                brokerId -> succeededFuture(true),
-                controller);
+            noException(), null,
+            podId -> podId == controller ? new RuntimeException("Test Exception") : null, noException(), noException(),
+            brokerId -> succeededFuture(true),
+            controller);
         // The algorithm should carry on rolling the pods (errors are logged),
         // because we never find the controller we get ascending order
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -388,9 +388,9 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, podOps,
-                noException(), null,
-                noException(), noException(), podId -> podId == controller ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
-                brokerId -> succeededFuture(true), controller);
+            noException(), null,
+            noException(), noException(), podId -> podId == controller ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
+            brokerId -> succeededFuture(true), controller);
         // The algorithm should carry on rolling the pods
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
