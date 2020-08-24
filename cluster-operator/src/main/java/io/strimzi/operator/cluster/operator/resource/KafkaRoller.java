@@ -654,6 +654,7 @@ public class KafkaRoller {
      * @return A future which completes the the node id of the controller of the cluster,
      * or -1 if there is not currently a controller.
      */
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
     int controller(int podId, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
         // Don't use all allClient here, because it will have cache metadata about which is the controller.
         try (Admin ac = adminClient(singletonList(podId), true)) {
