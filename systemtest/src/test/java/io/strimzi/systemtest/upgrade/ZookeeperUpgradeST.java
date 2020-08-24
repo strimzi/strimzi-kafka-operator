@@ -46,6 +46,7 @@ public class ZookeeperUpgradeST extends AbstractST {
 
     @Test
     void testKafkaClusterUpgrade(TestInfo testinfo) {
+        LOGGER.info("test");
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
