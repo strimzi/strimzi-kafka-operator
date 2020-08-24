@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -65,7 +66,7 @@ public class KafkaConnectorResource {
     }
 
     public static void deleteKafkaConnectorWithoutWait(String connectorName) {
-        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).cascading(true).delete();
+        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {

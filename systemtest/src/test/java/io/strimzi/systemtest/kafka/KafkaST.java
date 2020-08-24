@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
@@ -1972,7 +1973,7 @@ class KafkaST extends AbstractST {
     @Override
     protected void tearDownEnvironmentAfterEach() throws Exception {
         super.tearDownEnvironmentAfterEach();
-        kubeClient().getClient().customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).delete();
+        kubeClient().getClient().customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).delete();
         kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
 }

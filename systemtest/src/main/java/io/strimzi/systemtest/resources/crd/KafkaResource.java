@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -235,7 +236,7 @@ public class KafkaResource {
      * @param resourceName kafka cluster name
      */
     public static void deleteKafkaWithoutWait(String resourceName) {
-        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
+        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath) {

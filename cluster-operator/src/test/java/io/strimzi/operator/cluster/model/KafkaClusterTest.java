@@ -347,7 +347,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         StatefulSet sts = kc.generateStatefulSet(false, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount(), is(sizeLimit));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
     @Test
@@ -1586,15 +1586,15 @@ public class KafkaClusterTest {
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
-        assertThat(rules.get(0).getFrom().size(), is(0));
+        assertThat(rules.get(0).getFrom(), is(nullValue()));
 
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_TLS_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
-        assertThat(rules.get(0).getFrom().size(), is(0));
+        assertThat(rules.get(0).getFrom(), is(nullValue()));
 
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.EXTERNAL_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
-        assertThat(rules.get(0).getFrom().size(), is(0));
+        assertThat(rules.get(0).getFrom(), is(nullValue()));
     }
 
     @Test
@@ -1705,7 +1705,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         StatefulSet sts = kc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test

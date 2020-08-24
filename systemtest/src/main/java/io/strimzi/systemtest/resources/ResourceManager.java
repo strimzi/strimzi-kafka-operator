@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -132,7 +133,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((Kafka) resource);
                 });
@@ -143,7 +144,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaConnect) resource);
                 });
@@ -154,7 +155,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
@@ -165,7 +166,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
@@ -176,7 +177,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker2) resource);
                 });
@@ -187,7 +188,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaBridge) resource);
                 });
@@ -226,7 +227,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     kubeClient().deleteIngress((Ingress) resource);
                 });
@@ -237,7 +238,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                 });
         }

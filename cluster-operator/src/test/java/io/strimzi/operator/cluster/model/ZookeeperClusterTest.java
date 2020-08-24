@@ -140,7 +140,7 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(headful.getMetadata().getAnnotations().size(), is(0));
+        assertThat(headful.getMetadata().getAnnotations(), is(nullValue()));
 
         checkOwnerReference(zc.createOwnerReference(), headful);
     }
@@ -164,9 +164,7 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
-        assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"), is(false));
-        assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"), is(false));
-        assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
+        assertThat(headful.getMetadata().getAnnotations(), is(nullValue()));
 
         checkOwnerReference(zc.createOwnerReference(), headful);
     }
@@ -559,7 +557,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -931,7 +929,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount(), is(sizeLimit));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
     @Test

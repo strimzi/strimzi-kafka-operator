@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -316,7 +317,7 @@ class CustomResourceStatusST extends AbstractST {
 
         KafkaConnectorUtils.waitForConnectorNotReady(CLUSTER_NAME);
 
-        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).cascading(true).delete();
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     @Test

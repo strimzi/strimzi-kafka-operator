@@ -43,7 +43,7 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
 
         return new ClusterRoleBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withLabels(singletonMap("state", "new"))
                 .endMetadata()
                 .withRules(rule)
@@ -60,7 +60,7 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
 
         return new ClusterRoleBuilder()
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
+                .withName(resourceName)
                 .withLabels(singletonMap("state", "modified"))
                 .endMetadata()
                 .withRules(rule)

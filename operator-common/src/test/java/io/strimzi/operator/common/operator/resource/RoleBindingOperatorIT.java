@@ -49,7 +49,7 @@ public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<Kubernetes
 
         return new RoleBindingBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withNamespace(namespace)
                     .withLabels(singletonMap("state", "new"))
                 .endMetadata()
@@ -75,7 +75,7 @@ public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<Kubernetes
 
         return new RoleBindingBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withNamespace(namespace)
                     .withLabels(singletonMap("state", "modified"))
                 .endMetadata()
