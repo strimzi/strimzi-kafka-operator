@@ -1376,7 +1376,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.zkMetricsAndLogsConfigMap = zkCluster.generateConfigurationConfigMap(logAndMetricsConfigMap);
 
                         String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-                        this.zkLoggingHash = getStringHash(loggingConfiguration);
+                        this.zkLoggingHash = Util.stringHash(loggingConfiguration);
 
                         return Future.succeededFuture(this);
                     });
@@ -2271,12 +2271,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String brokerConfiguration = brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
             brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_PORTS_FILENAME, "");
 
-            this.kafkaBrokerConfigurationHash = getStringHash(brokerConfiguration);
+            this.kafkaBrokerConfigurationHash = Util.stringHash(brokerConfiguration);
             KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration());
-            this.kafkaBrokerConfigurationHash += getStringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
+            this.kafkaBrokerConfigurationHash += Util.stringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
 
             String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-            this.kafkaLoggingHash = getStringHash(loggingConfiguration);
+            this.kafkaLoggingHash = Util.stringHash(loggingConfiguration);
 
             return brokerCm;
         }
@@ -3475,23 +3475,4 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new Date();
     }
 
-    private String getStringHash(String toBeHashed)  {
-        try {
-            MessageDigest hashFunc = MessageDigest.getInstance("SHA-512");
-
-            byte[] hash = hashFunc.digest(toBeHashed.getBytes(StandardCharsets.UTF_8));
-
-            StringBuffer stringHash = new StringBuffer();
-
-            for (int i = 0; i < hash.length; i++) {
-                String hex = Integer.toHexString(0xff & hash[i]);
-                if (hex.length() == 1) stringHash.append('0');
-                stringHash.append(hex);
-            }
-
-            return stringHash.toString();
-        } catch (NoSuchAlgorithmException e)    {
-            throw new RuntimeException("Failed to create SHA-512 MessageDigest instance");
-        }
-    }
 }

@@ -4,8 +4,17 @@ Use `KafkaConnectSpec` properties to configure a Kafka Connect cluster.
 .`logging`
 Kafka Connect has its own configurable loggers:
 
-* `connect.root.logger.level`
+* `log4j.rootLogger`
 * `log4j.logger.org.reflections`
+
+Further loggers are added depending on the Kafka Connect plugins running.
+
+Use a curl request to get a complete list of Kafka Connect loggers running from any Kafka broker pod:
+
+[source,curl,subs=attributes+]
+----
+curl -s http://<connect-cluster-name>-connect-api:8083/admin/loggers/
+----
 
 Kafka Connect uses the Apache `log4j` logger implementation.
 
@@ -27,7 +36,7 @@ spec:
   logging:
     type: inline
     loggers:
-      connect.root.logger.level: "INFO"
+      log4j.rootLogger: "INFO"
   # ...
 ----
 
@@ -43,6 +52,12 @@ spec:
     name: customConfigMap
   # ...
 ----
+
+Any available loggers that are not configured have their level set to `OFF`.
+
+Changes to Kafka Connect logging levels are applied dynamically.
+
+If you use external logging, a rolling update is triggered when logging appenders are changed.
 
 .Garbage collector (GC)
 
