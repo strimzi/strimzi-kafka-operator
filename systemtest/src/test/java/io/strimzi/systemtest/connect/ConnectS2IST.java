@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.connect;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -342,7 +343,7 @@ class ConnectS2IST extends AbstractST {
         TestUtils.waitFor("build status: Pending", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").get().getStatus().getPhase().equals("Pending"));
 
-        kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").cascading(true).delete();
+        kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
         KafkaConnectS2IResource.replaceConnectS2IResource(kafkaConnectS2IName, kc -> {
             kc.getSpec().setBuildResources(new ResourceRequirementsBuilder()

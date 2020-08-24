@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.DoneableServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
@@ -72,7 +73,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         ServiceAccount resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.cascading(cascade)).thenReturn(mockResource);
+        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
