@@ -4,32 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-
-import static java.util.Arrays.asList;
 
 /**
  * A Java client for the Kafka Connect REST API.
@@ -133,6 +114,26 @@ public interface KafkaConnectApi {
      * this returns the list of connector plugins.
      */
     Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port);
+
+    /**
+     * Make a {@code GET} request to {@code /admin/loggers/$logger}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param desiredLogging Desired logging.
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns the list of connector loggers.
+     */
+    Future<Void> updateConnectLoggers(String host, int port, String desiredLogging);
+
+
+    /**
+     * Make a {@code GET} request to {@code /admin/loggers}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns the list of connect loggers.
+     */
+    Future<Map<String, Map<String, String>>> listConnectLoggers(String host, int port);
 }
 
 class ConnectRestException extends RuntimeException {
@@ -161,312 +162,3 @@ class ConnectRestException extends RuntimeException {
     }
 }
 
-@SuppressWarnings({"deprecation"})
-class KafkaConnectApiImpl implements KafkaConnectApi {
-    private static final Logger log = LogManager.getLogger(KafkaConnectApiImpl.class);
-    public static final TypeReference<Map<String, Object>> TREE_TYPE = new TypeReference<Map<String, Object>>() {
-    };
-    public static final TypeReference<Map<String, String>> MAP_OF_STRINGS = new TypeReference<Map<String, String>>() {
-    };
-    private final Vertx vertx;
-
-    public KafkaConnectApiImpl(Vertx vertx) {
-        this.vertx = vertx;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public Future<Map<String, Object>> createOrUpdatePutRequest(
-            String host, int port,
-            String connectorName, JsonObject configJson) {
-        Promise<Map<String, Object>> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-        Buffer data = configJson.toBuffer();
-        String path = "/connectors/" + connectorName + "/config";
-        log.debug("Making PUT request to {} with body {}", path, configJson);
-        vertx.createHttpClient(options)
-                .put(port, host, path, response -> {
-                    response.exceptionHandler(error -> {
-                        result.fail(error);
-                    });
-                    if (response.statusCode() == 200 || response.statusCode() == 201) {
-                        response.bodyHandler(buffer -> {
-                            ObjectMapper mapper = new ObjectMapper();
-                            try {
-                                Map t = mapper.readValue(buffer.getBytes(), Map.class);
-                                log.debug("Got {} response to PUT request to {}: {}", response.statusCode(), path, t);
-                                result.complete(t);
-                            } catch (IOException e) {
-                                result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
-                            }
-                        });
-                    } else {
-                        // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                        log.debug("Got {} response to PUT request to {}", response.statusCode(), path);
-                        response.bodyHandler(buffer -> {
-                            JsonObject x = buffer.toJsonObject();
-                            result.fail(new ConnectRestException(response, x.getString("message")));
-                        });
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .putHeader("Content-Type", "application/json")
-                .putHeader("Content-Length", String.valueOf(data.length()))
-                .write(data)
-                .end();
-        return result.future();
-    }
-
-    @Override
-    public Future<Map<String, Object>> getConnector(
-            String host, int port,
-            String connectorName) {
-        return doGet(host, port, String.format("/connectors/%s", connectorName),
-                new HashSet<>(asList(200, 201)),
-                TREE_TYPE);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> Future<T> doGet(String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
-        Promise<T> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-        log.debug("Making GET request to {}", path);
-        vertx.createHttpClient(options)
-                .get(port, host, path, response -> {
-                    response.exceptionHandler(error -> {
-                        result.fail(error);
-                    });
-                    if (okStatusCodes.contains(response.statusCode())) {
-                        response.bodyHandler(buffer -> {
-                            ObjectMapper mapper = new ObjectMapper();
-                            try {
-                                T t = mapper.readValue(buffer.getBytes(), type);
-                                log.debug("Got {} response to GET request to {}: {}", response.statusCode(), path, t);
-                                result.complete(t);
-                            } catch (IOException e) {
-                                result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
-                            }
-                        });
-                    } else {
-                        // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                        log.debug("Got {} response to GET request to {}", response.statusCode(), path);
-                        response.bodyHandler(buffer -> {
-                            JsonObject x = buffer.toJsonObject();
-                            result.fail(new ConnectRestException(response, x.getString("message")));
-                        });
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end();
-        return result.future();
-    }
-
-    @Override
-    public Future<Map<String, String>> getConnectorConfig(
-            String host, int port,
-            String connectorName) {
-        return doGet(host, port, String.format("/connectors/%s/config", connectorName),
-                new HashSet<>(asList(200, 201)),
-                MAP_OF_STRINGS);
-    }
-
-    @Override
-    public Future<Map<String, String>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName) {
-        return withBackoff(backOff, connectorName, Collections.singleton(409),
-            () -> getConnectorConfig(host, port, connectorName), "config");
-    }
-
-    @Override
-    public Future<Void> delete(String host, int port, String connectorName) {
-        Promise<Void> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-        String path = "/connectors/" + connectorName;
-        vertx.createHttpClient(options)
-                .delete(port, host, path, response -> {
-                    if (response.statusCode() == 204) {
-                        result.complete();
-                    } else {
-                        // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                        response.bodyHandler(buffer -> {
-                            JsonObject x = buffer.toJsonObject();
-                            result.fail(new ConnectRestException(response, x.getString("message")));
-                        });
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .putHeader("Content-Type", "application/json")
-                .end();
-        return result.future();
-    }
-
-    @Override
-    public Future<Map<String, Object>> statusWithBackOff(BackOff backOff, String host, int port, String connectorName) {
-        return withBackoff(backOff, connectorName, Collections.singleton(404),
-            () -> status(host, port, connectorName), "status");
-    }
-
-    private <T> Future<T> withBackoff(BackOff backOff, String connectorName,
-                                                    Set<Integer> retriableStatusCodes,
-                                                    Supplier<Future<T>> supplier,
-                                                    String attribute) {
-        Promise<T> result = Promise.promise();
-
-        Handler<Long> handler = new Handler<Long>() {
-            @Override
-            public void handle(Long tid) {
-                supplier.get().onComplete(connectorStatus -> {
-                    if (connectorStatus.succeeded()) {
-                        result.complete(connectorStatus.result());
-                    } else {
-                        Throwable cause = connectorStatus.cause();
-                        if (cause != null
-                                && cause instanceof ConnectRestException
-                                && retriableStatusCodes.contains(((ConnectRestException) cause).getStatusCode())) {
-                            if (backOff.done()) {
-                                log.debug("Connector {} {} returned HTTP {} and we run out of back off time", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
-                                result.fail(cause);
-                            } else {
-                                log.debug("Connector {} {} returned HTTP {} - backing off", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
-                                rescheduleOrComplete(tid);
-                            }
-                        } else {
-                            result.fail(cause);
-                        }
-                    }
-                });
-            }
-
-            void rescheduleOrComplete(Long tid) {
-                if (backOff.done()) {
-                    log.warn("Giving up waiting for status of connector {} after {} attempts taking {}ms",
-                            connectorName,  backOff.maxAttempts(), backOff.totalDelayMs());
-                } else {
-                    // Schedule ourselves to run again
-                    long delay = backOff.delayMs();
-                    log.debug("Status for connector {} not found; " +
-                                    "backing off for {}ms (cumulative {}ms)",
-                            connectorName, delay, backOff.cumulativeDelayMs());
-                    if (delay < 1) {
-                        this.handle(tid);
-                    } else {
-                        vertx.setTimer(delay, this);
-                    }
-                }
-            }
-        };
-
-        handler.handle(null);
-        return result.future();
-    }
-
-    @Override
-    public Future<Map<String, Object>> status(String host, int port, String connectorName) {
-        String path = "/connectors/" + connectorName + "/status";
-        return doGet(host, port, path, Collections.singleton(200), TREE_TYPE);
-    }
-
-    @Override
-    public Future<Void> pause(String host, int port, String connectorName) {
-        return pauseResume(host, port, "/connectors/" + connectorName + "/pause");
-    }
-
-    @Override
-    public Future<Void> resume(String host, int port, String connectorName) {
-        return pauseResume(host, port, "/connectors/" + connectorName + "/resume");
-    }
-
-    private Future<Void> pauseResume(String host, int port, String path) {
-        Promise<Void> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-        vertx.createHttpClient(options)
-                .put(port, host, path, response -> {
-                    response.exceptionHandler(error -> {
-                        result.fail(error);
-                    });
-                    if (response.statusCode() == 202) {
-                        result.complete();
-                    } else {
-                        result.fail("Unexpected status code " + response.statusCode()
-                                + " for GET request to " + host + ":" + port + path);
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end();
-        return result.future();
-    }
-
-    @Override
-    public Future<List<String>> list(String host, int port) {
-        String path = "/connectors";
-        Promise<List<String>> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-
-        vertx.createHttpClient(options)
-                .get(port, host, path, response -> {
-                    response.exceptionHandler(error -> {
-                        result.fail(error);
-                    });
-                    if (response.statusCode() == 200) {
-                        response.bodyHandler(buffer -> {
-                            JsonArray objects = buffer.toJsonArray();
-                            List<String> list = new ArrayList<>(objects.size());
-                            for (Object o : objects) {
-                                if (o instanceof String) {
-                                    list.add((String) o);
-                                } else {
-                                    result.fail(o == null ? "null" : o.getClass().getName());
-                                }
-                            }
-                            result.complete(list);
-                        });
-                    } else {
-                        result.fail(new ConnectRestException(response, "Unexpected status code"));
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end();
-        return result.future();
-    }
-
-    @Override
-    public Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port) {
-        Promise<List<ConnectorPlugin>> result = Promise.promise();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-        String path = "/connector-plugins";
-        vertx.createHttpClient(options)
-                .get(port, host, path, response -> {
-                    response.exceptionHandler(error -> {
-                        result.fail(error);
-                    });
-                    if (response.statusCode() == 200) {
-                        response.bodyHandler(buffer -> {
-                            ObjectMapper mapper = new ObjectMapper();
-
-                            try {
-                                result.complete(asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
-                            } catch (IOException e)  {
-                                log.warn("Failed to parse list of connector plugins", e);
-                                result.fail(new ConnectRestException(response, "Failed to parse list of connector plugins", e));
-                            }
-                        });
-                    } else {
-                        result.fail(new ConnectRestException(response, "Unexpected status code"));
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end();
-        return result.future();
-    }
-}
