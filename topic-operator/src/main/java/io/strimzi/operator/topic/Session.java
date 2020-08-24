@@ -130,7 +130,6 @@ public class Session extends AbstractVerticle {
         }, stop);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void start(Promise<Void> start) {
         LOGGER.info("Starting");

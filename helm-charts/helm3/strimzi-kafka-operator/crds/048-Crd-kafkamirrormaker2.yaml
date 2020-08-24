@@ -658,8 +658,6 @@ spec:
                       properties:
                         fsGroup:
                           type: integer
-                        fsGroupChangePolicy:
-                          type: string
                         runAsGroup:
                           type: integer
                         runAsNonRoot:
@@ -696,8 +694,6 @@ spec:
                             gmsaCredentialSpec:
                               type: string
                             gmsaCredentialSpecName:
-                              type: string
-                            runAsUserName:
                               type: string
                       description: Configures pod-level security attributes and common container settings.
                     terminationGracePeriodSeconds:
@@ -1010,8 +1006,6 @@ spec:
                             gmsaCredentialSpec:
                               type: string
                             gmsaCredentialSpecName:
-                              type: string
-                            runAsUserName:
                               type: string
                       description: Security context for the container.
                   description: Template for the Kafka Connect container.

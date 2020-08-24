@@ -6,6 +6,7 @@ package io.strimzi.kafka.init;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.operator.common.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,6 +18,12 @@ public class Main {
 
         log.info("Init-kafka {} is starting", Main.class.getPackage().getImplementationVersion());
         InitWriterConfig config = InitWriterConfig.fromMap(System.getenv());
+
+        // Workaround for https://github.com/fabric8io/kubernetes-client/issues/2212
+        // Can be removed after upgrade to Fabric8 4.10.2 or higher or to Java 11
+        if (Util.shouldDisableHttp2()) {
+            System.setProperty("http2.disable", "true");
+        }
 
         KubernetesClient client = new DefaultKubernetesClient();
 

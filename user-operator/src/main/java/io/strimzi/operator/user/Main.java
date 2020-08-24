@@ -61,6 +61,12 @@ public class Main {
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
 
+        // Workaround for https://github.com/fabric8io/kubernetes-client/issues/2212
+        // Can be removed after upgrade to Fabric8 4.10.2 or higher or to Java 11
+        if (Util.shouldDisableHttp2()) {
+            System.setProperty("http2.disable", "true");
+        }
+
         KubernetesClient client = new DefaultKubernetesClient();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
 

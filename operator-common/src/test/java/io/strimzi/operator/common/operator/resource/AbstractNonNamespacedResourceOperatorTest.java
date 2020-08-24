@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -93,7 +92,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
+        when(mockResource.cascading(cascade)).thenReturn(mockResource);
         when(mockResource.patch(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -151,7 +150,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(null);
-        when(mockResource.create((T) any())).thenReturn(resource);
+        when(mockResource.create(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -186,7 +185,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
-        when(mockResource.create((T) any())).thenThrow(ex);
+        when(mockResource.create(any())).thenThrow(ex);
 
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);

@@ -4,13 +4,11 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
@@ -92,7 +90,7 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
-                if (!Boolean.TRUE.equals(operation().inNamespace(namespace).withName(resourceName.toString()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete())) {
+                if (!Boolean.TRUE.equals(operation().inNamespace(namespace).withName(resourceName.toString()).cascading(true).delete())) {
                     LOGGER.warn("KafkaTopic {} could not be deleted, since it doesn't seem to exist", resourceName.toString());
                     future.complete();
                 } else {
@@ -111,7 +109,7 @@ public class K8sImpl implements K8s {
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        return client.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     @Override
@@ -127,7 +125,6 @@ public class K8sImpl implements K8s {
     /**
      * Create the given k8s event
      */
-    @SuppressWarnings("deprecation")
     @Override
     public Future<Void> createEvent(Event event) {
         Promise<Void> handler = Promise.promise();

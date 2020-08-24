@@ -31,7 +31,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
     protected StorageClass getOriginal()  {
         return new StorageClassBuilder()
                 .withNewMetadata()
-                    .withName(resourceName)
+                    .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("state", "new"))
                 .endMetadata()
                 .withReclaimPolicy("Delete")
@@ -46,7 +46,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
         // Most of the fields seem to be immutable, we patch only labels
         return new StorageClassBuilder()
                 .withNewMetadata()
-                    .withName(resourceName)
+                    .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("state", "modified"))
                 .endMetadata()
                 .withReclaimPolicy("Delete")

@@ -31,7 +31,7 @@
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-core</artifactId>
+            <artifactId>kubernetes-model</artifactId>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>

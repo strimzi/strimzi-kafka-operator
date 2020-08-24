@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -254,7 +253,7 @@ public class TopicST extends AbstractST {
 
         String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).cascading(true).delete();
         LOGGER.info("Topic {} deleted", topicName);
 
         KafkaTopicUtils.waitTopicHasRolled(topicName, topicUid);

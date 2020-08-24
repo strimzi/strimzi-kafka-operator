@@ -45,12 +45,11 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kuberne
         return "kafka-crd-it-namespace";
     }
 
-    @Override
-    protected Kafka getResource(String resourceName) {
+    protected Kafka getResource() {
         return new KafkaBuilder()
                 .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
-                    .withName(resourceName)
+                    .withName(RESOURCE_NAME)
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

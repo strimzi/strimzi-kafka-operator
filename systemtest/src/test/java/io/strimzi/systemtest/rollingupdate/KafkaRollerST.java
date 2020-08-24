@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.rollingupdate;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
@@ -88,7 +87,7 @@ class KafkaRollerST extends AbstractST {
         kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).withPropagationPolicy(DeletionPropagation.ORPHAN).edit()
+        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).cascading(false).edit()
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()
@@ -112,7 +111,7 @@ class KafkaRollerST extends AbstractST {
         LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
         // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit()
+        kubeClient().statefulSet(kafkaName).cascading(false).edit()
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()

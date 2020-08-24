@@ -23,19 +23,7 @@
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-rbac</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-networking</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-apiextensions</artifactId>
+            <artifactId>kubernetes-model</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -119,7 +107,7 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
-                        <configuration combine.self="override">
+                        <configuration combine.self="override">>
                             <compilerArgs>
                                 <arg>-Xlint:unchecked,deprecation</arg>
                             </compilerArgs>

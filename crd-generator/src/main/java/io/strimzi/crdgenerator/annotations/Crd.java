@@ -4,6 +4,8 @@
  */
 package io.strimzi.crdgenerator.annotations;
 
+import io.fabric8.kubernetes.api.model.extensions.Scale;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

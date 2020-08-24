@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -69,7 +68,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     protected abstract CrdOperator<C, T, L, D> operator();
     protected abstract CustomResourceDefinition getCrd();
     protected abstract String getNamespace();
-    protected abstract T getResource(String name);
+    protected abstract T getResource();
     protected abstract T getResourceWithModifications(T resourceInCluster);
     protected abstract T getResourceWithNewReadyStatus(T resourceInCluster);
     protected abstract void assertReady(VertxTestContext context, T modifiedCustomResource);
@@ -114,7 +113,6 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
     @Test
     public void testUpdateStatus(VertxTestContext context) {
-        String resourceName = getResourceName(RESOURCE_NAME);
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
@@ -129,7 +127,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
                 .compose(pfa -> {
                     log.info("Creating resource");
-                    return op.reconcile(namespace, resourceName, getResource(resourceName));
+                    return op.reconcile(namespace, RESOURCE_NAME, getResource());
                 })
                 .onComplete(context.succeeding())
                 .compose(rrCreated -> {
@@ -140,14 +138,14 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                 })
                 .onComplete(context.succeeding())
 
-                .compose(rrModified -> op.getAsync(namespace, resourceName))
+                .compose(rrModified -> op.getAsync(namespace, RESOURCE_NAME))
                 .onComplete(context.succeeding(modifiedCustomResource -> context.verify(() -> {
                     assertReady(context, modifiedCustomResource);
                 })))
 
                 .compose(rrModified -> {
                     log.info("Deleting resource");
-                    return op.reconcile(namespace, resourceName, null);
+                    return op.reconcile(namespace, RESOURCE_NAME, null);
                 })
                 .onComplete(context.succeeding(rrDeleted ->  async.flag()));
     }
@@ -160,7 +158,6 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
      */
     @Test
     public void testUpdateStatusAfterResourceDeletedThrowsKubernetesClientException(VertxTestContext context) {
-        String resourceName = getResourceName(RESOURCE_NAME);
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
@@ -176,15 +173,15 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                 })))
                 .compose(pfa -> {
                     log.info("Creating resource");
-                    return op.reconcile(namespace, resourceName, getResource(resourceName));
+                    return op.reconcile(namespace, RESOURCE_NAME, getResource());
                 })
                 .onComplete(context.succeeding())
 
                 .compose(rr -> {
                     log.info("Saving resource with status change prior to deletion");
-                    newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
+                    newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, RESOURCE_NAME)));
                     log.info("Deleting resource");
-                    return op.reconcile(namespace, resourceName, null);
+                    return op.reconcile(namespace, RESOURCE_NAME, null);
                 })
                 .onComplete(context.succeeding())
 
@@ -205,7 +202,6 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
      */
     @Test
     public void testUpdateStatusAfterResourceUpdatedThrowsKubernetesClientException(VertxTestContext context) {
-        String resourceName = getResourceName(RESOURCE_NAME);
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
@@ -221,7 +217,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                 })))
                 .compose(pfa -> {
                     log.info("Creating resource");
-                    return op.reconcile(namespace, resourceName, getResource(resourceName));
+                    return op.reconcile(namespace, RESOURCE_NAME, getResource());
                 })
                 .onComplete(context.succeeding())
                 .compose(rrCreated -> {
@@ -229,7 +225,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
                     log.info("Updating resource (mocking an update due to some other reason)");
-                    op.operation().inNamespace(namespace).withName(resourceName).patch(updated);
+                    op.operation().inNamespace(namespace).withName(RESOURCE_NAME).patch(updated);
 
                     log.info("Updating resource status after underlying resource has changed");
                     return op.updateStatusAsync(newStatus);
@@ -242,13 +238,9 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         updateFailed.future().compose(v -> {
             log.info("Deleting resource");
-            return op.reconcile(namespace, resourceName, null);
+            return op.reconcile(namespace, RESOURCE_NAME, null);
         })
         .onComplete(context.succeeding(v -> async.flag()));
-    }
-
-    protected String getResourceName(String name) {
-        return name + "-" + new Random().nextInt(Integer.MAX_VALUE);
     }
 }
 

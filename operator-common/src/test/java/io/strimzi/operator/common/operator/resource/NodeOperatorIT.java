@@ -34,7 +34,7 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
     protected Node getOriginal()  {
         return new NodeBuilder()
                 .withNewMetadata()
-                    .withName(resourceName)
+                    .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
                 .withNewSpec()
@@ -47,7 +47,7 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
     protected Node getModified()  {
         return new NodeBuilder()
                 .withNewMetadata()
-                    .withName(resourceName)
+                    .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("bar", "foo"))
                 .endMetadata()
                 .withNewSpec()

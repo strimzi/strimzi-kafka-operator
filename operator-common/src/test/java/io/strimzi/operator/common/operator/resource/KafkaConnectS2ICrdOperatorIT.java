@@ -46,12 +46,11 @@ public class KafkaConnectS2ICrdOperatorIT extends AbstractCustomResourceOperator
         return "kafka-connects2i-crd-it-namespace";
     }
 
-    @Override
-    protected KafkaConnectS2I getResource(String resourceName) {
+    protected KafkaConnectS2I getResource() {
         return new KafkaConnectS2IBuilder()
                 .withApiVersion(KafkaConnectS2I.RESOURCE_GROUP + "/" + KafkaConnectS2I.V1BETA1)
                 .withNewMetadata()
-                .withName(resourceName)
+                .withName(RESOURCE_NAME)
                 .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

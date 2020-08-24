@@ -442,8 +442,7 @@ public class ResourceUtils {
                     .withNamespace(namespace)
                     .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                             "my-user-label", "cromulent"))
-                    .withAnnotations(emptyMap())
-                .build())
+                    .build())
                 .withNewSpec()
                 .endSpec()
                 .build();
@@ -459,7 +458,6 @@ public class ResourceUtils {
                         .withNamespace(namespace)
                         .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
-                        .withAnnotations(emptyMap())
                         .build())
                 .withNewSpec()
                 .endSpec()
