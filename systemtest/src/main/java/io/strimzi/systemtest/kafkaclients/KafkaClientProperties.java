@@ -198,7 +198,6 @@ public class KafkaClientProperties  {
 
             try {
                 importKeycloakCertificateToTruststore(properties);
-//                fixBadlyImportedAuthzSettings();
             } catch (Exception e) {
                 e.printStackTrace();
             }
