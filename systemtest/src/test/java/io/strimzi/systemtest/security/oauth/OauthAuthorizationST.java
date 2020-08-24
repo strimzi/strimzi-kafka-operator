@@ -136,7 +136,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
         );
     }
 
-//    @Disabled("Will be fixed in the new PR.")
     @Description("As a member of team A, I can write to topics starting with 'x-' and " +
             "as a member of team B can read from topics starting with 'x-'")
     @Test
