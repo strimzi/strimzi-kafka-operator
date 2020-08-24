@@ -38,11 +38,11 @@ stringData:
     dbPassword: my-password
 ----
 <1> The connector configuration in properties file format.
-<2> Database _username_ and _password_ properties used in the configuration.
+<2> Database username and password properties used in the configuration.
 
 . Create or edit the Kafka Connect resource.
 +
-Configure the configuration provider in the `config` section and the `externalConfiguration` section of the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the secret.
+In the `config` section and the `externalConfiguration` section of the `KafkaConnect` or `KafkaConnectS2I` custom resource, configure the configuration provider to reference the secret.
 +
 For example:
 +
@@ -67,7 +67,7 @@ spec:
 <1> The alias for the configuration provider, which is used to define other configuration parameters.
 Use a comma-separated list if you want to add more than one provider.
 <2> The `FileConfigProvider` is the configuration provider that provides values from properties files.
-The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`. 
+The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
 <3> The name of the volume containing the Secret.
 <4> The name of the Secret.
 
