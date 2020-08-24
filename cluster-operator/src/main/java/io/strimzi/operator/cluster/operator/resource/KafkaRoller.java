@@ -383,17 +383,6 @@ public class KafkaRoller {
     }
 
     /**
-     * Return true if the given {@code podId} is the controller and there are other brokers we might yet have to consider.
-     * This ensures that the controller is restarted/reconfigured last.
-     */
-    private boolean deferController(int podId, RestartContext restartContext) throws Exception {
-        Integer controller = controller(podId, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
-        int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
-                0, Integer::sum);
-        return controller == podId && stillRunning > 1;
-    }
-
-    /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     private RestartPlan restartPlan(int podId, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
@@ -647,6 +636,17 @@ public class KafkaRoller {
     String podName(int podId) {
         return KafkaCluster.kafkaPodName(this.cluster, podId);
     }
+    
+    /**
+     * Return true if the given {@code podId} is the controller and there are other brokers we might yet have to consider.
+     * This ensures that the controller is restarted/reconfigured last.
+     */
+    private boolean deferController(int podId, RestartContext restartContext) throws Exception {
+        Integer controller = controller(podId, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
+        int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
+                0, Integer::sum);
+        return controller == podId && stillRunning > 1;
+    }
 
     /**
      * Completes the returned future <strong>on the context thread</strong> with the id of the controller of the cluster.
@@ -692,6 +692,7 @@ public class KafkaRoller {
             throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podName(podId), executionException.getCause());
         }
     }
+
     /**
      * Tries to open and close a TCP connection to the given host and port.
      * @param hostname The host
