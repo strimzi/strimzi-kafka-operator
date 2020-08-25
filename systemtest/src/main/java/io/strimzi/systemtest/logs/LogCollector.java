@@ -94,4 +94,10 @@ public class LogCollector {
         String crData = cmdKubeClient().exec(false, "get", "strimzi", "-o", "yaml", "-n", namespace).out();
         writeFile(logDir + "/strimzi-custom-resources.log", crData);
     }
+
+    public void collectClusterInfo() {
+        LOGGER.info("Collecting cluster status");
+        String nodes = cmdKubeClient().exec(false, "describe", "nodes").out();
+        writeFile(logDir + "/cluster-status.log", nodes);
+    }
 }
