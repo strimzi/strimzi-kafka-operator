@@ -73,7 +73,7 @@ public class KafkaBasicClientResource extends KafkaClientsResource {
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("MESSAGE")
-                                        .withValue("Hello-World")
+                                        .withValue("Hello-world")
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("PRODUCER_ACKS")
