@@ -25,7 +25,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.Base64;
 
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -34,7 +33,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(NODEPORT_SUPPORTED)
-@Tag(EXTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
 public class OauthAbstractST extends AbstractST {
 
