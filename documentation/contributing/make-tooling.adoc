@@ -17,7 +17,7 @@ Make is a useful tool for building your documentation and pushing it to a public
 The `documentation/modules/appendix_crds.adoc` file provides the main content for the _Custom Resource API Reference_.
 It is generated directly from the Java code when building the operators.
 
-If you change the Strimzi API, you need to regenerate the API Reference by running the following from the root:
+If you change the Strimzi API, you need to regenerate the API Reference before submitting your PR by running the following from the root:
 
 [source,shell,subs=attributes+]
 ----

@@ -39,17 +39,17 @@ For example, the _Deploying Strimzi_ guide has a chapter called _Verifying the S
 .Documentation folder descriptions
 [source,options="nowrap",subs="+quotes"]
 ----
-api/                                 # Property descriptions for the Custom Resource API Reference
-contributing/                        # Documentation contributor guide (this book)
-deploying/                           # Deploying Strimzi
-quickstart/                          # Strimzi Quick Start guide
-overview/                            # Strimzi Overview guide
-using/                               # Using Strimzi
-assemblies/                          # Assemblies provide content for all guides
-modules/                             # Modules provide the content for assemblies
-shared/                              # Shared include files
-shared/attributes.adoc               # Global book attributes
-shared/images/                       # Shared image files
+api/                          # Property descriptions for the Custom Resource API Reference section of the Using Strimzi guide
+contributing/                 # Documentation contributor guide (this book)
+deploying/                    # Deploying Strimzi
+quickstart/                   # Strimzi Quick Start guide
+overview/                     # Strimzi Overview guide
+using/                        # Using Strimzi
+assemblies/                   # Assemblies provide content for all guides
+modules/                      # Modules provide the content for assemblies
+shared/                       # Shared include files
+shared/attributes.adoc        # Global book attributes
+shared/images/                # Shared image files
 ----
 
 === Strimzi Overview guide
@@ -114,11 +114,11 @@ Additional information is included by adding:
 
 . An `@DescriptionFile` annotation to the Java file
 . A corresponding description file (`.adoc`) in the `documentation/api/` folder
-. An `include:__DESCRIPTION-FILE-NAME__` reference in `appendix_crds.adoc`
+. An `include:__DESCRIPTION-FILE-NAME__` reference to the `appendix_crds.adoc`
 
 The `include:__DESCRIPTION-FILE-NAME__` reference is added automatically by the Maven build, so you do not need to add it manually.
 
-For example, to add additional configuration for `KafkaUserQuotas`:
+For example, to add additional configuration for the `KafkaUserQuotas` custom resource:
 
 . `api/src/main/java/io/strimzi/api/kafka/model/KafkaUserQuotas.java` contains:
 ** `import io.strimzi.crdgenerator.annotations.Description`
@@ -137,4 +137,4 @@ The description file requires the same name as the related Java package.
 /include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
 ----
 
-If you change any anything in the `api` module of the Java code, you must rebuild the _Custom Resource API Reference_ using a xref:make-tooling[make command].
+If you change anything in the `api` module of the Java code, you must rebuild the _Custom Resource API Reference_ using a xref:make-tooling[make command].
