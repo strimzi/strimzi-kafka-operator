@@ -82,8 +82,8 @@ public class StrimziUpgradeST extends AbstractST {
     private final String topicName = "my-topic";
     private final String userName = "my-user";
     private final int upgradeTopicCount = 40;
-    // ExpectedTopicCount contains additionally consumer-offset topic and my-topic
-    private int expectedTopicCount = upgradeTopicCount + 2;
+    // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
+    private final int expectedTopicCount = upgradeTopicCount + 3;
 
     private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip";
 
@@ -270,9 +270,8 @@ public class StrimziUpgradeST extends AbstractST {
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
                 KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
-                // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
-                expectedTopicCount += 1;
             }
+
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
             KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "", continuousConsumerGroup).done();
