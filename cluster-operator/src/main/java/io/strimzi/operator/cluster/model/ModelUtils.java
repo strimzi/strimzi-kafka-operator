@@ -6,8 +6,14 @@ package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Probe;
@@ -606,5 +612,54 @@ public class ModelUtils {
         }
         removeEmptyValuesFromTolerations(tolerationsListLocal);
         return tolerationsListLocal;
+    }
+
+    /**
+     *
+     * @param builder the builder which is used to populate the node affinity
+     * @param userAffinity the userAffinity which is defined by the user
+     * @param topologyKey  the topology key which is used to select the node
+     * @return the AffinityBuilder which has the node selector with topology key which is needed to make sure
+     * the pods are scheduled only on nodes with the rack label
+     */
+    public static AffinityBuilder populateAffinityBuilderWithRackLabelSelector(AffinityBuilder builder, Affinity userAffinity, String topologyKey) {
+        // We need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
+        NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
+                .withNewKey(topologyKey)
+                .build();
+
+        if (userAffinity != null
+                && userAffinity.getNodeAffinity() != null
+                && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution() != null
+                && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms() != null) {
+            // User has specified some Node Selector Terms => we should enhance them
+            List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
+            List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
+
+            for (NodeSelectorTerm term : oldTerms) {
+                NodeSelectorTerm enhancedTerm = new NodeSelectorTermBuilder(term)
+                        .addToMatchExpressions(selector)
+                        .build();
+                enhancedTerms.add(enhancedTerm);
+            }
+
+            builder = builder
+                    .editOrNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                    .withNodeSelectorTerms(enhancedTerms)
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                    .endNodeAffinity();
+        } else {
+            // User has not specified any selector terms => we add our own
+            builder = builder
+                    .editOrNewNodeAffinity()
+                    .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
+                    .addNewNodeSelectorTerm()
+                    .withMatchExpressions(selector)
+                    .endNodeSelectorTerm()
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                    .endNodeAffinity();
+        }
+        return builder;
     }
 }

@@ -43,6 +43,10 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -1266,6 +1270,30 @@ public abstract class AbstractModel {
                 }
             }
         }
+    }
+
+    protected ClusterRoleBinding getClusterRoleBinding(Subject subject, RoleRef roleRef) {
+
+        return new ClusterRoleBindingBuilder()
+                .withNewMetadata()
+                .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                .withOwnerReferences(createOwnerReference())
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .withSubjects(subject)
+                .withRoleRef(roleRef)
+                .build();
+    }
+
+    /**
+     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
+     *
+     * @param namespace The namespace.
+     * @param cluster   The cluster name.
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
+        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
     }
 
     /**

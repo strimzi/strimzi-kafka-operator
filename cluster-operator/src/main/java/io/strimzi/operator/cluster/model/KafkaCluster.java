@@ -48,7 +48,6 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -1727,8 +1726,8 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected String getServiceAccountName() {
-        return initContainerServiceAccountName(cluster);
+    public String getServiceAccountName() {
+        return kafkaClusterName(cluster);
     }
 
     @Override
@@ -1897,27 +1896,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Get the name of the kafka service account given the name of the {@code kafkaResourceName}.
-     *
-     * @param kafkaResourceName The name of the Kafka resource.
-     * @return The name of the ServiceAccount.
-     */
-    public static String initContainerServiceAccountName(String kafkaResourceName) {
-        return kafkaClusterName(kafkaResourceName);
-    }
-
-    /**
-     * Get the name of the kafka init container role binding given the name of the {@code namespace} and {@code cluster}.
-     *
-     * @param namespace The namespace.
-     * @param cluster   The cluster name.
-     * @return The name of the init container's cluster role binding.
-     */
-    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
-        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
-    }
-
-    /**
      * Creates the ClusterRoleBinding which is used to bind the Kafka SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      *
@@ -1928,7 +1906,7 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null || isExposedWithNodePort()) {
             Subject ks = new SubjectBuilder()
                     .withKind("ServiceAccount")
-                    .withName(initContainerServiceAccountName(cluster))
+                    .withName(getServiceAccountName())
                     .withNamespace(assemblyNamespace)
                     .build();
 
@@ -1938,15 +1916,7 @@ public class KafkaCluster extends AbstractModel {
                     .withKind("ClusterRole")
                     .build();
 
-            return new ClusterRoleBindingBuilder()
-                    .withNewMetadata()
-                        .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                        .withOwnerReferences(createOwnerReference())
-                        .withLabels(labels.toMap())
-                    .endMetadata()
-                    .withSubjects(ks)
-                    .withRoleRef(roleRef)
-                    .build();
+            return getClusterRoleBinding(ks, roleRef);
         } else {
             return null;
         }

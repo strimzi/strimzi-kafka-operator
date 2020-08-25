@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -41,7 +42,6 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -461,6 +461,19 @@ public class KafkaConnectCluster extends AbstractModel {
         return volumeMountList;
     }
 
+    /**
+     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.
+     */
+    @Override
+    protected Affinity getMergedAffinity() {
+        Affinity userAffinity = getUserAffinity();
+        AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
+        if (rack != null) {
+            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
+        }
+        return builder.build();
+    }
+
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
@@ -509,9 +522,7 @@ public class KafkaConnectCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
 
-        if (rack != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
-        }
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
 
         // Add shared environment variables used for all containers
         varList.addAll(getSharedEnvVars());
@@ -526,18 +537,11 @@ public class KafkaConnectCluster extends AbstractModel {
         List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null) {
-            ResourceRequirements resources = new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("100m"))
-                    .addToRequests("memory", new Quantity("128Mi"))
-                    .addToLimits("cpu", new Quantity("1"))
-                    .addToLimits("memory", new Quantity("256Mi"))
-                    .build();
-
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
-                    .withResources(resources)
+                    .withResources(getInitContainerResourceResourceRequirements())
                     .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
@@ -548,6 +552,15 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         return initContainers;
+    }
+
+    private ResourceRequirements getInitContainerResourceResourceRequirements() {
+        return new ResourceRequirementsBuilder()
+                .addToRequests("cpu", new Quantity("100m"))
+                .addToRequests("memory", new Quantity("128Mi"))
+                .addToLimits("cpu", new Quantity("1"))
+                .addToLimits("memory", new Quantity("256Mi"))
+                .build();
     }
 
     protected String getCommand() {
@@ -569,22 +582,7 @@ public class KafkaConnectCluster extends AbstractModel {
         jvmPerformanceOptions(varList);
 
         if (tls != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS, "true"));
-
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                StringBuilder sb = new StringBuilder();
-                boolean separator = false;
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    if (separator) {
-                        sb.append(";");
-                    }
-                    sb.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
-                    separator = true;
-                }
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, sb.toString()));
-            }
+            populateTLSEnvVars(varList);
         }
 
         AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
@@ -601,6 +599,25 @@ public class KafkaConnectCluster extends AbstractModel {
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
+    }
+
+    private void populateTLSEnvVars(final List<EnvVar> varList) {
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS, "true"));
+
+        List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+
+        if (trustedCertificates != null && trustedCertificates.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            boolean separator = false;
+            for (CertSecretSource certSecretSource : trustedCertificates) {
+                if (separator) {
+                    sb.append(";");
+                }
+                sb.append(certSecretSource.getSecretName()).append("/").append(certSecretSource.getCertificate());
+                separator = true;
+            }
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, sb.toString()));
+        }
     }
 
     private List<EnvVar> getExternalConfigurationEnvVars()   {
@@ -688,7 +705,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     @Override
-    protected String getServiceAccountName() {
+    public String getServiceAccountName() {
         return KafkaConnectResources.serviceAccountName(cluster);
     }
 
@@ -783,43 +800,21 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Get the name of the kafka connect service account given the name of the {@code kafkaResourceName}.
-     *
-     * @param resourceName The name of the Kafka connect resource.
-     * @return The name of the ServiceAccount.
-     */
-    public static String initContainerServiceAccountName(String resourceName) {
-        return KafkaConnectResources.deploymentName(resourceName);
-    }
-
-    /**
-     * Get the name of the kafka connect init container role binding given the name of the {@code namespace} and {@code cluster}.
-     *
-     * @param namespace The namespace.
-     * @param cluster   The cluster name.
-     * @return The name of the init container's cluster role binding.
-     */
-    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
-        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
-    }
-
-    /**
      * Creates the ClusterRoleBinding which is used to bind the Kafka Connect SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      *
-     * @param assemblyNamespace The namespace.
      * @return The cluster role binding.
      */
-    public ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
+    public ClusterRoleBinding generateClusterRoleBinding() {
 
-        if (rack == null) {
+        if (rack != null) {
             return null;
         }
 
-        Subject ks = new SubjectBuilder()
+        Subject subject = new SubjectBuilder()
                 .withKind("ServiceAccount")
-                .withName(initContainerServiceAccountName(cluster))
-                .withNamespace(assemblyNamespace)
+                .withName(getServiceAccountName())
+                .withNamespace(namespace)
                 .build();
 
         RoleRef roleRef = new RoleRefBuilder()
@@ -828,14 +823,6 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withKind("ClusterRole")
                 .build();
 
-        return new ClusterRoleBindingBuilder()
-                .withNewMetadata()
-                .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                .withOwnerReferences(createOwnerReference())
-                .withLabels(labels.toMap())
-                .endMetadata()
-                .withSubjects(ks)
-                .withRoleRef(roleRef)
-                .build();
+        return getClusterRoleBinding(subject, roleRef);
     }
 }

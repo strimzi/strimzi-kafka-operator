@@ -1353,12 +1353,12 @@ public class KafkaConnectClusterTest {
                 .build();
 
         KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(kafkaConnect, VERSIONS);
-        ClusterRoleBinding crb = kafkaConnectCluster.generateClusterRoleBinding(testNamespace);
+        ClusterRoleBinding crb = kafkaConnectCluster.generateClusterRoleBinding();
 
         assertThat(crb.getMetadata().getName(), is(KafkaConnectCluster.initContainerClusterRoleBindingName(testNamespace, cluster)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(KafkaConnectCluster.initContainerServiceAccountName(cluster)));
+        assertThat(crb.getSubjects().get(0).getName(), is(kafkaConnectCluster.getServiceAccountName()));
     }
 
     @Test
@@ -1372,7 +1372,7 @@ public class KafkaConnectClusterTest {
                 .build();
 
         KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(kafkaConnect, VERSIONS);
-        ClusterRoleBinding crb = kafkaConnectCluster.generateClusterRoleBinding(testNamespace);
+        ClusterRoleBinding crb = kafkaConnectCluster.generateClusterRoleBinding();
 
         assertThat(crb, is(nullValue()));
     }

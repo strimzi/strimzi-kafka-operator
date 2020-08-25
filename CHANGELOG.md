@@ -14,6 +14,7 @@
 * Support dynamically changeable logging configuration of Kafka Connect and Kafka Connect S2I
 * Support dynamically changeable logging configuration of Kafka brokers
 * Support dynamically changeable logging configuration of Kafka MirrorMaker2
+* Add support for `client.rack` property for Kafka Connect to use `fetch from closest replica` feature. 
 
 ### Deprecations and removals
 

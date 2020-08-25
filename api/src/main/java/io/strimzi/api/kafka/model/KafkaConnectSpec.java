@@ -64,8 +64,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
         this.clientRackInitImage = brokerRackInitImage;
     }
 
-    @Description("Configuration of the `client.rack` consumer config.")
-    @JsonProperty("rack")
+    @Description("Configuration of the node label which will be used as the client.rack consumer configuration.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Rack getRack() {
         return rack;

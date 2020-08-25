@@ -190,12 +190,12 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     private Future<ReconcileResult<ServiceAccount>> connectInitServiceAccount(String namespace, KafkaConnectCluster connectCluster) {
         return serviceAccountOperations.reconcile(namespace,
-                KafkaConnectCluster.initContainerServiceAccountName(connectCluster.getCluster()),
+                connectCluster.getServiceAccountName(),
                 connectCluster.generateServiceAccount());
     }
 
     Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connectCluster) {
-        ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding(namespace);
+        ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding();
         return clusterRoleBindingOperations.reconcile(KafkaConnectCluster.initContainerClusterRoleBindingName(namespace, name), desired);
     }
 }
