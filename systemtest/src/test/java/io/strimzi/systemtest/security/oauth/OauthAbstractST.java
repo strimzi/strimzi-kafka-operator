@@ -12,6 +12,7 @@ import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
+import io.strimzi.test.TestUtils;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
@@ -87,11 +88,11 @@ public class OauthAbstractST extends AbstractST {
         clusterHost = kubeClient().getNodeAddress();
 
         LOGGER.info("Importing basic realm");
-        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
+        keycloakInstance.importRealm(TestUtils.USER_PATH + "/../systemtest/src/test/resources/oauth2/create_realm.sh");
 
         LOGGER.info("Importing authorization realm");
 
-        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
+        keycloakInstance.importRealm(TestUtils.USER_PATH + "/../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
 
         String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
 

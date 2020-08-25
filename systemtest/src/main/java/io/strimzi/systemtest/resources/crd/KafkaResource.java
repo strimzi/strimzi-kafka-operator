@@ -40,11 +40,11 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaResource {
-    private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/cruise-control/kafka-cruise-control.yaml";
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = "../examples/metrics/kafka-cruise-control-metrics.yaml";
-    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
-    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
+    private static final String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-metrics.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-cruise-control-metrics.yaml";
+    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-ephemeral.yaml";
+    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-persistent.yaml";
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaClient() {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());

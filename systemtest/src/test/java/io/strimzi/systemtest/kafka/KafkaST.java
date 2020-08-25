@@ -115,7 +115,7 @@ class KafkaST extends AbstractST {
     @Test
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
-        cluster.createCustomResources("../examples/templates/cluster-operator");
+        cluster.createCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator");
         String templateName = "strimzi-ephemeral";
         String clusterName = "openshift-my-cluster";
         cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", clusterName));
@@ -142,7 +142,7 @@ class KafkaST extends AbstractST {
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
         DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
-        cluster.deleteCustomResources("../examples/templates/cluster-operator");
+        cluster.deleteCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator");
     }
 
     @Test
