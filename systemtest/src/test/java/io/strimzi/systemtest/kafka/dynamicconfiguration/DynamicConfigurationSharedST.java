@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.kafka.dynamicconfiguration;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.kafka.config.model.ConfigModel;
+import io.strimzi.kafka.config.model.Type;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -22,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -70,16 +71,16 @@ public class DynamicConfigurationSharedST extends AbstractST {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private static Map<String, Object> generateTestCases(String kafkaVersion) {
 
-        Map<String, Object> dynamicProperties = KafkaUtils.getDynamicConfigurationProperties(kafkaVersion);
+        Map<String, ConfigModel> dynamicProperties = KafkaUtils.getDynamicConfigurationProperties(kafkaVersion);
         Map<String, Object> testCases = new HashMap<>();
 
         dynamicProperties.forEach((key, value) -> {
 
-            String type = ((LinkedHashMap<String, String>) value).get("type");
+            Type type = value.getType();
             Object stochasticChosenValue;
 
             switch (type) {
-                case "STRING":
+                case STRING:
                     if (key.equals("compression.type")) {
                         List<String> compressionTypes = Arrays.asList("snappy", "gzip", "lz4", "zstd");
 
@@ -93,8 +94,8 @@ public class DynamicConfigurationSharedST extends AbstractST {
                         testCases.put(key, " ");
                     }
                     break;
-                case "INT":
-                case "LONG":
+                case INT:
+                case LONG:
                     if (key.equals("num.recovery.threads.per.data.dir") || key.equals("log.cleaner.threads") ||
                         key.equals("num.network.threads") || key.equals("min.insync.replicas") ||
                         key.equals("num.replica.fetchers")) {
@@ -108,7 +109,7 @@ public class DynamicConfigurationSharedST extends AbstractST {
                     }
                     testCases.put(key, stochasticChosenValue);
                     break;
-                case "DOUBLE":
+                case DOUBLE:
                     if (key.equals("log.cleaner.min.cleanable.dirty.ratio") ||
                         key.equals("log.cleaner.min.cleanable.ratio")) {
                         stochasticChosenValue = ThreadLocalRandom.current().nextDouble(0, 1);
@@ -117,7 +118,7 @@ public class DynamicConfigurationSharedST extends AbstractST {
                     }
                     testCases.put(key, stochasticChosenValue);
                     break;
-                case "BOOLEAN":
+                case BOOLEAN:
                     if (key.equals("unclean.leader.election.enable") || key.equals("log.preallocate")) {
                         stochasticChosenValue = true;
                     } else {
@@ -125,7 +126,7 @@ public class DynamicConfigurationSharedST extends AbstractST {
                     }
                     testCases.put(key, stochasticChosenValue);
                     break;
-                case "LIST":
+                case LIST:
                     // metric.reporters has default empty '""'
                     // log.cleanup.policy = [delete, compact] -> default delete
 
