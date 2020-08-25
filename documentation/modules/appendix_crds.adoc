@@ -1752,7 +1752,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |clientRackInitImage    1.2+<.<|The image of the init container used for initializing the `client.rack`.
 |string
-|rack                   1.2+<.<|Configuration of the `client.rack` consumer config.
+|rack                   1.2+<.<|Configuration of the node label which will be used as the client.rack consumer configuration.
 |xref:type-Rack-{context}[`Rack`]
 |====
 
@@ -2084,7 +2084,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
-|rack                      1.2+<.<|Configuration of the `client.rack` consumer config.
+|rack                      1.2+<.<|Configuration of the node label which will be used as the client.rack consumer configuration.
 |xref:type-Rack-{context}[`Rack`]
 |resources                 1.2+<.<|The maximum limits for CPU and memory resources and the requested initial resources. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[core/v1 resourcerequirements].
 

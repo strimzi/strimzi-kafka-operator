@@ -933,6 +933,69 @@ spec:
                               type: string
                       description: Security context for the container.
                   description: Template for the Kafka Connect container.
+                initContainer:
+                  type: object
+                  properties:
+                    env:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            description: The environment variable key.
+                          value:
+                            type: string
+                            description: The environment variable value.
+                      description: Environment variables which should be applied to the container.
+                    securityContext:
+                      type: object
+                      properties:
+                        allowPrivilegeEscalation:
+                          type: boolean
+                        capabilities:
+                          type: object
+                          properties:
+                            add:
+                              type: array
+                              items:
+                                type: string
+                            drop:
+                              type: array
+                              items:
+                                type: string
+                        privileged:
+                          type: boolean
+                        procMount:
+                          type: string
+                        readOnlyRootFilesystem:
+                          type: boolean
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        windowsOptions:
+                          type: object
+                          properties:
+                            gmsaCredentialSpec:
+                              type: string
+                            gmsaCredentialSpecName:
+                              type: string
+                      description: Security context for the container.
+                  description: Template for the Kafka init container.
                 podDisruptionBudget:
                   type: object
                   properties:
@@ -1045,6 +1108,19 @@ spec:
                       - name
                   description: Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
               description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+            clientRackInitImage:
+              type: string
+              description: The image of the init container used for initializing the `client.rack`.
+            rack:
+              type: object
+              properties:
+                topologyKey:
+                  type: string
+                  example: topology.kubernetes.io/zone
+                  description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
+              required:
+                - topologyKey
+              description: Configuration of the node label which will be used as the client.rack consumer configuration.
           required:
             - bootstrapServers
           description: The specification of the Kafka Connect cluster.

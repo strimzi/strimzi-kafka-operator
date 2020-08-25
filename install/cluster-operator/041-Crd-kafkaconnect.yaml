@@ -1230,7 +1230,8 @@ spec:
                     `broker.rack` config.
               required:
               - topologyKey
-              description: Configuration of the `client.rack` consumer config.
+              description: Configuration of the node label which will be used as the
+                client.rack consumer configuration.
           required:
           - bootstrapServers
           description: The specification of the Kafka Connect cluster.
