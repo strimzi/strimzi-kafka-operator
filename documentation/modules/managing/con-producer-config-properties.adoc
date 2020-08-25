@@ -184,7 +184,7 @@ Batches will remain in the queue until one of the following occurs:
 
 * The batch is full (according to `batch.size`)
 * The delay introduced by `linger.ms` has passed
-* The sender is about to send message batches for other partitions to the same broker, and it's possible to add this batch too
+* The sender is about to send message batches for other partitions to the same broker, and it is possible to add this batch too
 * The producer is being flushed or closed
 
 Look at the configuration for batching and buffering to mitigate the impact of `send()` blocking on latency.
