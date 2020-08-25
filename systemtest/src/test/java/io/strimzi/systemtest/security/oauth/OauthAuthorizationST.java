@@ -6,9 +6,7 @@ package io.strimzi.systemtest.security.oauth;
 
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
-import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -221,76 +219,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
     void setUp()  {
         keycloakInstance.setRealm("kafka-authz", true);
 
-        LOGGER.info("Setting producer and consumer properties");
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_A_CLIENT).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_B_CLIENT).done();
-
-        teamAOauthKafkaClient = new OauthExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_A)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(TEAM_A_CLIENT)
-            .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withConsumerGroupName("a-consumer_group")
-            .withOauthClientId(TEAM_A_CLIENT)
-            .withClientSecretName(TEAM_A_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .build();
-
-        teamBOauthKafkaClient = new OauthExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(TEAM_A_CLIENT)
-            .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withConsumerGroupName("x-" + ClientUtils.generateRandomConsumerGroup())
-            .withOauthClientId(TEAM_B_CLIENT)
-            .withClientSecretName(TEAM_B_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .build();
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(
-                new KafkaListenerExternalNodePortBuilder()
-                    .withNewKafkaListenerAuthenticationOAuth()
-                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                    .withTlsTrustedCertificates(
-                        new CertSecretSourceBuilder()
-                            .withSecretName(SECRET_OF_KEYCLOAK)
-                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                            .build())
-                    .withDisableTlsHostnameVerification(true)
-                    .endKafkaListenerAuthenticationOAuth()
-                    .build());
-
-            kafka.getSpec().getKafka().setAuthorization(
-                new KafkaAuthorizationKeycloakBuilder()
-                    .withClientId(KAFKA_CLIENT_ID)
-                    .withDisableTlsHostnameVerification(true)
-                    .withDelegateToKafkaAcls(false)
-                    // ca.crt a tls.crt
-                    .withTlsTrustedCertificates(
-                        new CertSecretSourceBuilder()
-                            .withSecretName(SECRET_OF_KEYCLOAK)
-                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                            .build()
-                    )
-                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                    .build());
-        });
-
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
@@ -342,5 +270,36 @@ public class OauthAuthorizationST extends OauthAbstractST {
                 .endKafka()
             .endSpec()
             .done();
+
+        LOGGER.info("Setting producer and consumer properties");
+
+        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_A_CLIENT).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_B_CLIENT).done();
+
+        teamAOauthKafkaClient = new OauthExternalKafkaClient.Builder()
+            .withTopicName(TOPIC_A)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(TEAM_A_CLIENT)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withConsumerGroupName("a_consumer_group")
+            .withOauthClientId(TEAM_A_CLIENT)
+            .withClientSecretName(TEAM_A_CLIENT_SECRET)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
+
+        teamBOauthKafkaClient = new OauthExternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(TEAM_A_CLIENT)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withConsumerGroupName("x_" + ClientUtils.generateRandomConsumerGroup())
+            .withOauthClientId(TEAM_B_CLIENT)
+            .withClientSecretName(TEAM_B_CLIENT_SECRET)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
     }
 }
