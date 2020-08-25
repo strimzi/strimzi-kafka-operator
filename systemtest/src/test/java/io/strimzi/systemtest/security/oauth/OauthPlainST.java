@@ -14,7 +14,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthClientsResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;

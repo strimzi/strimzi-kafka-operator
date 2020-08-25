@@ -15,7 +15,7 @@ import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;

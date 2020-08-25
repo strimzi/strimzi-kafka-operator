@@ -19,7 +19,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClie
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;

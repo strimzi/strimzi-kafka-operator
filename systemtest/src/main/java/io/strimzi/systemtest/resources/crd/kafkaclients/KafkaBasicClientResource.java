@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 
 import java.util.HashMap;
 import java.util.Map;
