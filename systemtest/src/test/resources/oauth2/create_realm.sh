@@ -6,7 +6,7 @@ URL=$3
 
 TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token" | awk -F '\"' '{print $4}')
 
-curl -v --insecure "https://$URL/auth/admin/realms" \
+RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -H 'Postman-Token: 3a6cd746-03b5-46fe-a54a-014fc7c51983' \
@@ -371,10 +371,9 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             }
         }
     ]
-}'
+}')
 
-RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms/internal")
-if [[ ${RESULT} == *"Realm not found."* ]]; then
+if [[ ${RESULT} != *"HTTP/2 201"* || ${RESULT} != *"HTTP/2 409"* ]]; then
   echo "[ERROR] Realm wasn't imported!"
   exit 1
 fi

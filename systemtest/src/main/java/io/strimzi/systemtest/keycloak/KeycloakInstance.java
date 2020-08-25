@@ -22,6 +22,7 @@ public class KeycloakInstance {
     private final int jwksRefreshSeconds = 400;
     private final String username;
     private final String password;
+    private final String namespace;
     private final String httpsUri;
     private final String httpUri;
 
@@ -34,12 +35,15 @@ public class KeycloakInstance {
     private Pattern keystorePattern = Pattern.compile("<tls>\\s*<key-stores>\\s*<key-store name=\"kcKeyStore\">\\s*<credential-reference clear-text=\".*\"\\/>");
     private Pattern keystorePasswordPattern = Pattern.compile("\\\".*\\\"");
 
-    public KeycloakInstance(String username, String password) {
+    public KeycloakInstance(String username, String password, String namespace) {
 
         this.username = username;
         this.password = password;
+        this.namespace = namespace;
         this.httpsUri = ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT;
         this.httpUri = ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT;
+        // this.httpsUri = "keycloak." + namespace + ".svc.cluster.local" +":8443";
+        // this.httpUri = "keycloak-discovery." + namespace + ".svc.cluster.local" +":8080";
         this.validIssuerUri = "https://" + httpsUri + "/auth/realms/internal";
         this.jwksEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/certs";
         this.oauthTokenEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/token";
@@ -57,7 +61,6 @@ public class KeycloakInstance {
             validIssuerUri = "https://" + httpsUri + "/auth/realms/" + realmName;
             jwksEndpointUri = "https://" + httpsUri + "/auth/realms/" + realmName + "/protocol/openid-connect/certs";
             oauthTokenEndpointUri = "https://" + httpsUri + "/auth/realms/" + realmName + "/protocol/openid-connect/token";
-
         } else {
             LOGGER.info("Using HTTP endpoints");
             validIssuerUri = "http://" + httpUri + "/auth/realms/" + realmName;
@@ -99,6 +102,9 @@ public class KeycloakInstance {
     public String getPassword() {
         return password;
     }
+    public String getNamespace() {
+        return namespace;
+    }
     public String getHttpsUri() {
         return httpsUri;
     }
@@ -120,6 +126,7 @@ public class KeycloakInstance {
     public String getOauthTokenEndpointUri() {
         return oauthTokenEndpointUri;
     }
+
     public void setOauthTokenEndpointUri(String oauthTokenEndpointUri) {
         this.oauthTokenEndpointUri = oauthTokenEndpointUri;
     }
