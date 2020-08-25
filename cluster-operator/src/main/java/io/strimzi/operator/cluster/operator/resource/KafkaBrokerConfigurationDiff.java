@@ -14,18 +14,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -113,10 +112,11 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     }
 
     /**
-     * @return A map which can be used for dynamic configuration of kafka broker
+     * Returns configuration difference
+     * @return Collection of AlterConfigOp containing difference between current and desired configuration
      */
-    public Map<ConfigResource, Collection<AlterConfigOp>> getConfigDiff() {
-        return Collections.singletonMap(Util.getBrokersConfig(brokerId), diff);
+    public Collection<AlterConfigOp> getConfigDiff() {
+        return diff;
     }
 
     /**
@@ -136,7 +136,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
      * @param desired desired configuration, may be null if the related ConfigMap does not exist yet or no changes are required
      * @param brokerConfigs current configuration
      * @param configModel default configuration for {@code kafkaVersion} of broker
-     * @return KafkaConfiguration containing all entries which were changed from current in desired configuration
+     * @return Collection of AlterConfigOp containing all entries which were changed from current in desired configuration
      */
     private static Collection<AlterConfigOp> diff(int brokerId, String desired,
                                                   Config brokerConfigs,
@@ -159,8 +159,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
 
         fillPlaceholderValue(desiredMap, "STRIMZI_BROKER_ID", Integer.toString(brokerId));
 
-        JsonNode source = patchMapper().valueToTree(currentMap);
-        JsonNode target = patchMapper().valueToTree(desiredMap);
+        JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(currentMap);
+        JsonNode target = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(desiredMap);
         JsonNode jsonDiff = JsonDiff.asJson(source, target);
 
         for (JsonNode d : jsonDiff) {

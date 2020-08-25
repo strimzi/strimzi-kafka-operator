@@ -560,6 +560,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testDynamicallySetConnectLoggingLevels() throws InterruptedException {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -635,6 +636,215 @@ class LoggingChangeST extends AbstractST {
         );
 
         assertThat("Connect pod should not roll", DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME)), equalTo(connectSnapshot));
+    }
+
+    @Test
+    void testDynamicallySetKafkaLoggingLevels() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        InlineLogging ilOff = new InlineLogging();
+        ilOff.setLoggers(Collections.singletonMap("log4j.rootLogger", "INFO"));
+
+        LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+        InlineLogging ilDebug = new InlineLogging();
+        ilDebug.setLoggers(Collections.singletonMap("log4j.rootLogger", "DEBUG"));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(ilDebug);
+        });
+
+        LOGGER.info("Waiting for dynamic change in the kafka pod");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                .contains("root=DEBUG"));
+
+        LOGGER.info("Setting external logging INFO");
+        ConfigMap configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                        "log4j.logger.org.apache.zookeeper=INFO\n" +
+                        "log4j.logger.kafka=INFO\n" +
+                        "log4j.logger.org.apache.kafka=INFO\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                        "log4j.logger.kafka.controller=TRACE\n" +
+                        "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=INFO"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+
+        ExternalLogging elKafka = new ExternalLoggingBuilder()
+                .withName("external-configmap")
+                .build();
+
+        LOGGER.info("Setting log level of kafka INFO");
+        // change to external logging
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(elKafka);
+        });
+
+        LOGGER.info("Waiting for dynamic change in the kafka pod");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                    "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                    .contains("root=INFO"));
+
+        assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
+    }
+
+    @Test
+    void testDynamicallySetUnknownKafkaLogger() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        InlineLogging il = new InlineLogging();
+        il.setLoggers(Collections.singletonMap("log4j.logger.paprika", "INFO"));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(il);
+        });
+
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, kafkaPods);
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                        .contains("paprika=INFO"));
+    }
+
+    @Test
+    void testDynamicallySetUnknownKafkaLoggerValue() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        InlineLogging il = new InlineLogging();
+        il.setLoggers(Collections.singletonMap("log4j.rootLogger", "PAPRIKA"));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(il);
+        });
+
+        StatefulSetUtils.waitForNoRollingUpdate(kafkaName, kafkaPods);
+        assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
+    }
+
+    @Test
+    void testDynamicallySetKafkaExternalLogging() {
+        // this test changes dynamically unchangeable logging config and thus RU is expected
+        ConfigMap configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-cm")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                        "log4j.logger.org.apache.zookeeper=INFO\n" +
+                        "log4j.logger.kafka=INFO\n" +
+                        "log4j.logger.org.apache.kafka=INFO\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                        "log4j.logger.kafka.controller=TRACE\n" +
+                        "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=INFO"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        ExternalLogging el = new ExternalLogging();
+        el.setName("external-cm");
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
+                .editOrNewSpec()
+                    .editKafka()
+                        .withExternalLogging(el)
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-cm")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.kafka=ERROR\n" +
+                        "log4j.logger.org.apache.kafka=ERROR\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=ERROR\n" +
+                        "log4j.logger.kafka.controller=ERROR\n" +
+                        "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=ERROR"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        StatefulSetUtils.waitForNoRollingUpdate(kafkaName, kafkaPods);
+        assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
+        TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                        .contains("kafka.authorizer.logger=ERROR"));
+
+        // log4j.appender.CONSOLE.layout.ConversionPattern is changed and thus we need RU
+        configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-cm")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.kafka=ERROR\n" +
+                        "log4j.logger.org.apache.kafka=ERROR\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=ERROR\n" +
+                        "log4j.logger.kafka.controller=ERROR\n" +
+                        "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=DEBUG"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, kafkaPods);
+
+        TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                        .contains("kafka.authorizer.logger=DEBUG"));
     }
 
     @BeforeAll
