@@ -407,7 +407,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
 
         private String zkLoggingHash = "";
-        private String kafkaLoggingHash = "";
+        private String kafkaLogging = "";
+        private String kafkaLoggingAppendersHash = "";
         private String kafkaBrokerConfigurationHash = "";
 
         /* test */ EntityOperator entityOperator;
@@ -681,7 +682,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Utility method for checking the Secret existence when custom CA is used. The custom CA is configured but the
-         * secrets do not exist, it will throw InvalifConfigurationException.
+         * secrets do not exist, it will throw InvalidConfigurationException.
          *
          * @param ca            The CA Configuration from the Custom Resource
          * @param certSecret    Secret with the certificate public key
@@ -728,7 +729,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(sts -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                             () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
-                            kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                            kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
                             .rollingRestart(rollPodAndLogReason))
                         .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
                         .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
@@ -1279,7 +1280,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return adminClientSecrets()
                 .compose(compositeFuture -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                     () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
-                        kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                        kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
                     .rollingRestart(podNeedsRestart));
         }
 
@@ -1355,9 +1356,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // We are upgrading from previous Strimzi version which has a sidecars. The older sidecar
                         // configurations allowed only older versions of TLS to be used by default. But the Zookeeper
                         // native TLS support enabled by default only secure TLSv1.2. That is correct, but makes the
-                        // upgrade hard since Kakfa will be unable to connect. So in the first roll, we enable also
-                        // older TLS versions in Zookeeper so that we can configure the KAfka sidecars to enable
-                        // TLSv1.2 as well. Thsi will be removed again in the next rolling update of Zookeeper -> done
+                        // upgrade hard since Kafka will be unable to connect. So in the first roll, we enable also
+                        // older TLS versions in Zookeeper so that we can configure the Kafka sidecars to enable
+                        // TLSv1.2 as well. This will be removed again in the next rolling update of Zookeeper -> done
                         // only when Kafka is ready for it.
                         if (sts != null
                                 && sts.getSpec() != null
@@ -1451,7 +1452,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
-            Annotations.annotations(zkSts.getSpec().getTemplate()).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
+            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
         }
 
@@ -2276,7 +2277,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.kafkaBrokerConfigurationHash += Util.stringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
 
             String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-            this.kafkaLoggingHash = Util.stringHash(loggingConfiguration);
+            this.kafkaLogging = loggingConfiguration;
+            this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration));
 
             return brokerCm;
         }
@@ -2452,7 +2454,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
 
-            Annotations.annotations(template).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, kafkaLoggingHash);
+            Annotations.annotations(template).put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, kafkaLoggingAppendersHash);
             Annotations.annotations(template).put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash);
 
             // Annotations with custom cert thumbprints to help with rolling updates when they change
@@ -2803,10 +2805,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Internal method for deleting PVCs after scale-downs or disk removal from JBOD storage. It gets list of
-         * existing and desired PVCs, diffs them and removes those wioch should not exist.
+         * existing and desired PVCs, diffs them and removes those which should not exist.
          *
          * @param maybeDeletePvcs   List of existing PVCs
-         * @param desiredPvcs       List of PVCs whcih should exist
+         * @param desiredPvcs       List of PVCs which should exist
          * @return
          */
         Future<ReconciliationState> persistentClaimDeletion(List<String> maybeDeletePvcs, List<String> desiredPvcs) {
