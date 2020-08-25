@@ -17,9 +17,9 @@ import java.util.Map;
 // HTTP Bridge clients
 public class KafkaBridgeClientsResource extends KafkaClientsResource {
 
-    final private int port;
-    final private int sendInterval;
-    final private int pollInterval;
+    private final int port;
+    private final int sendInterval;
+    private final int pollInterval;
 
     public KafkaBridgeClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
                                       int messageCount, String additionalConfig, String consumerGroup, int port, int sendInterval, int pollInterval) {

@@ -40,13 +40,13 @@ import static io.strimzi.test.TestUtils.toYamlString;
 public abstract class KafkaClientsResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientsResource.class);
 
-    final String producerName;
-    final String consumerName;
-    final String bootstrapServer;
-    final String topicName;
-    final int messageCount;
-    final String additionalConfig;
-    final String consumerGroup;
+    protected final String producerName;
+    protected final String consumerName;
+    protected final String bootstrapServer;
+    protected final String topicName;
+    protected final int messageCount;
+    protected final String additionalConfig;
+    protected final String consumerGroup;
 
     public KafkaClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
                                 int messageCount, String additionalConfig, String consumerGroup) {

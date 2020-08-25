@@ -19,9 +19,9 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
     private static final String JAEGER_SAMPLER_TYPE =  "const";
     private static final String JAEGER_SAMPLER_PARAM =  "1";
 
-    final String jaegerServiceProducerName;
-    final String jaegerServiceConsumerName;
-    final String jaegerServiceStreamsName;
+    private final String jaegerServiceProducerName;
+    private final String jaegerServiceConsumerName;
+    private final String jaegerServiceStreamsName;
 
     public KafkaTracingClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
                                        int messageCount, String additionalConfig, String consumerGroup, String jaegerServiceProducerName,

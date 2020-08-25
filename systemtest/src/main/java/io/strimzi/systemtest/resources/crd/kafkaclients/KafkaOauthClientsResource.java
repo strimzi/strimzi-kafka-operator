@@ -9,9 +9,9 @@ import io.strimzi.api.kafka.model.KafkaResources;
 
 public class KafkaOauthClientsResource extends KafkaBasicClientResource {
 
-    final String oauthClientId;
-    final String oauthClientSecret;
-    final String oauthTokenEndpointUri;
+    private final String oauthClientId;
+    private final String oauthClientSecret;
+    private final String oauthTokenEndpointUri;
 
     public KafkaOauthClientsResource(
         String producerName, String consumerName, String bootstrapServer, String topicName, int messageCount,
