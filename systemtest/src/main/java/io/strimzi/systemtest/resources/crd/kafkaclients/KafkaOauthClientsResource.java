@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
 import io.fabric8.kubernetes.api.model.batch.DoneableJob;
+import io.strimzi.api.kafka.model.KafkaResources;
 
 public class KafkaOauthClientsResource extends KafkaBasicClientResource {
 
@@ -22,15 +23,23 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
         this.oauthTokenEndpointUri = oauthTokenEndpointUri;
     }
 
-    // from existing client create new client with different consumer group (immutability)
+    // from existing client create new client with random consumer group (immutability)
     public KafkaOauthClientsResource(KafkaOauthClientsResource kafkaOauthClientsResource) {
         super(kafkaOauthClientsResource);
         this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
         this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
-        this.oauthTokenEndpointUri =kafkaOauthClientsResource.oauthTokenEndpointUri;
+        this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
     }
 
-    public DoneableJob producerStrimziOauth() {
+    // from existing client create new client with new specific consumer group and topicName (immutability)
+    public KafkaOauthClientsResource(KafkaOauthClientsResource kafkaOauthClientsResource, String topicName, String consumerGroup) {
+        super(kafkaOauthClientsResource, topicName, consumerGroup);
+        this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
+        this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
+        this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
+    }
+
+    public DoneableJob producerStrimziOauthPlain() {
 
         return producerStrimzi()
             .editSpec()
@@ -69,7 +78,52 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
             .endSpec();
     }
 
-    public DoneableJob consumerStrimziOauth() {
+    public DoneableJob producerStrimziOauthTls(String clusterName) {
+
+        return producerStrimziOauthPlain()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addNewEnv()
+                                // disable hostname verification
+                                .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM")
+                                .withValue("")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("CA_CRT")
+                                .withNewValueFrom()
+                                    .withNewSecretKeyRef()
+                                        .withName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                                        .withKey("ca.crt")
+                                    .endSecretKeyRef()
+                                .endValueFrom()
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("USER_CRT")
+                                .withNewValueFrom()
+                                    .withNewSecretKeyRef()
+                                        .withName(oauthClientId)
+                                        .withKey("user.crt")
+                                    .endSecretKeyRef()
+                                .endValueFrom()
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("USER_KEY")
+                                .withNewValueFrom()
+                                    .withNewSecretKeyRef()
+                                        .withName(oauthClientId)
+                                        .withKey("user.key")
+                                    .endSecretKeyRef()
+                                .endValueFrom()
+                            .endEnv()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
+    public DoneableJob consumerStrimziOauthPlain() {
 
         return consumerStrimzi()
             .editSpec()
@@ -99,6 +153,55 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
                                     .withNewSecretKeyRef()
                                         .withName("x509-https-secret")
                                         .withKey("tls.crt")
+                                    .endSecretKeyRef()
+                                .endValueFrom()
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("LOG_LEVEL")
+                                .withValue("DEBUG")
+                            .endEnv()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
+    public DoneableJob consumerStrimziOauthTls(String clusterName) {
+
+        return consumerStrimziOauthPlain()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addNewEnv()
+                                // disable hostname verification
+                                .withName("OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM")
+                                .withValue("")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("CA_CRT")
+                                .withNewValueFrom()
+                                    .withNewSecretKeyRef()
+                                        .withName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                                        .withKey("ca.crt")
+                                    .endSecretKeyRef()
+                                .endValueFrom()
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("USER_CRT")
+                                .withNewValueFrom()
+                                    .withNewSecretKeyRef()
+                                        .withName(oauthClientId)
+                                        .withKey("user.crt")
+                                    .endSecretKeyRef()
+                                .endValueFrom()
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("USER_KEY")
+                                .withNewValueFrom()
+                                    .withNewSecretKeyRef()
+                                        .withName(oauthClientId)
+                                        .withKey("user.key")
                                     .endSecretKeyRef()
                                 .endValueFrom()
                             .endEnv()

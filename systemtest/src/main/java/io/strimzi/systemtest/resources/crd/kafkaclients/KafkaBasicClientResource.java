@@ -23,6 +23,11 @@ public class KafkaBasicClientResource extends KafkaClientsResource {
     public KafkaBasicClientResource(KafkaClientsResource kafkaClientsResource) {
         super(kafkaClientsResource);
     }
+
+    public KafkaBasicClientResource(KafkaClientsResource kafkaClientsResource, String topicName, String consumerGroup) {
+        super(kafkaClientsResource, topicName, consumerGroup);
+    }
+
     public DoneableJob producerStrimzi() {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);

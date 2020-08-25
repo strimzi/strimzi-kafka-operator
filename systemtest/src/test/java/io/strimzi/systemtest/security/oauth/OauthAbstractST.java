@@ -6,7 +6,6 @@ package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.batch.Job;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
@@ -23,10 +22,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
 import java.util.Base64;
 
@@ -63,11 +58,9 @@ public class OauthAbstractST extends AbstractST {
     protected KeycloakInstance keycloakInstance;
 
     protected static final String CERTIFICATE_OF_KEYCLOAK = "tls.crt";
-    protected static final String SECRET_OF_KEYCLOAK = "sso-x509-https-secret";
+    protected static final String SECRET_OF_KEYCLOAK = "x509-https-secret";
 
     protected static String clusterHost;
-    protected static String keycloakIpWithPortHttp;
-    protected static String keycloakIpWithPortHttps;
     protected WebClient client;
 
     @BeforeAll
@@ -76,19 +69,6 @@ public class OauthAbstractST extends AbstractST {
         installClusterOperator(NAMESPACE);
         KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
 
-        deployTestSpecificResources();
-    }
-
-    @AfterEach
-    void tearDown() {
-
-        for (Job job : kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).list().getItems()) {
-            LOGGER.info("Deleting {} job", job.getMetadata().getName());
-            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).delete(job);
-        }
-    }
-
-    private void deployTestSpecificResources() throws InterruptedException {
         LOGGER.info("Deploying keycloak...");
 
         KeycloakUtils.deployKeycloak(NAMESPACE);
@@ -109,50 +89,30 @@ public class OauthAbstractST extends AbstractST {
 
         clusterHost = kubeClient().getNodeAddress();
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewTls()
-                            .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                .withTlsTrustedCertificates(
-                                    new CertSecretSourceBuilder()
-                                        .withSecretName(SECRET_OF_KEYCLOAK)
-                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                                        .build())
-                                .withDisableTlsHostnameVerification(true)
-                            .endKafkaListenerAuthenticationOAuth()
-                        .endTls()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                .withTlsTrustedCertificates(
-                                    new CertSecretSourceBuilder()
-                                        .withSecretName(SECRET_OF_KEYCLOAK)
-                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                                        .build())
-                                .withDisableTlsHostnameVerification(true)
-                            .endKafkaListenerAuthenticationOAuth()
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+        LOGGER.info("Importing basic realm");
+        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        LOGGER.info("Importing authorization realm");
+
+        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
+
+        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
+
+        String pubKey = ResourceManager.cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
+            "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
+
+        SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
 
         createSecretsForDeployments();
+    }
 
-        KafkaUserResource.tlsUser(CLUSTER_NAME, OAUTH_CLIENT_NAME).done();
+    @AfterEach
+    void tearDown() {
+
+        for (Job job : kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).list().getItems()) {
+            LOGGER.info("Deleting {} job", job.getMetadata().getName());
+            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).delete(job);
+        }
     }
 
     /**

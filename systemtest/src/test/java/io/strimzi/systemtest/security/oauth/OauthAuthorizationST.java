@@ -15,7 +15,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
@@ -36,8 +35,8 @@ import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(OAUTH)
@@ -227,9 +226,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_A_CLIENT).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_B_CLIENT).done();
 
-        KafkaUserUtils.waitForKafkaUserCreation(TEAM_A_CLIENT);
-        KafkaUserUtils.waitForKafkaUserCreation(TEAM_B_CLIENT);
-
         teamAOauthKafkaClient = new OauthExternalKafkaClient.Builder()
             .withTopicName(TOPIC_A)
             .withNamespaceName(NAMESPACE)
@@ -262,17 +258,17 @@ public class OauthAuthorizationST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().setExternal(
                 new KafkaListenerExternalNodePortBuilder()
                     .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                        .withTlsTrustedCertificates(
-                            new CertSecretSourceBuilder()
-                                .withSecretName(SECRET_OF_KEYCLOAK)
-                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                                .build())
-                        .withDisableTlsHostnameVerification(true)
+                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                    .withTlsTrustedCertificates(
+                        new CertSecretSourceBuilder()
+                            .withSecretName(SECRET_OF_KEYCLOAK)
+                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                            .build())
+                    .withDisableTlsHostnameVerification(true)
                     .endKafkaListenerAuthenticationOAuth()
                     .build());
 
@@ -293,5 +289,58 @@ public class OauthAuthorizationST extends OauthAbstractST {
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewTls()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endTls()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
+                                .endKafkaListenerAuthenticationOAuth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withNewKafkaAuthorizationKeycloak()
+                        .withClientId(KAFKA_CLIENT_ID)
+                        .withDisableTlsHostnameVerification(true)
+                        .withDelegateToKafkaAcls(false)
+                        // ca.crt a tls.crt
+                        .withTlsTrustedCertificates(
+                            new CertSecretSourceBuilder()
+                                .withSecretName(SECRET_OF_KEYCLOAK)
+                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                .build()
+                        )
+                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .endKafkaAuthorizationKeycloak()
+                .endKafka()
+            .endSpec()
+            .done();
     }
 }

@@ -9,22 +9,22 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenerPlainBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthClientsResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -34,9 +34,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.time.Duration;
-import java.util.Map;
 
-import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -58,10 +56,10 @@ public class OauthPlainST extends OauthAbstractST {
             "As an oauth consumer, I should be able to consumer messages from the kafka broker.")
     @Test
     void testProducerConsumer() {
-        oauthInternalClientJob.producerStrimziOauth().done();
+        oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientJob.consumerStrimziOauth().done();
+        oauthInternalClientJob.consumerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -70,10 +68,10 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect() {
-        oauthInternalClientJob.producerStrimziOauth().done();
+        oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientJob.consumerStrimziOauth().done();
+        oauthInternalClientJob.consumerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
 
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
@@ -111,10 +109,10 @@ public class OauthPlainST extends OauthAbstractST {
     @Test
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMaker() {
-        oauthInternalClientJob.producerStrimziOauth().done();
+        oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientJob.consumerStrimziOauth().done();
+        oauthInternalClientJob.consumerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
 
         String targetKafkaCluster = CLUSTER_NAME + "-target";
@@ -184,17 +182,17 @@ public class OauthPlainST extends OauthAbstractST {
             Constants.GLOBAL_CLIENTS_POLL, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting the Job");
-                kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(OAUTH_PRODUCER_NAME).delete();
+                kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(OAUTH_CONSUMER_NAME).delete();
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
                 KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
                     KafkaResources.plainBootstrapAddress(targetKafkaCluster), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(),
-                    OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, oauthTokenEndpointUri);
+                    OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
 
-                kafkaOauthClientJob.consumerStrimziOauth().done();
+                kafkaOauthClientJob.consumerStrimziOauthPlain().done();
 
                 try {
-                    ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+                    ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
                     return  true;
                 } catch (WaitException e) {
                     e.printStackTrace();
@@ -207,12 +205,11 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerMirrorMaker2() {
-        oauthInternalClientJob.producerStrimziOauth().done();
+        oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientJob.consumerStrimziOauth().done();
+        oauthInternalClientJob.consumerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
-
 
         String kafkaSourceClusterName = CLUSTER_NAME;
         String kafkaTargetClusterName = CLUSTER_NAME + "-target";
@@ -286,18 +283,18 @@ public class OauthPlainST extends OauthAbstractST {
         TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
-                LOGGER.info("Deleting the Job");
-                kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(OAUTH_PRODUCER_NAME).delete();
+                LOGGER.info("Deleting the Job {}", OAUTH_CONSUMER_NAME);
+                kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(OAUTH_CONSUMER_NAME).delete();
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
                 KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
                     KafkaResources.plainBootstrapAddress(kafkaTargetClusterName), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(),
-                    OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, oauthTokenEndpointUri);
+                    OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
 
-                kafkaOauthClientJob.consumerStrimziOauth().done();
+                kafkaOauthClientJob.consumerStrimziOauthPlain().done();
 
                 try {
-                    ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+                    ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
                     return  true;
                 } catch (WaitException e) {
                     e.printStackTrace();
@@ -310,10 +307,10 @@ public class OauthPlainST extends OauthAbstractST {
     @Test
     @Tag(BRIDGE)
     void testProducerConsumerBridge() {
-        oauthInternalClientJob.producerStrimziOauth().done();
+        oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientJob.consumerStrimziOauth().done();
+        oauthInternalClientJob.consumerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
 
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
@@ -369,11 +366,16 @@ public class OauthPlainST extends OauthAbstractST {
             .endSpec()
             .done();
 
-        oauthInternalClientJob.producerStrimziOauth().done();
+        oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientJob.consumerStrimziOauth().done();
+        oauthInternalClientJob.consumerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+    }
+
+    @BeforeEach
+    void setUpEach() {
+        oauthInternalClientJob = new KafkaOauthClientsResource(oauthInternalClientJob);
     }
 
     @BeforeAll
@@ -383,26 +385,27 @@ public class OauthPlainST extends OauthAbstractST {
         LOGGER.info("Setting producer and consumer properties");
 
         oauthInternalClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
-            KafkaResources.plainBootstrapAddress(CLUSTER_NAME), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(),
-            OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, oauthTokenEndpointUri);
+            KafkaResources.plainBootstrapAddress(CLUSTER_NAME), TOPIC_NAME, MESSAGE_COUNT, "",
+            ClientUtils.generateRandomConsumerGroup(), OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewPlain()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endPlain()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            // internal plain
-            kafka.getSpec().getKafka().getListeners().setPlain(
-                new KafkaListenerPlainBuilder()
-                    .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                    .endKafkaListenerAuthenticationOAuth()
-                    .build());
-        });
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
     }
 }

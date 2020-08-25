@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.client.Client;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;

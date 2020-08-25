@@ -71,6 +71,17 @@ public abstract class KafkaClientsResource {
         this.consumerGroup = generateRandomConsumerGroup();
     }
 
+    // from existing client create new client with specific consumer group and topicName (immutability)
+    public KafkaClientsResource(KafkaClientsResource kafkaClientsResource, String topicName, String consumerGroup) {
+        this.producerName = kafkaClientsResource.producerName;
+        this.consumerName = kafkaClientsResource.consumerName;
+        this.bootstrapServer = kafkaClientsResource.bootstrapServer;
+        this.topicName = topicName;
+        this.messageCount = kafkaClientsResource.messageCount;
+        this.additionalConfig = kafkaClientsResource.additionalConfig;
+        this.consumerGroup = consumerGroup;
+    }
+
     // TODO: some-how move to internal clients... =>>> create issue ....
     public static DoneableDeployment deployKafkaClients(String kafkaClusterName) {
         return deployKafkaClients(false, kafkaClusterName, null);
