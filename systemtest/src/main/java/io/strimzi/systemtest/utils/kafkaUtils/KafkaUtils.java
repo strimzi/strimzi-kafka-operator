@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIXES;
+import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
@@ -290,53 +293,22 @@ public class KafkaUtils {
 
         LOGGER.info("This is all kafka configs with size {}", configs.size());
 
+        List<String> forbiddenPrefixesExceptions = Arrays.asList(FORBIDDEN_PREFIX_EXCEPTIONS.split("\\s*,+\\s*"));
+
         Map<String, ConfigModel> forbiddenExceptionsConfigs = configs
             .entrySet()
             .stream()
-            .filter(a ->
-                // forbidden prefix exceptions
-                a.getKey().startsWith("zookeeper.connection.timeout.ms") ||
-                a.getKey().startsWith("ssl.cipher.suites") ||
-                a.getKey().startsWith("ssl.protocol") ||
-                a.getKey().startsWith("ssl.enabled.protocols") ||
-                a.getKey().startsWith("cruise.control.metrics.topic.num.partitions") ||
-                a.getKey().startsWith("cruise.control.metrics.topic.replication.factor") ||
-                a.getKey().startsWith("cruise.control.metrics.topic.retention.ms") ||
-                a.getKey().startsWith("cruise.control.metrics.topic.auto.create.retries") ||
-                a.getKey().startsWith("cruise.control.metrics.topic.auto.create.timeout.ms"))
-//                a.getKey().contains(FORBIDDEN_PREFIX_EXCEPTIONS)) //  this doesn't work
+            .filter(a -> forbiddenPrefixesExceptions.contains(a.getKey()))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         LOGGER.info("This is size of forbidden-exception-configs size {}", forbiddenExceptionsConfigs.size());
 
+        List<String> forbiddenPrefixes = Arrays.asList(FORBIDDEN_PREFIXES.split("\\s*,+\\s*"));
+
         Map<String, ConfigModel> dynamicConfigs = configs
             .entrySet()
             .stream()
-            .filter(a ->
-                    !(a.getValue().getScope() == Scope.READ_ONLY) &&
-                    !(
-                        a.getKey().startsWith("listeners") ||
-                        a.getKey().startsWith("advertised") ||
-                        a.getKey().startsWith("broker") ||
-                        a.getKey().startsWith("listener") ||
-                        a.getKey().startsWith("host.name") ||
-                        a.getKey().startsWith("port") ||
-                        a.getKey().startsWith("inter.broker.listener.name") ||
-                        a.getKey().startsWith("sasl") ||
-                        a.getKey().startsWith("ssl") ||
-                        a.getKey().startsWith("security") ||
-                        a.getKey().startsWith("password") ||
-                        a.getKey().startsWith("principal.builder.class") ||
-                        a.getKey().startsWith("log.dir") ||
-                        a.getKey().startsWith("zookeeper.connect") ||
-                        a.getKey().startsWith("zookeeper.set.acl") ||
-                        a.getKey().startsWith("authorizer") ||
-                        a.getKey().startsWith("super.user") ||
-                        a.getKey().startsWith("cruise.control.metrics.topic") ||
-                        a.getKey().startsWith("cruise.control.metrics.reporter.bootstrap.servers"))
-                //   !a.getKey().contains(FORBIDDEN_PREFIXES) // this doesn't work
-
-            )
+            .filter(a -> !(a.getValue().getScope() == Scope.READ_ONLY) && !forbiddenPrefixes.contains(a.getKey()))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         LOGGER.info("This is dynamic-configs size {}", dynamicConfigs.size());
@@ -345,6 +317,8 @@ public class KafkaUtils {
 
         dynamicConfigsWithExceptions.putAll(dynamicConfigs);
         dynamicConfigsWithExceptions.putAll(forbiddenExceptionsConfigs);
+
+        LOGGER.info("This is dynamic-configs with forbidden-exception-configs size {}", dynamicConfigs.size());
 
         dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info(key + " -> "  + value));
 
