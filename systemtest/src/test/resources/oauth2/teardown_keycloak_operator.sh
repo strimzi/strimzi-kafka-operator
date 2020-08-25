@@ -6,7 +6,7 @@ KEYCLOAK_VERSION=11.0.0
 
 SCRIPT_PATH=$(dirname "${BASH_SOURCE[0]}")
 
-echo "[INFO] Delete Keycloak & Keycloak Operator"
+echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Delete Keycloak & Keycloak Operator"
 kubectl delete -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/examples/keycloak/keycloak.yaml
 kubectl delete -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/operator.yaml
 kubectl delete -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/crds/keycloak.org_keycloakusers_crd.yaml

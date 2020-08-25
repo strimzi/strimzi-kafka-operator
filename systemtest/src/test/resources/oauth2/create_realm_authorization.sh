@@ -666,9 +666,9 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
   ]
 }')
 
-if [[ ${RESULT} != *"HTTP/2 201"* || ${RESULT} != *"HTTP/2 409"* ]]; then
-  echo "[ERROR] Realm wasn't imported!"
+if [[ ${RESULT} != "" && ${RESULT} != *"Conflict detected"* ]]; then
+  echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Realm wasn't imported!"
   exit 1
 fi
 
-echo "[INFO] Realm was successfully imported!"
+echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Realm was successfully imported!"
