@@ -69,7 +69,6 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.NodeUtils;
-import io.strimzi.operator.cluster.model.OrderedProperties;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -2278,9 +2277,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.kafkaBrokerConfigurationHash += Util.stringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
 
             String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-            this.kafkaLoggingHash = Util.stringHash(loggingConfiguration);
             this.kafkaLogging = loggingConfiguration;
-            this.kafkaLoggingAppendersHash = getStringHash(getLoggingAppenders(loggingConfiguration));
+            this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration));
 
             return brokerCm;
         }
@@ -3473,18 +3471,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(Future.succeededFuture());
         }
 
-    }
-
-    private String getLoggingAppenders(String loggingConfiguration) {
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(loggingConfiguration);
-        StringBuilder result = new StringBuilder();
-        for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
-            if (entry.getKey().startsWith("log4j.appender.")) {
-                result.append(entry.getKey()).append("=").append(entry.getValue());
-            }
-        }
-        return result.toString();
     }
 
     /* test */ Date dateSupplier() {

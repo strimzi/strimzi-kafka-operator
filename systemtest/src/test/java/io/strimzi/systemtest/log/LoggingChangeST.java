@@ -744,6 +744,7 @@ class LoggingChangeST extends AbstractST {
 
     @Test
     void testDynamicallySetKafkaExternalLogging() {
+        // this test changes dynamically unchangeable logging config and thus RU is expected
         ConfigMap configMap = new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName("external-cm")
