@@ -24,6 +24,7 @@ public enum ClientArgument {
 
     // Producer
     BOOTSTRAP_SERVER("--bootstrap-server"),
+    BROKER_LIST("--broker-list"),
     PRODUCER_CONFIG("--producer.config"),
     ACKS("--acks"),
     TIMEOUT("--timeout"),
