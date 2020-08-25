@@ -18,7 +18,7 @@ Both the cluster CA and clients CA have a self-signed public key certificate.
 Kafka brokers are configured to trust certificates signed by either the cluster CA or clients CA.
 Components that clients do not need to connect to, such as ZooKeeper, only trust certificates signed by the cluster CA.
 Unless TLS encryption for external listeners is disabled, client applications must trust certificates signed by the cluster CA.
-This is also true for client applications that perform xref:con-mutual-tls-authentication-deployment-configuration-kafka[mutual TLS authentication]. 
+This is also true for client applications that perform xref:con-mutual-tls-authentication-deployment-configuration-kafka[mutual TLS authentication].
 
 By default, Strimzi automatically generates and renews CA certificates issued by the cluster CA or clients CA.
 You can configure the management of these CA certificates in the `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` objects.
@@ -27,11 +27,3 @@ Certificates provided by users are not renewed.
 You can provide your own CA certificates for the cluster CA or clients CA.
 For more information, see xref:installing-your-own-ca-certificates-{context}[].
 If you provide your own certificates, you must manually renew them when needed.
-
-== Validity periods of CA certificates
-
-CA certificate validity periods are expressed as a number of days after certificate generation.
-You can configure the validity period of:
-
-* Cluster CA certificates in `Kafka.spec.clusterCa.validityDays`
-* Client CA certificates in `Kafka.spec.clientsCa.validityDays`

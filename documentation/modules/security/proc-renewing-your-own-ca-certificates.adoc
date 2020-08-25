@@ -19,7 +19,7 @@ You can also use certificates in PKCS #12 format.
 * A Kafka cluster in which you previously installed your own CA certificates and private keys.
 * New cluster and clients X.509 certificates and keys in PEM format.
 
-These could be generated using `openssl` using a command such as:
+These could be generated using an `openssl` command, such as:
 
 [source,shell,subs="+quotes"]
 openssl req -x509 -new -days _NUMBER-OF-DAYS-VALID_ --nodes -out ca.crt -keyout ca.key
@@ -31,7 +31,7 @@ openssl req -x509 -new -days _NUMBER-OF-DAYS-VALID_ --nodes -out ca.crt -keyout 
 [source,shell,subs="+quotes"]
 kubectl describe secret _CA-CERTIFICATE-SECRET_
 +
-_CA-CERTIFICATE-SECRET_ is the name of the `Secret`, which is `_CLUSTER-NAME_-cluster-ca-cert` for the cluster CA certificate and `_CLUSTER-NAME_-clients-ca-cert` for the clients CA certificate.
+_CA-CERTIFICATE-SECRET_ is the name of the `Secret`, which is `_KAFKA-CLUSTER-NAME_-cluster-ca-cert` for the cluster CA certificate and `_KAFKA-CLUSTER-NAME_-clients-ca-cert` for the clients CA certificate.
 
 . Create a directory to contain the existing CA certificates in the secret.
 +
@@ -92,17 +92,17 @@ rm -r new-ca-cert-secret
 [source,shell,subs="+quotes"]
 kubectl delete secret _CA-KEY-SECRET_
 +
-_CA-KEY-SECRET_ is the name of CA key, which is `_CLUSTER-NAME_-cluster-ca` for the cluster CA key and `_CLUSTER-NAME_-clients-ca` for the clients CA key.
+_CA-KEY-SECRET_ is the name of CA key, which is `_KAFKA-CLUSTER-NAME_-cluster-ca` for the cluster CA key and `_KAFKA-CLUSTER-NAME_-clients-ca` for the clients CA key.
 
 .. Recreate the secret with the new CA key:
 +
 [source,shell,subs="+quotes"]
 kubectl create secret generic _CA-KEY-SECRET_ --from-file=ca.key=_CA-KEY-SECRET-FILENAME_
 
-. Label the secrets with the labels `strimzi.io/kind=Kafka` and `strimzi.io/cluster=_CLUSTER-NAME_`:
+. Label the secrets with the labels `strimzi.io/kind=Kafka` and `strimzi.io/cluster=_KAFKA-CLUSTER-NAME_`:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl label secret _CA-CERTIFICATE-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_CLUSTER-NAME_
-kubectl label secret _CA-KEY-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_CLUSTER-NAME_
+kubectl label secret _CA-CERTIFICATE-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_KAFKA-CLUSTER-NAME_
+kubectl label secret _CA-KEY-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_KAFKA-CLUSTER-NAME_
 ----
