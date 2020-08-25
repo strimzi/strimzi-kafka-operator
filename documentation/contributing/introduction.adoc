@@ -116,6 +116,8 @@ Additional information is included by adding:
 . A corresponding description file (`.adoc`) in the `documentation/api/` folder
 . An `include:__DESCRIPTION-FILE-NAME__` reference in `appendix_crds.adoc`
 
+The `include:__DESCRIPTION-FILE-NAME__` reference is added automatically by the Maven build, so you do not need to add it manually.
+
 For example, to add additional configuration for `KafkaUserQuotas`:
 
 . `api/src/main/java/io/strimzi/api/kafka/model/KafkaUserQuotas.java` contains:
