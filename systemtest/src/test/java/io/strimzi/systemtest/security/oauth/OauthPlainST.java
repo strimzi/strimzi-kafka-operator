@@ -288,8 +288,8 @@ public class OauthPlainST extends OauthAbstractST {
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
                 KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
-                    KafkaResources.plainBootstrapAddress(kafkaTargetClusterName), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(),
-                    OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
+                    KafkaResources.plainBootstrapAddress(kafkaTargetClusterName), kafkaTargetClusterTopicName, MESSAGE_COUNT, "",
+                    ClientUtils.generateRandomConsumerGroup(), OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
 
                 kafkaOauthClientJob.consumerStrimziOauthPlain().done();
 
