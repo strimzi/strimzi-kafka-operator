@@ -52,7 +52,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: kafka-metrics
+  name: kafka-and-cruise-control-metrics
   labels:
     app: strimzi
 spec:

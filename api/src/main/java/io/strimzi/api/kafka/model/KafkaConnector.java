@@ -51,7 +51,27 @@ import static java.util.Collections.unmodifiableList;
                                 specReplicasPath = KafkaConnector.SPEC_REPLICAS_PATH,
                                 statusReplicasPath = KafkaConnector.STATUS_REPLICAS_PATH
                         )
-                )
+                ),
+                additionalPrinterColumns = {
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Cluster",
+                                description = "The name of the Kafka Connect cluster this connector belongs to",
+                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Connector class",
+                                description = "The class used by this connector",
+                                jsonPath = ".spec.class",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Max Tasks",
+                                description = "Maximum number of tasks",
+                                jsonPath = ".spec.tasksMax",
+                                type = "integer"
+                        )
+                }
         )
 )
 @Buildable(

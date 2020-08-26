@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Quantity;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.Volume;
@@ -17,7 +18,7 @@ public class VolumeUtilsTest {
     @Test
     public void testCreateEmptyDirVolumeWithSizeLimit() {
         Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi");
-        assertThat(volume.getEmptyDir().getSizeLimit().getAmount(), is("1Gi"));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
     @Test

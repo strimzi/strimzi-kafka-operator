@@ -41,7 +41,10 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
 
     private static final long serialVersionUID = 1L;
 
-    private int replicas;
+    private static final int DEFAULT_REPLICAS = 3;
+
+    private int replicas = DEFAULT_REPLICAS;
+
     private String version;
     private String image;
     private String whitelist;
@@ -60,7 +63,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`.")
-    @Minimum(1)
+    @Minimum(0)
     @JsonProperty(required = true)
     public int getReplicas() {
         return replicas;

@@ -20,7 +20,7 @@ For example, in this procedure the Cluster Operator is installed into the namesp
 +
 include::snip-cluster-operator-namespace-sed.adoc[]
 
-. Edit the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file
+. Edit the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file
 to add a list of all the namespaces the Cluster Operator will watch to the `STRIMZI_NAMESPACE` environment variable.
 +
 For example, in this  procedure the Cluster Operator will watch the namespaces `watched-namespace-1`, `watched-namespace-2`, `watched-namespace-3`.

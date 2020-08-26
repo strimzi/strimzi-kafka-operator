@@ -43,6 +43,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
@@ -62,9 +63,6 @@ public class KafkaConnectApiTest {
         cluster.deleteDataUponShutdown(true);
         cluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
         cluster.startup();
-        cluster.createTopics(getClass().getSimpleName() + "-offsets",
-                getClass().getSimpleName() + "-config",
-                getClass().getSimpleName() + "-status");
 
         // Start a N node connect cluster
         Map<String, String> workerProps = new HashMap<>();
@@ -251,5 +249,31 @@ public class KafkaConnectApiTest {
                         containsString("Connector never-existed not found"));
                 async.flag();
             }));
+    }
+
+    @Test
+    public void testChangeLoggers(VertxTestContext context) throws InterruptedException {
+        String desired = "log4j.rootLogger=INFO, CONSOLE\n" +
+                "log4j.logger.org.apache.zookeeper=WARN\n" +
+                "log4j.logger.org.I0Itec.zkclient=INFO\n" +
+                "log4j.logger.org.reflections.Reflection=INFO\n" +
+                "log4j.logger.org.reflections=FATAL";
+
+        KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
+        Checkpoint async = context.checkpoint();
+
+        client.updateConnectLoggers("localhost", PORT, desired)
+                .onComplete(context.succeeding())
+                .compose(a -> client.listConnectLoggers("localhost", PORT)
+                        .onComplete(context.succeeding(map -> context.verify(() -> {
+                            assertThat(map.get("org.apache.zookeeper").get("level"), is("WARN"));
+                            assertThat(map.get("org.I0Itec.zkclient").get("level"), is("INFO"));
+                            assertThat(map.get("org.reflections").get("level"), is("FATAL"));
+                            assertThat(map.get("org.reflections.Reflection").get("level"), is("INFO"));
+                            assertThat(map.get("root").get("level"), is("INFO"));
+                            assertThat(map.get("io.debezium").get("level"), is("OFF"));
+                            assertThat(map.get("unknown"), is(nullValue()));
+                            async.flag();
+                        }))));
     }
 }

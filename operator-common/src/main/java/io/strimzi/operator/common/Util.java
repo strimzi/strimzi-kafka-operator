@@ -7,6 +7,7 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -22,8 +23,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -285,19 +288,6 @@ public class Util {
     }
 
     /**
-     * OkHttp wrongfully detects JDK8u251 and higher as JDK9 which enables Http2 unsupported for JDK8.
-     * This method is used as workaround as described in https://github.com/fabric8io/kubernetes-client/issues/2212
-     *
-     * This should be removed after migrating to Fabric8 4.10.2 or higher or after migration to Java 11.
-     *
-     * @return true if JDK8 is detected and the environment variable HTTP2_DISABLE is not set
-     */
-    public static boolean shouldDisableHttp2() {
-        return System.getProperty("java.version", "").startsWith("1.8")
-                    && System.getenv("HTTP2_DISABLE") == null;
-    }
-
-    /**
      * Merge two or more Maps together, should be used for merging multiple collections of Kubernetes labels or annotations
      *
      * @param base The base set of key value pairs that will be merged, if no overrides are present this will be returned.
@@ -366,7 +356,58 @@ public class Util {
         return Util.getBrokersConfig(Integer.toString(podId));
     }
 
+    public static ConfigResource getBrokersLogging(int podId) {
+        return Util.getBrokersLogging(Integer.toString(podId));
+    }
+
     public static ConfigResource getBrokersConfig(String podId) {
         return new ConfigResource(ConfigResource.Type.BROKER, podId);
     }
+
+    public static ConfigResource getBrokersLogging(String podId) {
+        return new ConfigResource(ConfigResource.Type.BROKER_LOGGER, podId);
+    }
+
+    /**
+     * Computes and returns a hash from the String
+     * @param toBeHashed String to be hashed
+     * @return hash
+     */
+    public static String stringHash(String toBeHashed)  {
+        try {
+            MessageDigest hashFunc = MessageDigest.getInstance("SHA");
+
+            byte[] hash = hashFunc.digest(toBeHashed.getBytes(StandardCharsets.UTF_8));
+
+            StringBuffer stringHash = new StringBuffer();
+
+            for (int i = 0; i < hash.length; i++) {
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if (hex.length() == 1) stringHash.append('0');
+                stringHash.append(hex);
+            }
+
+            return stringHash.toString();
+        } catch (NoSuchAlgorithmException e)    {
+            throw new RuntimeException("Failed to create SHA MessageDigest instance");
+        }
+    }
+
+    /**
+     * Method parses all dynamically unchangeable entries from the logging configuration.
+     * @param loggingConfiguration logging configuration to be parsed
+     * @return String containing all unmodifiable entries.
+     */
+    public static String getLoggingDynamicallyUnmodifiableEntries(String loggingConfiguration) {
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(loggingConfiguration);
+        StringBuilder result = new StringBuilder();
+        for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
+            if (!entry.getKey().startsWith("log4j.logger.") && !entry.getKey().equals("log4j.rootLogger") && !entry.getKey().equals("monitorInterval")) {
+                result.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+        }
+        return result.toString();
+    }
+
 }

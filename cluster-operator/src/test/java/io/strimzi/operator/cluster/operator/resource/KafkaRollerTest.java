@@ -526,7 +526,7 @@ public class KafkaRollerTest {
                                   int... controllers) {
             super(KafkaRollerTest.vertx, new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), podOps, 500, 1000,
                 () -> new BackOff(10L, 2, 4),
-                sts, clusterCaCertSecret, coKeySecret, "", KafkaVersionTestUtils.getLatestVersion());
+                sts, clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion());
             this.controllers = controllers;
             this.controllerCall = 0;
             this.acOpenException = acOpenException;
@@ -602,7 +602,14 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff) throws ForceableProblem, InterruptedException {
+        protected Config brokerLogging(Admin ac, int brokerId) throws ForceableProblem, InterruptedException {
+            if (getConfigsException != null) {
+                throw getConfigsException;
+            } else return new Config(emptyList());
+        }
+
+        @Override
+        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem, InterruptedException {
             if (alterConfigsException != null) {
                 throw alterConfigsException;
             }

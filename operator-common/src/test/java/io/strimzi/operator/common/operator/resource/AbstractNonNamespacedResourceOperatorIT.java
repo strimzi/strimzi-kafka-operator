@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -16,8 +17,11 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Random;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -34,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @ExtendWith(VertxExtension.class)
 public abstract class AbstractNonNamespacedResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
     public static final String RESOURCE_NAME = "my-resource";
+    protected String resourceName;
     protected static Vertx vertx;
     protected static KubernetesClient client;
 
@@ -42,6 +47,11 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
+    }
+
+    @BeforeEach
+    public void renameResource() {
+        resourceName = getResourceName(RESOURCE_NAME);
     }
 
     @AfterAll
@@ -62,27 +72,37 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         T newResource = getOriginal();
         T modResource = getModified();
 
-        op.reconcile(RESOURCE_NAME, newResource)
+        op.reconcile(resourceName, newResource)
             .onComplete(context.succeeding(rrCreate -> context.verify(() -> {
-                T created = op.get(RESOURCE_NAME);
+                T created = op.get(resourceName);
 
                 assertThat("Failed to get created Resource", created, is(notNullValue()));
                 assertResources(context, newResource, created);
             })))
-            .compose(rr -> op.reconcile(RESOURCE_NAME, modResource))
+            .compose(rr -> op.reconcile(resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> context.verify(() -> {
-                T modified = (T) op.get(RESOURCE_NAME);
+                T modified = (T) op.get(resourceName);
 
                 assertThat("Failed to get modified Resource", modified, is(notNullValue()));
                 assertResources(context, modResource, modified);
             })))
-            .compose(rr -> op.reconcile(RESOURCE_NAME, null))
+            .compose(rr -> op.reconcile(resourceName, null))
             .onComplete(context.succeeding(rrDelete -> context.verify(() -> {
-                T deleted = (T) op.get(RESOURCE_NAME);
-
-                assertThat("Failed to get modified Resource", deleted, is(nullValue()));
-                async.flag();
+                // it seems the resource is cached for some time so we need wait for it to be null
+                context.verify(() -> {
+                        Util.waitFor(vertx, "resource deletion " + resourceName, "deleted", 1000,
+                                30_000, () -> op.get(resourceName) == null)
+                                .onComplete(del -> {
+                                    assertThat(op.get(resourceName), is(nullValue()));
+                                    async.flag();
+                                });
+                    }
+                );
             })));
+    }
+
+    protected String getResourceName(String name) {
+        return name + "-" + new Random().nextInt(Integer.MAX_VALUE);
     }
 }
 

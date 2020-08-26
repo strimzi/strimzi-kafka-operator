@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class InitWriter {
 
@@ -100,43 +99,5 @@ public class InitWriter {
         }
 
         return isWritten;
-    }
-
-    /**
-     * Tries to find the right address of the node. The different addresses has different prioprities:
-     *      1. ExternalDNS
-     *      2. ExternalIP
-     *      3. Hostname
-     *      4. InternalDNS
-     *      5. InternalIP
-     *
-     * @param addresses List of addresses which are assigned to our node
-     * @return  Address of the node
-     */
-    protected String findAddress(List<NodeAddress> addresses)   {
-        if (addresses == null)  {
-            return null;
-        }
-
-        Map<String, String> addressMap = addresses.stream().collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress));
-
-        // If user set preferred address type, we should check it first
-        if (config.getAddressType() != null && addressMap.containsKey(config.getAddressType())) {
-            return addressMap.get(config.getAddressType());
-        }
-
-        if (addressMap.containsKey("ExternalDNS"))  {
-            return addressMap.get("ExternalDNS");
-        } else if (addressMap.containsKey("ExternalIP"))  {
-            return addressMap.get("ExternalIP");
-        } else if (addressMap.containsKey("InternalDNS"))  {
-            return addressMap.get("InternalDNS");
-        } else if (addressMap.containsKey("InternalIP"))  {
-            return addressMap.get("InternalIP");
-        } else if (addressMap.containsKey("Hostname")) {
-            return addressMap.get("Hostname");
-        }
-
-        return null;
     }
 }

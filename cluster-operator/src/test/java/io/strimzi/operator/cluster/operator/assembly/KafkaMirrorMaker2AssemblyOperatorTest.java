@@ -55,6 +55,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -99,12 +100,12 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
-        KafkaMirrorMaker2 clusterCm = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, clusterCmName);
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
 
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -116,7 +117,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockNetPolOps.reconcile(eq(clusterCm.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(clusterCm.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -130,15 +131,15 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // No metrics config  => no CMs created
                 Set<String> metricsNames = new HashSet<>();
                 if (mirrorMaker2.isMetricsEnabled()) {
-                    metricsNames.add(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterCmName));
+                    metricsNames.add(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name));
                 }
 
                 // Verify service
@@ -168,7 +169,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getUrl(), is("http://foo-mirrormaker2-api.test.svc:8083"));
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getReplicas(), is(mirrorMaker2.getReplicas()));
-                assertThat(capturedMirrorMaker2s.get(0).getStatus().getPodSelector().getMatchLabels(), is(mirrorMaker2.getSelectorLabels().toMap()));
+                assertThat(capturedMirrorMaker2s.get(0).getStatus().getLabelSelector(), is(mirrorMaker2.getSelectorLabels().toSelectorString()));
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
                 async.flag();
@@ -185,37 +186,37 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
 
-        KafkaMirrorMaker2 clusterCm = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, clusterCmName);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
         when(mockMirrorMaker2Ops.updateStatusAsync(any(KafkaMirrorMaker2.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
-        when(mockDcOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockServiceOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
+        when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(eq(clusterCmNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(kmm2Namespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(eq(clusterCmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(eq(kmm2Namespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(eq(clusterCmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(eq(kmm2Namespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(eq(clusterCmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(eq(kmm2Namespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockNetPolOps.reconcile(eq(clusterCm.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(clusterCm.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -227,7 +228,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 // Verify service
@@ -263,69 +264,69 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
 
-        KafkaMirrorMaker2 clusterCm = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, clusterCmName);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
-        clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
+        kmm2.getSpec().setImage("some/different:image"); // Change the image to generate some diff
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
         when(mockMirrorMaker2Ops.updateStatusAsync(any(KafkaMirrorMaker2.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
-        when(mockDcOps.get(clusterCmNamespace, mirrorMaker2.getName()))
+        when(mockServiceOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
+        when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName()))
                 .thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(eq(clusterCmNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(kmm2Namespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(eq(clusterCmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(eq(kmm2Namespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(eq(clusterCmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(eq(kmm2Namespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(eq(clusterCmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(eq(kmm2Namespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockNetPolOps.reconcile(eq(clusterCm.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(clusterCm.getMetadata().getName())), any()))
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any()))
                 .thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock CM get
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterCmName))
-                    .withNamespace(clusterCmNamespace)
+                    .withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))
+                    .withNamespace(kmm2Namespace)
                 .endMetadata()
                 .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(kmm2Namespace, KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))).thenReturn(metricsCm);
 
         ConfigMap loggingCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterCmName))
-                    .withNamespace(clusterCmNamespace)
+                    .withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))
+                    .withNamespace(kmm2Namespace)
                     .endMetadata()
                     .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
                     .build();
 
-        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(kmm2Namespace, KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))).thenReturn(metricsCm);
 
         // Mock CM patch
         Set<String> metricsCms = TestUtils.set();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
             return Future.succeededFuture();
-        }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
+        }).when(mockCmOps).reconcile(eq(kmm2Namespace), anyString(), any());
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
@@ -334,9 +335,9 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                KafkaMirrorMaker2Cluster compareTo = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
+                KafkaMirrorMaker2Cluster compareTo = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
 
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -381,18 +382,18 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
 
-        KafkaMirrorMaker2 clusterCm = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, clusterCmName);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
-        clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
+        kmm2.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
         when(mockMirrorMaker2Ops.updateStatusAsync(any(KafkaMirrorMaker2.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
-        when(mockDcOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockServiceOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
+        when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
@@ -419,13 +420,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockMirrorMaker2Ops.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker2())));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
-        when(mockNetPolOps.reconcile(eq(clusterCm.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(clusterCm.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.failing(v -> async.flag()));
     }
 
@@ -441,35 +442,35 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
 
-        KafkaMirrorMaker2 clusterCm = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, clusterCmName);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
-        clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
+        kmm2.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
         when(mockMirrorMaker2Ops.updateStatusAsync(any(KafkaMirrorMaker2.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
-        when(mockDcOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockServiceOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
+        when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        when(mockDcOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
-
-        doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
+        when(mockDcOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(kmm2Namespace, mirrorMaker2.getName(), scaleTo);
+
+        doAnswer(i -> Future.succeededFuture(scaleTo))
+                .when(mockDcOps).scaleDown(kmm2Namespace, mirrorMaker2.getName(), scaleTo);
 
         when(mockMirrorMaker2Ops.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker2())));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
-        when(mockNetPolOps.reconcile(eq(clusterCm.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(clusterCm.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
@@ -478,9 +479,9 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
+                verify(mockDcOps).scaleUp(kmm2Namespace, mirrorMaker2.getName(), scaleTo);
                 async.flag();
             })));
     }
@@ -497,35 +498,35 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
 
-        KafkaMirrorMaker2 clusterCm = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, clusterCmName);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(clusterCm, VERSIONS);
-        clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
+        kmm2.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
         when(mockMirrorMaker2Ops.updateStatusAsync(any(KafkaMirrorMaker2.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
-        when(mockDcOps.get(clusterCmNamespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockServiceOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateService());
+        when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        when(mockDcOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
-
-        doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
+        when(mockDcOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(kmm2Namespace, mirrorMaker2.getName(), scaleTo);
+
+        doAnswer(i -> Future.succeededFuture(scaleTo))
+                .when(mockDcOps).scaleDown(kmm2Namespace, mirrorMaker2.getName(), scaleTo);
 
         when(mockMirrorMaker2Ops.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker2())));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
-        when(mockNetPolOps.reconcile(eq(clusterCm.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(clusterCm.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
@@ -534,9 +535,9 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(clusterCmNamespace, mirrorMaker2.getName(), scaleTo);
+                verify(mockDcOps).scaleUp(kmm2Namespace, mirrorMaker2.getName(), scaleTo);
                 async.flag();
             })));
     }
@@ -549,30 +550,30 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
 
-        String clusterCmNamespace = "test";
+        String kmm2Namespace = "test";
 
-        KafkaMirrorMaker2 foo = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, "foo");
-        KafkaMirrorMaker2 bar = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, "bar");
-        when(mockMirrorMaker2Ops.listAsync(eq(clusterCmNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
+        KafkaMirrorMaker2 foo = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, "foo");
+        KafkaMirrorMaker2 bar = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, "bar");
+        when(mockMirrorMaker2Ops.listAsync(eq(kmm2Namespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka MirrorMaker 2.0 cluster
-        when(mockMirrorMaker2Ops.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
-        when(mockMirrorMaker2Ops.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
+        when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("foo"))).thenReturn(foo);
+        when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL Deployments for all the Kafka MirrorMaker 2.0 clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker2.RESOURCE_KIND);
-        when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
+        when(mockDcOps.list(eq(kmm2Namespace), eq(newLabels))).thenReturn(
                 asList(KafkaMirrorMaker2Cluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka MirrorMaker 2.0 clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
-        when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
+        when(mockDcOps.list(eq(kmm2Namespace), eq(barLabels))).thenReturn(
                 asList(KafkaMirrorMaker2Cluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
         );
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockPdbOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
@@ -590,7 +591,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         Checkpoint async = context.checkpoint();
         // Now try to reconcile all the Kafka MirrorMaker 2.0 clusters
-        ops.reconcileAll("test", clusterCmNamespace,
+        ops.reconcileAll("test", kmm2Namespace,
             context.succeeding(v -> context.verify(() -> {
                 assertThat(createdOrUpdated, is(new HashSet(asList("foo", "bar"))));
                 async.flag();
@@ -608,13 +609,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
         String failureMsg = "failure";
-        KafkaMirrorMaker2 clusterCm = ResourceUtils.createEmptyKafkaMirrorMaker2Cluster(clusterCmNamespace, clusterCmName);
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
 
-        when(mockMirrorMaker2Ops.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(clusterCm));
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
         when(mockServiceOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
@@ -622,7 +623,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockNetPolOps.reconcile(eq(clusterCm.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(clusterCm.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
@@ -632,7 +633,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, clusterCmNamespace, clusterCmName), clusterCm)
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.failing(v -> context.verify(() -> {
                 // Verify status
                 List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
@@ -642,6 +643,90 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getMessage(), is(failureMsg));
                 async.flag();
             })));
+    }
+
+
+    @Test
+    public void testCreateClusterWithZeroReplicas(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+
+        String kmm2Name = "foo";
+        String kmm2Namespace = "test";
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name, 0);
+
+        when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
+
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
+        when(mockDcOps.reconcile(anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+        when(mockMirrorMaker2Ops.updateStatusAsync(mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+
+        KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(kmm2, VERSIONS);
+
+        Checkpoint async = context.checkpoint();
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+
+                    // 0 Replicas - readiness should never get called.
+                    verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());
+
+                    // Verify service
+                    List<Service> capturedServices = serviceCaptor.getAllValues();
+                    assertThat(capturedServices, hasSize(1));
+                    Service service = capturedServices.get(0);
+                    assertThat(service.getMetadata().getName(), is(mirrorMaker2.getServiceName()));
+                    assertThat(service, is(mirrorMaker2.generateService()));
+
+                    // Verify Deployment
+                    List<Deployment> capturedDc = dcCaptor.getAllValues();
+                    assertThat(capturedDc, hasSize(1));
+                    Deployment dc = capturedDc.get(0);
+                    assertThat(dc.getMetadata().getName(), is(mirrorMaker2.getName()));
+                    Map<String, String> annotations = new HashMap<>();
+                    annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                    assertThat(dc, is(mirrorMaker2.generateDeployment(annotations, true, null, null)));
+
+                    // Verify PodDisruptionBudget
+                    List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                    assertThat(capturedPdb, hasSize(1));
+                    PodDisruptionBudget pdb = capturedPdb.get(0);
+                    assertThat(pdb.getMetadata().getName(), is(mirrorMaker2.getName()));
+                    assertThat(pdb, is(mirrorMaker2.generatePodDisruptionBudget()));
+
+                    // Verify status
+                    List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
+                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getUrl(), is(nullValue()));
+                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getReplicas(), is(mirrorMaker2.getReplicas()));
+                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getLabelSelector(), is(mirrorMaker2.getSelectorLabels().toSelectorString()));
+                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
+                    assertThat(capturedMirrorMaker2s.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
+                    async.flag();
+                })));
     }
 
 }

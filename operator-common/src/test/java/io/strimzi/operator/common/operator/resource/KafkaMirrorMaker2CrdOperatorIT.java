@@ -45,11 +45,12 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
         return "kafka-mirror-maker-2-crd-it-namespace";
     }
 
-    protected KafkaMirrorMaker2 getResource() {
+    @Override
+    protected KafkaMirrorMaker2 getResource(String resourceName) {
         return new KafkaMirrorMaker2Builder()
                 .withApiVersion(KafkaMirrorMaker2.RESOURCE_GROUP + "/" + KafkaMirrorMaker2.V1ALPHA1)
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

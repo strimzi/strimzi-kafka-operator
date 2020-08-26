@@ -17,13 +17,13 @@
 :KubernetesVersion: 1.11 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 2.5.0
-:KafkaVersionLower: 2.4.1
-:KafkaVersionHigher: 2.5.0
+:DefaultKafkaVersion: 2.6.0
+:KafkaVersionLower: 2.5.0
+:KafkaVersionHigher: 2.6.0
 
 //log message format version
-:LogMsgVersLower: 2.4
-:LogMsgVersHigher: 2.5
+:LogMsgVersLower: 2.5
+:LogMsgVersHigher: 2.4
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
@@ -37,7 +37,7 @@
 
 //OAuth attributes and links
 :oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
-:oauth-artifact-version: 0.5.0
+:oauth-artifact-version: 0.6.0
 :keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Authorization Services^]
 :oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using OAuth 2.0^]
@@ -105,11 +105,9 @@
 :BridgeDockerTag: {BridgeVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
 :DockerZookeeper: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerZookeeperStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaImageCurrent: strimzi/kafka:{DockerTag}-kafka-{KafkaVersionHigher}
 :DockerKafkaImagePrevious: strimzi/kafka:{DockerTag}-kafka-{KafkaVersionLower}
 :DockerKafka: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaConnect: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaConnectS2I: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerClusterOperator: strimzi/operator:{DockerTag}
@@ -159,7 +157,7 @@
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.18.0
+:ProductVersion: 0.20.0
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html

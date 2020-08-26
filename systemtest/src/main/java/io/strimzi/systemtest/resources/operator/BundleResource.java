@@ -20,25 +20,25 @@ import java.util.List;
 public class BundleResource {
     private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
 
-    public static final String PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final String PATH_TO_CO_CONFIG = "../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
     public static DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
-        return KubernetesResource.deployNewDeployment(defaultCLusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());
+        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());
     }
 
     public static DoneableDeployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        return KubernetesResource.deployNewDeployment(defaultCLusterOperator(namespace, operationTimeout, reconciliationInterval).build());
+        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, reconciliationInterval).build());
     }
 
     public static DoneableDeployment clusterOperator(String namespace) {
-        return KubernetesResource.deployNewDeployment(defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
+        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
     }
 
     public static DeploymentBuilder defaultClusterOperator(String namespace) {
-        return defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        return defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    private static DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+    private static DeploymentBuilder defaultClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
 
         Deployment clusterOperator = KubernetesResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
 

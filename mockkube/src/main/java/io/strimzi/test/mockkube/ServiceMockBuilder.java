@@ -31,7 +31,7 @@ class ServiceMockBuilder extends MockBuilder<Service, ServiceList, DoneableServi
     /** Override Service creation to also create Endpoints */
     @Override
     protected void mockCreate(String resourceName, ServiceResource<Service, DoneableService> resource) {
-        when(resource.create(any())).thenAnswer(i -> {
+        when(resource.create(any(Service.class))).thenAnswer(i -> {
             Service argument = i.getArgument(0);
             db.put(resourceName, copyResource(argument));
             LOGGER.debug("create {} (and endpoint) {} ", resourceType, resourceName);

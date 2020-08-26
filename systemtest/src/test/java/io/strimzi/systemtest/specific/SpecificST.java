@@ -18,7 +18,9 @@ import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClie
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +34,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SPECIFIC;
@@ -55,6 +58,7 @@ public class SpecificST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testRackAware() {
         String rackKey = "rack-key";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
@@ -99,7 +103,6 @@ public class SpecificST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -111,6 +114,7 @@ public class SpecificST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerIpOverride() {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
@@ -179,6 +183,7 @@ public class SpecificST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerSourceRanges() {
         String networkInterfaces = Exec.exec("ip", "route").out();
         Pattern ipv4InterfacesPattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
@@ -236,7 +241,7 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");
 
-        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         basicExternalKafkaClient.setMessageCount(2 * MESSAGE_COUNT);
 
         assertThrows(TimeoutException.class, () ->
@@ -248,11 +253,12 @@ public class SpecificST extends AbstractST {
 
     @BeforeAll
     void setup() {
+        LOGGER.info(BridgeUtils.getBridgeVersion());
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
         applyRoleBindings(NAMESPACE);
-        // 050-Deployment
+        // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
     }
 }

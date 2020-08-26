@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -19,6 +20,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaConnectorResource {
@@ -64,7 +66,7 @@ public class KafkaConnectorResource {
     }
 
     public static void deleteKafkaConnectorWithoutWait(String connectorName) {
-        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).cascading(true).delete();
+        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {
@@ -92,7 +94,7 @@ public class KafkaConnectorResource {
     }
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, Ready);
     }
 
     private static KafkaConnector deleteLater(KafkaConnector kafkaConnector) {

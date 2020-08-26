@@ -131,6 +131,11 @@
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
+    "fetch.max.bytes" : {
+      "minimum" : 1024,
+      "scope" : "READ_ONLY",
+      "type" : "INT"
+    },
     "fetch.purgatory.purge.interval.requests" : {
       "scope" : "READ_ONLY",
       "type" : "INT"
@@ -161,7 +166,7 @@
       "type" : "STRING"
     },
     "inter.broker.protocol.version" : {
-      "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E",
+      "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E|\\Q2.5\\E(\\.[0-9]+)*|\\Q2.5-IV0\\E|\\Q2.6\\E(\\.[0-9]+)*|\\Q2.6-IV0\\E",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
@@ -288,7 +293,7 @@
       "type" : "BOOLEAN"
     },
     "log.message.format.version" : {
-      "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E",
+      "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E|\\Q2.5\\E(\\.[0-9]+)*|\\Q2.5-IV0\\E|\\Q2.6\\E(\\.[0-9]+)*|\\Q2.6-IV0\\E",
       "scope" : "READ_ONLY",
       "type" : "STRING"
     },
@@ -711,6 +716,10 @@
       "scope" : "PER_BROKER",
       "type" : "STRING"
     },
+    "ssl.engine.factory.class" : {
+      "scope" : "PER_BROKER",
+      "type" : "CLASS"
+    },
     "ssl.key.password" : {
       "scope" : "PER_BROKER",
       "type" : "PASSWORD"
@@ -812,6 +821,10 @@
       "scope" : "CLUSTER_WIDE",
       "type" : "BOOLEAN"
     },
+    "zookeeper.clientCnxnSocket" : {
+      "scope" : "READ_ONLY",
+      "type" : "STRING"
+    },
     "zookeeper.connect" : {
       "scope" : "READ_ONLY",
       "type" : "STRING"
@@ -833,10 +846,62 @@
       "scope" : "READ_ONLY",
       "type" : "BOOLEAN"
     },
+    "zookeeper.ssl.cipher.suites" : {
+      "scope" : "READ_ONLY",
+      "type" : "LIST"
+    },
+    "zookeeper.ssl.client.enable" : {
+      "scope" : "READ_ONLY",
+      "type" : "BOOLEAN"
+    },
+    "zookeeper.ssl.crl.enable" : {
+      "scope" : "READ_ONLY",
+      "type" : "BOOLEAN"
+    },
+    "zookeeper.ssl.enabled.protocols" : {
+      "scope" : "READ_ONLY",
+      "type" : "LIST"
+    },
+    "zookeeper.ssl.endpoint.identification.algorithm" : {
+      "scope" : "READ_ONLY",
+      "type" : "STRING"
+    },
+    "zookeeper.ssl.keystore.location" : {
+      "scope" : "READ_ONLY",
+      "type" : "STRING"
+    },
+    "zookeeper.ssl.keystore.password" : {
+      "scope" : "READ_ONLY",
+      "type" : "PASSWORD"
+    },
+    "zookeeper.ssl.keystore.type" : {
+      "scope" : "READ_ONLY",
+      "type" : "STRING"
+    },
+    "zookeeper.ssl.ocsp.enable" : {
+      "scope" : "READ_ONLY",
+      "type" : "BOOLEAN"
+    },
+    "zookeeper.ssl.protocol" : {
+      "scope" : "READ_ONLY",
+      "type" : "STRING"
+    },
+    "zookeeper.ssl.truststore.location" : {
+      "scope" : "READ_ONLY",
+      "type" : "STRING"
+    },
+    "zookeeper.ssl.truststore.password" : {
+      "scope" : "READ_ONLY",
+      "type" : "PASSWORD"
+    },
+    "zookeeper.ssl.truststore.type" : {
+      "scope" : "READ_ONLY",
+      "type" : "STRING"
+    },
     "zookeeper.sync.time.ms" : {
       "scope" : "READ_ONLY",
       "type" : "INT"
     }
   },
-  "version" : "2.4.1"
+  "version" : "2.6.0"
 }

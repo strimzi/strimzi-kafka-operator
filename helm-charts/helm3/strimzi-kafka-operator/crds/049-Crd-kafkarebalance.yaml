@@ -23,6 +23,11 @@ spec:
       - kr
     categories:
       - strimzi
+  additionalPrinterColumns:
+    - name: Cluster
+      description: The name of the Kafka cluster this resource rebalances
+      JSONPath: .metadata.labels.strimzi\.io/cluster
+      type: string
   subresources:
     status: {}
   validation:
@@ -58,6 +63,11 @@ spec:
               type: integer
               minimum: 0
               description: The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.
+            replicaMovementStrategies:
+              type: array
+              items:
+                type: string
+              description: A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.
           description: The specification of the Kafka rebalance.
         status:
           type: object

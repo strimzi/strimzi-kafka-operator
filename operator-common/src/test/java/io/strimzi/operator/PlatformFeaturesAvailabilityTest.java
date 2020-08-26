@@ -7,7 +7,6 @@ package io.strimzi.operator;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
-import io.strimzi.operator.common.Util;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -185,7 +184,7 @@ public class PlatformFeaturesAvailabilityTest {
                 "compiler=gc\n" +
                 "platform=linux/amd64";
 
-        VersionInfo vi = new VersionInfo(Util.parseMap(version));
+        VersionInfo vi = PlatformFeaturesAvailability.parseVersionInfo(version);
 
         context.verify(() -> {
             assertThat(vi.getMajor(), is("1"));

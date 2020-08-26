@@ -84,9 +84,9 @@
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <sundrio.version>0.19.0</sundrio.version>
 
-        <fabric8.kubernetes-client.version>4.6.4</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>4.6.4</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>4.6.4</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>4.10.3</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>4.10.3</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>4.10.3</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <okhttp.version>3.12.6</okhttp.version>
         <okio.version>1.15.0</okio.version>
@@ -99,19 +99,19 @@
         <fasterxml.jackson-databind.version>2.10.2</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.10.2</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.10.2</fasterxml.jackson-annotations.version>
-        <kafka.version>2.5.0</kafka.version>
+        <kafka.version>2.6.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.10</scala-library.version>
-        <zookeeper.version>3.5.7</zookeeper.version>
+        <zookeeper.version>3.5.8</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.3.2</quartz.version>
-        <debezium.version>1.1.0.Final</debezium.version>
-        <jaeger.version>1.0.0</jaeger.version>
+        <debezium.version>1.2.1.Final</debezium.version>
+        <jaeger.version>1.1.0</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.4</opentracing-kafka.version>
-        <strimzi-oauth.version>0.5.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.6.0</strimzi-oauth.version>
 
         <junit-json-params.version>5.5.1-r0</junit-json-params.version>
         <test-containers.version>1.14.0</test-containers.version>
@@ -238,8 +238,58 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-extensions</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-core</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-rbac</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-apps</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-apiextensions</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-networking</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-policy</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-storageclass</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-batch</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>openshift-model</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
                 <artifactId>openshift-client</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
+                <version>${fabric8.openshift-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>

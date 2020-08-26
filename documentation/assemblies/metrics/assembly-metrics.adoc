@@ -28,3 +28,5 @@ include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 include::assembly_metrics-kafka-exporter.adoc[leveloffset=+1]
 //How to set up Kafka Bridge
 include::assembly_metrics-kafka-bridge.adoc[leveloffset=+1]
+//How to set up Cruise Control
+include::assembly_metrics-cruise-control.adoc[leveloffset=+1]

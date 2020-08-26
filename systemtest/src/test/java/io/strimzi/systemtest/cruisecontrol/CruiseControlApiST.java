@@ -76,8 +76,7 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString("DiskCapacityGoal"));
         assertThat(response, containsString("NetworkInboundCapacityGoal"));
         assertThat(response, containsString("NetworkOutboundCapacityGoal"));
-        // TODO: This Goal is currently not working properly on Kubernetes. It will be added in once this issue is fixed: https://github.com/linkedin/cruise-control/issues/1242
-        //assertThat(response, containsString("CpuCapacityGoal"));
+        assertThat(response, containsString("CpuCapacityGoal"));
         assertThat(response, containsString("ReplicaDistributionGoal"));
         assertThat(response, containsString("DiskUsageDistributionGoal"));
         assertThat(response, containsString("NetworkInboundUsageDistributionGoal"));
@@ -127,10 +126,6 @@ public class CruiseControlApiST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        deployTestResources();
-    }
-
-    private void deployTestResources() {
         KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
     }
 }

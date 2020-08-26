@@ -18,6 +18,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
 
@@ -67,7 +69,7 @@ public class KafkaUserResource {
     }
 
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, Ready);
     }
 
     private static KafkaUser deleteLater(KafkaUser kafkaUser) {

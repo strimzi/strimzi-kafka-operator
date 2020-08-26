@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
@@ -21,11 +22,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
@@ -86,11 +89,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
-        // attach the approve annotation -> RS
-        LOGGER.info("Executing command in the namespace {}", cmdKubeClient().namespace(NAMESPACE).namespace());
-        String response = ResourceManager.cmdKubeClient().namespace(NAMESPACE)
-            .execInCurrentNamespace("annotate", "kafkarebalance", CLUSTER_NAME, "strimzi.io/rebalance=" + KafkaRebalanceAnnotation.approve.toString())
-            .out();
+        String response = KafkaRebalanceUtils.annotateKafkaRebalanceResource(CLUSTER_NAME, KafkaRebalanceAnnotation.approve);
 
         LOGGER.info("Response from the annotation process {}", response);
 
@@ -111,7 +110,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
         KafkaResource.kafkaWithCruiseControlWithoutWait(CLUSTER_NAME, 1, 1);
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, errMessage);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, errMessage, Duration.ofMinutes(6).toMillis());
 
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
@@ -123,6 +122,35 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is(not(errMessage)));
+    }
+
+    @Test
+    void testCruiseControlTopicExclusion() {
+        String excludedTopic1 = "excluded-topic-1";
+        String excludedTopic2 = "excluded-topic-2";
+        String includedTopic = "included-topic";
+
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, excludedTopic1).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, excludedTopic2).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, includedTopic).done();
+
+        KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME)
+            .editOrNewSpec()
+                .withExcludedTopics("excluded-.*")
+            .endSpec()
+            .done();
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.ProposalReady);
+
+        LOGGER.info("Checking status of KafkaRebalance");
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic1));
+        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic2));
+        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), not(containsString(includedTopic)));
+
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(CLUSTER_NAME, KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.Ready);
     }
 
     @BeforeAll

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -12,8 +13,10 @@ import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
+import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 
 import java.util.function.Consumer;
@@ -67,7 +70,7 @@ public class KafkaRebalanceResource {
     }
 
     public static void deleteKafkaRebalanceWithoutWait(String resourceName) {
-        kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
+        kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static KafkaRebalance getKafkaRebalanceFromYaml(String yamlPath) {
@@ -75,7 +78,8 @@ public class KafkaRebalanceResource {
     }
 
     private static KafkaRebalance waitFor(KafkaRebalance kafkaRebalance) {
-        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, "PendingProposal");
+        long timeout = ResourceOperation.getTimeoutForKafkaRebalanceState(KafkaRebalanceState.PendingProposal);
+        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, KafkaRebalanceState.PendingProposal, timeout);
     }
 
     private static KafkaRebalance deleteLater(KafkaRebalance kafkaRebalance) {

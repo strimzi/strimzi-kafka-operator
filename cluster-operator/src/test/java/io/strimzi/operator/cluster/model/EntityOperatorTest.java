@@ -87,7 +87,7 @@ public class EntityOperatorTest {
             .build();
 
     private final Kafka resource =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                     .withEntityOperator(entityOperatorSpec)
                     .endSpec()
@@ -137,7 +137,7 @@ public class EntityOperatorTest {
     public void testFromCrdNoTopicAndUserOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -186,7 +186,7 @@ public class EntityOperatorTest {
 
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .withNewEntityOperator()
                                 .withTopicOperator(entityTopicOperatorSpec)
@@ -229,7 +229,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testGracePeriod() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                     .withTopicOperator(entityTopicOperatorSpec)
@@ -252,7 +252,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultGracePeriod() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -273,7 +273,7 @@ public class EntityOperatorTest {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                     .withTopicOperator(entityTopicOperatorSpec)
@@ -303,7 +303,7 @@ public class EntityOperatorTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -324,7 +324,7 @@ public class EntityOperatorTest {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                 .withNewEntityOperator()
                 .withTopicOperator(entityTopicOperatorSpec)
@@ -347,7 +347,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultImagePullSecrets() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -358,12 +358,12 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
     public void testSecurityContext() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -387,7 +387,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultSecurityContext() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -470,7 +470,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testImagePullPolicy() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -519,7 +519,7 @@ public class EntityOperatorTest {
         topicOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -564,7 +564,7 @@ public class EntityOperatorTest {
         topicOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -610,7 +610,7 @@ public class EntityOperatorTest {
         userOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -654,7 +654,7 @@ public class EntityOperatorTest {
         userOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -698,7 +698,7 @@ public class EntityOperatorTest {
         tlsContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -737,7 +737,7 @@ public class EntityOperatorTest {
         tlsContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .withNewEntityOperator()
                                 .withTopicOperator(entityTopicOperatorSpec)
@@ -770,7 +770,7 @@ public class EntityOperatorTest {
                 .endCapabilities()
                 .build();
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editOrNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -807,7 +807,7 @@ public class EntityOperatorTest {
                 .endCapabilities()
                 .build();
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editOrNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -844,7 +844,7 @@ public class EntityOperatorTest {
                 .endCapabilities()
                 .build();
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editOrNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)

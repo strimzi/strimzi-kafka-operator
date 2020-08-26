@@ -4,6 +4,7 @@
 
 [id="security-configuration-authorization_{context}"]
 = Authorization
+
 You can apply authorization to a Kafka cluster using `AclAuthorizer`.
 If applied to a Kafka cluster, authorization is enabled for all listeners used for client connection.
 

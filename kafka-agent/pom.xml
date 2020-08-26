@@ -29,6 +29,12 @@
             <version>1.7.25</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.12</artifactId>
+            <version>${kafka.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

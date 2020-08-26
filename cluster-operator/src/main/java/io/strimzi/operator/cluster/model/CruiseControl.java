@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
@@ -42,6 +43,7 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 
@@ -53,11 +55,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
@@ -67,39 +66,25 @@ public class CruiseControl extends AbstractModel {
 
     public static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
 
-    public static final String RACK_AWARENESS_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal";
-    public static final String REPLICA_CAPACITY_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal";
-    public static final String DISK_CAPACITY_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal";
-    public static final String NETWORK_INBOUND_CAPACITY_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal";
-    public static final String NETWORK_OUTBOUND_CAPACITY_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal";
-    public static final String CPU_CAPACITY_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuCapacityGoal";
-    public static final String REPLICA_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaDistributionGoal";
-    public static final String POTENTIAL_NETWORK_OUTAGE_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.PotentialNwOutGoal";
-    public static final String DISK_USAGE_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskUsageDistributionGoal";
-    public static final String NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundUsageDistributionGoal";
-    public static final String NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundUsageDistributionGoal";
-    public static final String CPU_USAGE_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuUsageDistributionGoal";
-    public static final String TOPIC_REPLICA_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.TopicReplicaDistributionGoal";
-    public static final String LEADER_REPLICA_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderReplicaDistributionGoal";
-    public static final String LEADER_BYTES_IN_DISTRIBUTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderBytesInDistributionGoal";
-    public static final String PREFERRED_LEADER_ELECTION_GOAL = "com.linkedin.kafka.cruisecontrol.analyzer.goals.PreferredLeaderElectionGoal";
-
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_CC_CERTS_VOLUME_NAME = "cc-certs";
     protected static final String TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cc-certs/";
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
-    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-logging";
+    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-metrics-and-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     private static final String NAME_SUFFIX = "-cruise-control";
 
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "logging";
 
+    public static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
+
     private String zookeeperConnect;
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
+    public static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
 
     // Default probe settings (liveness and readiness) for health checks
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -160,6 +145,7 @@ public class CruiseControl extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = LOG_AND_METRICS_CONFIG_VOLUME_NAME;
         this.logAndMetricsConfigMountPath = LOG_AND_METRICS_CONFIG_VOLUME_MOUNT;
+        this.isMetricsEnabled = DEFAULT_CRUISE_CONTROL_METRICS_ENABLED;
 
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
     }
@@ -223,6 +209,12 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.brokerInboundNetworkKiBPerSecondCapacity = capacity.getInboundNetworkKiBPerSecond();
             cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKiBPerSecond();
 
+            Map<String, Object> metrics = spec.getMetrics();
+            if (metrics != null) {
+                cruiseControl.setMetricsEnabled(true);
+                cruiseControl.setMetricsConfig(metrics.entrySet());
+            }
+
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());
             }
@@ -268,20 +260,20 @@ public class CruiseControl extends AbstractModel {
     public static void checkGoals(CruiseControlConfiguration configuration) {
         // If self healing goals are defined then these take precedence.
         // Right now, self.healing.goals must either be null or an empty list
-        if (configuration.getConfigOption(CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY) != null) {
-            String selfHealingGoalsString = configuration.getConfigOption(CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY);
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY.toString()) != null) {
+            String selfHealingGoalsString = configuration.getConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY.toString());
             List<String> selfHealingGoals = Arrays.asList(selfHealingGoalsString.split("\\s*,\\s*"));
             if (!selfHealingGoals.isEmpty()) {
                 throw new UnsupportedOperationException("Cruise Control's self healing functionality is not currently supported. Please remove " +
-                        CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY + " config");
+                        CruiseControlConfigurationParameters.CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY + " config");
             }
         }
 
         // If no anomaly detection goals have been defined by the user, the defaults defined in Cruise Control will be used.
-        String anomalyGoalsString = configuration.getConfigOption(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY, CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS);
+        String anomalyGoalsString = configuration.getConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.toString(), CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS);
         Set<String> anomalyDetectionGoals = new HashSet<>(Arrays.asList(anomalyGoalsString.split("\\s*,\\s*")));
 
-        String defaultGoalsString = configuration.getConfigOption(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY, CRUISE_CONTROL_GOALS);
+        String defaultGoalsString = configuration.getConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.toString(), CRUISE_CONTROL_GOALS);
         Set<String> defaultGoals = new HashSet<>(Arrays.asList(defaultGoalsString.split("\\s*,\\s*")));
 
         // Remove all the goals which are present in the default goals set from the anomaly detection goals
@@ -290,7 +282,7 @@ public class CruiseControl extends AbstractModel {
         if (!anomalyDetectionGoals.isEmpty()) {
             // If the anomaly detection goals contain goals which are not in the default goals then the CC startup
             // checks will fail, so we make the anomaly goals match the default goals
-            configuration.setConfigOption(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY, defaultGoalsString);
+            configuration.setConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.toString(), defaultGoalsString);
             log.warn("Anomaly goals contained goals which are not in the configured default goals. Anomaly goals have " +
                     "been changed to match the specified default goals.");
         }
@@ -448,6 +440,7 @@ public class CruiseControl extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
+        varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, String.valueOf(defaultBootstrapServers(cluster))));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
@@ -584,6 +577,18 @@ public class CruiseControl extends AbstractModel {
         }
 
         rules.add(restApiRule);
+
+        if (isMetricsEnabled) {
+            NetworkPolicyPort metricsPort = new NetworkPolicyPort();
+            metricsPort.setPort(new IntOrString(METRICS_PORT));
+
+            NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
+                    .withPorts(metricsPort)
+                    .withFrom()
+                    .build();
+
+            rules.add(metricsRule);
+        }
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()

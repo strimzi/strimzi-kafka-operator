@@ -137,7 +137,6 @@ A copy of the container image might also be customized and used for debugging.
 You can specify which container image to use for a component using the `image` property in the following resources:
 
 * `Kafka.spec.kafka`
-* `Kafka.spec.kafka.tlsSidecar`
 * `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
@@ -186,9 +185,6 @@ For the `image` property in the other custom resources, the given value will be 
 If the `image` property is missing, the `image` specified in the Cluster Operator configuration will be used.
 If the `image` name is not defined in the Cluster Operator configuration, then the default value will be used.
 
-* For Kafka broker TLS sidecar:
-. Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerKafkaStunnel}` container image.
 * For Topic Operator:
 . Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerTopicOperator}` container image.

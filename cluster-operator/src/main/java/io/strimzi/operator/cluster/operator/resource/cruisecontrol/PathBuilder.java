@@ -76,6 +76,9 @@ public class PathBuilder {
             if (options.getExcludedTopics() != null) {
                 builder.addParameter(CruiseControlParameters.EXCLUDED_TOPICS, options.getExcludedTopics());
             }
+            if (options.getReplicaMovementStrategies() != null) {
+                builder.addParameter(CruiseControlParameters.REPLICA_MOVEMENT_STRATEGIES, options.getReplicaMovementStrategies());
+            }
 
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_PARTITION_MOVEMENTS, options.getConcurrentPartitionMovementsPerBroker());
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS, options.getConcurrentIntraBrokerPartitionMovements());

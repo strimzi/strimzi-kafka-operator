@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -109,7 +108,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 }
 
                 kafkaBridgeStatus.setReplicas(bridge.getReplicas());
-                kafkaBridgeStatus.setPodSelector(new LabelSelectorBuilder().withMatchLabels(bridge.getSelectorLabels().toMap()).build());
+                kafkaBridgeStatus.setLabelSelector(bridge.getSelectorLabels().toSelectorString());
 
                 updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).onComplete(statusResult -> {
                     // If both features succeeded, createOrUpdate succeeded as well

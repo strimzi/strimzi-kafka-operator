@@ -35,7 +35,7 @@ spec:
     scale:
       specReplicasPath: .spec.replicas
       statusReplicasPath: .status.replicas
-      labelSelectorPath: .status.selector
+      labelSelectorPath: .status.labelSelector
   validation:
     openAPIV3Schema:
       properties:
@@ -430,6 +430,8 @@ spec:
                       properties:
                         fsGroup:
                           type: integer
+                        fsGroupChangePolicy:
+                          type: string
                         runAsGroup:
                           type: integer
                         runAsNonRoot:
@@ -466,6 +468,8 @@ spec:
                             gmsaCredentialSpec:
                               type: string
                             gmsaCredentialSpecName:
+                              type: string
+                            runAsUserName:
                               type: string
                       description: Configures pod-level security attributes and common
                         container settings.
@@ -796,6 +800,8 @@ spec:
                             gmsaCredentialSpec:
                               type: string
                             gmsaCredentialSpecName:
+                              type: string
+                            runAsUserName:
                               type: string
                       description: Security context for the container.
                   description: Template for the Kafka Connect container.
@@ -1220,24 +1226,8 @@ spec:
             buildConfigName:
               type: string
               description: The name of the build configuration.
-            podSelector:
-              type: object
-              properties:
-                matchExpressions:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                      operator:
-                        type: string
-                      values:
-                        type: array
-                        items:
-                          type: string
-                matchLabels:
-                  type: object
+            labelSelector:
+              type: string
               description: Label selector for pods providing this resource.
             replicas:
               type: integer

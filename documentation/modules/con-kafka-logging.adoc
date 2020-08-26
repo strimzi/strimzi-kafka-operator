@@ -7,7 +7,6 @@
 
 Kafka has its own configurable loggers:
 
-* `kafka.root.logger.level`
 * `log4j.logger.org.I0Itec.zkclient.ZkClient`
 * `log4j.logger.org.apache.zookeeper`
 * `log4j.logger.kafka`
@@ -26,6 +25,9 @@ ZooKeeper also has a configurable logger:
 * `zookeeper.root.logger`
 
 Kafka and ZooKeeper use the Apache `log4j` logger implementation.
+
+Operators use the Apache `log4j2` logger implementation, so the logging configuration is described inside the ConfigMap using `log4j2.properties`.
+For more information, see xref:con-entity-operator-logging-{context}[].
 
 Use the `logging` property to configure loggers and logger levels.
 
@@ -46,7 +48,7 @@ spec:
     logging:
       type: inline
       loggers:
-        kafka.root.logger.level: "INFO"
+        log4j.logger.kafka: "INFO"
   # ...
   zookeeper:
     # ...
@@ -86,8 +88,7 @@ spec:
   # ...
 ----
 
-Operators use the Apache `log4j2` logger implementation, so the logging configuration is described inside the ConfigMap using `log4j2.properties`.
-For more information, see xref:con-entity-operator-logging-{context}[].
+Changes to both external and inline logging levels will be applied to Kafka brokers without a restart.
 
 .Additional resources
 

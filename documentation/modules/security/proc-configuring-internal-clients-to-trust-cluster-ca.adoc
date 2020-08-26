@@ -19,7 +19,7 @@ The steps describe how to mount the Cluster Secret that verifies the identity of
 
 * The Cluster Operator must be running.
 * There needs to be a `Kafka` resource within the Kubernetes cluster.
-* You need a Kafka client application outside the Kubernetes cluster that will connect using TLS, and needs to trust the cluster CA certificate.
+* You need a Kafka client application inside the Kubernetes cluster that will connect using TLS, and needs to trust the cluster CA certificate.
 * The client application must be running in the same namespace as the `Kafka` resource.
 
 .Using PKCS #12 format (.p12)

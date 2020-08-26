@@ -1,0 +1,28 @@
+// Module included in the following assemblies:
+//
+// assembly-oauth.adoc
+
+[id='con-oauth-reauthentication-{context}']
+= Session re-authentication for Kafka brokers
+
+The Kafka _SASL OAUTHBEARER_ mechanism, which is used for OAuth 2.0 authentication in Strimzi, supports a Kafka feature called the _re-authentication_ mechanism.
+
+When the re-authentication mechanism is enabled in the configuration of an `oauth` type listener, the broker's authenticated session expires when the access token expires.
+The client must then re-authenticate to the existing session by sending a new, valid access token to the broker, without dropping the connection.
+
+If token validation is successful, a new client session is started using the existing connection.
+If the client fails to re-authenticate, the broker will close the connection if further attempts are made to send or receive messages.
+Java clients that use Kafka client library 2.2 or later automatically re-authenticate if the re-authentication mechanism is enabled on the broker.
+
+You enable session re-authentication in the `Kafka` resource. Set the `maxSecondsWithoutReauthentication` property for a TLS listener with `type: oauth` authentication.
+Session re-authentication is supported for both types of token validation (fast local JWT and introspection endpoint). For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
+
+For more information about the re-authentication mechanism, which was added in Kafka version 2.2, see link:https://cwiki.apache.org/confluence/display/KAFKA/KIP-368%3A+Allow+SASL+Connections+to+Periodically+Re-Authenticate[KIP-368^].
+
+.Additional resources
+
+* xref:con-oauth-authentication-broker-{context}[]
+
+* xref:proc-oauth-authentication-broker-config-{context}[]
+
+* xref:appendix_crds#type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]

@@ -20,6 +20,7 @@ import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.HelmResource;
 import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -84,21 +85,23 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
-    protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
-    protected static final String CONSUMER_GROUP_NAME = "my-consumer-group";
 
     protected String testClass;
     protected String testName;
 
-    protected Random rng = new Random();
+    public static Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
+
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
     public static final String EXAMPLE_TOPIC_NAME = "my-topic";
-
+    public static final String AVAILABILITY_TOPIC_SOURCE_NAME = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
+    public static final String AVAILABILITY_TOPIC_TARGET_NAME = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
+
+    public static final String CONSUMER_GROUP_NAME = ClientUtils.generateRandomConsumerGroup();
 
     /**
      * This method install Strimzi Cluster Operator based on environment variable configuration.
@@ -121,7 +124,7 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
             prepareEnvForOperator(namespace, bindingsNamespaces);
             applyRoleBindings(namespace, bindingsNamespaces);
-            // 050-Deployment
+            // 060-Deployment
             BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
         }
     }
@@ -418,12 +421,10 @@ public abstract class AbstractST implements TestSeparator {
 
     void verifyLabelsForCRDs() {
         LOGGER.info("Verifying labels for CRDs");
-        kubeClient().listCustomResourceDefinition().stream()
-            .filter(crd -> crd.getMetadata().getName().startsWith("kafka"))
-            .forEach(crd -> {
-                LOGGER.info("Verifying labels for custom resource {}", crd.getMetadata().getName());
-                assertThat(crd.getMetadata().getLabels().get("app"), is("strimzi"));
-            });
+        String crds = cmdKubeClient().exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
+        crds = crds.replace(" ", "\n").trim();
+        assertThat(crds.split("\n").length, is(Crds.getNumCrds()));
+
     }
 
     void verifyLabelsForKafkaAndZKServices(String clusterName, String appName) {
@@ -555,13 +556,13 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String status, String type) {
+    protected void verifyCRStatusCondition(Condition condition, String status, Enum<?> type) {
         verifyCRStatusCondition(condition, null, null, status, type);
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, String type) {
+    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, Enum<?> type) {
         assertThat(condition.getStatus(), is(status));
-        assertThat(condition.getType(), is(type));
+        assertThat(condition.getType(), is(type.toString()));
 
         if (condition.getMessage() != null && condition.getReason() != null) {
             assertThat(condition.getMessage(), containsString(message));
@@ -604,8 +605,6 @@ public abstract class AbstractST implements TestSeparator {
         for (int i = 0; i < kafkaPods; i++) {
             String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "kafka");
             assertThat("Kafka pod " + i + " uses wrong image", TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), is(imgFromPod));
-            imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "tls-sidecar");
-            assertThat("Kafka TLS side car for pod " + i + " uses wrong image", imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), is(imgFromPod));
             if (rackAwareEnabled) {
                 String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
                 assertThat(initContainerImage, is(imgFromDeplConf.get(KAFKA_INIT_IMAGE)));

@@ -12,11 +12,14 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
@@ -33,8 +36,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -187,6 +193,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicallySetEOloggingLevels() throws InterruptedException {
         InlineLogging ilOff = new InlineLogging();
@@ -352,6 +359,8 @@ class LoggingChangeST extends AbstractST {
     }
 
     @Test
+    @Tag(BRIDGE)
+    @Tag(ROLLING_UPDATE)
     void testDynamicallySetBridgeLoggingLevels() throws InterruptedException {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -454,6 +463,388 @@ class LoggingChangeST extends AbstractST {
         assertThat(StUtils.getLogFromPodByTime(bridgePodName, KafkaBridgeResources.deploymentName(CLUSTER_NAME), "30s"), is(emptyString()));
 
         assertThat("Bridge pod should not roll", DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(CLUSTER_NAME)), equalTo(bridgeSnapshot));
+    }
+
+    @Test
+    @Tag(ROLLING_UPDATE)
+    void testDynamicallySetClusterOperatorLoggingLevels() throws InterruptedException {
+        Map<String, String> coPod = DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME);
+        String coPodName = kubeClient().listPodsByPrefixInName(STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+        String command = "cat /opt/strimzi/custom-config/log4j2.properties";
+
+        String log4jConfig =
+            "name = COConfig\n" +
+            "monitorInterval = 30\n" +
+            "\n" +
+            "    appender.console.type = Console\n" +
+            "    appender.console.name = STDOUT\n" +
+            "    appender.console.layout.type = PatternLayout\n" +
+            "    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n\n" +
+            "\n" +
+            "    rootLogger.level = OFF\n" +
+            "    rootLogger.appenderRefs = stdout\n" +
+            "    rootLogger.appenderRef.console.ref = STDOUT\n" +
+            "    rootLogger.additivity = false\n" +
+            "\n" +
+            "    # Kafka AdminClient logging is a bit noisy at INFO level\n" +
+            "    logger.kafka.name = org.apache.kafka\n" +
+            "    logger.kafka.level = OFF\n" +
+            "    logger.kafka.additivity = false\n" +
+            "\n" +
+            "    # Zookeeper is very verbose even on INFO level -> We set it to WARN by default\n" +
+            "    logger.zookeepertrustmanager.name = org.apache.zookeeper\n" +
+            "    logger.zookeepertrustmanager.level = OFF\n" +
+            "    logger.zookeepertrustmanager.additivity = false";
+
+        ConfigMap coMap = new ConfigMapBuilder()
+            .withNewMetadata()
+                .addToLabels("app", "strimzi")
+                .withName(STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .withData(Collections.singletonMap("log4j2.properties", log4jConfig))
+            .build();
+
+        LOGGER.info("Checking that original logging config is different from the new one");
+        assertThat(log4jConfig, not(equalTo(cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
+
+        LOGGER.info("Changing logging for cluster-operator");
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(coMap);
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
+        );
+
+        LOGGER.info("Checking log4j2.properties in CO pod");
+        String podLogConfig = cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        assertThat(podLogConfig, equalTo(log4jConfig));
+
+        LOGGER.info("Checking if CO rolled its pod");
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
+
+        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL);
+        // wait some time and check whether logs after this time are empty
+        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+
+        LOGGER.info("Asserting if log will contain no records");
+        assertThat(StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(emptyString()));
+
+        LOGGER.info("Changing all levels from OFF to INFO/WARN");
+        log4jConfig = log4jConfig.replaceAll("OFF", "INFO");
+        coMap.setData(Collections.singletonMap("log4j2.properties", log4jConfig));
+
+        LOGGER.info("Changing logging for cluster-operator");
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(coMap);
+
+        LOGGER.info("Waiting for log4j2.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
+        );
+
+        LOGGER.info("Checking log4j2.properties in CO pod");
+        podLogConfig = cmdKubeClient().execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        assertThat(podLogConfig, equalTo(log4jConfig));
+
+        LOGGER.info("Checking if CO rolled its pod");
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
+
+        LOGGER.info("Waiting {} ms log not to be empty", LOGGING_RELOADING_INTERVAL);
+        // wait some time and check whether logs after this time are not empty
+        Thread.sleep(LOGGING_RELOADING_INTERVAL);
+
+        LOGGER.info("Asserting if log will contain no records");
+        String coLog = StUtils.getLogFromPodByTime(coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+        assertThat(coLog, is(not(emptyString())));
+        assertThat(coLog.contains("INFO"), is(true));
+    }
+
+    @Test
+    @Tag(ROLLING_UPDATE)
+    void testDynamicallySetConnectLoggingLevels() throws InterruptedException {
+        InlineLogging ilOff = new InlineLogging();
+        Map<String, String> loggers = new HashMap<>();
+        loggers.put("log4j.rootLogger", "OFF");
+        ilOff.setLoggers(loggers);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+                .editSpec()
+                .withInlineLogging(ilOff)
+                .endSpec()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .endMetadata()
+                .done();
+
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+
+        LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+        InlineLogging ilDebug = new InlineLogging();
+        loggers.put("log4j.rootLogger", "DEBUG");
+        ilDebug.setLoggers(loggers);
+
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, conn -> {
+            conn.getSpec().setLogging(ilDebug);
+        });
+
+        cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+                + ":8083/admin/loggers/root").out().contains("DEBUG");
+
+        LOGGER.info("Waiting for log4j.properties will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+                        + ":8083/admin/loggers/root").out().contains("DEBUG")
+        );
+
+        String log4jConfig =
+                "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=OFF, CONSOLE\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
+                        "log4j.logger.org.reflections=ERROR";
+
+        String externalCmName = "external-cm";
+
+        ConfigMap connectLoggingMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .addToLabels("app", "strimzi")
+                .withName(externalCmName)
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", log4jConfig))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(connectLoggingMap);
+
+        ExternalLogging connectXternalLogging = new ExternalLoggingBuilder()
+                .withName(externalCmName)
+                .build();
+
+        LOGGER.info("Setting log level of Bridge to OFF - records should not appear in the log");
+        // change to the external logging
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, conn -> {
+            conn.getSpec().setLogging(connectXternalLogging);
+        });
+
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+                        + ":8083/admin/loggers/root").out().contains("OFF")
+        );
+
+        assertThat("Connect pod should not roll", DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(CLUSTER_NAME)), equalTo(connectSnapshot));
+    }
+
+    @Test
+    void testDynamicallySetKafkaLoggingLevels() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        InlineLogging ilOff = new InlineLogging();
+        ilOff.setLoggers(Collections.singletonMap("log4j.rootLogger", "INFO"));
+
+        LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
+        InlineLogging ilDebug = new InlineLogging();
+        ilDebug.setLoggers(Collections.singletonMap("log4j.rootLogger", "DEBUG"));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(ilDebug);
+        });
+
+        LOGGER.info("Waiting for dynamic change in the kafka pod");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                .contains("root=DEBUG"));
+
+        LOGGER.info("Setting external logging INFO");
+        ConfigMap configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-configmap")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                        "log4j.logger.org.apache.zookeeper=INFO\n" +
+                        "log4j.logger.kafka=INFO\n" +
+                        "log4j.logger.org.apache.kafka=INFO\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                        "log4j.logger.kafka.controller=TRACE\n" +
+                        "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=INFO"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+
+        ExternalLogging elKafka = new ExternalLoggingBuilder()
+                .withName("external-configmap")
+                .build();
+
+        LOGGER.info("Setting log level of kafka INFO");
+        // change to external logging
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(elKafka);
+        });
+
+        LOGGER.info("Waiting for dynamic change in the kafka pod");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                    "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                    .contains("root=INFO"));
+
+        assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
+    }
+
+    @Test
+    void testDynamicallySetUnknownKafkaLogger() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        InlineLogging il = new InlineLogging();
+        il.setLoggers(Collections.singletonMap("log4j.logger.paprika", "INFO"));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(il);
+        });
+
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, kafkaPods);
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                        .contains("paprika=INFO"));
+    }
+
+    @Test
+    void testDynamicallySetUnknownKafkaLoggerValue() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1).done();
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        InlineLogging il = new InlineLogging();
+        il.setLoggers(Collections.singletonMap("log4j.rootLogger", "PAPRIKA"));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setLogging(il);
+        });
+
+        StatefulSetUtils.waitForNoRollingUpdate(kafkaName, kafkaPods);
+        assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
+    }
+
+    @Test
+    void testDynamicallySetKafkaExternalLogging() {
+        // this test changes dynamically unchangeable logging config and thus RU is expected
+        ConfigMap configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-cm")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                        "log4j.logger.org.apache.zookeeper=INFO\n" +
+                        "log4j.logger.kafka=INFO\n" +
+                        "log4j.logger.org.apache.kafka=INFO\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                        "log4j.logger.kafka.controller=TRACE\n" +
+                        "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=INFO"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        ExternalLogging el = new ExternalLogging();
+        el.setName("external-cm");
+
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 1)
+                .editOrNewSpec()
+                    .editKafka()
+                        .withExternalLogging(el)
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-cm")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.kafka=ERROR\n" +
+                        "log4j.logger.org.apache.kafka=ERROR\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=ERROR\n" +
+                        "log4j.logger.kafka.controller=ERROR\n" +
+                        "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=ERROR"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        StatefulSetUtils.waitForNoRollingUpdate(kafkaName, kafkaPods);
+        assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
+        TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                        .contains("kafka.authorizer.logger=ERROR"));
+
+        // log4j.appender.CONSOLE.layout.ConversionPattern is changed and thus we need RU
+        configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName("external-cm")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.I0Itec.zkclient.ZkClient=ERROR\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.kafka=ERROR\n" +
+                        "log4j.logger.org.apache.kafka=ERROR\n" +
+                        "log4j.logger.kafka.request.logger=WARN\n" +
+                        "log4j.logger.kafka.network.Processor=ERROR\n" +
+                        "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
+                        "log4j.logger.kafka.network.RequestChannel$=ERROR\n" +
+                        "log4j.logger.kafka.controller=ERROR\n" +
+                        "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
+                        "log4j.logger.state.change.logger=TRACE\n" +
+                        "log4j.logger.kafka.authorizer.logger=DEBUG"))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaName, kafkaPods);
+
+        TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
+                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
+                        .contains("kafka.authorizer.logger=DEBUG"));
     }
 
     @BeforeAll
