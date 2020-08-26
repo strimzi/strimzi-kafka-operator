@@ -862,7 +862,7 @@ class KafkaST extends AbstractST {
     @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsTrueFalse() {
         int kafkaReplicas = 2;
-        int diskSizeGi = 10;
+        String diskSizeGi = "10";
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
@@ -885,7 +885,7 @@ class KafkaST extends AbstractST {
     @Test
     void testKafkaJBODDeleteClaimsTrue() {
         int kafkaReplicas = 2;
-        int diskSizeGi = 10;
+        String diskSizeGi = "10";
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
@@ -908,7 +908,7 @@ class KafkaST extends AbstractST {
     @Test
     void testKafkaJBODDeleteClaimsFalse() {
         int kafkaReplicas = 2;
-        int diskSizeGi = 10;
+        String diskSizeGi = "10";
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
@@ -1848,8 +1848,8 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < kafkaRepl; i++) {
             for (int j = 0; j < diskCount; j++) {
                 LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
-                        volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
-                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizes[i]));
+                        volumes.get(k).getSpec().getResources().getRequests().get("storage"));
+                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizes[i])));
                 k++;
             }
         }
@@ -1873,9 +1873,8 @@ class KafkaST extends AbstractST {
         });
     }
 
-    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
-
-        ArrayList pvcs = new ArrayList();
+    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {
+        ArrayList<String> pvcs = new ArrayList<>();
 
         kubeClient().listPersistentVolumeClaims().stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("kafka"))
@@ -1886,20 +1885,20 @@ class KafkaST extends AbstractST {
                     assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(CLUSTER_NAME));
                     assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(Kafka.RESOURCE_KIND));
                     assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(CLUSTER_NAME.concat("-kafka")));
-                    assertThat(volume.getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizeGi + "Gi"));
+                    assertThat(volume.getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizeGi, "Gi")));
                 });
 
         LOGGER.info("Checking PVC names included in JBOD array");
         for (int i = 0; i < kafkaReplicas; i++) {
             for (int j = 0; j < diskCountPerReplica; j++) {
-                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+                assertThat(pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i), is(true));
             }
         }
 
         LOGGER.info("Checking PVC on Kafka pods");
         for (int i = 0; i < kafkaReplicas; i++) {
-            ArrayList dataSourcesOnPod = new ArrayList();
-            ArrayList pvcsOnPod = new ArrayList();
+            ArrayList<String> dataSourcesOnPod = new ArrayList<>();
+            ArrayList<String> pvcsOnPod = new ArrayList<>();
 
             LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
             for (int j = 0; j < diskCountPerReplica; j++) {
@@ -1911,8 +1910,8 @@ class KafkaST extends AbstractST {
 
             LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
             for (int j = 0; j < diskCountPerReplica; j++) {
-                dataSourcesOnPod.contains("data-" + j);
-                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+                assertThat(dataSourcesOnPod.contains("data-" + j), is(true));
+                assertThat(pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i), is(true));
             }
         }
     }
