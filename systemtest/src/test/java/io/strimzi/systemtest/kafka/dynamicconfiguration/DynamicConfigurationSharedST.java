@@ -98,9 +98,10 @@ public class DynamicConfigurationSharedST extends AbstractST {
                 case LONG:
                     if (key.equals("num.recovery.threads.per.data.dir") || key.equals("log.cleaner.threads") ||
                         key.equals("num.network.threads") || key.equals("min.insync.replicas") ||
-                        key.equals("num.replica.fetchers")) {
+                        key.equals("num.replica.fetchers") || key.equals("num.partitions") ||
+                        key.equals("background.threads")) {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(2, 3);
-                    } else if (key.equals("background.threads") || key.equals("log.cleaner.io.buffer.load.factor") ||
+                    } else if (key.equals("log.cleaner.io.buffer.load.factor") ||
                         key.equals("log.retention.ms") || key.equals("max.connections") ||
                         key.equals("max.connections.per.ip")) {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(1, 20);
@@ -147,7 +148,13 @@ public class DynamicConfigurationSharedST extends AbstractST {
             testCases.remove("log.cleanup.policy");
             testCases.remove("num.io.threads");
             testCases.remove("log.cleaner.dedupe.buffer.size");
+            testCases.remove("max.connections");
 
+            // skipping these configuration exceptions
+            testCases.remove("ssl.enabled.protocols");
+            testCases.remove("ssl.protocol");
+            testCases.remove("ssl.cipher.suites");
+            testCases.remove("zookeeper.connection.timeout.ms");
         });
 
         return testCases;
