@@ -625,6 +625,7 @@ public class ModelUtils {
     public static AffinityBuilder populateAffinityBuilderWithRackLabelSelector(AffinityBuilder builder, Affinity userAffinity, String topologyKey) {
         // We need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
         NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
+                .withNewOperator("Exists")
                 .withNewKey(topologyKey)
                 .build();
 
@@ -645,19 +646,19 @@ public class ModelUtils {
 
             builder = builder
                     .editOrNewNodeAffinity()
-                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                    .withNodeSelectorTerms(enhancedTerms)
-                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                            .withNodeSelectorTerms(enhancedTerms)
+                        .endRequiredDuringSchedulingIgnoredDuringExecution()
                     .endNodeAffinity();
         } else {
             // User has not specified any selector terms => we add our own
             builder = builder
                     .editOrNewNodeAffinity()
-                    .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
-                    .addNewNodeSelectorTerm()
-                    .withMatchExpressions(selector)
-                    .endNodeSelectorTerm()
-                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                        .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
+                            .addNewNodeSelectorTerm()
+                                .withMatchExpressions(selector)
+                            .endNodeSelectorTerm()
+                        .endRequiredDuringSchedulingIgnoredDuringExecution()
                     .endNodeAffinity();
         }
         return builder;
