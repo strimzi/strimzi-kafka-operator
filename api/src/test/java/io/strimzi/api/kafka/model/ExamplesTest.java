@@ -51,7 +51,7 @@ public class ExamplesTest {
      */
     @Test
     public void examples() throws Exception {
-        validateRecursively(new File("../examples"));
+        validateRecursively(new File(TestUtils.USER_PATH + "/../examples"));
     }
 
     private void validateRecursively(File directory) {

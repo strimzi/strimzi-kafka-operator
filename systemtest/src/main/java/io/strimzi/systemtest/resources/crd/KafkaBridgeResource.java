@@ -27,7 +27,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 
 public class KafkaBridgeResource {
 
-    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = "../examples/bridge/kafka-bridge.yaml";
+    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = TestUtils.USER_PATH + "/../examples/bridge/kafka-bridge.yaml";
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> kafkaBridgeClient() {
         return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());

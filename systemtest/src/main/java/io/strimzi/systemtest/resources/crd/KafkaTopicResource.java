@@ -24,7 +24,7 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 public class KafkaTopicResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicResource.class);
 
-    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = "../examples/topic/kafka-topic.yaml";
+    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopicClient() {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());

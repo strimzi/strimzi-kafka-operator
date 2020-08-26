@@ -79,8 +79,8 @@ public class TracingST extends AbstractST {
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
 
-    private static final String JI_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-instance/";
-    private static final String JO_INSTALL_DIR = "../systemtest/src/test/resources/tracing/jaeger-operator/";
+    private static final String JI_INSTALL_DIR = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance/";
+    private static final String JO_INSTALL_DIR = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-operator/";
 
     private static final String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
@@ -204,7 +204,7 @@ public class TracingST extends AbstractST {
                 .done();
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
+        String pathToConnectorSinkConfig = TestUtils.USER_PATH + "/../systemtest/src/test/resources/file/sink/connector.json";
         String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
 
         LOGGER.info("Creating file sink in {}", pathToConnectorSinkConfig);
@@ -678,7 +678,7 @@ public class TracingST extends AbstractST {
 
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        String pathToConnectorSinkConfig = "../systemtest/src/test/resources/file/sink/connector.json";
+        String pathToConnectorSinkConfig = TestUtils.USER_PATH + "/../systemtest/src/test/resources/file/sink/connector.json";
         String connectorConfig = getFileAsString(pathToConnectorSinkConfig);
 
         LOGGER.info("Creating file sink in {}", pathToConnectorSinkConfig);
