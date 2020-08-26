@@ -53,6 +53,7 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.SslAuthenticationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -289,7 +290,7 @@ public class KafkaRoller {
         private final KafkaBrokerConfigurationDiff diff;
         private final KafkaBrokerLoggingConfigurationDiff logDiff;
 
-       public RestartPlan(boolean needsRestart, boolean needsReconfig, KafkaBrokerConfigurationDiff diff, KafkaBrokerLoggingConfigurationDiff logDiff) {
+        public RestartPlan(boolean needsRestart, boolean needsReconfig, KafkaBrokerConfigurationDiff diff, KafkaBrokerLoggingConfigurationDiff logDiff) {
             this.needsRestart = needsRestart;
             this.needsReconfig = needsReconfig;
             this.diff = diff;
@@ -323,7 +324,7 @@ public class KafkaRoller {
                     log.debug("{}: Pod {} is controller and there are other pods to roll", reconciliation, podId);
                     throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                 } else {
-                    if (canRoll(allClient, podId, 60_000, TimeUnit.MILLISECONDS)) {
+                    if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
                         if (!maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
                             log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
@@ -348,7 +349,7 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (restartContext.backOff.done() || e.forceNow) {
-                if (canRoll(allClient, podId, 60_000, TimeUnit.MILLISECONDS)) {
+                if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS)) {
                     log.warn("{}: Pod {} will be force-rolled", reconciliation, podName(podId));
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
@@ -409,9 +410,10 @@ public class KafkaRoller {
         // connect to the broker and that it's capable of responding.
         Config brokerConfig;
         try {
-            brokerConfig = brokerConfig(allClient, podId);
+            brokerConfig = brokerConfig(podId);
         } catch (ForceableProblem e) {
-            if (restartContext.backOff.done()) {
+            // If we're not able to connect then roll
+            if (e.getCause() instanceof SslAuthenticationException || restartContext.backOff.done()) {
                 needsRestart = true;
                 brokerConfig = null;
             } else {
@@ -421,7 +423,7 @@ public class KafkaRoller {
         if (!needsRestart) {
             log.trace("{}: Broker {}: description {}", reconciliation, podId, brokerConfig);
             diff = new KafkaBrokerConfigurationDiff(brokerConfig, kafkaConfig, kafkaVersion, podId);
-            loggingDiff = logging(allClient, podId);
+            loggingDiff = logging(podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
                     log.info("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
@@ -443,13 +445,12 @@ public class KafkaRoller {
 
     /**
      * Returns a config of the given broker.
-     * @param ac The admin client
      * @param brokerId The id of the broker.
      * @return a Future which completes with the config of the given broker.
      */
-    protected Config brokerConfig(Admin ac, int brokerId) throws ForceableProblem, InterruptedException {
-        ConfigResource resource = Util.getBrokersConfig(brokerId);
-        return await(Util.kafkaFutureToVertxFuture(vertx, ac.describeConfigs(singletonList(resource)).values().get(resource)),
+    protected Config brokerConfig(int brokerId) throws ForceableProblem, InterruptedException {
+        ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(brokerId));
+        return await(Util.kafkaFutureToVertxFuture(vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
             30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker config", error)
         );
@@ -457,13 +458,12 @@ public class KafkaRoller {
 
     /**
      * Returns logging of the given broker.
-     * @param ac The admin client
      * @param brokerId The id of the broker.
      * @return a Future which completes with the logging of the given broker.
      */
-    protected Config brokerLogging(Admin ac, int brokerId) throws ForceableProblem, InterruptedException {
+    protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
         ConfigResource resource = Util.getBrokersLogging(brokerId);
-        return await(Util.kafkaFutureToVertxFuture(vertx, ac.describeConfigs(singletonList(resource)).values().get(resource)),
+        return await(Util.kafkaFutureToVertxFuture(vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
                 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker logging", error)
         );
@@ -488,9 +488,9 @@ public class KafkaRoller {
         log.info("{}: Dynamic AlterConfig for broker {} was successful.", reconciliation, podId);
     }
 
-    private KafkaBrokerLoggingConfigurationDiff logging(Admin ac, int podId)
+    private KafkaBrokerLoggingConfigurationDiff logging(int podId)
             throws ForceableProblem, InterruptedException {
-        Config brokerLogging = brokerLogging(ac, podId);
+        Config brokerLogging = brokerLogging(podId);
         log.trace("{}: Broker {}: logging description {}", reconciliation, podId, brokerLogging);
         return new KafkaBrokerLoggingConfigurationDiff(brokerLogging, kafkaLogging, podId);
     }
@@ -537,10 +537,19 @@ public class KafkaRoller {
         }
     }
 
-    private boolean canRoll(Admin adminClient, int podId, long timeout, TimeUnit unit)
+    private boolean canRoll(int podId, long timeout, TimeUnit unit)
             throws ForceableProblem, InterruptedException {
-        return await(availability(adminClient).canRoll(podId), timeout, unit,
-            t -> new ForceableProblem("An error while trying to determine rollability", t));
+        try {
+            return await(availability(allClient).canRoll(podId), timeout, unit,
+                t -> new ForceableProblem("An error while trying to determine rollability", t));
+        } catch (ForceableProblem e) {
+            // If we're not able to connect then roll
+            if (e.getCause() instanceof SslAuthenticationException) {
+                return true;
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**

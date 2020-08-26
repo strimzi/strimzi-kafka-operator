@@ -654,7 +654,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerConfig(Admin ac, int brokerId) throws ForceableProblem, InterruptedException {
+        protected Config brokerConfig(int brokerId) throws ForceableProblem, InterruptedException {
             ForceableProblem problem = getConfigsException.apply(brokerId);
             if (problem != null) {
                 throw problem;
@@ -662,9 +662,15 @@ public class KafkaRollerTest {
         }
 
         @Override
+        protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
+            return new Config(emptyList());
+        }
+
+        @Override
         protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem, InterruptedException {
             ForceableProblem problem = alterConfigsException.apply(podId);
             if (problem != null) {
+                throw problem;
             }
         }
 
