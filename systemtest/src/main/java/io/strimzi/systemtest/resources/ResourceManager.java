@@ -384,7 +384,7 @@ public class ResourceManager {
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
     public static <T extends HasMetadata & HasStatus> void logCurrentResourceStatus(T customResource) {
-        if (customResource != null) {
+        try {
             List<String> printWholeCR = Arrays.asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND);
 
             String kind = customResource.getKind();
@@ -417,7 +417,10 @@ public class ResourceManager {
                 }
                 LOGGER.info("{}", String.join("", log));
             }
+        } catch (NullPointerException e) {
+            LOGGER.debug("Cannot print messages and conditions for CR because it doesn't exist in given namespace");
         }
+
     }
 
     /**
