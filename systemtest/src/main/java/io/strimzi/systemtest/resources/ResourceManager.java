@@ -398,8 +398,10 @@ public class ResourceManager {
                 List<Condition> conditions = customResource.getStatus().getConditions();
                 if (conditions != null) {
                     for (Condition condition : customResource.getStatus().getConditions()) {
-                        log.add("\tType: " + condition.getType() + "\n");
-                        log.add("\tMessage: " + condition.getMessage() + "\n");
+                        if (condition.getMessage() != null) {
+                            log.add("\tType: " + condition.getType() + "\n");
+                            log.add("\tMessage: " + condition.getMessage() + "\n");
+                        }
                     }
                 }
 
@@ -418,7 +420,7 @@ public class ResourceManager {
                 LOGGER.info("{}", String.join("", log));
             }
         } catch (NullPointerException e) {
-            LOGGER.debug("Cannot print messages and conditions for CR because it doesn't exist in given namespace");
+            LOGGER.debug("Cannot provide CR status, because the CR is null or messages/conditions are empty");
         }
 
     }
