@@ -19,6 +19,3 @@ kubectl delete -f https://raw.githubusercontent.com/keycloak/keycloak-operator/$
 kubectl delete -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/role.yaml
 kubectl delete -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/role_binding.yaml
 kubectl delete -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/service_account.yaml
-
-
-#keycloak.oauth2-cluster-test.svc.cluster.local:8443
