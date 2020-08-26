@@ -97,7 +97,7 @@ public class KafkaMirrorMaker2Resource {
                     .withTargetCluster(kafkaTargetClusterName)
                 .endMirror()
                 .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                    .addToLoggers("log4j.rootLogger", "DEBUG")
                 .endInlineLogging()
             .endSpec();
     }
