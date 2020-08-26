@@ -1079,6 +1079,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            runAsUserName:
+                              type: string
                       description: Security context for the container.
                   description: Template for the Kafka init container.
                 podDisruptionBudget:
