@@ -90,6 +90,9 @@ public class DynamicConfigurationSharedST extends AbstractST {
                         case "log.message.timestamp.type":
                             stochasticChosenValue = "LogAppendTime";
                             break;
+                        case "ssl.protocol":
+                            stochasticChosenValue = "TLSv1.1";
+                            break;
                         default:
                             stochasticChosenValue = " ";
                     }
@@ -104,7 +107,7 @@ public class DynamicConfigurationSharedST extends AbstractST {
                     } else if (key.equals("log.cleaner.io.buffer.load.factor") ||
                         key.equals("log.retention.ms") || key.equals("max.connections") ||
                         key.equals("max.connections.per.ip") || key.equals("background.threads")) {
-                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(1, 20);
+                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(4, 20);
                     } else {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(100, 50_000);
                     }
@@ -133,7 +136,10 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
                     switch (key) {
                         case "log.cleanup.policy":
-                            stochasticChosenValue = "delete";
+                            stochasticChosenValue = "compact";
+                            break;
+                        case "ssl.enabled.protocols":
+                            stochasticChosenValue = "TLSv1.1";
                             break;
                         default:
                             stochasticChosenValue = " ";
@@ -142,20 +148,12 @@ public class DynamicConfigurationSharedST extends AbstractST {
             }
 
             // skipping these configuration, which doesn't work appear in the kafka pod (TODO: investigate why!)
-            testCases.remove("log.message.downconversion.enable");
-            testCases.remove("log.roll.ms");
             testCases.remove("num.recovery.threads.per.data.dir");
-            testCases.remove("log.cleanup.policy");
             testCases.remove("num.io.threads");
             testCases.remove("log.cleaner.dedupe.buffer.size");
-            testCases.remove("max.connections");
-            testCases.remove("background.threads");
             testCases.remove("num.partitions");
-            testCases.remove("unclean.leader.election.enable");
 
             // skipping these configuration exceptions
-            testCases.remove("ssl.enabled.protocols");
-            testCases.remove("ssl.protocol");
             testCases.remove("ssl.cipher.suites");
             testCases.remove("zookeeper.connection.timeout.ms");
             testCases.remove("zookeeper.connect");
@@ -170,6 +168,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
     }
 }
