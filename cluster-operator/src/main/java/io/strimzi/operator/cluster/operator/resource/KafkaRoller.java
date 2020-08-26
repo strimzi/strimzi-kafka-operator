@@ -324,7 +324,7 @@ public class KafkaRoller {
                     log.debug("{}: Pod {} is controller and there are other pods to roll", reconciliation, podId);
                     throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                 } else {
-                    if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS)) {
+                    if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, false)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
                         if (!maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
                             log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
@@ -349,7 +349,7 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (restartContext.backOff.done() || e.forceNow) {
-                if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS)) {
+                if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
                     log.warn("{}: Pod {} will be force-rolled", reconciliation, podName(podId));
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
@@ -412,8 +412,7 @@ public class KafkaRoller {
         try {
             brokerConfig = brokerConfig(podId);
         } catch (ForceableProblem e) {
-            // If we're not able to connect then roll
-            if (e.getCause() instanceof SslAuthenticationException || restartContext.backOff.done()) {
+            if (restartContext.backOff.done()) {
                 needsRestart = true;
                 brokerConfig = null;
             } else {
@@ -537,14 +536,14 @@ public class KafkaRoller {
         }
     }
 
-    private boolean canRoll(int podId, long timeout, TimeUnit unit)
+    private boolean canRoll(int podId, long timeout, TimeUnit unit, boolean ignoreSslError)
             throws ForceableProblem, InterruptedException {
         try {
             return await(availability(allClient).canRoll(podId), timeout, unit,
                 t -> new ForceableProblem("An error while trying to determine rollability", t));
         } catch (ForceableProblem e) {
             // If we're not able to connect then roll
-            if (e.getCause() instanceof SslAuthenticationException) {
+            if (ignoreSslError && e.getCause() instanceof SslAuthenticationException) {
                 return true;
             } else {
                 throw e;
