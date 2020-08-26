@@ -6,8 +6,9 @@
 
 = Renewing CA certificates manually
 
-Unless the `Kafka.spec.clusterCa.generateCertificateAuthority` and `Kafka.spec.clientsCa.generateCertificateAuthority` objects are set to `false`,
-the cluster and clients CA certificates will auto-renew at the start of their respective certificate renewal periods.
+Cluster and clients CA certificates auto-renew at the start of their respective certificate renewal periods.
+If `Kafka.spec.clusterCa.generateCertificateAuthority` and `Kafka.spec.clientsCa.generateCertificateAuthority` are set to `false`,
+the CA certificates do not auto-renew.
 
 You can manually renew one or both of these certificates before the certificate renewal period starts.
 You might do this for security reasons, or if you have xref:con-certificate-renewal-str[changed the renewal or validity periods for the certificates].
