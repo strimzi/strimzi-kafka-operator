@@ -102,8 +102,9 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  password: Z2VuZXJhdGVkcGFzc3dvcmQ= # Generated password
+  password: Z2VuZXJhdGVkcGFzc3dvcmQ= <1>
 ----
+<1> The generated password, base64 encoded.
 
 Decoding the generated password:
 ----

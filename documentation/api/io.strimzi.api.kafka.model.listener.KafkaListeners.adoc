@@ -1,4 +1,4 @@
-Use `KafkaListeners` properties to configure types of Kafka listener.
+Configure types of Kafka listener.
 
 [id='property-listeners-{context}']
 .`listeners`
@@ -9,9 +9,11 @@ The `listeners` property contains three sub-properties:
 * `tls`
 * `external`
 
-Each listener will only be defined when the `listeners` object has the given property.
+Each listener is defined when the `listeners` object has the given property.
 
-.An example of `listeners` property with all listeners enabled
+An empty object ({}) means the default configuration is used.
+
+.Example`listeners` property configuration with all listeners enabled
 [source,yaml,subs="attributes+"]
 ----
 # ...

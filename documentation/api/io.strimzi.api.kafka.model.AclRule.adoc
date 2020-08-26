@@ -1,6 +1,6 @@
-Use `ACLRule` properties to configure simple authorization for a `KafkaUser`.
+Configures access control rule for a `KafkaUser` when brokers are using the `AclAuthorizer`.
 
-.An example `KafkaUser` with authorization
+.Example `KafkaUser` configuration with authorization
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}

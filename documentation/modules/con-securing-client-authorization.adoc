@@ -8,14 +8,16 @@
 User authorization is configured using the `authorization` property in `KafkaUser.spec`.
 The authorization type enabled for a user is specified using the `type` field.
 
-If no authorization is specified, the User Operator does not provision any access rights for the user.
-
-To use simple authorization, you set the `type` property to `simple` in `KafkaUser.spec`.
+To use simple authorization, you set the `type` property to `simple` in `KafkaUser.spec.authorization`.
 Simple authorization uses the default Kafka authorization plugin, `AclAuthorizer`.
 
 Alternatively, you can use xref:type-KafkaAuthorizationOpa-reference[OPA authorization],
 or if you are already using OAuth 2.0 token based authentication,
 you can also use xref:assembly-oauth-authorization_str[OAuth 2.0 authorization].
+
+If no authorization is specified, the User Operator does not provision any access rights for the user.
+Whether such a `KafkaUser` can still access resources depends on the authorizer being used.
+For example, for the `AclAuthorizer` this is determined by its `allow.everyone.if.no.acl.found` configuration.
 
 == ACL rules
 

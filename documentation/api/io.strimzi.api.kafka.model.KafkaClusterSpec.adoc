@@ -1,4 +1,4 @@
-Use `KafkaClusterSpec` properties to configure Kafka clusters.
+Configures a Kafka cluster.
 
 [id='property-kafka-listeners-{context}']
 .`listeners`

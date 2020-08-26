@@ -1,3 +1,4 @@
+[id='nodeport-listener-{context}']
 Use `KafkaListenerExternalNodePort` properties to configure an external listener to expose expose Kafka using `NodePort` type `Services`.
 Kafka clients connect directly to the nodes of Kubernetes.
 
