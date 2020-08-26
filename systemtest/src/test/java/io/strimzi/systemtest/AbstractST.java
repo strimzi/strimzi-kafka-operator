@@ -238,11 +238,11 @@ public abstract class AbstractST implements TestSeparator {
 
         Container container = (Container) optional.get();
         Map<String, Quantity> limits = container.getResources().getLimits();
-        assertThat(limits.get("memory").getAmount(), is(memoryLimit));
-        assertThat(limits.get("cpu").getAmount(), is(cpuLimit));
+        assertThat(limits.get("memory"), is(new Quantity(memoryLimit)));
+        assertThat(limits.get("cpu"), is(new Quantity(cpuLimit)));
         Map<String, Quantity> requests = container.getResources().getRequests();
-        assertThat(requests.get("memory").getAmount(), is(memoryRequest));
-        assertThat(requests.get("cpu").getAmount(), is(cpuRequest));
+        assertThat(requests.get("memory"), is(new Quantity(memoryRequest)));
+        assertThat(requests.get("cpu"), is(new Quantity(cpuRequest)));
     }
 
     private void assertCmdOption(List<String> cmd, String expectedXmx) {
