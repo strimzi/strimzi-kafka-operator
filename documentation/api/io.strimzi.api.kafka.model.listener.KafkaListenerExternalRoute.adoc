@@ -1,0 +1,18 @@
+Configures an external listener to expose Kafka using OpenShift `Routes` and the HAProxy router.
+A dedicated `Route` is created for every Kafka broker pod.
+An additional `Route` is created to serve as a Kafka bootstrap address.
+Kafka clients can use these `Routes` to connect to Kafka on port 443.
+
+TLS encryption is always used with `Routes`.
+
+.Example of an external listener of type `route`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: route
+    authentication:
+      type: tls
+# ...
+----

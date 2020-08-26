@@ -1,0 +1,69 @@
+Configures overrides for node port external listeners.
+
+[id='property-nodeport-listener-overrides-{context}']
+.`overrides`
+
+By default, the port numbers used for the bootstrap and broker services are automatically assigned by Kubernetes.
+However, you can override the assigned node ports by specifying the requested port numbers in the `overrides` property.
+
+Strimzi does not perform any validation on the requested ports; you must ensure that they are free and available for use.
+
+.Example of an external listener configured with overrides for node ports
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: nodeport
+    tls: true
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        nodePort: 32100
+      brokers:
+      - broker: 0
+        nodePort: 32000
+      - broker: 1
+        nodePort: 32001
+      - broker: 2
+        nodePort: 32002
+# ...
+----
+
+[id='property-nodeport-listener-dns-annotations-{context}']
+.`dnsAnnotations`
+
+Use the `dnsAnnotations` property to add additional annotations to the node port services.
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the cluster nodes.
+
+.Example of an external listener of type `nodeport` using `dnsAnnotations`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: nodeport
+    tls: true
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      brokers:
+      - broker: 0
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 1
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 2
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+# ...
+----

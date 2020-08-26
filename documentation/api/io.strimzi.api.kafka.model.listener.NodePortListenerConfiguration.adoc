@@ -1,0 +1,30 @@
+Configures external node port listeners.
+
+[id='property-nodeport-listener-preferredAddressType-{context}']
+.`preferredAddressType`
+
+Use the `preferredAddressType` property in your listener configuration to specify the first address type checked as the node address.
+This property is useful, for example, if your deployment does not have DNS support, or you only want to expose a broker internally through an internal DNS or IP address.
+If an address of this type is found, it is used.
+If the preferred address type is not found, Strimzi proceeds through the types in the xref:nodeport-listener-{context}[standard order of priority].
+
+.Example of an external listener configured with a preferred address type
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    listeners:
+      external:
+        type: nodeport
+        tls: true
+        authentication:
+          type: tls
+        configuration:
+          preferredAddressType: InternalDNS
+    # ...
+  zookeeper:
+    # ...
+----

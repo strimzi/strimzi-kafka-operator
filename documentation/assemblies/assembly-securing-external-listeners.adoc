@@ -1,0 +1,28 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-securing-access.adoc
+
+[id='assembly-configuring-external-listeners-{context}']
+= Configuring external listeners
+
+Use an external listener to expose your Strimzi Kafka cluster to a client outside a Kubernetes environment.
+
+Specify the connection `type` to expose Kafka in the external listener configuration.
+
+* `nodeport` uses `NodePort` type `Services`
+* `loadbalancer` uses `Loadbalancer` type `Services`
+* `ingress` uses Kubernetes `Ingress` and the {NginxIngressController}
+* `route` uses OpenShift `Routes` and the HAProxy router
+
+For more information about listener configuration, see the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+
+NOTE: `route` is only supported on OpenShift
+
+.Additional resources
+
+* {Externallisteners}
+
+include::../modules/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
+include::../modules/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
+include::../modules/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
+include::../modules/proc-accessing-kafka-using-routes.adoc[leveloffset=+1]

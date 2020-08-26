@@ -1,0 +1,28 @@
+Simple authorization in Strimzi uses the `AclAuthorizer` plugin, the default Access Control Lists (ACLs) authorization plugin provided with Apache Kafka.
+ACLs allow you to define which users have access to which resources at a granular level.
+
+Configure the `Kafka` custom resource to use simple authorization.
+Set the `type` property in the `authorization` section to the value `simple`,
+and configure a list of super users.
+
+Access rules are configured for the `KafkaUser`, as described in the xref:type-AclRule-reference[ACLRule schema reference].
+
+[id='property-simple-authorization-superusers-{context}']
+.`superUsers`
+A list of user principals treated as super users, so that they are always allowed without querying ACL rules.
+For more information see xref:con-securing-kafka-authorization-str[Kafka authorization].
+
+.An example of simple authorization configuration
+[source,yaml,subs="attributes+"]
+----
+authorization:
+  type: simple
+  superUsers:
+    - CN=client_1
+    - user_2
+    - CN=client_3
+----
+
+NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.
+Designate super users in the `authorization` property instead.
+For more information, see xref:type-KafkaClusterSpec-reference[Kafka broker configuration].

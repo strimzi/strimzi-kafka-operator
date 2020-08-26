@@ -1,0 +1,50 @@
+[id='nodeport-listener-{context}']
+Configures an external listener to expose Kafka using `NodePort` type `Services`.
+Kafka clients connect directly to the nodes of Kubernetes.
+
+An additional `NodePort` type of service is created to serve as a Kafka bootstrap address.
+
+.Example of an external listener of type `nodeport`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: nodeport
+    authentication:
+      type: tls
+# ...
+----
+
+When configuring the advertised addresses for the Kafka broker pods, Strimzi uses the address of the node on which the given pod is running.
+Nodes often have multiple addresses.
+
+The address type used is based on the first type found in the following order of priority:
+
+. ExternalDNS
+. ExternalIP
+. Hostname
+. InternalDNS
+. InternalIP
+
+You must enable access to the ports on the Kubernetes nodes for each node port (for example, in firewalls or security groups).
+Each Kafka broker pod is then accessible on a separate port.
+
+[id='property-nodeport-listener-tls-{context}']
+.`tls`
+
+By default, TLS encryption is enabled.
+To disable it, set the `tls` property to `false`.
+
+.Example of an external listener of type `nodeport` and disabled TLS encryption
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: nodeport
+    tls: false
+# ...
+----
+
+NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.

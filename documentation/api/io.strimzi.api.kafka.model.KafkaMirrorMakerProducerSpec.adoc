@@ -1,4 +1,4 @@
-Use `KafkaMirrorMakerProducerSpec` properties to configure a MirrorMaker producer.
+Configures a MirrorMaker producer.
 
 [id='property-producer-abort-on-send-{context}']
 .`abortOnSendFailure`

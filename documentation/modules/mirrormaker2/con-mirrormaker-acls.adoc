@@ -7,7 +7,7 @@
 
 ACL access to remote topics is possible if you are *not* using the User Operator.
 
-If `SimpleAclAuthorizer` is being used, without the User Operator, ACL rules that manage access to brokers also apply to remote topics.
+If `AclAuthorizer` is being used, without the User Operator, ACL rules that manage access to brokers also apply to remote topics.
 Users that can read a source topic can read its remote equivalent.
 
 NOTE: OAuth 2.0 authorization does not support access to remote topics in this way.

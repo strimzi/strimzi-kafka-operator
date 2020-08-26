@@ -1,4 +1,4 @@
-`KafkaUserTemplate` is used specify additional labels and annotations for the secret created by the User Operator.
+Specify additional labels and annotations for the secret created by the User Operator.
 
 .An example showing the `KafkaUserTemplate`
 [source,yaml,subs=attributes+]

@@ -1,0 +1,22 @@
+Configures an external listener to expose Kafka `Loadbalancer` type `Services`.
+A new loadbalancer service is created for every Kafka broker pod.
+An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
+Loadbalancers listen to connections on port 9094.
+
+.Example of an external listener of type `loadbalancer`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: loadbalancer
+    authentication:
+      type: tls
+# ...
+----
+
+[id='property-loadbalancer-listener-tls-{context}']
+.`tls`
+
+By default, TLS encryption is enabled.
+To disable it, set the `tls` property to `false`.
