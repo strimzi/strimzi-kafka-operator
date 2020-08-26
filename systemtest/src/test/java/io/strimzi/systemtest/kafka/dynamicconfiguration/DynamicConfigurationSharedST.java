@@ -81,29 +81,35 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
             switch (type) {
                 case STRING:
-                    if (key.equals("compression.type")) {
-                        List<String> compressionTypes = Arrays.asList("snappy", "gzip", "lz4", "zstd");
 
-                        stochasticChosenValue = compressionTypes.get(ThreadLocalRandom.current().nextInt(0, compressionTypes.size() - 1));
+                    switch(key) {
+                        case "compression.type":
+                            List<String> compressionTypes = Arrays.asList("snappy", "gzip", "lz4", "zstd");
 
-                        testCases.put(key, stochasticChosenValue);
-                    } else if (key.equals("log.message.timestamp.type")) {
-                        stochasticChosenValue = "LogAppendTime";
-                        testCases.put(key, stochasticChosenValue);
-                    } else {
-                        testCases.put(key, " ");
+                            stochasticChosenValue = compressionTypes.get(ThreadLocalRandom.current().nextInt(0, compressionTypes.size() - 1));
+                            testCases.put(key, stochasticChosenValue);
+                            break;
+                        case "log.message.timestamp.type":
+                            stochasticChosenValue = "LogAppendTime";
+                            testCases.put(key, stochasticChosenValue);
+                            break;
+//                        case "zookeeper.connect":
+//                            stochasticChosenValue = "localhost:2181";
+//                            testCases.put(key, stochasticChosenValue);
+//                            break;
+                        default:
+                            testCases.put(key, " ");
                     }
                     break;
                 case INT:
                 case LONG:
                     if (key.equals("num.recovery.threads.per.data.dir") || key.equals("log.cleaner.threads") ||
                         key.equals("num.network.threads") || key.equals("min.insync.replicas") ||
-                        key.equals("num.replica.fetchers") || key.equals("num.partitions") ||
-                        key.equals("background.threads")) {
+                        key.equals("num.replica.fetchers") || key.equals("num.partitions")) {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(2, 3);
                     } else if (key.equals("log.cleaner.io.buffer.load.factor") ||
                         key.equals("log.retention.ms") || key.equals("max.connections") ||
-                        key.equals("max.connections.per.ip")) {
+                        key.equals("max.connections.per.ip") || key.equals("background.threads")) {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(1, 20);
                     } else {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(100, 50_000);
@@ -149,12 +155,16 @@ public class DynamicConfigurationSharedST extends AbstractST {
             testCases.remove("num.io.threads");
             testCases.remove("log.cleaner.dedupe.buffer.size");
             testCases.remove("max.connections");
+            testCases.remove("background.threads");
+            testCases.remove("num.partitions");
+            testCases.remove("unclean.leader.election.enable");
 
             // skipping these configuration exceptions
             testCases.remove("ssl.enabled.protocols");
             testCases.remove("ssl.protocol");
             testCases.remove("ssl.cipher.suites");
             testCases.remove("zookeeper.connection.timeout.ms");
+            testCases.remove("zookeeper.connect");
         });
 
         return testCases;
@@ -166,6 +176,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
     }
 }
