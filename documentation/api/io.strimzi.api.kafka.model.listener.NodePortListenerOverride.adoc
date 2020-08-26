@@ -1,4 +1,4 @@
-Use `NodePortListenerOverride` properties to configure overrides for node port external listeners.
+Configures overrides for node port external listeners.
 
 [id='property-nodeport-listener-overrides-{context}']
 .`overrides`

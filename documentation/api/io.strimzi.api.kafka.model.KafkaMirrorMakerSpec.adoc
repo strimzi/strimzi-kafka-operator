@@ -1,4 +1,4 @@
-Use the `KafkaMirrorMakerSpec` properties to configure Kafka MirrorMaker.
+Configures Kafka MirrorMaker.
 
 [id='property-mm-whitelist-{context}']
 .`whitelist`

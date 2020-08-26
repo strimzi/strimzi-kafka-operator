@@ -1,5 +1,4 @@
-Use `LoadBalancerListenerOverride` properties to configure overrides for node port external listeners.
-
+Configures overrides for node port external listeners.
 
 [id='property-loadbalancer-listener-dns-annotations-{context}']
 .`dnsAnnotations`

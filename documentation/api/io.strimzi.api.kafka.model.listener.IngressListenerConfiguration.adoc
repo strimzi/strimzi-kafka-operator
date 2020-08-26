@@ -1,4 +1,4 @@
-Use `IngressListenerConfiguration` properties to add configuration to external ingress listeners.
+Configures external ingress listeners.
 
 [id='property-ingress-listener-host-{context}']
 .`host`

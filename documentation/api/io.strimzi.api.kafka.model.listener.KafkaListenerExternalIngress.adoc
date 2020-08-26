@@ -1,4 +1,4 @@
-Use `KafkaListenerExternalIngress` properties to configure an external listener to expose expose Kafka using Kubernetes `Ingress` and the {NginxIngressController}.
+Configures an external listener to expose Kafka using Kubernetes `Ingress` and the {NginxIngressController}.
 
 A dedicated `Ingress` resource is created for every Kafka broker pod.
 An additional `Ingress` resource is created to serve as a Kafka bootstrap address.

@@ -1,4 +1,4 @@
-Use `KafkaMirrorMaker2ClusterSpec` properties to configure Kafka clusters for mirroring.
+Configures Kafka clusters for mirroring.
 
 [id='property-mirrormaker2-config-{context}']
 .`config`

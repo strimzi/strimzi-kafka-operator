@@ -1,4 +1,4 @@
-Use `KafkaListenerExternalLoadBalancer` properties to configure an external listener to expose expose Kafka `Loadbalancer` type `Services`.
+Configures an external listener to expose Kafka `Loadbalancer` type `Services`.
 A new loadbalancer service is created for every Kafka broker pod.
 An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
 Loadbalancers listen to connections on port 9094.

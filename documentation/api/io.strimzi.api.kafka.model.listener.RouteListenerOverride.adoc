@@ -1,4 +1,4 @@
-Use `RouteListenerOverride` properties to configure overrides for route external listeners.
+Configures overrides for route external listeners.
 
 [id='property-route-listener-overrides-{context}']
 .`overrides`
