@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.specific;
 
-import io.fabric8.kubernetes.api.model.Node;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
@@ -13,7 +12,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,15 +43,14 @@ public class ClusterOperationST extends AbstractST {
         List<String> consumerNames = IntStream.range(0, 5).boxed().map(i -> "hello-world-consumer-" + i).collect(Collectors.toList());
         List<String> continuousConsumerGroups = IntStream.range(0, 5).boxed().map(i -> "continuous-consumer-group-" + i).collect(Collectors.toList());
         int continuousClientsMessageCount = 300;
-        List<Node> nodes = kubeClient().getClusterWorkers();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
                 .editOrNewSpec()
-                .editEntityOperator()
-                .editUserOperator()
-                .withReconciliationIntervalSeconds(30)
-                .endUserOperator()
-                .endEntityOperator()
+                    .editEntityOperator()
+                        .editUserOperator()
+                            .withReconciliationIntervalSeconds(30)
+                        .endUserOperator()
+                    .endEntityOperator()
                 .endSpec()
                 .done();
 
@@ -77,10 +74,10 @@ public class ClusterOperationST extends AbstractST {
         // ##############################
         // Nodes draining
         // ##############################
-        for (Node node : nodes) {
+        kubeClient().getClusterWorkers().forEach(node -> {
             drainNode(node.getMetadata().getName());
             setNodeSchedule(node.getMetadata().getName(), true);
-        }
+        });
 
         producerNames.forEach(producerName -> ClientUtils.waitTillContinuousClientsFinish(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
         producerNames.forEach(producerName -> kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(producerName).delete());
@@ -88,12 +85,9 @@ public class ClusterOperationST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
         ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
-
-        applyRoleBindings(NAMESPACE);
-        BundleResource.clusterOperator(NAMESPACE).done();
+        installClusterOperator(NAMESPACE);
     }
 
     @AfterEach

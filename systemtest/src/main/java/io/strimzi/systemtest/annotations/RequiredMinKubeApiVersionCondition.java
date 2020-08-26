@@ -27,8 +27,10 @@ public class RequiredMinKubeApiVersionCondition implements ExecutionCondition {
         if (Double.parseDouble(clusterResource.client().clusterKubernetesVersion()) >= version) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
-            LOGGER.info("{} is @MultiNodeClusterOnly, but the running cluster is not multi-node cluster: Ignoring {}",
+            LOGGER.info("{} is @RequiredMinKubeApiVersion with version {}, but the running on cluster with {}: Ignoring {}",
                     extensionContext.getDisplayName(),
+                    version,
+                    clusterResource.client().clusterKubernetesVersion(),
                     extensionContext.getDisplayName()
             );
             return ConditionEvaluationResult.disabled("Test is disabled");
