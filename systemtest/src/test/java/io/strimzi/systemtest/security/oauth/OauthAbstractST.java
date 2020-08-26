@@ -12,7 +12,6 @@ import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
-import io.strimzi.test.TestUtils;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
