@@ -384,7 +384,7 @@ public class ResourceManager {
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
     public static <T extends HasMetadata & HasStatus> void logCurrentResourceStatus(T customResource) {
-        try {
+        if (customResource != null) {
             List<String> printWholeCR = Arrays.asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND);
 
             String kind = customResource.getKind();
@@ -395,34 +395,33 @@ public class ResourceManager {
             } else {
                 List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-                List<Condition> conditions = customResource.getStatus().getConditions();
-                if (conditions != null) {
-                    for (Condition condition : customResource.getStatus().getConditions()) {
-                        if (condition.getMessage() != null) {
-                            log.add("\tType: " + condition.getType() + "\n");
-                            log.add("\tMessage: " + condition.getMessage() + "\n");
+                if (customResource.getStatus() != null) {
+                    List<Condition> conditions = customResource.getStatus().getConditions();
+                    if (conditions != null) {
+                        for (Condition condition : customResource.getStatus().getConditions()) {
+                            if (condition.getMessage() != null) {
+                                log.add("\tType: " + condition.getType() + "\n");
+                                log.add("\tMessage: " + condition.getMessage() + "\n");
+                            }
                         }
                     }
-                }
 
-                log.add("\nPods with conditions and messages:\n\n");
+                    log.add("\nPods with conditions and messages:\n\n");
 
-                for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
-                    log.add(pod.getMetadata().getName() + ":");
-                    for (PodCondition podCondition : pod.getStatus().getConditions()) {
-                        if (podCondition.getMessage() != null) {
-                            log.add("\n\tType: " + podCondition.getType() + "\n");
-                            log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                    for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                        log.add(pod.getMetadata().getName() + ":");
+                        for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                            if (podCondition.getMessage() != null) {
+                                log.add("\n\tType: " + podCondition.getType() + "\n");
+                                log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                            }
                         }
+                        log.add("\n\n");
                     }
-                    log.add("\n\n");
+                    LOGGER.info("{}", String.join("", log));
                 }
-                LOGGER.info("{}", String.join("", log));
             }
-        } catch (NullPointerException e) {
-            LOGGER.debug("Cannot provide CR status, because the CR is null or messages/conditions are empty");
         }
-
     }
 
     /**
