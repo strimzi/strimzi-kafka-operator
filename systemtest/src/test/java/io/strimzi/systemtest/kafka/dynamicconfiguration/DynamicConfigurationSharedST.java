@@ -81,25 +81,19 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
             switch (type) {
                 case STRING:
-
-                    switch(key) {
+                    switch (key) {
                         case "compression.type":
                             List<String> compressionTypes = Arrays.asList("snappy", "gzip", "lz4", "zstd");
 
                             stochasticChosenValue = compressionTypes.get(ThreadLocalRandom.current().nextInt(0, compressionTypes.size() - 1));
-                            testCases.put(key, stochasticChosenValue);
                             break;
                         case "log.message.timestamp.type":
                             stochasticChosenValue = "LogAppendTime";
-                            testCases.put(key, stochasticChosenValue);
                             break;
-//                        case "zookeeper.connect":
-//                            stochasticChosenValue = "localhost:2181";
-//                            testCases.put(key, stochasticChosenValue);
-//                            break;
                         default:
-                            testCases.put(key, " ");
+                            stochasticChosenValue = " ";
                     }
+                    testCases.put(key, stochasticChosenValue);
                     break;
                 case INT:
                 case LONG:
