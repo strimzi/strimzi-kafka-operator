@@ -6,6 +6,10 @@ KEYCLOAK_VERSION=11.0.0
 
 SCRIPT_PATH=$(dirname "${BASH_SOURCE[0]}")
 
+echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Generate keycloak secret"
+openssl req  -nodes -new -x509  -keyout keycloak.key -out keycloak.crt -subj '/CN=keycloak'
+kubectl create secret -n ${NAMESPACE} generic sso-x509-https-secret --from-file=tls.crt=keycloak.crt --from-file=tls.key=keycloak.key
+
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Deploy Keycloak Operator"
 kubectl apply -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/service_account.yaml
 kubectl apply -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/role_binding.yaml
@@ -48,7 +52,6 @@ USERNAME=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jso
 
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Import realms - USER:${USERNAME} - PASS:${PASSWORD}"
 AUTHENTICATION_REALM_OUTPUT=$(kubectl exec keycloak-0 -n ${NAMESPACE} -- /tmp/create_realm.sh ${USERNAME} ${PASSWORD} localhost:8443)
-echo "XXXXXXXX"
 echo ${AUTHENTICATION_REALM_OUTPUT}
 if [[ ${AUTHENTICATION_REALM_OUTPUT} == *"Realm wasn't imported!"* ]]; then
   echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Authentication realm wasn't imported!"
