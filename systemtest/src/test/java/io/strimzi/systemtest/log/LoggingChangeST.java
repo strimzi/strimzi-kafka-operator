@@ -371,6 +371,9 @@ class LoggingChangeST extends AbstractST {
         ilOff.setLoggers(loggers);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1).done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
                 .editSpec()
                     .withInlineLogging(ilOff)
