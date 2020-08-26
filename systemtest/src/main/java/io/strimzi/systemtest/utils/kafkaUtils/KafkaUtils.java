@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -291,34 +290,44 @@ public class KafkaUtils {
 
         Map<String, ConfigModel> configs = KafkaUtils.readConfigModel(kafkaVersion);
 
+        LOGGER.info("This is configs {}", configs.toString());
+
         LOGGER.info("This is all kafka configs with size {}", configs.size());
-
-        List<String> forbiddenPrefixesExceptions = Arrays.asList(FORBIDDEN_PREFIX_EXCEPTIONS.split("\\s*,+\\s*"));
-
-        Map<String, ConfigModel> forbiddenExceptionsConfigs = configs
-            .entrySet()
-            .stream()
-            .filter(a -> forbiddenPrefixesExceptions.contains(a.getKey()))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        LOGGER.info("This is size of forbidden-exception-configs size {}", forbiddenExceptionsConfigs.size());
-
-        List<String> forbiddenPrefixes = Arrays.asList(FORBIDDEN_PREFIXES.split("\\s*,+\\s*"));
 
         Map<String, ConfigModel> dynamicConfigs = configs
             .entrySet()
             .stream()
-            .filter(a -> !(a.getValue().getScope() == Scope.READ_ONLY) && !forbiddenPrefixes.contains(a.getKey()))
+            .filter(a -> {
+                String[] prefixKey = a.getKey().split("\\.");
+
+                // filter all which is Scope = ClusterWide or PerBroker
+                boolean isClusterWideOrPerBroker = a.getValue().getScope() == Scope.CLUSTER_WIDE || a.getValue().getScope() == Scope.PER_BROKER;
+
+                if (prefixKey[0].equals("ssl") || prefixKey[0].equals("sasl") || prefixKey[0].equals("advertised") ||
+                    prefixKey[0].equals("listeners") || prefixKey[0].equals("listener")) {
+                    return isClusterWideOrPerBroker && !FORBIDDEN_PREFIXES.contains(prefixKey[0]);
+                }
+
+                return isClusterWideOrPerBroker;
+            })
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         LOGGER.info("This is dynamic-configs size {}", dynamicConfigs.size());
+
+        Map<String, ConfigModel> forbiddenExceptionsConfigs = configs
+            .entrySet()
+            .stream()
+            .filter(a -> FORBIDDEN_PREFIX_EXCEPTIONS.contains(a.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        LOGGER.info("This is size of forbidden-exception-configs size {}", forbiddenExceptionsConfigs.size());
 
         Map<String, ConfigModel> dynamicConfigsWithExceptions = new HashMap<>();
 
         dynamicConfigsWithExceptions.putAll(dynamicConfigs);
         dynamicConfigsWithExceptions.putAll(forbiddenExceptionsConfigs);
 
-        LOGGER.info("This is dynamic-configs with forbidden-exception-configs size {}", dynamicConfigs.size());
+        LOGGER.info("This is dynamic-configs with forbidden-exception-configs size {}", dynamicConfigsWithExceptions.size());
 
         dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info(key + " -> "  + value));
 
