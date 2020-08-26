@@ -4,73 +4,36 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.test.executor.Exec;
+import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class KeycloakUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KeycloakUtils.class);
 
+    public final static String PATH_TO_KEYCLOAK_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_keycloak_operator.sh";
+    public final static String PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_keycloak_operator.sh";
+
+
     private KeycloakUtils() {}
 
-    public static DoneableDeployment deployKeycloak() {
-        String keycloakName = "keycloak";
+    public static void deployKeycloak(String namespace) {
+        LOGGER.info("Prepare Keycloak in namespace: {}", namespace);
+        ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
+        ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace);
 
-        Map<String, String> keycloakLabels = new HashMap<>();
-        keycloakLabels.put("app", keycloakName);
+        if (!result.out().contains("All realms were successfully imported")) {
+            LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
+            throw new RuntimeException("Keycloak wasn't deployed correctly!");
+        }
+        LOGGER.info("Keycloak in namespace {} is ready", namespace);
+    }
 
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withLabels(keycloakLabels)
-                .withName(keycloakName)
-            .endMetadata()
-            .withNewSpec()
-                .withNewSelector()
-                    .withMatchLabels(keycloakLabels)
-                .endSelector()
-                .withReplicas(1)
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(keycloakLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers()
-                        .addNewContainer()
-                            .withName(keycloakName + "pod")
-                            .withImage("jboss/keycloak:8.0.1")
-                            .withPorts(
-                                new ContainerPortBuilder()
-                                    .withName("http")
-                                    .withContainerPort(8080)
-                                    .build(),
-                                new ContainerPortBuilder()
-                                    .withName("https")
-                                    .withContainerPort(8443)
-                                    .build()
-                            )
-                            .addNewEnv()
-                                .withName("KEYCLOAK_USER")
-                                .withValue("admin")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("KEYCLOAK_PASSWORD")
-                                .withValue("admin")
-                            .endEnv()
-                            // for enabling importing authorization script
-                            .withArgs("-Dkeycloak.profile.feature.upload_scripts=enabled")
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
+    public static void deleteKeycloak(String namespace) {
+        LOGGER.info("Teardown Keycloak in namespace: {}", namespace);
+        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, namespace);
     }
 }

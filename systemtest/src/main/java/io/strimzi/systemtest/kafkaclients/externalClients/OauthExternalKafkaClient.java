@@ -218,7 +218,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
     }
 
     public int receiveMessagesTls() {
-        return sendMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
+        return receiveMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override
