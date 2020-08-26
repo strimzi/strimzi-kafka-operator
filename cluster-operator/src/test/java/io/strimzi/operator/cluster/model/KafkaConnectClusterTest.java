@@ -1415,8 +1415,8 @@ public class KafkaConnectClusterTest {
         Rack rack = resource.getSpec().getRack();
 
         if (rack != null) {
-
             PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
+
             // check that pod spec contains the init Kafka container
             List<Container> initContainers = podSpec.getInitContainers();
             assertThat(initContainers, is(notNullValue()));
@@ -1426,5 +1426,6 @@ public class KafkaConnectClusterTest {
                     initContainers.stream().anyMatch(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME));
             assertThat(isInitKafkaConnect, is(true));
         }
+
     }
 }

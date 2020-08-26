@@ -92,6 +92,15 @@ public abstract class AbstractModel {
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
 
+    /**
+     * Init container related configuration
+     */
+    protected static final String INIT_NAME = "kafka-init";
+    protected static final String INIT_VOLUME_NAME = "rack-volume";
+    protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
+    protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
+    protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
+
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";

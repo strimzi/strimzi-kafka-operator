@@ -14,10 +14,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
-import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
-import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
-import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -123,11 +119,6 @@ import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_MET
 public class KafkaCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka";
 
-    protected static final String INIT_NAME = "kafka-init";
-    protected static final String INIT_VOLUME_NAME = "rack-volume";
-    protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
-    protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-    protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
 
@@ -1601,44 +1592,7 @@ public class KafkaCluster extends AbstractModel {
                         .endPreferredDuringSchedulingIgnoredDuringExecution()
                     .endPodAntiAffinity();
 
-            // We also need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
-            NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
-                    .withNewOperator("Exists")
-                    .withNewKey(rack.getTopologyKey())
-                    .build();
-
-            if (userAffinity != null
-                    && userAffinity.getNodeAffinity() != null
-                    && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution() != null
-                    && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms() != null) {
-                // User has specified some Node Selector Terms => we should enhance them
-                List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
-                List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
-
-                for (NodeSelectorTerm term : oldTerms) {
-                    NodeSelectorTerm enhancedTerm = new NodeSelectorTermBuilder(term)
-                            .addToMatchExpressions(selector)
-                            .build();
-                    enhancedTerms.add(enhancedTerm);
-                }
-
-                builder = builder
-                        .editOrNewNodeAffinity()
-                            .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                                .withNodeSelectorTerms(enhancedTerms)
-                            .endRequiredDuringSchedulingIgnoredDuringExecution()
-                        .endNodeAffinity();
-            } else {
-                // User has not specified any selector terms => we add our own
-                builder = builder
-                        .editOrNewNodeAffinity()
-                            .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
-                                .addNewNodeSelectorTerm()
-                                    .withMatchExpressions(selector)
-                                .endNodeSelectorTerm()
-                            .endRequiredDuringSchedulingIgnoredDuringExecution()
-                        .endNodeAffinity();
-            }
+            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
         }
 
         return builder.build();

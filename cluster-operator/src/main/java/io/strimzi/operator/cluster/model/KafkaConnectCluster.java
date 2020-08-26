@@ -87,12 +87,6 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH = "/opt/kafka/external-configuration/";
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX = "ext-conf-";
 
-    protected static final String INIT_NAME = "kafka-init";
-    protected static final String INIT_VOLUME_NAME = "rack-volume";
-    protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
-    protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-    protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
-
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 3;
     static final int DEFAULT_HEALTHCHECK_DELAY = 60;
