@@ -13,11 +13,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_S2I;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.OLM;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -45,35 +40,30 @@ public class AllNamespacesST extends OlmAbstractST {
     }
 
     @Test
-    @Tag(CONNECT)
     @Order(4)
     void testDeployExampleKafkaConnect() {
         doTestDeployExampleKafkaConnect();
     }
 
     @Test
-    @Tag(CONNECT_S2I)
     @Order(5)
     void testDeployExampleKafkaConnectS2I() {
         doTestDeployExampleKafkaConnectS2I();
     }
 
     @Test
-    @Tag(BRIDGE)
     @Order(6)
     void testDeployExampleKafkaBridge() {
         doTestDeployExampleKafkaBridge();
     }
 
     @Test
-    @Tag(MIRROR_MAKER)
     @Order(7)
     void testDeployExampleKafkaMirrorMaker() {
         doTestDeployExampleKafkaMirrorMaker();
     }
 
     @Test
-    @Tag(MIRROR_MAKER2)
     @Order(8)
     void testDeployExampleKafkaMirrorMaker2() {
         doTestDeployExampleKafkaMirrorMaker2();
