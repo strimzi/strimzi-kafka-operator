@@ -538,4 +538,21 @@ public class KubeClient {
         LabelSelector selector = kubeClient().getDeploymentSelectors("strimzi-cluster-operator");
         return kubeClient().listPods(selector).get(0).getMetadata().getName();
     }
+
+    /**
+     * Method which return list of kube cluster nodes
+     * @return list of nodes
+     */
+    public List<Node> getClusterNodes() {
+        return client.nodes().list().getItems();
+    }
+
+    /**
+     * Method which return list of kube cluster workers node
+     * @return list of worker nodes
+     */
+    public List<Node> getClusterWorkers() {
+        return getClusterNodes().stream().filter(node ->
+                node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/worker")).collect(Collectors.toList());
+    }
 }
