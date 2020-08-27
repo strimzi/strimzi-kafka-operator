@@ -125,7 +125,10 @@ public class DynamicConfigurationSharedST extends AbstractST {
                 case BOOLEAN:
                     if (key.equals("unclean.leader.election.enable") || key.equals("log.preallocate")) {
                         stochasticChosenValue = true;
-                    } else {
+                    } else if (key.equals("log.message.downconversion.enable")) {
+                        stochasticChosenValue = false;
+                    }
+                    else {
                         stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0 ? true : false;
                     }
                     testCases.put(key, stochasticChosenValue);
