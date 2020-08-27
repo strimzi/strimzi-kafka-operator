@@ -87,12 +87,13 @@ public class OauthAbstractST extends AbstractST {
 
         clusterHost = kubeClient().getNodeAddress();
 
-        LOGGER.info("Importing basic realm");
-        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
-
-        LOGGER.info("Importing authorization realm");
-
-        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
+        // TODO: ====== this should be removed ??
+//        LOGGER.info("Importing basic realm");
+//        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
+//
+//        LOGGER.info("Importing authorization realm");
+//
+//        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
 
         String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
 
@@ -100,6 +101,8 @@ public class OauthAbstractST extends AbstractST {
             "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
 
         SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
+
+        // TODO: ======= until here ?
 
         createSecretsForDeployments();
     }
