@@ -395,27 +395,31 @@ public class ResourceManager {
             } else {
                 List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-                List<Condition> conditions = customResource.getStatus().getConditions();
-                if (conditions != null) {
-                    for (Condition condition : customResource.getStatus().getConditions()) {
-                        log.add("\tType: " + condition.getType() + "\n");
-                        log.add("\tMessage: " + condition.getMessage() + "\n");
-                    }
-                }
-
-                log.add("\nPods with conditions and messages:\n\n");
-
-                for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
-                    log.add(pod.getMetadata().getName() + ":");
-                    for (PodCondition podCondition : pod.getStatus().getConditions()) {
-                        if (podCondition.getMessage() != null) {
-                            log.add("\n\tType: " + podCondition.getType() + "\n");
-                            log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                if (customResource.getStatus() != null) {
+                    List<Condition> conditions = customResource.getStatus().getConditions();
+                    if (conditions != null) {
+                        for (Condition condition : customResource.getStatus().getConditions()) {
+                            if (condition.getMessage() != null) {
+                                log.add("\tType: " + condition.getType() + "\n");
+                                log.add("\tMessage: " + condition.getMessage() + "\n");
+                            }
                         }
                     }
-                    log.add("\n\n");
+
+                    log.add("\nPods with conditions and messages:\n\n");
+
+                    for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                        log.add(pod.getMetadata().getName() + ":");
+                        for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                            if (podCondition.getMessage() != null) {
+                                log.add("\n\tType: " + podCondition.getType() + "\n");
+                                log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                            }
+                        }
+                        log.add("\n\n");
+                    }
+                    LOGGER.info("{}", String.join("", log));
                 }
-                LOGGER.info("{}", String.join("", log));
             }
         }
     }
