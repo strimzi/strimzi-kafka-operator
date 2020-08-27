@@ -7,7 +7,7 @@
 
 You can configure Kafka Connect to connect to Kafka brokers using SASL-based authentication using the SCRAM-SHA-512 mechanism.
 
-This procedure includes creating a Secret from a text file. The Secret will contain the password used for authentication in one of its fields. Secrets created by the User Operator can also be used.
+The following procedure includes creating a Secret from a text file. The Secret will contain the password used for authentication in one of its fields. Secrets created by the User Operator can also be used.
 
 .Prerequisites
 
@@ -31,7 +31,7 @@ echo -n _PASSWORD_ > _MY-CONNECT-PASSWORD_.txt
 kubectl create secret generic _MY-CONNECT-SECRET_ --from-file=_PASSWORD-FIELD-NAME_=./_MY-CONNECT-PASSWORD_.txt
 ----
 
-. Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` custom resource.
+. Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the username and Secret.
 For example:
 +
 [source,yaml,subs="+quotes,attributes"]
