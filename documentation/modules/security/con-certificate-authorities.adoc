@@ -27,11 +27,3 @@ Certificates provided by users are not renewed.
 You can provide your own CA certificates for the cluster CA or clients CA.
 For more information, see xref:installing-your-own-ca-certificates-{context}[].
 If you provide your own certificates, you must manually renew them when needed.
-
-== Validity periods of CA certificates
-
-CA certificate validity periods are expressed as a number of days after certificate generation.
-You can configure the validity period of:
-
-* Cluster CA certificates in `Kafka.spec.clusterCa.validityDays`
-* Client CA certificates in `Kafka.spec.clientsCa.validityDays`
