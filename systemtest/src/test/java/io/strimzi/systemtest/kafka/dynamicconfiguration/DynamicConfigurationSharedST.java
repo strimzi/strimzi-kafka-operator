@@ -100,43 +100,55 @@ public class DynamicConfigurationSharedST extends AbstractST {
                     break;
                 case INT:
                 case LONG:
-                    if (key.equals("num.recovery.threads.per.data.dir") || key.equals("log.cleaner.threads") ||
-                        key.equals("num.network.threads") || key.equals("min.insync.replicas") ||
-                        key.equals("num.replica.fetchers") || key.equals("num.partitions")) {
-                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(2, 3);
-                    } else if (key.equals("log.cleaner.io.buffer.load.factor") ||
-                        key.equals("log.retention.ms") || key.equals("max.connections") ||
-                        key.equals("max.connections.per.ip") || key.equals("background.threads")) {
-                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(4, 20);
-                    } else {
-                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(100, 50_000);
+                    switch (key) {
+                        case "num.recovery.threads.per.data.dir":
+                        case "log.cleaner.threads":
+                        case "num.network.threads":
+                        case "min.insync.replicas":
+                        case "num.replica.fetchers":
+                        case "num.partitions":
+                            stochasticChosenValue = ThreadLocalRandom.current().nextInt(2, 3);
+                            break;
+                        case "log.cleaner.io.buffer.load.factor":
+                        case "log.retention.ms":
+                        case "max.connections":
+                        case "max.connections.per.ip":
+                        case "background.threads":
+                            stochasticChosenValue = ThreadLocalRandom.current().nextInt(4, 20);
+                            break;
+                        default:
+                            stochasticChosenValue = ThreadLocalRandom.current().nextInt(100, 50_000);
                     }
                     testCases.put(key, stochasticChosenValue);
                     break;
                 case DOUBLE:
-                    if (key.equals("log.cleaner.min.cleanable.dirty.ratio") ||
-                        key.equals("log.cleaner.min.cleanable.ratio")) {
-                        stochasticChosenValue = ThreadLocalRandom.current().nextDouble(0, 1);
-                    } else {
-                        stochasticChosenValue = ThreadLocalRandom.current().nextDouble(1, 20);
+                    switch (key) {
+                        case "log.cleaner.min.cleanable.dirty.ratio":
+                        case "log.cleaner.min.cleanable.ratio":
+                            stochasticChosenValue = ThreadLocalRandom.current().nextDouble(0, 1);
+                            break;
+                        default:
+                            stochasticChosenValue = ThreadLocalRandom.current().nextDouble(1, 20);
                     }
                     testCases.put(key, stochasticChosenValue);
                     break;
                 case BOOLEAN:
-                    if (key.equals("unclean.leader.election.enable") || key.equals("log.preallocate")) {
-                        stochasticChosenValue = true;
-                    } else if (key.equals("log.message.downconversion.enable")) {
-                        stochasticChosenValue = false;
-                    }
-                    else {
-                        stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0 ? true : false;
+                    switch (key) {
+                        case "unclean.leader.election.enable":
+                        case "log.preallocate":
+                            stochasticChosenValue = true;
+                            break;
+                        case "log.message.downconversion.enable":
+                            stochasticChosenValue = false;
+                            break;
+                        default:
+                            stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0 ? true : false;
                     }
                     testCases.put(key, stochasticChosenValue);
                     break;
                 case LIST:
                     // metric.reporters has default empty '""'
                     // log.cleanup.policy = [delete, compact] -> default delete
-
                     switch (key) {
                         case "log.cleanup.policy":
                             stochasticChosenValue = "compact";
