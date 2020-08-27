@@ -3,7 +3,7 @@
 // assembly-using-the-user-operator.adoc
 
 [id='proc-configuring-kafka-user-{context}']
-= Configuring a Kafka user
+= Securing user access to Kafka
 
 Use the properties of the `KafkaUser` resource to configure a Kafka user.
 
@@ -11,8 +11,8 @@ You can use `kubectl apply` to create or modify users, and `kubectl delete` to d
 
 For example:
 
-* `kubectl apply -f _<user-config-file>_`
-* `kubectl delete KafkaUser _<user-name>_`
+* `kubectl apply -f _USER-CONFIG-FILE_`
+* `kubectl delete KafkaUser _USER-NAME_`
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent `Kafka` configuration:
 
@@ -22,23 +22,24 @@ When you configure the `KafkaUser` authentication and authorization mechanisms, 
 This procedure shows how a user is created with TLS authentication.
 You can also create a user with SCRAM-SHA authentication.
 
-The authentication required depends on the xref:assembly-kafka-broker-listener-authentication-deployment-configuration-kafka[type of authentication configured for the Kafka broker listener].
+The authentication required depends on the xref:con-securing-kafka-authentication-{context}[type of authentication configured for the Kafka broker listener].
 
 NOTE: Authentication between Kafka users and Kafka brokers depends on the authentication settings for each.
 For example, it is not possible to authenticate a user with TLS if it is not also enabled in the Kafka configuration.
 
 .Prerequisites
 
-* A running Kafka cluster xref:con-mutual-tls-authentication-deployment-configuration-kafka[configured with a Kafka broker listener using TLS authentication and encryption].
+* A running Kafka cluster xref:con-mutual-tls-authentication-{context}[configured with a Kafka broker listener using TLS authentication and encryption].
 * A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
 
-If you are using SCRAM-SHA authentication, you need a running Kafka cluster xref:con-scram-sha-authentication-deployment-configuration-kafka[configured with a Kafka broker listener using SCRAM-SHA authentication].
+The authentication type in `KafkaUser` should match the authentication configured in `Kafka` brokers.
 
 .Procedure
 
-. Prepare a YAML file containing the `KafkaUser` to be created.
+. Configure the `KafkaUser` resource.
 +
-.An example `KafkaUser`
+For example:
++
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -72,9 +73,12 @@ spec:
 <1> User authentication mechanism, defined as mutual `tls` or `scram-sha-512`.
 <2> Simple authorization, which requires an accompanying list of ACL rules.
 
-. Create the `KafkaUser` resource in Kubernetes.
+. Create or update the `KafkaUser` resource.
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _USER-CONFIG-FILE_
++
+The user is created, as well as a Secret with the same name as the `KafkaUser` resource.
+The Secret contains a private and public key for TLS client authentication.
 
-. Use the credentials from the `my-user` secret in your client application.
+For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up access for clients outside of Kubernetes^] in the _Deploying Strimzi Guide_.

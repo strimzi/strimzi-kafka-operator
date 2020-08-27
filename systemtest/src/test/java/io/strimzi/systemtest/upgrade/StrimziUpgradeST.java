@@ -318,7 +318,7 @@ public class StrimziUpgradeST extends AbstractST {
         // Modify + apply installation files
         LOGGER.info("Going to update CO from {} to {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         if ("HEAD".equals(testParameters.getString("toVersion"))) {
-            coDir = new File("../install/cluster-operator");
+            coDir = new File(TestUtils.USER_PATH + "/../install/cluster-operator");
         } else {
             url = testParameters.getString("urlTo");
             dir = FileUtils.downloadAndUnzip(url);

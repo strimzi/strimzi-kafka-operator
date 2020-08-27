@@ -3,7 +3,7 @@
 // assembly-kafka-broker-listener-network-policies.adoc
 
 [id='proc-restricting-access-to-listeners-using-network-policies-{context}']
-= Restricting access to Kafka listeners using `networkPolicyPeers`
+= Restricting access to Kafka listeners using network policies
 
 You can restrict access to a listener to only selected applications by using the `networkPolicyPeers` field.
 
@@ -45,4 +45,4 @@ Use `kubectl apply`:
 kubectl apply -f _your-file_
 
 .Additional resources
-* For more information about the schema, see {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+* For more information about the schema, see the {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

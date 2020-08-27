@@ -114,7 +114,7 @@ public abstract class TopicOperatorBaseIT {
         oldNamespace = cluster.setNamespace(NAMESPACE);
         LOGGER.info("#### Creating " + "../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         LOGGER.info(new String(Files.readAllBytes(new File("../install/topic-operator/02-Role-strimzi-topic-operator.yaml").toPath())));
-        cmdKubeClient().create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
+        cmdKubeClient().create(TestUtils.USER_PATH + "/../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
         LOGGER.info(new String(Files.readAllBytes(new File(TestUtils.CRD_TOPIC).toPath())));
         cmdKubeClient().create(TestUtils.CRD_TOPIC);
@@ -131,7 +131,7 @@ public abstract class TopicOperatorBaseIT {
             cmdKubeClient()
                     .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                     .delete(TestUtils.CRD_TOPIC)
-                    .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
+                    .delete(TestUtils.USER_PATH + "/../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                     .deleteNamespace(NAMESPACE);
             cmdKubeClient().namespace(oldNamespace);
         }

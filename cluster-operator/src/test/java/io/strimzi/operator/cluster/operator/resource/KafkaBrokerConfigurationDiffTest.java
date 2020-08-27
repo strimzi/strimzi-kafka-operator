@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.common.Util;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
@@ -74,7 +73,7 @@ public class KafkaBrokerConfigurationDiffTest {
     }
 
     private void assertConfig(KafkaBrokerConfigurationDiff kcd, ConfigEntry ce) {
-        Collection<AlterConfigOp> brokerDiffConf = kcd.getConfigDiff().get(Util.getBrokersConfig(brokerId));
+        Collection<AlterConfigOp> brokerDiffConf = kcd.getConfigDiff();
         long appearances = brokerDiffConf.stream().filter(entry -> entry.configEntry().name().equals(ce.name())).count();
         Optional<AlterConfigOp> en = brokerDiffConf.stream().filter(entry -> entry.configEntry().name().equals(ce.name())).findFirst();
         assertThat(appearances, is(1L));

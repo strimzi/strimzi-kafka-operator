@@ -122,13 +122,13 @@ spec:
 <3> Resource requests xref:ref-resource-limits-and-requests-{context}[specify the resources to reserve for a given container].
 <4> Resource limits specify the maximum resources that can be consumed by a container.
 <5> JVM options can xref:ref-jvm-options-{context}[specify the minimum (`-Xms`) and maximum (`-Xmx`) memory allocation for JVM].
-<6> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-configuring-kafka-broker-listeners-{context}[configured as `plain` (without encryption), `tls` or `external`].
-<7> Listener authentication mechanisms may be configured for each listener, and xref:assembly-kafka-broker-listener-authentication-{context}[specified as mutual TLS or SCRAM-SHA].
-<8> External listener configuration specifies xref:assembly-kafka-broker-external-listeners-{context}[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
+<6> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-securing-kafka-brokers-str[configured as `plain` (without encryption), `tls` or `external`].
+<7> Listener authentication mechanisms may be configured for each listener, and xref:assembly-securing-kafka-brokers-str[specified as mutual TLS or SCRAM-SHA].
+<8> External listener configuration specifies xref:assembly-configuring-external-listeners-str[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
 <9> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a private key. Kafka listener certificates can also be configured for TLS listeners.
-<10> Authorization xref:ref-kafka-authorization-{context}[enables `simple` authorization on the Kafka broker using the `SimpleAclAuthorizer` Kafka plugin].
-<11> Config specifies the broker configuration. xref:ref-kafka-broker-configuration-{context}[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
-<12> xref:ref-kafka-broker-configuration-{context}[SSL properties for external listeners to run with a specific _cipher suite_ for a TLS version].
+<10> Authorization xref:con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `AclAuthorizer` Kafka plugin].
+<11> Config specifies the broker configuration. xref:type-KafkaClusterSpec-reference[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
+<12> xref:type-KafkaClusterSpec-reference[SSL properties for external listeners to run with a specific _cipher suite_ for a TLS version].
 <13> Storage is xref:assembly-storage-{context}[configured as `ephemeral`, `persistent-claim` or `jbod`].
 <14> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
 <15> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.

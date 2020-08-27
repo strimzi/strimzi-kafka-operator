@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -22,6 +23,7 @@ import static java.util.Collections.emptyMap;
 /**
  * Configures overrides for LoadBalancer listeners
  */
+@DescriptionFile
 @JsonPropertyOrder({"bootstrap", "brokers"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(

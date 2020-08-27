@@ -4,11 +4,8 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.kafka.oauth.common.HttpUtil;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.executor.Exec;
@@ -28,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidParameterException;
@@ -39,12 +35,10 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.kafka.oauth.common.OAuthAuthenticator.urlencode;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -204,7 +198,6 @@ public class KafkaClientProperties  {
 
             try {
                 importKeycloakCertificateToTruststore(properties);
-                fixBadlyImportedAuthzSettings();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -377,74 +370,6 @@ public class KafkaClientProperties  {
                 "-alias", "keycloakCrt1", "-keystore", clientProperties.get("ssl.truststore.location").toString(),
                 "-noprompt", "-storepass", clientProperties.get("ssl.truststore.password").toString());
         }
-    }
-
-    /**
-     * Use Keycloak Admin API to update Authorization Services 'decisionStrategy' on 'kafka' client to AFFIRMATIVE
-     * link to bug -> https://issues.redhat.com/browse/KEYCLOAK-12640
-     *
-     * @throws IOException
-     */
-    static void fixBadlyImportedAuthzSettings() throws IOException {
-
-        URI masterTokenEndpoint = URI.create("http://" + ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT + "/auth/realms/master/protocol/openid-connect/token");
-
-        String token = loginWithUsernamePasswordToKeycloak(masterTokenEndpoint,
-            "admin", "admin", "admin-cli");
-
-        String authorization = "Bearer " + token;
-
-        // This is quite a round-about way but here it goes
-
-        // We first need to identify the 'id' of the 'kafka' client by fetching the clients
-        JsonNode clients = HttpUtil.get(URI.create("http://" + ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT + "/auth/admin/realms/kafka-authz/clients"),
-            authorization, JsonNode.class);
-
-        String id = null;
-
-        // iterate over clients
-        Iterator<JsonNode> it = clients.iterator();
-        while (it.hasNext()) {
-            JsonNode client = it.next();
-            String clientId = client.get("clientId").asText();
-            if ("kafka".equals(clientId)) {
-                id = client.get("id").asText();
-                break;
-            }
-        }
-
-        if (id == null) {
-            throw new IllegalStateException("It seems that 'kafka' client isn't configured");
-        }
-
-        URI authzUri = URI.create("http://" + ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT + "/auth/admin/realms/kafka-authz/clients/" + id + "/authz/resource-server");
-
-        // Now we fetch from this client's resource-server the current configuration
-        ObjectNode authzConf = (ObjectNode) HttpUtil.get(authzUri, authorization, JsonNode.class);
-
-        // And we update the configuration and send it back
-        authzConf.put("decisionStrategy", "AFFIRMATIVE");
-        HttpUtil.put(authzUri, authorization, "application/json", authzConf.toString());
-    }
-
-    static String loginWithUsernamePasswordToKeycloak(URI tokenEndpointUri, String username, String password, String clientId) throws IOException {
-
-        StringBuilder body = new StringBuilder("grant_type=password&username=" + urlencode(username) +
-            "&password=" + urlencode(password) + "&client_id=" + urlencode(clientId));
-
-        JsonNode result = HttpUtil.post(tokenEndpointUri,
-            null,
-            null,
-            null,
-            "application/x-www-form-urlencoded",
-            body.toString(),
-            JsonNode.class);
-
-        JsonNode token = result.get("access_token");
-        if (token == null) {
-            throw new IllegalStateException("Invalid response from authorization server: no access_token");
-        }
-        return token.asText();
     }
 
     public Properties getProperties() {

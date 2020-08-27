@@ -1,11 +1,30 @@
-// Module included in the following assemblies:
-//
-// assembly-kafka-broker-configuration.adoc
+Configures a Kafka cluster.
 
-[id='ref-kafka-broker-configuration-{context}']
-= Kafka broker configuration
+[id='property-kafka-listeners-{context}']
+.`listeners`
 
-The `config` property in `Kafka.spec.kafka` contains Kafka broker configuration options as keys with values in one of the following JSON types:
+Use the `listeners` property to configure listeners to provide access to Kafka brokers.
+
+.Example configuration of a plain (unencrypted) listener without authentication
+
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    listeners:
+      plain: {}
+    # ...
+  zookeeper:
+    # ...
+----
+
+[id='property-kafka-config-{context}']
+.`config`
+
+Use the `config` properties to configure Kafka brokers as keys with values in one of the following JSON types:
 
 * String
 * Number
@@ -36,8 +55,7 @@ When a forbidden option is present in the `config` property, it is ignored and a
 All other supported options are passed to Kafka.
 
 There are exceptions to the forbidden options.
-You can use three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
-A cipher suite combines algorithms for secure connection and data transfer.
+For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
 You can also configure the `zookeeper.connection.timeout.ms` property to set the maximum time allowed for establishing a ZooKeeper connection.
 
 .Example Kafka broker configuration
@@ -66,15 +84,9 @@ spec:
       socket.receive.buffer.bytes: 102400
       socket.request.max.bytes: 104857600
       group.initial.rebalance.delay.ms: 0
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <1>
-      ssl.enabled.protocols: "TLSv1.2" <2>
-      ssl.protocol: "TLSv1.2" <3>
-      zookeeper.connection.timeout.ms: 6000 <4>
+      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+      ssl.enabled.protocols: "TLSv1.2"
+      ssl.protocol: "TLSv1.2"
+      zookeeper.connection.timeout.ms: 6000
     # ...
 ----
-<1> The cipher suite for TLS using a combination of `ECDHE` key exchange mechanism, `RSA` authentication algorithm,
-`AES` bulk encyption algorithm and `SHA384` MAC algorithm.
-<2> The SSl protocol `TLSv1.2` is enabled.
-<3> Specifies the `TLSv1.2` protocol to generate the SSL context.
-Allowed values are `TLSv1.1` and `TLSv1.2`.
-<4> Maximum time in milliseconds to establish a ZooKeeper connection.

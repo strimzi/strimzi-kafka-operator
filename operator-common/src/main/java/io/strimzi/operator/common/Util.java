@@ -356,8 +356,16 @@ public class Util {
         return Util.getBrokersConfig(Integer.toString(podId));
     }
 
+    public static ConfigResource getBrokersLogging(int podId) {
+        return Util.getBrokersLogging(Integer.toString(podId));
+    }
+
     public static ConfigResource getBrokersConfig(String podId) {
         return new ConfigResource(ConfigResource.Type.BROKER, podId);
+    }
+
+    public static ConfigResource getBrokersLogging(String podId) {
+        return new ConfigResource(ConfigResource.Type.BROKER_LOGGER, podId);
     }
 
     /**
@@ -401,4 +409,5 @@ public class Util {
         }
         return result.toString();
     }
+
 }

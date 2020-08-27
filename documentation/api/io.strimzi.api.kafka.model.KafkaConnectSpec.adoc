@@ -1,4 +1,4 @@
-Use `KafkaConnectSpec` properties to configure a Kafka Connect cluster.
+Configures a Kafka Connect cluster.
 
 [id='property-kafka-connect-logging-{context}']
 .`logging`

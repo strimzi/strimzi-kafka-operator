@@ -21,8 +21,6 @@ import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.InlineLoggingBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -70,7 +68,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -115,7 +112,7 @@ class KafkaST extends AbstractST {
     @Test
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
-        cluster.createCustomResources("../examples/templates/cluster-operator");
+        cluster.createCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator");
         String templateName = "strimzi-ephemeral";
         String clusterName = "openshift-my-cluster";
         cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", clusterName));
@@ -142,7 +139,7 @@ class KafkaST extends AbstractST {
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
         StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
         DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
-        cluster.deleteCustomResources("../examples/templates/cluster-operator");
+        cluster.deleteCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator");
     }
 
     @Test
@@ -865,7 +862,7 @@ class KafkaST extends AbstractST {
     @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsTrueFalse() {
         int kafkaReplicas = 2;
-        int diskSizeGi = 10;
+        String diskSizeGi = "10";
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
@@ -888,7 +885,7 @@ class KafkaST extends AbstractST {
     @Test
     void testKafkaJBODDeleteClaimsTrue() {
         int kafkaReplicas = 2;
-        int diskSizeGi = 10;
+        String diskSizeGi = "10";
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
@@ -911,7 +908,7 @@ class KafkaST extends AbstractST {
     @Test
     void testKafkaJBODDeleteClaimsFalse() {
         int kafkaReplicas = 2;
-        int diskSizeGi = 10;
+        String diskSizeGi = "10";
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
@@ -1567,18 +1564,6 @@ class KafkaST extends AbstractST {
 
         kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=true"));
-
-        InlineLogging il = new InlineLoggingBuilder().withLoggers(Collections.singletonMap("kafka.logger.level", "INFO")).build();
-
-        Map<String, String> kafkaPodsSnapshot = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
-
-        LOGGER.info("Updating logging of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setLogging(il);
-        });
-
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPodsSnapshot);
     }
 
     @Test
@@ -1863,8 +1848,8 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < kafkaRepl; i++) {
             for (int j = 0; j < diskCount; j++) {
                 LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
-                        volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount());
-                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizes[i]));
+                        volumes.get(k).getSpec().getResources().getRequests().get("storage"));
+                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizes[i])));
                 k++;
             }
         }
@@ -1888,9 +1873,8 @@ class KafkaST extends AbstractST {
         });
     }
 
-    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
-
-        ArrayList pvcs = new ArrayList();
+    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {
+        ArrayList<String> pvcs = new ArrayList<>();
 
         kubeClient().listPersistentVolumeClaims().stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("kafka"))
@@ -1901,20 +1885,20 @@ class KafkaST extends AbstractST {
                     assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(CLUSTER_NAME));
                     assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(Kafka.RESOURCE_KIND));
                     assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(CLUSTER_NAME.concat("-kafka")));
-                    assertThat(volume.getSpec().getResources().getRequests().get("storage").getAmount(), is(diskSizeGi + "Gi"));
+                    assertThat(volume.getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizeGi, "Gi")));
                 });
 
         LOGGER.info("Checking PVC names included in JBOD array");
         for (int i = 0; i < kafkaReplicas; i++) {
             for (int j = 0; j < diskCountPerReplica; j++) {
-                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+                assertThat(pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i), is(true));
             }
         }
 
         LOGGER.info("Checking PVC on Kafka pods");
         for (int i = 0; i < kafkaReplicas; i++) {
-            ArrayList dataSourcesOnPod = new ArrayList();
-            ArrayList pvcsOnPod = new ArrayList();
+            ArrayList<String> dataSourcesOnPod = new ArrayList<>();
+            ArrayList<String> pvcsOnPod = new ArrayList<>();
 
             LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
             for (int j = 0; j < diskCountPerReplica; j++) {
@@ -1926,8 +1910,8 @@ class KafkaST extends AbstractST {
 
             LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
             for (int j = 0; j < diskCountPerReplica; j++) {
-                dataSourcesOnPod.contains("data-" + j);
-                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+                assertThat(dataSourcesOnPod.contains("data-" + j), is(true));
+                assertThat(pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i), is(true));
             }
         }
     }

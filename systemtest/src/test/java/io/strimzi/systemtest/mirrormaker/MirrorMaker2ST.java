@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
+import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -36,6 +37,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -680,5 +682,18 @@ class MirrorMaker2ST extends AbstractST {
     void setup() throws Exception {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
+    }
+
+    @AfterEach
+    void removeResourcesAndTopics() {
+        // force deletion of MM2 (all) components, after that remove other KafkaTopics
+        // else they will/might be incorrectly recreated by MM2 component (TopicOperator)
+        ResourceManager.deleteMethodResources();
+        KafkaTopicList kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list();
+        kafkaTopicList.getItems().forEach(kafkaTopic -> {
+            KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).delete(kafkaTopic);
+            LOGGER.info("Topic {} deleted", kafkaTopic.getMetadata().getName());
+            KafkaTopicUtils.waitForKafkaTopicDeletion(kafkaTopic.getMetadata().getName());
+        });
     }
 }

@@ -1,0 +1,74 @@
+Configures external ingress listeners.
+
+[id='property-ingress-listener-host-{context}']
+.`host`
+
+The Ingress controller does not assign any hostnames automatically.
+Use the `configuration` property to specify the hostnames used by the bootstrap and per-broker services.
+
+The `host` property values are mandatory for ingress listener configuration.
+
+Make sure that the hostnames resolve to the Ingress endpoints.
+Strimzi will not perform any validation that the requested hosts are available and properly routed to the Ingress endpoints.
+
+.Example of an external listener of type `ingress`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    authentication:
+      type: tls
+    configuration:
+      bootstrap:
+        host: bootstrap.myingress.com
+      brokers:
+      - broker: 0
+        host: broker-0.myingress.com
+      - broker: 1
+        host: broker-1.myingress.com
+      - broker: 2
+        host: broker-2.myingress.com
+# ...
+----
+
+[id='property-ingress-listener-dns-annotations-{context}']
+.`dnsAnnotations`
+
+Use the `dnsAnnotations` property to add additional annotations to the ingress resources.
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the ingress resources.
+
+.Example of an external listener of type `ingress` using `dnsAnnotations`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    authentication:
+      type: tls
+    configuration:
+      bootstrap:
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: bootstrap.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: bootstrap.myingress.com
+      brokers:
+      - broker: 0
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-0.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-0.myingress.com
+      - broker: 1
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-1.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-1.myingress.com
+      - broker: 2
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-2.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-2.myingress.com
+# ...
+----

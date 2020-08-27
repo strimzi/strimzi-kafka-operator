@@ -42,7 +42,7 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-oc apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _KAFKA-CONFIG-FILE_
 +
 `ClusterIP` type services are created for each Kafka broker, as well as an external _bootstrap service_.
 The services route the traffic from the OpenShift Routes to the Kafka brokers.
@@ -56,13 +56,10 @@ The cluster CA certificate to verify the identity of the kafka brokers is also c
 [source,shell,subs=+quotes]
 kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
 
-. Extract the public certificate of the broker certification authority
+. Extract the public certificate of the broker certification authority.
 +
 [source,shell,subs=+quotes]
 kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
-
-.Additional resources
-* For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

@@ -1,0 +1,39 @@
+// Module included in the following assemblies:
+//
+// assembly-securing-access.adoc
+
+[id='con-securing-kafka-authorization-{context}']
+= Kafka authorization
+
+You can configure authorization for Kafka brokers using the `authorization` property in the `Kafka.spec.kafka` resource.
+If the `authorization` property is missing, no authorization is enabled and clients have no restrictions.
+When enabled, authorization is applied to all enabled listeners.
+The authorization method is defined in the `type` field.
+
+Supported authorization options:
+
+* xref:type-KafkaAuthorizationSimple-reference[Simple authorization]
+* xref:assembly-oauth-authorization_str[OAuth 2.0 authorization] (if you are using OAuth 2.0 token based authentication)
+* xref:type-KafkaAuthorizationOpa-reference[Open Policy Agent (OPA) authorization]
+
+.Kafka cluster authorization options
+image::kafka-authorization-config-options.png[options for kafks authorization configuration]
+
+== Super users
+
+Super users can access all resources in your Kafka cluster regardless of any access restrictions,
+and are supported by all authorization mechanisms.
+
+To designate super users for a Kafka cluster, add a list of user principals to the `superUsers` property.
+If a user uses TLS client authentication, their username is the common name from their certificate subject prefixed with `CN=`.
+
+.An example configuration with super users
+[source,yaml,subs="attributes+"]
+----
+authorization:
+  type: simple
+  superUsers:
+    - CN=client_1
+    - user_2
+    - CN=client_3
+----

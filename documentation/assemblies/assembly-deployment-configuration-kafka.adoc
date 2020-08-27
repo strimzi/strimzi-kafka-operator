@@ -31,8 +31,6 @@ include::assembly-kafka-broker-configuration.adoc[leveloffset=+1]
 
 include::assembly-configuring-kafka-listeners.adoc[leveloffset=+1]
 
-include::assembly-kafka-authentication-and-authorization.adoc[leveloffset=+1]
-
 include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
 
 include::assembly-zookeeper-node-configuration.adoc[leveloffset=+1]

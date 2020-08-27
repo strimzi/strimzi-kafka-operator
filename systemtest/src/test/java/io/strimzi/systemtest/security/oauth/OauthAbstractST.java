@@ -25,7 +25,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
@@ -71,73 +70,62 @@ public class OauthAbstractST extends AbstractST {
 
         LOGGER.info("Deploying keycloak...");
 
-        KeycloakUtils.deployKeycloak().done();
+        KeycloakUtils.deployKeycloak(NAMESPACE);
 
         // https
-        Service keycloakService = KubernetesResource.deployKeycloakNodePortService(NAMESPACE);
+        Service keycloakService = KubernetesResource.createKeycloakNodePortService(NAMESPACE);
         KubernetesResource.createServiceResource(keycloakService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakService.getMetadata().getName());
 
         // http
-        Service keycloakHttpService = KubernetesResource.deployKeycloakNodePortHttpService(NAMESPACE);
+        Service keycloakHttpService = KubernetesResource.createKeycloakNodePortHttpService(NAMESPACE);
         KubernetesResource.createServiceResource(keycloakHttpService, NAMESPACE);
         ServiceUtils.waitForNodePortService(keycloakHttpService.getMetadata().getName());
 
-        keycloakInstance = new KeycloakInstance("admin", "admin");
+        String passwordEncoded = kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD");
+        String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
+        keycloakInstance = new KeycloakInstance("admin", password, NAMESPACE);
+
         clusterHost = kubeClient().getNodeAddress();
 
-        LOGGER.info("Importing basic realm");
-        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
-
-        LOGGER.info("Importing authorization realm");
-
-        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
-
-        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
-
-        String pubKey = ResourceManager.cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-            "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
-
-        SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewTls()
-                                .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                    .withTlsTrustedCertificates(
-                                        new CertSecretSourceBuilder()
-                                            .withSecretName(SECRET_OF_KEYCLOAK)
-                                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                                            .build())
-                                    .withDisableTlsHostnameVerification(true)
-                                .endKafkaListenerAuthenticationOAuth()
-                            .endTls()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withNewKafkaListenerAuthenticationOAuth()
-                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                    .withTlsTrustedCertificates(
-                                        new CertSecretSourceBuilder()
-                                            .withSecretName(SECRET_OF_KEYCLOAK)
-                                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
-                                            .build())
-                                    .withDisableTlsHostnameVerification(true)
-                                .endKafkaListenerAuthenticationOAuth()
-                            .endKafkaListenerExternalNodePort()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewTls()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endTls()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withNewKafkaListenerAuthenticationOAuth()
+                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                .withTlsTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName(SECRET_OF_KEYCLOAK)
+                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .build())
+                                .withDisableTlsHostnameVerification(true)
+                            .endKafkaListenerAuthenticationOAuth()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 

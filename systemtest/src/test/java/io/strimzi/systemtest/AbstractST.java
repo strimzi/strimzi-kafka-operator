@@ -199,15 +199,15 @@ public abstract class AbstractST implements TestSeparator {
     public static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
         for (String bindingsNamespace : bindingsNamespaces) {
             // 020-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 021-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 030-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
             // 031-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
             // 032-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
         }
     }
 
@@ -238,11 +238,11 @@ public abstract class AbstractST implements TestSeparator {
 
         Container container = (Container) optional.get();
         Map<String, Quantity> limits = container.getResources().getLimits();
-        assertThat(limits.get("memory").getAmount(), is(memoryLimit));
-        assertThat(limits.get("cpu").getAmount(), is(cpuLimit));
+        assertThat(limits.get("memory"), is(new Quantity(memoryLimit)));
+        assertThat(limits.get("cpu"), is(new Quantity(cpuLimit)));
         Map<String, Quantity> requests = container.getResources().getRequests();
-        assertThat(requests.get("memory").getAmount(), is(memoryRequest));
-        assertThat(requests.get("cpu").getAmount(), is(cpuRequest));
+        assertThat(requests.get("memory"), is(new Quantity(memoryRequest)));
+        assertThat(requests.get("cpu"), is(new Quantity(cpuRequest)));
     }
 
     private void assertCmdOption(List<String> cmd, String expectedXmx) {
