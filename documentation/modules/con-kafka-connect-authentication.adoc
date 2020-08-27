@@ -73,9 +73,7 @@ spec:
 ----
 
 <1> `username`: The username.
-
 <2> `secretName`: The name of the Secret that contains the username and password.
-
 <3> `password`: The name of the field in the Secret under which the password is stored.
 
 [WARNING]
