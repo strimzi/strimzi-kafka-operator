@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
