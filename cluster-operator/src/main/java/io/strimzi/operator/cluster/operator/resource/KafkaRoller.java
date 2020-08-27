@@ -471,7 +471,8 @@ public class KafkaRoller {
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
         updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
-        log.info("{}: Altering broker {} with {}", reconciliation, podId, updatedConfig);
+        log.info("{}: Altering broker {}", reconciliation, podId);
+        log.debug("{}: Altering broker {} with {}", reconciliation, podId, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
