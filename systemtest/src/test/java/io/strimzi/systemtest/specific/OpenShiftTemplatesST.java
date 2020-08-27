@@ -204,7 +204,7 @@ public class OpenShiftTemplatesST extends AbstractST {
                 TestUtils.CRD_KAFKA_CONNECT,
                 TestUtils.CRD_KAFKA_CONNECT_S2I,
                 TestUtils.CRD_TOPIC,
-                "src/rbac/role-edit-kafka.yaml");
+                TestUtils.USER_PATH + "/src/rbac/role-edit-kafka.yaml");
     }
 
     @Override
