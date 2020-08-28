@@ -350,10 +350,10 @@ public class KafkaRoller {
         } catch (ForceableProblem e) {
             if (restartContext.backOff.done() || e.forceNow) {
                 if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
-                    log.warn("{}: Pod {} will be force-rolled", reconciliation, podName(podId));
+                    log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
-                    log.warn("{}: Pod {} can't be force-rolled", reconciliation, podName(podId));
+                    log.warn("{}: Pod {} can't be safely force-rolled; original error: ", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     throw e;
                 }
             } else {
