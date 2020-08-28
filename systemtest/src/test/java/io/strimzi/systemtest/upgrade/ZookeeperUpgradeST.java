@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 import java.util.Map;
@@ -45,14 +45,14 @@ public class ZookeeperUpgradeST extends AbstractST {
     private final String consumerName = "hello-world-consumer";
 
     @Test
-    void testKafkaClusterUpgrade(TestInfo testinfo) {
+    void testKafkaClusterUpgrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, 3, 3, testinfo);
+            runVersionChange(initialVersion, newVersion, 3, 3, testContext);
         }
 
         // ##############################
@@ -63,14 +63,14 @@ public class ZookeeperUpgradeST extends AbstractST {
     }
 
     @Test
-    void testKafkaClusterDowngrade(TestInfo testInfo) {
+    void testKafkaClusterDowngrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            runVersionChange(initialVersion, newVersion, 3, 3, testInfo);
+            runVersionChange(initialVersion, newVersion, 3, 3, testContext);
         }
 
         // ##############################
@@ -80,7 +80,7 @@ public class ZookeeperUpgradeST extends AbstractST {
         // ##############################
     }
 
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas, TestInfo testInfo) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
         Map<String, String> kafkaPods;
         String logMsgFormat;
         if (initialVersion.compareTo(newVersion) < 0) {
@@ -119,7 +119,7 @@ public class ZookeeperUpgradeST extends AbstractST {
             kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
             // Wait for log.message.format.version change
-            if (!sameMinorVersion && testInfo.getDisplayName().contains("Downgrade"))   {
+            if (!sameMinorVersion && testContext.getDisplayName().contains("Downgrade"))   {
                 KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
                     LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                     Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
@@ -169,11 +169,11 @@ public class ZookeeperUpgradeST extends AbstractST {
             LOGGER.info("2nd Kafka roll (update) is complete");
         }
 
-        if (testInfo.getDisplayName().contains("Upgrade") && initialVersion.zookeeperVersion().contains("3.4")) {
+        if (testContext.getDisplayName().contains("Upgrade") && initialVersion.zookeeperVersion().contains("3.4")) {
             // Two rolling updates are need if we upgrade from 3.4.x to 3.5.x, because of dynamic configuration and snapshots checks
             StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
             LOGGER.info("2nd Zookeeper roll (update) is complete");
-        } else if (testInfo.getDisplayName().contains("Downgrade")) {
+        } else if (testContext.getDisplayName().contains("Downgrade")) {
             kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
             LOGGER.info("3rd Kafka roll (update) is complete");
         }
@@ -199,7 +199,7 @@ public class ZookeeperUpgradeST extends AbstractST {
                 " was expected", kafkaResult, is(newVersion.version()));
 
 
-        if (testInfo.getDisplayName().contains("Upgrade") && !sameMinorVersion) {
+        if (testContext.getDisplayName().contains("Upgrade") && !sameMinorVersion) {
             LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.version(), newVersion.version());
             LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
 

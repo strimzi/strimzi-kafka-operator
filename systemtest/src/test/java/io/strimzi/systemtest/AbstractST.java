@@ -38,7 +38,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -625,26 +624,26 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     @BeforeEach
-    void createTestResources(TestInfo testInfo) {
-        if (testInfo.getTestMethod().isPresent()) {
-            testName = testInfo.getTestMethod().get().getName();
+    void createTestResources(ExtensionContext testContext) {
+        if (testContext.getTestMethod().isPresent()) {
+            testName = testContext.getTestMethod().get().getName();
         }
         ResourceManager.setMethodResources();
     }
 
     @BeforeAll
-    void setTestClassName(TestInfo testInfo) {
-        if (testInfo.getTestClass().isPresent()) {
-            testClass = testInfo.getTestClass().get().getName();
+    void setTestClassName(ExtensionContext testContext) {
+        if (testContext.getTestClass().isPresent()) {
+            testClass = testContext.getTestClass().get().getName();
         }
     }
 
     @AfterEach
-    void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
+    void teardownEnvironmentMethod(ExtensionContext testContext) throws Exception {
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         AssertionError assertionError = null;
         try {
-            long testDuration = timeMeasuringSystem.getDurationInSeconds(context.getTestClass().get().getName(), context.getTestMethod().get().getName(), Operation.TEST_EXECUTION.name());
+            long testDuration = timeMeasuringSystem.getDurationInSeconds(testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName(), Operation.TEST_EXECUTION.name());
             assertNoCoErrorsLogged(testDuration);
         } catch (AssertionError e) {
             LOGGER.error("Cluster Operator contains unexpected errors!");
