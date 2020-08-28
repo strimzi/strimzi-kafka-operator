@@ -494,8 +494,8 @@ public class KafkaRebalanceAssemblyOperator
                         if (currentKafkaRebalance != null) {
                             // Check resource is in the right state as previous execution might have set the status and completed the future
                             // Safety check as timer might be called again (from a delayed timer firing)
-                            if (KafkaRebalanceState.PendingProposal.equals(state(currentKafkaRebalance))) {
-                                if (KafkaRebalanceAnnotation.stop.equals(rebalanceAnnotation(currentKafkaRebalance))) {
+                            if (state(currentKafkaRebalance) == KafkaRebalanceState.PendingProposal) {
+                                if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.stop) {
                                     log.debug("{}: Stopping current Cruise Control proposal request timer", reconciliation);
                                     vertx.cancelTimer(t);
                                     p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped));
@@ -618,8 +618,8 @@ public class KafkaRebalanceAssemblyOperator
                         if (currentKafkaRebalance != null) {
                             // Check resource is in the right state as previous execution might have set the status and completed the future
                             // Safety check as timer might be called again (from a delayed timer firing)
-                            if (KafkaRebalanceState.Rebalancing.equals(state(currentKafkaRebalance))) {
-                                if (KafkaRebalanceAnnotation.stop.equals(rebalanceAnnotation(currentKafkaRebalance))) {
+                            if (state(currentKafkaRebalance) == KafkaRebalanceState.Rebalancing) {
+                                if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.stop) {
                                     log.debug("{}: Stopping current Cruise Control rebalance user task", reconciliation);
                                     vertx.cancelTimer(t);
                                     apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
