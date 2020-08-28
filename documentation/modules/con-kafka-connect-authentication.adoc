@@ -50,7 +50,7 @@ To use this method, see xref:proc-configuring-kafka-connect-authentication-tls-{
 == SASL-based SCRAM-SHA-512 authentication
 
 To configure Kafka Connect to use SASL-based SCRAM-SHA-512 authentication, set the `authentication.type` property to `scram-sha-512`.
-This authentication mechanism requires a client username and password, which are contained in a Secret.
+This authentication mechanism requires a client username and password. The password is contained in a Secret.
 
 The `KafkaConnect` or `KafkaConnectS2I` custom resource references the Secret and its fields under the `passwordSecret` property. 
 
@@ -74,12 +74,19 @@ spec:
 
 <1> `username`: The username.
 <2> `secretName`: The name of the Secret that contains the username and password.
-<3> `password`: The name of the field in the Secret under which the password is stored.
+<3> `password`: The name of the field in the Secret under which the password is stored. Do NOT specify the actual password.
 
-[WARNING]
-====
-Do NOT specify the actual password in the `passwordSecret.password` property.
-====
+.Example Secret YAML for SCRAM-SHA-512 client authentication for Kafka Connect
+[source,yaml,subs="attributes+"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-connect-secret-name
+type: Opaque
+data:
+  my-connect-password-field: LFTIyFRFlMmU2N2Tm
+----
 
 To use this method, see xref:proc-configuring-kafka-connect-authentication-scram-sha-512-{context}[].
 
