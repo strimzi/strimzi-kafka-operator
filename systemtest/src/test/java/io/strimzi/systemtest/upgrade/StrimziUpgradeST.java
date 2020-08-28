@@ -27,13 +27,14 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
-import net.joshka.junit.json.params.JsonFileSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -41,12 +42,16 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
@@ -87,13 +92,16 @@ public class StrimziUpgradeST extends AbstractST {
 
     private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip";
 
-    @ParameterizedTest()
-    @JsonFileSource(resources = "/StrimziUpgradeST.json")
+
+    @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
+    @MethodSource("loadJsonUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(JsonObject parameters) throws Exception {
+    void testUpgradeStrimziVersion(String from, String to, JsonObject parameters) throws Exception {
 
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
+
+        LOGGER.debug("Running upgrade test from version {} to {}", from, to);
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
@@ -126,10 +134,7 @@ public class StrimziUpgradeST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testChainUpgrade() throws Exception {
-        ClassLoader classLoader = getClass().getClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream("StrimziUpgradeST.json");
-        JsonReader jsonReader = Json.createReader(inputStream);
-        JsonArray parameters = jsonReader.readArray();
+        JsonArray parameters = readUpgradeJson();
 
         int consumedMessagesCount = MESSAGE_COUNT;
 
@@ -515,6 +520,24 @@ public class StrimziUpgradeST extends AbstractST {
                     .endSpec()
                 .endTemplate()
             .endSpec().done();
+    }
+
+    private static Stream<Arguments> loadJsonUpgradeData() throws FileNotFoundException {
+        JsonArray upgradeData = readUpgradeJson();
+        List<Arguments> parameters = new LinkedList<>();
+
+        upgradeData.forEach(jsonData -> {
+            JsonObject data = (JsonObject) jsonData;
+            parameters.add(Arguments.of(data.getString("fromVersion"), data.getString("toVersion"), data));
+        });
+
+        return parameters.stream();
+    }
+
+    private static JsonArray readUpgradeJson() throws FileNotFoundException {
+        InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json");
+        JsonReader reader = Json.createReader(fis);
+        return reader.readArray();
     }
 
     @BeforeEach

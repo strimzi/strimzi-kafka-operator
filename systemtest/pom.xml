@@ -140,11 +140,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.joshka</groupId>
-            <artifactId>junit-json-params</artifactId>
-            <version>${junit-json-params.version}</version>
-        </dependency>
-        <dependency>
             <groupId>javax.json</groupId>
             <artifactId>javax.json-api</artifactId>
             <version>${javax.json-api.version}</version>
