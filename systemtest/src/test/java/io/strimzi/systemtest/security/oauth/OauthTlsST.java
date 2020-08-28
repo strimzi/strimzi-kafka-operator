@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
@@ -24,9 +25,12 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -51,6 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
 public class OauthTlsST extends OauthAbstractST {
+    protected static final Logger LOGGER = LogManager.getLogger(OauthTlsST.class);
 
     private KafkaOauthClientsResource oauthInternalClientJob;
 
@@ -97,8 +102,8 @@ public class OauthTlsST extends OauthAbstractST {
                         .endClientSecret()
                         .withTlsTrustedCertificates(
                             new CertSecretSourceBuilder()
-                                .withSecretName(SECRET_OF_KEYCLOAK)
-                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                 .build())
                         .withDisableTlsHostnameVerification(true)
                     .endKafkaClientAuthenticationOAuth()
@@ -149,8 +154,8 @@ public class OauthTlsST extends OauthAbstractST {
                             .withKey(OAUTH_KEY)
                         .endClientSecret()
                         .addNewTlsTrustedCertificate()
-                            .withSecretName(SECRET_OF_KEYCLOAK)
-                            .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                            .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                            .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                         .endTlsTrustedCertificate()
                         .withDisableTlsHostnameVerification(true)
                     .endKafkaClientAuthenticationOAuth()
@@ -160,13 +165,13 @@ public class OauthTlsST extends OauthAbstractST {
         String producerName = "bridge-producer";
 
         KafkaBridgeClientsResource kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, "", KafkaBridgeResources.serviceName(CLUSTER_NAME),
-            TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), HTTP_BRIDGE_DEFAULT_PORT, 1000, 1000);
+            TOPIC_NAME, 10, "", ClientUtils.generateRandomConsumerGroup(), HTTP_BRIDGE_DEFAULT_PORT, 1000, 1000);
 
         kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @Description("As a oauth mirror maker, i am able to replicate topic data using using encrypted communication")
+    @Description("As a oauth mirror maker, I am able to replicate topic data using using encrypted communication")
     @Test
     @Tag(MIRROR_MAKER)
     void testMirrorMaker() {
@@ -191,8 +196,8 @@ public class OauthTlsST extends OauthAbstractST {
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .withTlsTrustedCertificates(
                                     new CertSecretSourceBuilder()
-                                        .withSecretName(SECRET_OF_KEYCLOAK)
-                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                        .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
@@ -206,8 +211,8 @@ public class OauthTlsST extends OauthAbstractST {
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .withTlsTrustedCertificates(
                                     new CertSecretSourceBuilder()
-                                        .withSecretName(SECRET_OF_KEYCLOAK)
-                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                        .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
@@ -240,8 +245,8 @@ public class OauthTlsST extends OauthAbstractST {
                             .endClientSecret()
                             // this is for authorization server tls connection
                             .withTlsTrustedCertificates(new CertSecretSourceBuilder()
-                                .withSecretName(SECRET_OF_KEYCLOAK)
-                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                 .build())
                             .withDisableTlsHostnameVerification(true)
                         .endKafkaClientAuthenticationOAuth()
@@ -264,8 +269,8 @@ public class OauthTlsST extends OauthAbstractST {
                             .endClientSecret()
                             // this is for authorization server tls connection
                             .withTlsTrustedCertificates(new CertSecretSourceBuilder()
-                                .withSecretName(SECRET_OF_KEYCLOAK)
-                                .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                 .build())
                             .withDisableTlsHostnameVerification(true)
                         .endKafkaClientAuthenticationOAuth()
@@ -283,8 +288,7 @@ public class OauthTlsST extends OauthAbstractST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
 
-        LOGGER.info("Deleting the Job");
-        kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(OAUTH_PRODUCER_NAME).delete();
+        JobUtils.deleteJob(NAMESPACE, OAUTH_PRODUCER_NAME);
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
 
@@ -325,8 +329,8 @@ public class OauthTlsST extends OauthAbstractST {
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .withTlsTrustedCertificates(
                                     new CertSecretSourceBuilder()
-                                        .withSecretName(SECRET_OF_KEYCLOAK)
-                                        .withCertificate(CERTIFICATE_OF_KEYCLOAK)
+                                        .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                        .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()

@@ -112,7 +112,7 @@ public class ZookeeperUpgradeST extends AbstractST {
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
-                KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, ClientUtils.generateRandomConsumerGroup());
+                KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, ClientUtils.generateRandomConsumerGroup(), 1000);
 
             kafkaBasicClientJob.producerStrimzi().done();
             kafkaBasicClientJob.consumerStrimzi().done();

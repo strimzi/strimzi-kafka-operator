@@ -4,13 +4,11 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
@@ -23,7 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -52,14 +49,12 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-broker-secret";
     protected static final String OAUTH_KAFKA_PRODUCER_SECRET = "hello-world-producer-secret";
     protected static final String OAUTH_KAFKA_CONSUMER_SECRET = "hello-world-consumer-secret";
+    protected static final String OAUTH_TEAM_A_SECRET = "team-a-client-secret";
+    protected static final String OAUTH_TEAM_B_SECRET = "team-b-client-secret";
     protected static final String OAUTH_KEY = "clientSecret";
 
     protected KeycloakInstance keycloakInstance;
 
-    protected static final String CERTIFICATE_OF_KEYCLOAK = "tls.crt";
-    protected static final String SECRET_OF_KEYCLOAK = "x509-https-secret";
-
-    protected static String clusterHost;
     protected WebClient client;
 
     @BeforeAll
@@ -72,38 +67,9 @@ public class OauthAbstractST extends AbstractST {
 
         KeycloakUtils.deployKeycloak(NAMESPACE);
 
-        // https
-        Service keycloakService = KubernetesResource.createKeycloakNodePortService(NAMESPACE);
-        KubernetesResource.createServiceResource(keycloakService, NAMESPACE);
-        ServiceUtils.waitForNodePortService(keycloakService.getMetadata().getName());
-
-        // http
-        Service keycloakHttpService = KubernetesResource.createKeycloakNodePortHttpService(NAMESPACE);
-        KubernetesResource.createServiceResource(keycloakHttpService, NAMESPACE);
-        ServiceUtils.waitForNodePortService(keycloakHttpService.getMetadata().getName());
-
         String passwordEncoded = kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD");
         String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
         keycloakInstance = new KeycloakInstance("admin", password, NAMESPACE);
-
-        clusterHost = kubeClient().getNodeAddress();
-
-        // TODO: ====== this should be removed ??
-//        LOGGER.info("Importing basic realm");
-//        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm.sh");
-//
-//        LOGGER.info("Importing authorization realm");
-//
-//        keycloakInstance.importRealm("../systemtest/src/test/resources/oauth2/create_realm_authorization.sh");
-
-        String keycloakPodName = kubeClient().listPodsByPrefixInName("keycloak-").get(0).getMetadata().getName();
-
-        String pubKey = ResourceManager.cmdKubeClient().execInPod(keycloakPodName, "keytool", "-exportcert", "-keystore",
-            "/opt/jboss/keycloak/standalone/configuration/application.keystore", "-alias", "server", "-storepass", "password", "-rfc").out();
-
-        SecretUtils.createSecret(SECRET_OF_KEYCLOAK, CERTIFICATE_OF_KEYCLOAK, new String(Base64.getEncoder().encode(pubKey.getBytes()), StandardCharsets.US_ASCII));
-
-        // TODO: ======= until here ?
 
         createSecretsForDeployments();
     }
@@ -124,6 +90,8 @@ public class OauthAbstractST extends AbstractST {
     private void createSecretsForDeployments() {
         SecretUtils.createSecret(OAUTH_KAFKA_PRODUCER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0");
         SecretUtils.createSecret(OAUTH_KAFKA_CONSUMER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
+        SecretUtils.createSecret(OAUTH_TEAM_A_SECRET, OAUTH_KEY, "dGVhbS1hLWNsaWVudC1zZWNyZXQ=");
+        SecretUtils.createSecret(OAUTH_TEAM_B_SECRET, OAUTH_KEY, "dGVhbS1iLWNsaWVudC1zZWNyZXQ=");
         SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtYnJva2VyLXNlY3JldA==");
         SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");

@@ -18,14 +18,12 @@ import java.util.Map;
 public class KafkaBridgeClientsResource extends KafkaClientsResource {
 
     private final int port;
-    private final int sendInterval;
     private final int pollInterval;
 
     public KafkaBridgeClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
                                       int messageCount, String additionalConfig, String consumerGroup, int port, int sendInterval, int pollInterval) {
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup);
+        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, sendInterval);
         this.port = port;
-        this.sendInterval = sendInterval;
         this.pollInterval = pollInterval;
     }
 
@@ -65,7 +63,7 @@ public class KafkaBridgeClientsResource extends KafkaClientsResource {
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("SEND_INTERVAL")
-                                    .withValue(Integer.toString(sendInterval))
+                                    .withValue(String.valueOf(delayMs))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("MESSAGE_COUNT")

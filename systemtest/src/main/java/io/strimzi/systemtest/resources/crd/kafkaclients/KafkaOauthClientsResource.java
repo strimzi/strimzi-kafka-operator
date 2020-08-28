@@ -6,21 +6,24 @@ package io.strimzi.systemtest.resources.crd.kafkaclients;
 
 import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.keycloak.KeycloakInstance;
 
 public class KafkaOauthClientsResource extends KafkaBasicClientResource {
 
     private final String oauthClientId;
     private final String oauthClientSecret;
     private final String oauthTokenEndpointUri;
+    private final String userName;
 
     public KafkaOauthClientsResource(
         String producerName, String consumerName, String bootstrapServer, String topicName, int messageCount,
         String additionalConfig, String consumerGroup, String oauthClientId, String oauthClientSecret, String oauthTokenEndpointUri) {
 
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup);
+        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, 0);
         this.oauthClientId = oauthClientId;
         this.oauthClientSecret = oauthClientSecret;
         this.oauthTokenEndpointUri = oauthTokenEndpointUri;
+        this.userName = oauthClientId;
     }
 
     // from existing client create new client with random consumer group (immutability)
@@ -29,6 +32,8 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
         this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
         this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
         this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
+        this.userName = kafkaOauthClientsResource.userName;
+
     }
 
     // from existing client create new client with new specific consumer group and topicName (immutability)
@@ -37,6 +42,18 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
         this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
         this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
         this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
+        this.userName = kafkaOauthClientsResource.userName;
+
+    }
+
+    // from existing client create new username (immutability)
+    public KafkaOauthClientsResource(KafkaOauthClientsResource kafkaOauthClientsResource, String userName) {
+        super(kafkaOauthClientsResource);
+        this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
+        this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
+        this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
+        this.userName = userName;
+
     }
 
     public DoneableJob producerStrimziOauthPlain() {
@@ -67,8 +84,8 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
                                 .withName("OAUTH_CRT")
                                 .editOrNewValueFrom()
                                     .withNewSecretKeyRef()
-                                        .withName("x509-https-secret")
-                                        .withKey("tls.crt")
+                                        .withName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                        .withKey(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                     .endSecretKeyRef()
                                 .endValueFrom()
                             .endEnv()
@@ -103,7 +120,7 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
                                 .withName("USER_CRT")
                                 .withNewValueFrom()
                                     .withNewSecretKeyRef()
-                                        .withName(oauthClientId)
+                                        .withName(userName)
                                         .withKey("user.crt")
                                     .endSecretKeyRef()
                                 .endValueFrom()
@@ -112,7 +129,7 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
                                 .withName("USER_KEY")
                                 .withNewValueFrom()
                                     .withNewSecretKeyRef()
-                                        .withName(oauthClientId)
+                                        .withName(userName)
                                         .withKey("user.key")
                                     .endSecretKeyRef()
                                 .endValueFrom()
@@ -151,8 +168,8 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
                                 .withName("OAUTH_CRT")
                                 .editOrNewValueFrom()
                                     .withNewSecretKeyRef()
-                                        .withName("x509-https-secret")
-                                        .withKey("tls.crt")
+                                        .withName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                        .withKey(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                                     .endSecretKeyRef()
                                 .endValueFrom()
                             .endEnv()
@@ -191,7 +208,7 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
                                 .withName("USER_CRT")
                                 .withNewValueFrom()
                                     .withNewSecretKeyRef()
-                                        .withName(oauthClientId)
+                                        .withName(userName)
                                         .withKey("user.crt")
                                     .endSecretKeyRef()
                                 .endValueFrom()
@@ -200,7 +217,7 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
                                 .withName("USER_KEY")
                                 .withNewValueFrom()
                                     .withNewSecretKeyRef()
-                                        .withName(oauthClientId)
+                                        .withName(userName)
                                         .withKey("user.key")
                                     .endSecretKeyRef()
                                 .endValueFrom()

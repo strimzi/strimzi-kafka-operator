@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.keycloak;
 
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,6 +16,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KeycloakInstance {
 
     private static final Logger LOGGER = LogManager.getLogger(KeycloakInstance.class);
+    public static final String KEYCLOAK_SECRET_NAME = "sso-x509-https-secret";
+    public static final String KEYCLOAK_SECRET_CERT = "tls.crt";
 
     private final int jwksExpireSeconds = 500;
     private final int jwksRefreshSeconds = 400;
@@ -40,8 +41,8 @@ public class KeycloakInstance {
         this.username = username;
         this.password = password;
         this.namespace = namespace;
-        this.httpsUri = ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT;
-        this.httpUri = ResourceManager.kubeClient().getNodeAddress() + ":" + Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT;
+        this.httpsUri = "keycloak." + namespace + ".svc.cluster.local:8443";
+        this.httpUri = "keycloak-discovery." + namespace + ".svc.cluster.local:8080";
         this.validIssuerUri = "https://" + httpsUri + "/auth/realms/internal";
         this.jwksEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/certs";
         this.oauthTokenEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/token";

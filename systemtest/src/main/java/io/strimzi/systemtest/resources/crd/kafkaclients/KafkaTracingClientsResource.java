@@ -27,7 +27,7 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
                                        int messageCount, String additionalConfig, String consumerGroup, String jaegerServiceProducerName,
                                        String jaegerServiceConsumerName, String jaegerServiceStreamsName) {
 
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup);
+        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, 0);
         this.jaegerServiceProducerName =  jaegerServiceProducerName;
         this.jaegerServiceConsumerName =  jaegerServiceConsumerName;
         this.jaegerServiceStreamsName = jaegerServiceStreamsName;
@@ -38,7 +38,7 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
                                        String topicName) {
 
         super(kafkaTracingClientsResource.producerName, kafkaTracingClientsResource.consumerName, bootstrapServer, topicName,
-            kafkaTracingClientsResource.messageCount, kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup);
+            kafkaTracingClientsResource.messageCount, kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup, 0);
         this.jaegerServiceProducerName =  kafkaTracingClientsResource.jaegerServiceProducerName;
         this.jaegerServiceConsumerName =  kafkaTracingClientsResource.jaegerServiceConsumerName;
         this.jaegerServiceStreamsName = kafkaTracingClientsResource.jaegerServiceStreamsName;
@@ -49,7 +49,7 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
 
         super(kafkaTracingClientsResource.producerName, kafkaTracingClientsResource.consumerName, bootstrapServer,
             kafkaTracingClientsResource.topicName, kafkaTracingClientsResource.messageCount,
-            kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup);
+            kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup, 0);
         this.jaegerServiceProducerName =  kafkaTracingClientsResource.jaegerServiceProducerName;
         this.jaegerServiceConsumerName =  kafkaTracingClientsResource.jaegerServiceConsumerName;
         this.jaegerServiceStreamsName = kafkaTracingClientsResource.jaegerServiceStreamsName;

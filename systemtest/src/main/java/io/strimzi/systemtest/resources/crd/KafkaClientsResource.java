@@ -47,9 +47,10 @@ public abstract class KafkaClientsResource {
     protected final int messageCount;
     protected final String additionalConfig;
     protected final String consumerGroup;
+    protected final long delayMs;
 
     public KafkaClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
-                                int messageCount, String additionalConfig, String consumerGroup) {
+                                int messageCount, String additionalConfig, String consumerGroup, long delayMs) {
         this.producerName = producerName;
         this.consumerName = consumerName;
         this.bootstrapServer = bootstrapServer;
@@ -57,6 +58,7 @@ public abstract class KafkaClientsResource {
         this.messageCount = messageCount;
         this.additionalConfig = additionalConfig;
         this.consumerGroup = consumerGroup;
+        this.delayMs = delayMs;
     }
 
     // from existing client create new client with different consumer group (immutability)
@@ -67,6 +69,7 @@ public abstract class KafkaClientsResource {
         this.topicName = kafkaClientsResource.topicName;
         this.messageCount = kafkaClientsResource.messageCount;
         this.additionalConfig = kafkaClientsResource.additionalConfig;
+        this.delayMs = kafkaClientsResource.delayMs;
         this.consumerGroup = generateRandomConsumerGroup();
     }
 
@@ -78,6 +81,7 @@ public abstract class KafkaClientsResource {
         this.topicName = topicName;
         this.messageCount = kafkaClientsResource.messageCount;
         this.additionalConfig = kafkaClientsResource.additionalConfig;
+        this.delayMs = kafkaClientsResource.delayMs;
         this.consumerGroup = consumerGroup;
     }
 

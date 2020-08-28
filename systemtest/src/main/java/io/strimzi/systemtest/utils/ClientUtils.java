@@ -60,6 +60,12 @@ public class ClientUtils {
             () -> kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(jobName).get().getStatus().getSucceeded().equals(1));
     }
 
+    public static void waitForClientFailure(String jobName, String namespace, long timeout) {
+        LOGGER.info("Waiting for producer/consumer:{} will be in error state", jobName);
+        TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
+            () -> kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(jobName).get().getStatus().getSucceeded().equals(1));
+    }
+
     private static long timeoutForClientFinishJob(int messagesCount) {
         // need to add at least 2minutes for finishing the job
         return (long) messagesCount * 1000 + Duration.ofMinutes(2).toMillis();

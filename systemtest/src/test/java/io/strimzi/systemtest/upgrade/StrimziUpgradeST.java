@@ -281,7 +281,7 @@ public class StrimziUpgradeST extends AbstractST {
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
-                KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, continuousConsumerGroup);
+                KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, continuousConsumerGroup, 1000);
 
             kafkaBasicClientJob.producerStrimzi().done();
             kafkaBasicClientJob.consumerStrimzi().done();
