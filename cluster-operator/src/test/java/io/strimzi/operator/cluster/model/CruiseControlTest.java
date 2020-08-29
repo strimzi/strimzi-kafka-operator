@@ -255,10 +255,10 @@ public class CruiseControlTest {
         // checks on the main Cruise Control container
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
         assertThat(ccContainer.getImage(), is(cc.image));
-        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
-        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
-        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
-        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
+        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
+        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
+        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
+        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
         assertThat(ccContainer.getEnv(), is(getExpectedEnvVars()));
         assertThat(ccContainer.getPorts().size(), is(1));
         assertThat(ccContainer.getPorts().get(0).getName(), is(CruiseControl.REST_API_PORT_NAME));
@@ -409,7 +409,7 @@ public class CruiseControlTest {
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(CruiseControl.REST_API_PORT_NAME));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(CruiseControl.REST_API_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(CruiseControl.REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
         TestUtils.checkOwnerReference(cc.createOwnerReference(), svc);
@@ -609,10 +609,10 @@ public class CruiseControlTest {
         // checks on the main Cruise Control container
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
         assertThat(ccContainer.getImage(), is(cc.image));
-        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
+        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
     }
 
     @Test
