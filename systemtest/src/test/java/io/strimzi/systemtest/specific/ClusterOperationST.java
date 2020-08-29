@@ -9,9 +9,9 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,16 +32,19 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ClusterOperationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperationST.class);
+    private KafkaBasicClientResource kafkaBasicClientResource;
+
     public static final String NAMESPACE = "cluster-operations-test";
 
     @Test
     @MultiNodeClusterOnly
     @RequiredMinKubeApiVersion(version = 1.15)
     void testAvailabilityDuringNodeDrain() {
-        List<String> topicNames = IntStream.range(0, 5).boxed().map(i -> "test-topic-" + i).collect(Collectors.toList());
-        List<String> producerNames = IntStream.range(0, 5).boxed().map(i -> "hello-world-producer-" + i).collect(Collectors.toList());
-        List<String> consumerNames = IntStream.range(0, 5).boxed().map(i -> "hello-world-consumer-" + i).collect(Collectors.toList());
-        List<String> continuousConsumerGroups = IntStream.range(0, 5).boxed().map(i -> "continuous-consumer-group-" + i).collect(Collectors.toList());
+        int size = 5;
+        List<String> topicNames = IntStream.range(0, size).boxed().map(i -> "test-topic-" + i).collect(Collectors.toList());
+        List<String> producerNames = IntStream.range(0, size).boxed().map(i -> "hello-world-producer-" + i).collect(Collectors.toList());
+        List<String> consumerNames = IntStream.range(0, size).boxed().map(i -> "hello-world-consumer-" + i).collect(Collectors.toList());
+        List<String> continuousConsumerGroups = IntStream.range(0, size).boxed().map(i -> "continuous-consumer-group-" + i).collect(Collectors.toList());
         int continuousClientsMessageCount = 300;
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
@@ -57,19 +60,14 @@ public class ClusterOperationST extends AbstractST {
         topicNames.forEach(topicName -> KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, 3, 2).done());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
-        producerNames.forEach(producerName -> KafkaClientsResource.producerStrimzi(
-                producerName,
-                KafkaResources.plainBootstrapAddress(CLUSTER_NAME),
-                topicNames.get(producerNames.indexOf(producerName)),
-                continuousClientsMessageCount, producerAdditionConfiguration).done());
 
-
-        consumerNames.forEach(consumerName -> KafkaClientsResource.consumerStrimzi(
-                consumerName,
-                KafkaResources.plainBootstrapAddress(CLUSTER_NAME),
-                topicNames.get(consumerNames.indexOf(consumerName)),
-                continuousClientsMessageCount, "",
-                continuousConsumerGroups.get(consumerNames.indexOf(consumerName))).done());
+        for (int i = 0; i < size; i++) {
+            kafkaBasicClientResource = new KafkaBasicClientResource(producerNames.get(i), consumerNames.get(i),
+                    KafkaResources.plainBootstrapAddress(CLUSTER_NAME), topicNames.get(producerNames.indexOf(i)),
+                    continuousClientsMessageCount, producerAdditionConfiguration, continuousConsumerGroups.get(i), 1000);
+            kafkaBasicClientResource.producerStrimzi();
+            kafkaBasicClientResource.consumerStrimzi();
+        }
 
         // ##############################
         // Nodes draining
