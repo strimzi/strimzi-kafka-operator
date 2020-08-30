@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
@@ -24,7 +23,6 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -32,14 +30,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -332,69 +327,6 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
-    // TODO fix
-    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName,
-            String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
-        Map<String, String> data = new HashMap<>(4);
-        CertAndKey certAndKey = null;
-        boolean shouldBeRegenerated = false;
-        List<String> reasons = new ArrayList<>(2);
-
-        if (secret == null) {
-            reasons.add("certificate doesn't exist yet");
-            shouldBeRegenerated = true;
-        } else {
-            if (clusterCa.keyCreated() || clusterCa.certRenewed() || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt"))) {
-                reasons.add("certificate needs to be renewed");
-                shouldBeRegenerated = true;
-            }
-        }
-
-        if (shouldBeRegenerated) {
-            log.debug("Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
-
-            try {
-                certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
-            } catch (IOException e) {
-                log.warn("Error while generating certificates", e);
-            }
-
-            log.debug("End generating certificates");
-        } else {
-            if (secret.getData().get(keyCertName + ".p12") != null &&
-                    !secret.getData().get(keyCertName + ".p12").isEmpty() &&
-                    secret.getData().get(keyCertName + ".password") != null &&
-                    !secret.getData().get(keyCertName + ".password").isEmpty()) {
-                certAndKey = new CertAndKey(
-                        decodeFromSecret(secret, keyCertName + ".key"),
-                        decodeFromSecret(secret, keyCertName + ".crt"),
-                        null,
-                        decodeFromSecret(secret, keyCertName + ".p12"),
-                        new String(decodeFromSecret(secret, keyCertName + ".password"), StandardCharsets.US_ASCII)
-                );
-            } else {
-                try {
-                    // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = clusterCa.addKeyAndCertToKeyStore(commonName,
-                            decodeFromSecret(secret, keyCertName + ".key"),
-                            decodeFromSecret(secret, keyCertName + ".crt"));
-                } catch (IOException e) {
-                    log.error("Error generating the keystore for {}", keyCertName, e);
-                }
-            }
-        }
-
-        if (certAndKey != null) {
-            data.put(keyCertName + ".key", certAndKey.keyAsBase64String());
-            data.put(keyCertName + ".crt", certAndKey.certAsBase64String());
-            data.put(keyCertName + ".p12", certAndKey.keyStoreAsBase64String());
-            data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
-        }
-
-        return SecretGenerator.of(secretName, namespace, labels, ownerReference, data)
-                .create();
-    }
-
     /**
      * Parses the values from the PodDisruptionBudgetTemplate in CRD model into the component model
      *
@@ -484,10 +416,6 @@ public class ModelUtils {
      */
     public static Map<String, String> getCustomLabelsOrAnnotations(String envVarName)   {
         return Util.parseMap(System.getenv().get(envVarName));
-    }
-
-    private static byte[] decodeFromSecret(Secret secret, String key) {
-        return Base64.getDecoder().decode(secret.getData().get(key));
     }
 
     /**

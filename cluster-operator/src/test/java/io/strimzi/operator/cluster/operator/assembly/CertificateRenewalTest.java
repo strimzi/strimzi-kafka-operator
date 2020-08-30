@@ -4,9 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
@@ -20,7 +18,6 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -83,9 +80,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -1200,129 +1195,5 @@ public class CertificateRenewalTest {
                 assertThat(c.getAllValues(), hasSize(0));
                 async.flag();
             })));
-    }
-
-    @Test
-    public void testRenewalOfDeploymentCertificatesWithNullSecret() throws IOException {
-        CertAndKey newCertAndKey = new CertAndKey("new-key".getBytes(), "new-cert".getBytes(), "new-truststore".getBytes(), "new-keystore".getBytes(), "new-password");
-        ClusterCa clusterCaMock = mock(ClusterCa.class);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
-        String namespace = "my-namespace";
-        String secretName = "my-secret";
-        String commonName = "deployment";
-        String keyCertName = "deployment";
-        Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
-
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, null, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
-
-        assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.p12", newCertAndKey.keyStoreAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.password", newCertAndKey.storePasswordAsBase64String()));
-    }
-
-    @Test
-    public void testRenewalOfDeploymentCertificatesWithRenewingCa() throws IOException {
-        Secret initialSecret = new SecretBuilder()
-                .withNewMetadata()
-                    .withNewName("test-secret")
-                .endMetadata()
-                .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
-                .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
-                .addToData("deployment.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()))
-                .addToData("deployment.password", Base64.getEncoder().encodeToString("old-password".getBytes()))
-                .build();
-
-        CertAndKey newCertAndKey = new CertAndKey("new-key".getBytes(), "new-cert".getBytes(), "new-truststore".getBytes(), "new-keystore".getBytes(), "new-password");
-        ClusterCa clusterCaMock = mock(ClusterCa.class);
-        when(clusterCaMock.certRenewed()).thenReturn(true);
-        when(clusterCaMock.isExpiring(any(), any())).thenReturn(false);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
-        String namespace = "my-namespace";
-        String secretName = "my-secret";
-        String commonName = "deployment";
-        String keyCertName = "deployment";
-        Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
-
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
-
-        assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.p12", newCertAndKey.keyStoreAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.password", newCertAndKey.storePasswordAsBase64String()));
-    }
-
-    @Test
-    public void testRenewalOfDeploymentCertificatesDelayedRenewal() throws IOException {
-        Secret initialSecret = new SecretBuilder()
-                .withNewMetadata()
-                .withNewName("test-secret")
-                .endMetadata()
-                .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
-                .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
-                .addToData("deployment.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()))
-                .addToData("deployment.password", Base64.getEncoder().encodeToString("old-password".getBytes()))
-                .build();
-
-        CertAndKey newCertAndKey = new CertAndKey("new-key".getBytes(), "new-cert".getBytes(), "new-truststore".getBytes(), "new-keystore".getBytes(), "new-password");
-        ClusterCa clusterCaMock = mock(ClusterCa.class);
-        when(clusterCaMock.certRenewed()).thenReturn(false);
-        when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
-        String namespace = "my-namespace";
-        String secretName = "my-secret";
-        String commonName = "deployment";
-        String keyCertName = "deployment";
-        Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
-
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
-
-        assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.p12", newCertAndKey.keyStoreAsBase64String()));
-        assertThat(newSecret.getData(), hasEntry("deployment.password", newCertAndKey.storePasswordAsBase64String()));
-    }
-
-    @Test
-    public void testRenewalOfDeploymentCertificatesDelayedRenewalOutsideOfMaintenanceWindow() throws IOException {
-        Secret initialSecret = new SecretBuilder()
-                .withNewMetadata()
-                .withNewName("test-secret")
-                .endMetadata()
-                .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
-                .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
-                .addToData("deployment.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes()))
-                .addToData("deployment.password", Base64.getEncoder().encodeToString("old-password".getBytes()))
-                .build();
-
-        CertAndKey newCertAndKey = new CertAndKey("new-key".getBytes(), "new-cert".getBytes(), "new-truststore".getBytes(), "new-keystore".getBytes(), "new-password");
-        ClusterCa clusterCaMock = mock(ClusterCa.class);
-        when(clusterCaMock.certRenewed()).thenReturn(false);
-        when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
-        String namespace = "my-namespace";
-        String secretName = "my-secret";
-        String commonName = "deployment";
-        String keyCertName = "deployment";
-        Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = false;
-
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
-
-        assertThat(newSecret.getData(), hasEntry("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes())));
-        assertThat(newSecret.getData(), hasEntry("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes())));
-        assertThat(newSecret.getData(), hasEntry("deployment.p12", Base64.getEncoder().encodeToString("old-keystore".getBytes())));
-        assertThat(newSecret.getData(), hasEntry("deployment.password", Base64.getEncoder().encodeToString("old-password".getBytes())));
     }
 }

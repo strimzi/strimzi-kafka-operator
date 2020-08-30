@@ -540,7 +540,8 @@ public class CruiseControl extends AbstractModel {
             return null;
         }
         Secret secret = clusterCa.cruiseControlSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, CruiseControl.secretName(cluster), name, "cruise-control", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+        return CertificateRenewer.of(clusterCa, name, "cruise-control", isMaintenanceTimeWindowsSatisfied)
+                .signedCertificateSecret(secret, secretName(cluster), namespace, labels, createOwnerReference());
     }
 
     /**
