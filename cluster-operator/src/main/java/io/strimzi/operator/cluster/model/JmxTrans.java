@@ -315,7 +315,8 @@ public class JmxTrans extends AbstractModel {
         String internalBootstrapServiceName = KafkaCluster.headlessServiceName(clusterName);
         String metricsPortValue = String.valueOf(KafkaCluster.JMX_PORT);
         kafkaJmxMetricsReadinessProbe = kafkaJmxMetricsReadinessProbe == null ? DEFAULT_JMX_TRANS_PROBE : kafkaJmxMetricsReadinessProbe;
-        return execProbe(Arrays.asList("/opt/jmx/jmxtrans_readiness_check.sh", internalBootstrapServiceName, metricsPortValue), kafkaJmxMetricsReadinessProbe);
+        return ProbeGenerator.of(kafkaJmxMetricsReadinessProbe)
+            .execProbe(Arrays.asList("/opt/jmx/jmxtrans_readiness_check.sh", internalBootstrapServiceName, metricsPortValue));
     }
 
     private JmxTransServer convertSpecToServers(JmxTransSpec spec, String brokerServiceName) {

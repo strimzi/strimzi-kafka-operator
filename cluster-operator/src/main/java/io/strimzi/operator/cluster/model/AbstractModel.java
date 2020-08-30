@@ -24,7 +24,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
-import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -50,9 +49,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
-import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -71,7 +68,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1288,64 +1284,5 @@ public abstract class AbstractModel {
      */
     public List<Condition> getWarningConditions() {
         return warningConditions;
-    }
-
-    /**
-     * probeBuilder returns a ProbeBuilder pre-configured with the supplied properties
-     *
-     * @param probeConfig the Strimzi Probe class that contains user configured properties
-     * @return ProbeBuilder
-     */
-    public static ProbeBuilder probeBuilder(Probe probeConfig) {
-        return new ProbeBuilder()
-                .withInitialDelaySeconds(probeConfig.getInitialDelaySeconds())
-                .withTimeoutSeconds(probeConfig.getTimeoutSeconds())
-                .withPeriodSeconds(probeConfig.getPeriodSeconds())
-                .withSuccessThreshold(probeConfig.getSuccessThreshold())
-                .withFailureThreshold(probeConfig.getFailureThreshold());
-    }
-
-    public static io.fabric8.kubernetes.api.model.Probe httpProbe(String path, String port, Probe probeConfig) {
-        io.fabric8.kubernetes.api.model.Probe probe = probeBuilder(probeConfig).withNewHttpGet()
-                .withPath(path)
-                    .withNewPort(port)
-                .endHttpGet()
-                .build();
-        log.trace("Created http probe {}", probe);
-        return probe;
-    }
-
-    public static io.fabric8.kubernetes.api.model.Probe execProbe(List<String> command, Probe probeConfig) {
-        io.fabric8.kubernetes.api.model.Probe probe = probeBuilder(probeConfig).withNewExec()
-                    .withCommand(command)
-                .endExec()
-                .build();
-        log.trace("Created exec probe {}", probe);
-        return probe;
-    }
-
-    public static final io.strimzi.api.kafka.model.Probe DEFAULT_TLS_SIDECAR_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
-            .withInitialDelaySeconds(TlsSidecar.DEFAULT_HEALTHCHECK_DELAY)
-            .withTimeoutSeconds(TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT)
-            .build();
-
-    protected io.fabric8.kubernetes.api.model.Probe tlsSidecarReadinessProbe(TlsSidecar tlsSidecar) {
-        Probe tlsSidecarReadinessProbe;
-        if (tlsSidecar != null && tlsSidecar.getReadinessProbe() != null) {
-            tlsSidecarReadinessProbe = tlsSidecar.getReadinessProbe();
-        } else {
-            tlsSidecarReadinessProbe = DEFAULT_TLS_SIDECAR_PROBE;
-        }
-        return execProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessProbe);
-    }
-
-    protected io.fabric8.kubernetes.api.model.Probe tlsSidecarLivenessProbe(TlsSidecar tlsSidecar) {
-        Probe tlsSidecarLivenessProbe;
-        if (tlsSidecar != null && tlsSidecar.getLivenessProbe() != null) {
-            tlsSidecarLivenessProbe = tlsSidecar.getLivenessProbe();
-        } else {
-            tlsSidecarLivenessProbe = DEFAULT_TLS_SIDECAR_PROBE;
-        }
-        return execProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessProbe);
     }
 }
