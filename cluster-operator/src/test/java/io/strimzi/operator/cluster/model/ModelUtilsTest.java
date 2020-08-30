@@ -235,9 +235,9 @@ public class ModelUtilsTest {
     @Test
     public void testCreateTcpSocketProbe()  {
         Probe probe = ModelUtils.createTcpSocketProbe(1234, new ProbeBuilder().withInitialDelaySeconds(10).withTimeoutSeconds(20).build());
-        assertThat(probe.getTcpSocket().getPort().getIntVal(), is(new Integer(1234)));
-        assertThat(probe.getInitialDelaySeconds(), is(new Integer(10)));
-        assertThat(probe.getTimeoutSeconds(), is(new Integer(20)));
+        assertThat(probe.getTcpSocket().getPort().getIntVal(), is(Integer.valueOf(1234)));
+        assertThat(probe.getInitialDelaySeconds(), is(Integer.valueOf(10)));
+        assertThat(probe.getTimeoutSeconds(), is(Integer.valueOf(20)));
     }
 
     @Test

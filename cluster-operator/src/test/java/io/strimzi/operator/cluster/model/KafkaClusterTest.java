@@ -184,13 +184,13 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headful.getSpec().getPorts().size(), is(3));
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headful.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
 
         assertThat(headful.getMetadata().getAnnotations(), is(Util.mergeLabelsOrAnnotations(kc.getInternalDiscoveryAnnotation())));
@@ -217,13 +217,13 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headful.getSpec().getPorts().size(), is(3));
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headful.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
 
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"), is(false));
@@ -252,16 +252,16 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(4));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(3).getName(), is(KafkaCluster.JMX_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.JMX_PORT)));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(Integer.valueOf(KafkaCluster.JMX_PORT)));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
@@ -283,13 +283,13 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(3));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
@@ -427,19 +427,19 @@ public class KafkaClusterTest {
         assertThat(containers.size(), is(1));
 
         // checks on the main Kafka container
-        assertThat(sts.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(sts.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
         assertThat(containers.get(0).getImage(), is(image));
-        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(new Integer(10)));
-        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(new Integer(4)));
-        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(new Integer(33)));
-        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(new Integer(10)));
-        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(new Integer(4)));
-        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(new Integer(33)));
+        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
+        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
+        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
+        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
+        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
+        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
         assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
         assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaCluster.BROKER_CERTS_VOLUME_MOUNT));
@@ -1157,9 +1157,9 @@ public class KafkaClusterTest {
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(new Integer(32101)));
-        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(new Integer(32001)));
-        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(new Integer(32001)));
+        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32101)));
+        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32001)));
+        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(Integer.valueOf(32001)));
     }
 
     @Test
@@ -1188,10 +1188,10 @@ public class KafkaClusterTest {
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(new Integer(32101)));
-        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(new Integer(32001)));
+        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32101)));
+        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32001)));
 
-        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(new Integer(32001)));
+        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(Integer.valueOf(32001)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(0), is("advertised.host"));
     }
 
@@ -1823,13 +1823,13 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.getExternalServiceAdvertisedPortOverride(0), is(new Integer(10000)));
+        assertThat(kc.getExternalServiceAdvertisedPortOverride(0), is(Integer.valueOf(10000)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(0), is("my-host-0.cz"));
 
-        assertThat(kc.getExternalServiceAdvertisedPortOverride(1), is(new Integer(10001)));
+        assertThat(kc.getExternalServiceAdvertisedPortOverride(1), is(Integer.valueOf(10001)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(1), is("my-host-1.cz"));
 
-        assertThat(kc.getExternalServiceAdvertisedPortOverride(2), is(new Integer(10002)));
+        assertThat(kc.getExternalServiceAdvertisedPortOverride(2), is(Integer.valueOf(10002)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(2), is("my-host-2.cz"));
     }
 
