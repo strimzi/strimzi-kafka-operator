@@ -586,7 +586,7 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
+        varList.addAll(getRequiredEnvVars());
 
         varList.addAll(getExternalConfigurationEnvVars());
 

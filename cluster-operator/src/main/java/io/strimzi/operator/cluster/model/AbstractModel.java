@@ -82,6 +82,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
+/**
+ * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
+ */
 public abstract class AbstractModel {
 
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
@@ -356,6 +360,10 @@ public abstract class AbstractModel {
      * @return OrderedProperties map with all available loggers for current pod and default values.
      */
     protected OrderedProperties getDefaultLogConfig() {
+        String logConfigFileName = getDefaultLogConfigFileName();
+        if (logConfigFileName == null || logConfigFileName.isEmpty()) {
+            return new OrderedProperties();
+        }
         return getOrderedProperties(getDefaultLogConfigFileName());
     }
 
@@ -366,22 +374,23 @@ public abstract class AbstractModel {
      * @return The OrderedProperties of the inputted file.
      */
     public static OrderedProperties getOrderedProperties(String configFileName) {
+        if (configFileName == null || configFileName.isEmpty()) {
+            throw new IllegalArgumentException("configFileName must be non-empty string");
+        }
         OrderedProperties properties = new OrderedProperties();
-        if (configFileName != null && !configFileName.isEmpty()) {
-            InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
-            if (is == null) {
-                log.warn("Cannot find resource '{}'", configFileName);
-            } else {
+        InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
+        if (is == null) {
+            log.warn("Cannot find resource '{}'", configFileName);
+        } else {
+            try {
+                properties.addStringPairs(is);
+            } catch (IOException e) {
+                log.warn("Unable to read default log config from '{}'", configFileName);
+            } finally {
                 try {
-                    properties.addStringPairs(is);
+                    is.close();
                 } catch (IOException e) {
-                    log.warn("Unable to read default log config from '{}'", configFileName);
-                } finally {
-                    try {
-                        is.close();
-                    } catch (IOException e) {
-                        log.error("Failed to close stream. Reason: " + e.getMessage());
-                    }
+                    log.error("Failed to close stream. Reason: " + e.getMessage());
                 }
             }
         }
@@ -442,6 +451,7 @@ public abstract class AbstractModel {
 
     /**
      * Adds 'monitorInterval=30' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
+     *
      * @param data String with log4j2 properties in format key=value separated by new lines
      * @return log4j2 configuration with monitorInterval property
      */
@@ -449,7 +459,8 @@ public abstract class AbstractModel {
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(data);
 
-        Optional<String> mi = orderedProperties.asMap().keySet().stream().filter(key -> key.matches("^monitorInterval$")).findFirst();
+        Optional<String> mi = orderedProperties.asMap().keySet().stream()
+                .filter(key -> key.matches("^monitorInterval$")).findFirst();
         if (mi.isPresent()) {
             return data;
         } else {
@@ -460,6 +471,7 @@ public abstract class AbstractModel {
 
     /**
      * Generates a metrics and logging ConfigMap according to configured defaults.
+     *
      * @param externalConfigMap The ConfigMap used if Logging is an instance of ExternalLogging
      * @return The generated ConfigMap.
      */
@@ -494,12 +506,14 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Returns a lit of environment variables which should be shared by all containers.
-     * Currently contains the mirrored HTTP Proxy environment variables
+     * Returns a lit of environment variables which are required by all containers.
      *
-     * @return  List of environment variables
+     * Contains:
+     * The mirrored HTTP Proxy environment variables
+     *
+     * @return  List of required environment variables for all containers
      */
-    protected List<EnvVar> getSharedEnvVars() {
+    protected List<EnvVar> getRequiredEnvVars() {
         // HTTP Proxy configuration should be passed to all images
         return PROXY_ENV_VARS;
     }
@@ -532,8 +546,11 @@ public abstract class AbstractModel {
 
     /**
      * Validates persistent storage
+     * If storage is of a persistent type, validations are made
+     * If storage is not of a persistent type, validation passes
      *
      * @param storage   Persistent Storage configuration
+     * @throws InvalidResourceException if validations fails for any reason
      */
     protected static void validatePersistentStorage(Storage storage)   {
         if (storage instanceof PersistentClaimStorage) {
