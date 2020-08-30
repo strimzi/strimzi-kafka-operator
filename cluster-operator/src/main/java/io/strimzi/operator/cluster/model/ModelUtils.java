@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
@@ -333,6 +332,7 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
+    // TODO fix
     public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName,
             String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, String> data = new HashMap<>(4);
@@ -391,28 +391,8 @@ public class ModelUtils {
             data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
         }
 
-        return createSecret(secretName, namespace, labels, ownerReference, data);
-    }
-
-    public static Secret createSecret(String name, String namespace, Labels labels, OwnerReference ownerReference, Map<String, String> data) {
-        if (ownerReference == null) {
-            return new SecretBuilder()
-                    .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
-                    .endMetadata()
-                    .withData(data).build();
-        } else {
-            return new SecretBuilder()
-                    .withNewMetadata()
-                    .withName(name)
-                    .withOwnerReferences(ownerReference)
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
-                    .endMetadata()
-                    .withData(data).build();
-        }
+        return SecretGenerator.of(secretName, namespace, labels, ownerReference, data)
+                .create();
     }
 
     /**
