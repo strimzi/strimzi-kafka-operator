@@ -18,6 +18,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * CertificateRenewer is a class which takes the cluster CA cert as well as a secret and ensures the secret passed out
+ * is signed by the CA, renewing the certificates if necessary
+ */
 public class CertificateRenewer {
 
     private final ClusterCa clusterCa;
@@ -34,10 +38,27 @@ public class CertificateRenewer {
         this.isMaintenanceTimeWindowsSatisfied = isMaintenanceTimeWindowsSatisfied;
     }
 
+    /**
+     * Pre-configure the CertificateRenewer for generating signed certificates
+     *
+     * @param clusterCa
+     * @param commonName the common-name used in te certificate
+     * @param keyCertName the keyCertName used to index data in the secret
+     * @param isMaintenanceTimeWindowsSatisfied
+     */
     public static CertificateRenewer of(ClusterCa clusterCa, String commonName, String keyCertName, boolean isMaintenanceTimeWindowsSatisfied) {
         return new CertificateRenewer(clusterCa, commonName, keyCertName, isMaintenanceTimeWindowsSatisfied);
     }
 
+    /**
+     * Return a new secret signed by the cluster CA
+     *
+     * @param secret the pre-existing secret, may be null
+     * @param secretName the name of the secret to create or modify
+     * @param namespace the namespace to write the secret to
+     * @param labels the labels te secret should contain
+     * @param ownerReference the OwnerReference for the secret
+     */
     public Secret signedCertificateSecret(Secret secret, String secretName, String namespace, Labels labels, OwnerReference ownerReference) {
         Map<String, String> signedCertData = new HashMap<>(4);
         CertAndKey certAndKey = null;
