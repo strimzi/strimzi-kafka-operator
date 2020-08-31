@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -31,7 +30,6 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.utils.ClientUtils.generateRandomConsumerGroup;
