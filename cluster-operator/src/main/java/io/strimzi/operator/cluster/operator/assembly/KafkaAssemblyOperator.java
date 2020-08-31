@@ -149,7 +149,7 @@ import static java.util.Collections.singletonMap;
  * <ul>
  *     <li>A ZooKeeper cluster StatefulSet and related Services</li>
  *     <li>A Kafka cluster StatefulSet and related Services</li>
- *     <li>Optionally, a TopicOperator Deployment</li>
+ *     <li>Optionally, an EntityOperator Deployment comprised of the UserOperator and TopicOperator</li>
  * </ul>
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
@@ -168,7 +168,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final IngressOperator ingressOperations;
     private final StorageClassOperator storageClassOperator;
     private final NodeOperator nodeOperator;
-    private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
+    private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator;
     private final ZookeeperScalerProvider zkScalerProvider;
     private final AdminClientProvider adminClientProvider;
 
@@ -196,7 +196,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
         this.storageClassOperator = supplier.storageClassOperations;
-        this.crdOperator = supplier.kafkaOperator;
+        this.kafkaOperator = supplier.kafkaOperator;
         this.nodeOperator = supplier.nodeOperator;
         this.zkScalerProvider = supplier.zkScalerProvider;
         this.adminClientProvider = supplier.adminClientProvider;
@@ -244,9 +244,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.error("Failed to set status for {}", kafkaAssembly.getMetadata().getName());
                 }
 
-                // If both features succeeded, createOrUpdate succeeded as well
+                // If both futures succeeded, createOrUpdate succeeded as well
                 // If one or both of them failed, we prefer the reconciliation failure as the main error
-                if (reconcileResult.succeeded() && statusResult.succeeded())    {
+                if (reconcileResult.succeeded() && statusResult.succeeded()) {
                     createOrUpdatePromise.complete();
                 } else if (reconcileResult.failed())    {
                     createOrUpdatePromise.fail(reconcileResult.cause());
@@ -375,7 +375,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     /**
-     * Hold the mutable state during a reconciliation
+     * Holds the mutable state during a reconciliation
+     *
+     * Ensures state from one reconciliation step can be persisted to others
+     * Reconciliations steps are functions are methods on ReconciliationState so they can return the ReconciliationState class
      */
     class ReconciliationState {
 
@@ -458,94 +461,82 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * the update only when there is any difference in non-timestamp fields.
          *
          * @param desiredStatus The KafkaStatus which should be set
-         *
-         * @return
          */
         Future<Void> updateStatus(KafkaStatus desiredStatus) {
-            Promise<Void> updateStatusPromise = Promise.promise();
-
-            crdOperator.getAsync(namespace, name).onComplete(getRes -> {
-                if (getRes.succeeded())    {
-                    Kafka kafka = getRes.result();
-
-                    if (kafka != null) {
-                        if ((Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1).equals(kafka.getApiVersion()))   {
-                            log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, kafka.getApiVersion());
-                            updateStatusPromise.complete();
-                        } else {
-                            KafkaStatus currentStatus = kafka.getStatus();
-
-                            StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                            if (!ksDiff.isEmpty()) {
-                                Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
-
-                                crdOperator.updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
-                                    if (updateRes.succeeded()) {
-                                        log.debug("{}: Completed status update", reconciliation);
-                                        updateStatusPromise.complete();
-                                    } else {
-                                        log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                        updateStatusPromise.fail(updateRes.cause());
-                                    }
-                                });
-                            } else {
-                                log.debug("{}: Status did not change", reconciliation);
-                                updateStatusPromise.complete();
-                            }
-                        }
-                    } else {
-                        log.error("{}: Current Kafka resource not found", reconciliation);
-                        updateStatusPromise.fail("Current Kafka resource not found");
-                    }
-                } else {
-                    log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, getRes.cause());
-                    updateStatusPromise.fail(getRes.cause());
+            return kafkaOperator.getAsync(namespace, name).compose(kafka -> {
+                if (kafka == null) {
+                    log.error("{}: Current Kafka resource not found", reconciliation);
+                    return Future.failedFuture("Current Kafka resource not found");
                 }
-            });
 
-            return updateStatusPromise.future();
+                if ((Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1).equals(kafka.getApiVersion()))   {
+                    log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, kafka.getApiVersion());
+                    return Future.succeededFuture();
+                }
+
+                KafkaStatus currentStatus = kafka.getStatus();
+
+                StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                if (ksDiff.isEmpty()) {
+                    log.debug("{}: Status did not change", reconciliation);
+                    return Future.succeededFuture();
+                }
+
+                Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
+
+                return kafkaOperator.updateStatusAsync(resourceWithNewStatus)
+                    .compose(updated -> {
+                        log.debug("{}: Completed status update", reconciliation);
+                        return Future.succeededFuture();
+                    },
+                        error -> {
+                            log.error("{}: Failed to update status", reconciliation, error.getCause());
+                            return Future.failedFuture(error);
+                        });
+            },
+                error -> {
+                    log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, error.getCause());
+                    return Future.failedFuture(error);
+                });
         }
 
         /**
          * Sets the initial status when the Kafka resource is created and the cluster starts deploying.
-         *
-         * @return
          */
         Future<ReconciliationState> initialStatus() {
-            Promise<ReconciliationState> initialStatusPromise = Promise.promise();
-
-            crdOperator.getAsync(namespace, name).onComplete(getRes -> {
-                if (getRes.succeeded())    {
-                    Kafka kafka = getRes.result();
-
-                    if (kafka != null && kafka.getStatus() == null) {
-                        log.debug("{}: Setting the initial status for a new resource", reconciliation);
-
-                        Condition deployingCondition = new ConditionBuilder()
-                                .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
-                                .withType("NotReady")
-                                .withStatus("True")
-                                .withReason("Creating")
-                                .withMessage("Kafka cluster is being deployed")
-                                .build();
-
-                        KafkaStatus initialStatus = new KafkaStatusBuilder()
-                                .addToConditions(deployingCondition)
-                                .build();
-
-                        updateStatus(initialStatus).map(this).onComplete(initialStatusPromise);
-                    } else {
-                        log.debug("{}: Status is already set. No need to set initial status", reconciliation);
-                        initialStatusPromise.complete(this);
-                    }
-                } else {
-                    log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, getRes.cause());
-                    initialStatusPromise.fail(getRes.cause());
+            return kafkaOperator.getAsync(namespace, name).compose(kafka -> {
+                if (kafka == null) {
+                    log.debug("{}: Kafka no longer present. No need to set initial status", reconciliation);
+                    return Future.succeededFuture();
                 }
-            });
 
-            return initialStatusPromise.future();
+                if (kafka.getStatus() != null) {
+                    log.debug("{}: Status is already set. No need to set initial status", reconciliation);
+                    return Future.succeededFuture();
+                }
+
+                log.debug("{}: Setting the initial status for a new resource", reconciliation);
+
+                Condition deployingCondition = new ConditionBuilder()
+                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
+                        .withType("NotReady")
+                        .withStatus("True")
+                        .withReason("Creating")
+                        .withMessage("Kafka cluster is being deployed")
+                        .build();
+
+                KafkaStatus initialStatus = new KafkaStatusBuilder()
+                        .addToConditions(deployingCondition)
+                        .build();
+
+                return updateStatus(initialStatus);
+            },
+                error -> {
+                    log.error("{}: Failed to get the current Kafka resource and its status", reconciliation, error.getCause());
+                    return Future.failedFuture(error);
+                })
+            .map(this);
         }
 
         /**
@@ -711,33 +702,36 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (this.clientsCa.keyReplaced()) {
                 reason.add("trust new clients CA certificate signed by new key");
             }
-            if (!reason.isEmpty()) {
-                Future<Void> zkRollFuture;
-                Function<Pod, List<String>> rollPodAndLogReason = pod -> {
-                    log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reason);
-                    return reason;
-                };
-                if (this.clusterCa.keyReplaced()) {
-                    zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                        .compose(sts -> zkSetOperations.maybeRollingUpdate(sts, rollPodAndLogReason,
-                        clusterCa.caCertSecret(),
-                        oldCoSecret));
-                } else {
-                    zkRollFuture = Future.succeededFuture();
-                }
-                return zkRollFuture
-                        .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
-                        .compose(sts -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
-                            () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
-                            kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
-                            .rollingRestart(rollPodAndLogReason))
-                        .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
-                        .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
-                        .compose(i -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reason.toString()))
-                        .map(i -> this);
-            } else {
+            if (reason.isEmpty()) {
                 return Future.succeededFuture(this);
             }
+
+            Function<Pod, List<String>> rollPodAndLogReason = pod -> {
+                log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reason);
+                return reason;
+            };
+
+            final Future<Void> zkRollFuture;
+            // If key replaced, roll the zk statefulset
+            if (this.clusterCa.keyReplaced()) {
+                zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                        .compose(sts -> zkSetOperations.maybeRollingUpdate(sts, rollPodAndLogReason,
+                                clusterCa.caCertSecret(),
+                                oldCoSecret));
+            } else {
+                zkRollFuture = Future.succeededFuture();
+            }
+
+            return zkRollFuture
+                    .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
+                    .compose(sts -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
+                        () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
+                        kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
+                        .rollingRestart(rollPodAndLogReason))
+                    .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
+                    .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
+                    .compose(i -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reason.toString()))
+                    .map(this);
         }
 
         /**
@@ -750,66 +744,64 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<Void> rollDeploymentIfExists(String deploymentName, String reasons)  {
             return deploymentOperations.getAsync(namespace, deploymentName)
                     .compose(dep -> {
-                        if (dep != null) {
-                            log.debug("{}: Rolling Deployment {} to {}", reconciliation, deploymentName, reasons);
-                            return deploymentOperations.rollingUpdate(namespace, deploymentName, operationTimeoutMs);
-                        } else {
+                        if (dep == null) {
                             return Future.succeededFuture();
                         }
+                        log.debug("{}: Rolling Deployment {} to {}", reconciliation, deploymentName, reasons);
+                        return deploymentOperations.rollingUpdate(namespace, deploymentName, operationTimeoutMs);
                     });
         }
 
         @SuppressWarnings("deprecation")
         Future<ReconciliationState> kafkaManualRollingUpdate() {
-            Future<StatefulSet> futsts = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
-            if (futsts != null) {
-                return futsts.compose(sts -> {
-                    if (sts != null) {
-                        if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
-                                false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
-                            return maybeRollKafka(sts, pod -> {
-                                if (pod == null) {
-                                    throw new ConcurrentDeletionException("Unexpectedly pod no longer exists during roll of StatefulSet.");
-                                }
-                                log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
-                                        reconciliation, pod.getMetadata().getName());
-                                return singletonList("manual rolling update");
-                            });
-                        }
+            return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                .compose(sts -> {
+                    if (sts == null) {
+                        return Future.succeededFuture();
                     }
-                    return Future.succeededFuture();
-                }).map(i -> this);
-            }
-            return Future.succeededFuture(this);
+
+                    if (!Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                            false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                        return Future.succeededFuture();
+                    }
+
+                    return maybeRollKafka(sts, pod -> {
+                        if (pod == null) {
+                            throw new ConcurrentDeletionException("Unexpectedly pod no longer exists during roll of StatefulSet.");
+                        }
+                        log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
+                                reconciliation, pod.getMetadata().getName());
+                        return singletonList("manual rolling update");
+                    });
+                })
+                .map(this);
         }
 
         @SuppressWarnings("deprecation")
         Future<ReconciliationState> zkManualRollingUpdate() {
-            Future<StatefulSet> futsts = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            if (futsts != null) {
-                return futsts.compose(sts -> {
-                    if (sts != null) {
-                        if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
-                                false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
-
-                            return zkSetOperations.maybeRollingUpdate(sts, pod -> {
-
-                                log.debug("{}: Rolling Zookeeper pod {} due to manual rolling update",
-                                        reconciliation, pod.getMetadata().getName());
-                                return singletonList("manual rolling update");
-                            });
-                        }
+            return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                .compose(sts -> {
+                    if (sts == null) {
+                        return Future.succeededFuture();
                     }
-                    return Future.succeededFuture();
-                }).map(i -> this);
-            }
-            return Future.succeededFuture(this);
+                    if (!Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                            false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                        return Future.succeededFuture();
+                    }
+
+                    return zkSetOperations.maybeRollingUpdate(sts, pod -> {
+                        log.debug("{}: Rolling Zookeeper pod {} due to manual rolling update",
+                                reconciliation, pod.getMetadata().getName());
+                        return singletonList("manual rolling update");
+                    });
+                })
+                .map(i -> this);
         }
 
         Future<ReconciliationState> zkVersionChange() {
 
-            return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)).compose(kafkaSts -> {
-
+            return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                .compose(kafkaSts -> {
                     if (kafkaSts == null) {
                         return Future.succeededFuture(this);
                     }
@@ -819,36 +811,37 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (versionChange.isNoop()) {
                         log.debug("Kafka.spec.kafka.version is unchanged therefore no change to Zookeeper is required");
                         return Future.succeededFuture(this);
-                    } else {
-                        String versionChangeType;
-                        if (versionChange.isDowngrade()) {
-                            versionChangeType = "downgrade";
-                        } else {
-                            versionChangeType = "upgrade";
-                        }
-                        if (versionChange.requiresZookeeperChange()) {
-                            log.info("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
-                                    versionChangeType,
-                                    versionChange.from().version(),
-                                    versionChange.to().version(),
-                                    versionChangeType,
-                                    versionChange.from().zookeeperVersion(),
-                                    versionChange.to().zookeeperVersion());
-                        } else {
-                            log.info("Kafka {} from {} to {} requires no change in Zookeeper version",
-                                    versionChangeType,
-                                    versionChange.from().version(),
-                                    versionChange.to().version());
-
-                        }
-                        // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
-                        String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
-
-                        log.debug("Setting new Zookeeper image: " + newZkImage);
-                        this.zkCluster.setImage(newZkImage);
-
-                        return Future.succeededFuture(this);
                     }
+
+                    final String versionChangeType;
+                    if (versionChange.isDowngrade()) {
+                        versionChangeType = "downgrade";
+                    } else {
+                        versionChangeType = "upgrade";
+                    }
+
+                    if (versionChange.requiresZookeeperChange()) {
+                        log.info("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
+                                versionChangeType,
+                                versionChange.from().version(),
+                                versionChange.to().version(),
+                                versionChangeType,
+                                versionChange.from().zookeeperVersion(),
+                                versionChange.to().zookeeperVersion());
+                    } else {
+                        log.info("Kafka {} from {} to {} requires no change in Zookeeper version",
+                                versionChangeType,
+                                versionChange.from().version(),
+                                versionChange.to().version());
+
+                    }
+                    // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
+                    String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
+
+                    log.debug("Setting new Zookeeper image: " + newZkImage);
+                    this.zkCluster.setImage(newZkImage);
+
+                    return Future.succeededFuture(this);
                 }
             );
         }
@@ -859,20 +852,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return A Future which completes with the current state of the STS, or with null if the STS never existed.
          */
         public Future<Void> waitForQuiescence(StatefulSet sts) {
-            if (sts != null) {
-                return maybeRollKafka(sts,
-                    pod -> {
-                        boolean notUpToDate = !isPodUpToDate(sts, pod);
-                        List<String> reason = emptyList();
-                        if (notUpToDate) {
-                            log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
-                            reason = singletonList("upgrade quiescence");
-                        }
-                        return reason;
-                    });
-            } else {
+            if (sts == null) {
                 return Future.succeededFuture();
             }
+            return maybeRollKafka(sts,
+                pod -> {
+                    boolean notUpToDate = !isPodUpToDate(sts, pod);
+                    List<String> reason = emptyList();
+                    if (notUpToDate) {
+                        log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
+                        reason = singletonList("upgrade quiescence");
+                    }
+                    return reason;
+                });
         }
 
         private KafkaVersionChange getKafkaVersionChange(StatefulSet kafkaSts) {
@@ -882,7 +874,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.debug("STS {} currently has Kafka version {}", kafkaSts.getMetadata().getName(), currentVersion);
 
             String fromVersionAnno = Annotations.annotations(kafkaSts).get(ANNO_STRIMZI_IO_FROM_VERSION);
-            KafkaVersion fromVersion;
+            final KafkaVersion fromVersion;
             if (fromVersionAnno != null) { // We're mid version change
                 fromVersion = versions.version(fromVersionAnno);
             } else {
@@ -892,7 +884,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.debug("STS {} is moving from Kafka version {}", kafkaSts.getMetadata().getName(), fromVersion);
 
             String toVersionAnno = Annotations.annotations(kafkaSts).get(ANNO_STRIMZI_IO_TO_VERSION);
-            KafkaVersion toVersion;
+            final KafkaVersion toVersion;
             if (toVersionAnno != null) { // We're mid version change
                 toVersion = versions.version(toVersionAnno);
             } else {
@@ -937,7 +929,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // the CRD), the broker configuration file introduced in 0.16.0 might not be there yet (if
                         // upgrading from any version before 0.16.0). We have to detect this and trigger different
                         // upgrade procedure.
-                        boolean certificatesHaveToBeUpgraded;
+                        final boolean certificatesHaveToBeUpgraded;
                         if (oldCm.getData().get("server.config") == null)  {
                             certificatesHaveToBeUpgraded = true;
                             cm = getKafkaAncillaryCm();
@@ -951,30 +943,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (versionChange.isNoop()) {
                             log.debug("Kafka.spec.kafka.version unchanged");
                             return Future.succeededFuture(this);
-                        } else {
-                            // Wait until the STS is not being updated (it shouldn't be, but there's no harm in checking)
-                            return waitForQuiescence(oldSts).compose(v -> {
-                                // Get the image currently set in the Kafka CR or, if that is not set, the image from the version we are changing to.
-                                String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), versionChange.to().version());
-
-                                Future<StatefulSet> f = Future.succeededFuture(sts);
-                                Future<?> result;
-
-                                if (versionChange.isUpgrade()) {
-                                    if (currentVersion.equals(versionChange.from())) {
-                                        f = f.compose(ignored -> kafkaUpgradePhase1(sts, cm, versionChange, image, certificatesHaveToBeUpgraded));
-                                    }
-                                    result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, cm, versionChange));
-                                } else {
-                                    // Must be a downgrade
-                                    if (currentVersion.equals(versionChange.from())) {
-                                        f = f.compose(ignored -> kafkaDowngradePhase1(sts, cm, versionChange));
-                                    }
-                                    result = f.compose(ignored -> kafkaDowngradePhase2(sts, cm, versionChange, image));
-                                }
-                                return result.map(this);
-                            });
                         }
+
+                        // Wait until the STS is not being updated (it shouldn't be, but there's no harm in checking)
+                        return waitForQuiescence(oldSts).compose(v -> {
+                            // Get the image currently set in the Kafka CR or, if that is not set, the image from the version we are changing to.
+                            String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), versionChange.to().version());
+
+                            Future<StatefulSet> f = Future.succeededFuture(sts);
+                            Future<?> result;
+
+                            if (versionChange.isUpgrade()) {
+                                if (currentVersion.equals(versionChange.from())) {
+                                    f = f.compose(ignored -> kafkaUpgradePhase1(sts, cm, versionChange, image, certificatesHaveToBeUpgraded));
+                                }
+                                result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, cm, versionChange));
+                            } else {
+                                // Must be a downgrade
+                                if (currentVersion.equals(versionChange.from())) {
+                                    f = f.compose(ignored -> kafkaDowngradePhase1(sts, cm, versionChange));
+                                }
+                                result = f.compose(ignored -> kafkaDowngradePhase2(sts, cm, versionChange, image));
+                            }
+                            return result.map(this);
+                        });
                     });
         }
 
@@ -1060,12 +1052,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             ConfigMap newCm = new ConfigMapBuilder(cm).build();
             newCm.getData().put("server.config", config);
 
-            Future<Void> secretUpdateFuture;
+            final Future<Void> secretUpdateFuture;
             if (certificatesHaveToBeUpgraded) {
                 // Advertised hostnames for replication changed, we need to update the certs as well
                 secretUpdateFuture = kafkaGenerateCertificates(() -> new Date())
                         .compose(ignore -> secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret()))
-                        .map(ignore -> (Void) null);
+                        .map(null);
             } else {
                 secretUpdateFuture = Future.succeededFuture();
             }
@@ -1087,13 +1079,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return singletonList("Upgrade phase 1 of " + (twoPhase ? 2 : 1) + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName());
                         }).map(resultSts);
                     })
-                    .compose(ss2 -> {
+                    .compose(ss -> {
                         log.info("{}: {}, phase 1 of {} completed: {}", reconciliation, versionChange,
                                 twoPhase ? 2 : 1,
                                 twoPhase ? "change in " + INTERBROKER_PROTOCOL_VERSION + " requires 2nd phase"
                                         : "no change to " + INTERBROKER_PROTOCOL_VERSION + " because it is explicitly configured"
                         );
-                        return Future.succeededFuture(twoPhase ? ss2 : null);
+                        return Future.succeededFuture(twoPhase ? ss : null);
                     });
         }
 
@@ -1164,7 +1156,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             Map<String, String> annotations = Annotations.annotations(sts);
             String config = cm.getData().getOrDefault("server.config", "");
-            String newConfig;
+            final String newConfig;
             String oldMessageFormatConfiguration = Arrays.stream(config.split(System.lineSeparator())).filter(line -> line.startsWith(LOG_MESSAGE_FORMAT_VERSION + "=")).findFirst().orElse(null);
             String oldMessageFormat = oldMessageFormatConfiguration == null ? null : oldMessageFormatConfiguration.substring(oldMessageFormatConfiguration.lastIndexOf("=") + 1);
 
@@ -1185,36 +1177,35 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String lowerVersionProtocol = lowerVersionProtocolConfiguration == null ? null : lowerVersionProtocolConfiguration.substring(lowerVersionProtocolConfiguration.lastIndexOf("=") + 1);
 
             String phases;
-            if (lowerVersionProtocol == null || compareDottedVersions(lowerVersionProtocol, versionChange.to().protocolVersion()) > 0) {
-                phases = "2 (change in " + INTERBROKER_PROTOCOL_VERSION + " requires 2nd phase)";
-                // Set proto version and message version in Kafka config, if they're not already set
-                String newLowerVersionProtocol = lowerVersionProtocol == null ? versionChange.to().protocolVersion() : lowerVersionProtocol;
-                log.info("{}: Downgrade: Setting {} to {}", reconciliation, INTERBROKER_PROTOCOL_VERSION, newLowerVersionProtocol);
-
-                if (config.contains(INTERBROKER_PROTOCOL_VERSION + "=")) {
-                    StringBuilder newConfigBuilder = new StringBuilder();
-                    Arrays.stream(config.split(System.lineSeparator())).forEach(line -> {
-                        if (line.startsWith(INTERBROKER_PROTOCOL_VERSION + "=")) {
-                            newConfigBuilder.append(INTERBROKER_PROTOCOL_VERSION + "=" + newLowerVersionProtocol + System.lineSeparator());
-                        } else {
-                            newConfigBuilder.append(line + System.lineSeparator());
-                        }
-                    });
-                    newConfig = newConfigBuilder.toString();
-                } else {
-                    newConfig = config + System.lineSeparator() + INTERBROKER_PROTOCOL_VERSION + "=" + newLowerVersionProtocol;
-                }
-
-                // Store upgrade state in annotations
-                annotations.put(ANNO_STRIMZI_IO_FROM_VERSION, versionChange.from().version());
-                annotations.put(ANNO_STRIMZI_IO_TO_VERSION, versionChange.to().version());
-            } else {
+            if (lowerVersionProtocol != null && compareDottedVersions(lowerVersionProtocol, versionChange.to().protocolVersion()) <= 0) {
                 // In this case there's no need for this phase of update, because the both old and new
                 // brokers speaking protocol of the lower version.
                 phases = "2 (1st phase skips rolling update)";
                 log.info("{}: {}, phase 1 of {} completed", reconciliation, versionChange, phases);
                 return Future.succeededFuture(sts);
             }
+            phases = "2 (change in " + INTERBROKER_PROTOCOL_VERSION + " requires 2nd phase)";
+            // Set proto version and message version in Kafka config, if they're not already set
+            String newLowerVersionProtocol = lowerVersionProtocol == null ? versionChange.to().protocolVersion() : lowerVersionProtocol;
+            log.info("{}: Downgrade: Setting {} to {}", reconciliation, INTERBROKER_PROTOCOL_VERSION, newLowerVersionProtocol);
+
+            if (config.contains(INTERBROKER_PROTOCOL_VERSION + "=")) {
+                StringBuilder newConfigBuilder = new StringBuilder();
+                Arrays.stream(config.split(System.lineSeparator())).forEach(line -> {
+                    if (line.startsWith(INTERBROKER_PROTOCOL_VERSION + "=")) {
+                        newConfigBuilder.append(INTERBROKER_PROTOCOL_VERSION + "=" + newLowerVersionProtocol + System.lineSeparator());
+                    } else {
+                        newConfigBuilder.append(line + System.lineSeparator());
+                    }
+                });
+                newConfig = newConfigBuilder.toString();
+            } else {
+                newConfig = config + System.lineSeparator() + INTERBROKER_PROTOCOL_VERSION + "=" + newLowerVersionProtocol;
+            }
+
+            // Store upgrade state in annotations
+            annotations.put(ANNO_STRIMZI_IO_FROM_VERSION, versionChange.from().version());
+            annotations.put(ANNO_STRIMZI_IO_TO_VERSION, versionChange.to().version());
 
             // update the annotations, image and environment
             StatefulSet newSts = new StatefulSetBuilder(sts)
@@ -1242,11 +1233,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             log.info("{}: Downgrade: Patch + rolling update of {}: Pod {}", reconciliation, stsName, pod.getMetadata().getName());
                             return singletonList("Downgrade phase 1 of " + phases + ": Patch + rolling update of " + name + ": Pod " + pod.getMetadata().getName());
                         };
-                        return maybeRollKafka(sts, fn).map(resultSts);
+                        return maybeRollKafka(sts, fn)
+                                .map(resultSts);
                     })
-                    .compose(ss2 -> {
+                    .compose(ss -> {
                         log.info("{}: {}, phase 1 of {} completed", reconciliation, versionChange, phases);
-                        return Future.succeededFuture(ss2);
+                        return Future.succeededFuture(ss);
                     });
         }
 
@@ -1255,17 +1247,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 namespace, KafkaResources.clusterCaCertificateSecretName(name)).compose(secret -> {
                     if (secret == null) {
                         return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaCertSecretName(name)));
-                    } else {
-                        return Future.succeededFuture(secret);
                     }
+                    return Future.succeededFuture(secret);
                 });
             Future<Secret> coKeySecretFuture = secretOperations.getAsync(
                 namespace, ClusterOperator.secretName(name)).compose(secret -> {
                     if (secret == null) {
                         return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
-                    } else {
-                        return Future.succeededFuture(secret);
                     }
+                    return Future.succeededFuture(secret);
                 });
             return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture);
         }
@@ -1369,9 +1359,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         if (zkCluster.getLogging() instanceof  ExternalLogging) {
                             return configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName());
-                        } else {
-                            return Future.succeededFuture(null);
                         }
+                        return Future.succeededFuture(null);
                     }).compose(cm -> {
                         ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(cm);
                         this.zkMetricsAndLogsConfigMap = zkCluster.generateConfigurationConfigMap(logAndMetricsConfigMap);
@@ -1527,87 +1516,76 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkScalingUp() {
             int desired = zkCluster.getReplicas();
 
-            if (zkCurrentReplicas != null
-                    && zkCurrentReplicas < desired) {
-                log.info("{}: Scaling Zookeeper up from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
-
-                return zkScaler(zkCurrentReplicas)
-                        .compose(zkScaler -> {
-                            Promise<ReconciliationState> scalingPromise = Promise.promise();
-
-                            zkScalingUpByOne(zkScaler, zkCurrentReplicas, desired)
-                                    .onComplete(res -> {
-                                        zkScaler.close();
-
-                                        if (res.succeeded())    {
-                                            scalingPromise.complete(res.result());
-                                        } else {
-                                            log.warn("{}: Failed to scale Zookeeper", reconciliation, res.cause());
-                                            scalingPromise.fail(res.cause());
-                                        }
-                                    });
-
-                            return scalingPromise.future();
-                        });
-            } else {
+            if (zkCurrentReplicas == null
+                    || zkCurrentReplicas >= desired) {
                 // No scaling up => do nothing
                 return Future.succeededFuture(this);
             }
+            log.info("{}: Scaling Zookeeper up from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
+
+            return zkScaler(zkCurrentReplicas)
+                    .compose(zkScaler ->
+                            zkScalingUpByOne(zkScaler, zkCurrentReplicas, desired)
+                                .compose(rs -> {
+                                    zkScaler.close();
+
+                                    return Future.succeededFuture(rs);
+                                },
+                                    error -> {
+                                        zkScaler.close();
+
+                                        log.warn("{}: Failed to scale Zookeeper", reconciliation, error.getCause());
+                                        return Future.failedFuture(error);
+                                    }));
         }
 
         Future<ReconciliationState> zkScalingUpByOne(ZookeeperScaler zkScaler, int current, int desired) {
-            if (current < desired) {
-                return zkSetOperations.scaleUp(namespace, zkCluster.getName(), current + 1)
-                        .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
-                        .compose(ignore -> zkScaler.scale(current + 1))
-                        .compose(ignore -> zkScalingUpByOne(zkScaler, current + 1, desired));
-            } else {
+            if (current >= desired) {
                 return Future.succeededFuture(this);
             }
+            return zkSetOperations.scaleUp(namespace, zkCluster.getName(), current + 1)
+                    .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
+                    .compose(ignore -> zkScaler.scale(current + 1))
+                    .compose(ignore -> zkScalingUpByOne(zkScaler, current + 1, desired));
         }
 
         Future<ReconciliationState> zkScalingDown() {
             int desired = zkCluster.getReplicas();
 
-            if (zkCurrentReplicas != null
-                    && zkCurrentReplicas > desired) {
-                // With scaling
-                log.info("{}: Scaling Zookeeper down from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
-
-                // No need to check for pod readiness since we run right after the readiness check
-                return zkScaler(desired)
-                        .compose(zkScaler -> {
-                            Promise<ReconciliationState> scalingPromise = Promise.promise();
-
-                            zkScalingDownByOne(zkScaler, zkCurrentReplicas, desired)
-                                    .onComplete(res -> {
-                                        zkScaler.close();
-
-                                        if (res.succeeded())    {
-                                            scalingPromise.complete(res.result());
-                                        } else {
-                                            log.warn("{}: Failed to scale Zookeeper", reconciliation, res.cause());
-                                            scalingPromise.fail(res.cause());
-                                        }
-                                    });
-
-                            return scalingPromise.future();
-                        });
-            } else {
+            if (zkCurrentReplicas == null
+                    || zkCurrentReplicas <= desired) {
                 // No scaling down => do nothing
                 return Future.succeededFuture(this);
             }
+            // With scaling
+            log.info("{}: Scaling Zookeeper down from {} to {} replicas", reconciliation, zkCurrentReplicas, desired);
+
+            // No need to check for pod readiness since we run right after the readiness check
+            return zkScaler(desired)
+                    .compose(zkScaler ->
+                        zkScalingDownByOne(zkScaler, zkCurrentReplicas, desired)
+                                .compose(rs -> {
+                                    zkScaler.close();
+
+                                    return Future.succeededFuture(rs);
+                                },
+                                    error -> {
+                                        zkScaler.close();
+
+                                        log.warn("{}: Failed to scale Zookeeper", reconciliation, error.getCause());
+                                        return Future.failedFuture(error);
+                                    }));
         }
 
         Future<ReconciliationState> zkScalingDownByOne(ZookeeperScaler zkScaler, int current, int desired) {
-            if (current > desired) {
-                return podsReady(zkCluster, current - 1)
-                        .compose(ignore -> zkScaler.scale(current - 1))
-                        .compose(ignore -> zkSetOperations.scaleDown(namespace, zkCluster.getName(), current - 1))
-                        .compose(ignore -> zkScalingDownByOne(zkScaler, current - 1, desired));
-            } else {
+            if (current <= desired) {
                 return Future.succeededFuture(this);
+
             }
+            return podsReady(zkCluster, current - 1)
+                    .compose(ignore -> zkScaler.scale(current - 1))
+                    .compose(ignore -> zkSetOperations.scaleDown(namespace, zkCluster.getName(), current - 1))
+                    .compose(ignore -> zkScalingDownByOne(zkScaler, current - 1, desired));
         }
 
 
@@ -1618,22 +1596,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // No need to check for pod readiness since we run right after the readiness check
             return zkScaler(zkCluster.getReplicas())
-                    .compose(zkScaler -> {
-                        Promise<ReconciliationState> scalingPromise = Promise.promise();
-
-                        zkScaler.scale(zkCluster.getReplicas()).onComplete(res -> {
+                    .compose(zkScaler ->
+                        zkScaler.scale(zkCluster.getReplicas()).compose(v -> {
                             zkScaler.close();
 
-                            if (res.succeeded())    {
-                                scalingPromise.complete(this);
-                            } else {
-                                log.warn("{}: Failed to verify Zookeeper configuration", res.cause());
-                                scalingPromise.fail(res.cause());
-                            }
-                        });
+                            return Future.succeededFuture();
+                        },
+                            error -> {
+                                zkScaler.close();
 
-                        return scalingPromise.future();
-                    });
+                                log.warn("{}: Failed to verify Zookeeper configuration", error);
+                                return Future.failedFuture(error);
+                            }))
+                    .map(this);
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness() {
@@ -1676,26 +1651,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
             ClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
-            Future<ReconcileResult<ClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
-                    KafkaCluster.initContainerClusterRoleBindingName(namespace, name), desired);
 
-            Promise replacementPromise = Promise.promise();
-
-            fut.onComplete(res -> {
-                if (res.failed()) {
-                    if (desired == null && res.cause() != null && res.cause().getMessage() != null &&
-                            res.cause().getMessage().contains("Message: Forbidden!")) {
-                        log.debug("Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.");
-                        replacementPromise.complete();
-                    } else {
-                        replacementPromise.fail(res.cause());
-                    }
-                } else {
-                    replacementPromise.complete();
-                }
-            });
-
-            return withVoid(replacementPromise.future());
+            return clusterRoleBindingOperations.reconcile(KafkaCluster.initContainerClusterRoleBindingName(namespace, name), desired)
+                .compose(
+                    res -> Future.succeededFuture(),
+                    error -> {
+                        if (desired == null &&
+                                error.getMessage() != null &&
+                                error.getMessage().contains("Message: Forbidden!")) {
+                            log.debug("Ignoring forbidden access to ClusterRoleBindings which are not needed while Kafka rack awareness is disabled.");
+                            return Future.succeededFuture();
+                        }
+                        return Future.failedFuture(error);
+                    })
+                .map(this);
         }
 
         Future<ReconciliationState> kafkaScaleDown() {
@@ -1703,12 +1672,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaService() {
-            Future<ReconcileResult<Service>> serviceFuture = serviceOperations.reconcile(namespace, kafkaCluster.getServiceName(), kafkaService);
-
-            return withVoid(serviceFuture.map(res -> {
-                setPlainAndTlsListenerStatus();
-                return res;
-            }));
+            return serviceOperations.reconcile(namespace, kafkaCluster.getServiceName(), kafkaService)
+                    // Set listeners prior to completing the future
+                    .compose(rs -> {
+                        setPlainAndTlsListenerStatus();
+                        return Future.succeededFuture();
+                    })
+                    .map(this);
         }
 
         Future<ReconciliationState> kafkaHeadlessService() {
@@ -1733,14 +1703,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaBootstrapRoute() {
             Route route = kafkaCluster.generateExternalBootstrapRoute();
 
-            if (pfa.hasRoutes()) {
-                return withVoid(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route));
-            } else if (route != null) {
-                log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);
-                return withVoid(Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + name + " using routes is not possible."));
+            if (!pfa.hasRoutes()) {
+                if (route != null) {
+                    log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);
+                    return withVoid(Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + name + " using routes is not possible."));
+                }
+                return withVoid(Future.succeededFuture());
             }
 
-            return withVoid(Future.succeededFuture());
+            return withVoid(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route));
         }
 
         Future<ReconciliationState> kafkaReplicaRoutes() {
@@ -1762,51 +1733,51 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaBootstrapIngress() {
-            if (kafkaCluster.isExposedWithIngress()) {
-                Ingress ingress = kafkaCluster.generateExternalBootstrapIngress();
-
-                if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null) {
-                    log.debug("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-                    this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-                }
-
-                this.kafkaExternalBootstrapDnsName.add(ingress.getSpec().getRules().get(0).getHost());
-
-                return withVoid(ingressOperations.reconcile(namespace, KafkaCluster.serviceName(name), ingress));
-            } else {
+            if (!kafkaCluster.isExposedWithIngress()) {
                 return withVoid(Future.succeededFuture());
             }
+
+            Ingress ingress = kafkaCluster.generateExternalBootstrapIngress();
+
+            if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null) {
+                log.debug("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+                this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+            }
+
+            this.kafkaExternalBootstrapDnsName.add(ingress.getSpec().getRules().get(0).getHost());
+
+            return withVoid(ingressOperations.reconcile(namespace, KafkaCluster.serviceName(name), ingress));
         }
 
         Future<ReconciliationState> kafkaReplicaIngress() {
-            if (kafkaCluster.isExposedWithIngress()) {
-                int replicas = kafkaCluster.getReplicas();
-                List<Future> routeFutures = new ArrayList<>(replicas);
-
-                for (int i = 0; i < replicas; i++) {
-                    Ingress ingress = kafkaCluster.generateExternalIngress(i);
-
-                    Set<String> dnsNames = new HashSet<>();
-
-                    String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
-                    if (dnsOverride != null)    {
-                        dnsNames.add(dnsOverride);
-                    }
-
-                    String host = ingress.getSpec().getRules().get(0).getHost();
-                    dnsNames.add(host);
-
-                    this.kafkaExternalDnsNames.put(i, dnsNames);
-                    this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(i, host));
-                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(i, "443"));
-
-                    routeFutures.add(ingressOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), ingress));
-                }
-
-                return withVoid(CompositeFuture.join(routeFutures));
-            } else {
+            if (!kafkaCluster.isExposedWithIngress()) {
                 return withVoid(Future.succeededFuture());
             }
+
+            int replicas = kafkaCluster.getReplicas();
+            List<Future> routeFutures = new ArrayList<>(replicas);
+
+            for (int i = 0; i < replicas; i++) {
+                Ingress ingress = kafkaCluster.generateExternalIngress(i);
+
+                Set<String> dnsNames = new HashSet<>();
+
+                String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
+                if (dnsOverride != null)    {
+                    dnsNames.add(dnsOverride);
+                }
+
+                String host = ingress.getSpec().getRules().get(0).getHost();
+                dnsNames.add(host);
+
+                this.kafkaExternalDnsNames.put(i, dnsNames);
+                this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(i, host));
+                this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(i, "443"));
+
+                routeFutures.add(ingressOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), ingress));
+            }
+
+            return withVoid(CompositeFuture.join(routeFutures));
         }
 
         Future<ReconciliationState> kafkaExternalBootstrapServiceReady() {
@@ -1824,50 +1795,50 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     String serviceName = KafkaCluster.externalBootstrapServiceName(name);
-                    Future<Void> address = null;
 
+                    final Future<Void> address;
                     if (kafkaCluster.isExposedWithNodePort()) {
                         address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
                     } else {
                         address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
                     }
 
-                    address.onComplete(res -> {
-                        if (res.succeeded()) {
-                            if (kafkaCluster.isExposedWithLoadBalancer()) {
-                                String bootstrapAddress = null;
+                    address.compose(v -> {
+                        if (kafkaCluster.isExposedWithLoadBalancer()) {
+                            final String bootstrapAddress;
 
-                                if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                                    bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
-                                } else {
-                                    bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
-                                }
-
-                                if (log.isTraceEnabled()) {
-                                    log.trace("{}: Found address {} for Service {}", reconciliation, bootstrapAddress, serviceName);
-                                }
-
-                                this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
-
-                                setExternalListenerStatus(new ListenerAddressBuilder()
-                                        .withHost(bootstrapAddress)
-                                        .withPort(kafkaCluster.getLoadbalancerPort())
-                                        .build());
-                            } else if (kafkaCluster.isExposedWithNodePort()) {
-                                ServiceSpec sts = serviceOperations.get(namespace, serviceName).getSpec();
-                                externalBootstrapNodePort = sts.getPorts().get(0).getNodePort();
+                            if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
+                                bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                            } else {
+                                bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
                             }
-                            future.complete();
-                        } else {
+
+                            if (log.isTraceEnabled()) {
+                                log.trace("{}: Found address {} for Service {}", reconciliation, bootstrapAddress, serviceName);
+                            }
+
+                            this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
+
+                            setExternalListenerStatus(new ListenerAddressBuilder()
+                                    .withHost(bootstrapAddress)
+                                    .withPort(kafkaCluster.getLoadbalancerPort())
+                                    .build());
+                        } else if (kafkaCluster.isExposedWithNodePort()) {
+                            ServiceSpec sts = serviceOperations.get(namespace, serviceName).getSpec();
+                            externalBootstrapNodePort = sts.getPorts().get(0).getNodePort();
+                        }
+                        future.complete();
+                        return Future.succeededFuture();
+                    },
+                        error -> {
                             if (kafkaCluster.isExposedWithNodePort()) {
                                 log.warn("{}: Node port was not assigned for Service {}.", reconciliation, serviceName);
-                                future.fail("Node port was not assigned for Service " + serviceName + ".");
-                            } else {
-                                log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
-                                future.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
+                                return Future.failedFuture("Node port was not assigned for Service " + serviceName + ".");
                             }
-                        }
-                    });
+                            log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
+                            return Future.failedFuture("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
+                        })
+                        .map(future);
                 }, res -> {
                     if (res.succeeded()) {
                         blockingPromise.complete();
@@ -1882,57 +1853,61 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaNodePortExternalListenerStatus() {
             List<Node> nodes = new ArrayList<>();
 
-            if (kafkaCluster.isExposedWithNodePort())   {
-                return nodeOperator.listAsync(Labels.EMPTY)
-                        .compose(result -> {
-                            nodes.addAll(result);
-                            return podOperations.listAsync(namespace, kafkaCluster.getSelectorLabels());
-                        })
-                        .map(pods -> {
-                            Set<ListenerAddress> statusAddresses = new HashSet<>();
+            if (!kafkaCluster.isExposedWithNodePort()) {
+                return Future.succeededFuture(this);
+            }
 
-                            for (Pod broker : pods) {
-                                String podName = broker.getMetadata().getName();
-                                Integer podIndex = getPodIndexFromPodName(podName);
+            return nodeOperator.listAsync(Labels.EMPTY)
+                    .compose(listedNodes -> {
+                        nodes.addAll(listedNodes);
+                        return podOperations.listAsync(namespace, kafkaCluster.getSelectorLabels());
+                    })
+                    .map(pods -> {
+                        Set<ListenerAddress> statusAddresses = new HashSet<>();
 
-                                if (kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex) != null)    {
+                        for (Pod broker : pods) {
+                            String podName = broker.getMetadata().getName();
+                            Integer podIndex = getPodIndexFromPodName(podName);
+
+                            if (kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex) != null)    {
+                                ListenerAddress address = new ListenerAddressBuilder()
+                                        .withHost(kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex))
+                                        .withPort(externalBootstrapNodePort)
+                                        .build();
+
+                                statusAddresses.add(address);
+                            } else if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
+                                String hostIP = broker.getStatus().getHostIP();
+                                Node podNode = nodes.stream()
+                                    .filter(node -> {
+                                        if (node.getStatus() != null && node.getStatus().getAddresses() != null)    {
+                                            return null != node.getStatus()
+                                                    .getAddresses()
+                                                    .stream().filter(address -> hostIP.equals(address.getAddress())).findFirst()
+                                                    .orElse(null);
+                                        }
+                                        return false;
+                                    }).findFirst()
+                                    .orElse(null);
+
+                                if (podNode != null) {
                                     ListenerAddress address = new ListenerAddressBuilder()
-                                            .withHost(kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex))
+                                            .withHost(NodeUtils.findAddress(podNode.getStatus().getAddresses(), kafkaCluster.getPreferredNodeAddressType()))
                                             .withPort(externalBootstrapNodePort)
                                             .build();
 
                                     statusAddresses.add(address);
-                                } else if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
-                                    String hostIP = broker.getStatus().getHostIP();
-                                    Node podNode = nodes.stream().filter(node -> {
-                                        if (node.getStatus() != null && node.getStatus().getAddresses() != null)    {
-                                            return null != node.getStatus().getAddresses().stream().filter(address -> hostIP.equals(address.getAddress())).findFirst().orElse(null);
-                                        } else {
-                                            return false;
-                                        }
-                                    }).findFirst().orElse(null);
-
-                                    if (podNode != null) {
-                                        ListenerAddress address = new ListenerAddressBuilder()
-                                                .withHost(NodeUtils.findAddress(podNode.getStatus().getAddresses(), kafkaCluster.getPreferredNodeAddressType()))
-                                                .withPort(externalBootstrapNodePort)
-                                                .build();
-
-                                        statusAddresses.add(address);
-                                    }
-
-                                } else {
-                                    continue;
                                 }
+
+                            } else {
+                                continue;
                             }
+                        }
 
-                            setExternalListenerStatus(statusAddresses.toArray(new ListenerAddress[statusAddresses.size()]));
+                        setExternalListenerStatus(statusAddresses.toArray(new ListenerAddress[statusAddresses.size()]));
 
-                            return this;
-                        });
-            } else {
-                return Future.succeededFuture(this);
-            }
+                        return this;
+                    });
         }
 
         Future<ReconciliationState> kafkaReplicaServicesReady() {
@@ -1949,9 +1924,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     for (int i = 0; i < replicas; i++) {
                         String serviceName = KafkaCluster.externalServiceName(name, i);
-                        Promise servicePromise = Promise.promise();
 
-                        Future<Void> address = null;
+                        final Future<Void> address;
                         Set<String> dnsNames = new HashSet<>();
 
                         String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
@@ -1967,66 +1941,64 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         int podNumber = i;
 
-                        address.onComplete(res -> {
-                            if (res.succeeded()) {
-                                if (kafkaCluster.isExposedWithLoadBalancer()) {
-                                    // Get the advertised URL
-                                    String serviceAddress = null;
+                        Future<Void> serviceFuture = address.compose(v -> {
+                            if (kafkaCluster.isExposedWithLoadBalancer()) {
+                                // Get the advertised URL
+                                String serviceAddress = null;
 
-                                    if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                                        serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
-                                    } else {
-                                        serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
-                                    }
-
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
-                                    }
-
-                                    this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(podNumber, serviceAddress));
-                                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, "9094"));
-
-                                    // Collect the DNS names for certificates
-                                    for (LoadBalancerIngress ingress : serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress())    {
-                                        if (ingress.getHostname() != null) {
-                                            dnsNames.add(ingress.getHostname());
-                                        } else {
-                                            dnsNames.add(ingress.getIp());
-                                        }
-                                    }
-                                } else if (kafkaCluster.isExposedWithNodePort()) {
-                                    // Get the advertised URL
-                                    String port = serviceOperations.get(namespace, serviceName).getSpec().getPorts()
-                                        .get(0).getNodePort().toString();
-
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("{}: Found port {} for Service {}", reconciliation, port, serviceName);
-                                    }
-
-                                    // For node ports, when the override is not set, we don't pass any advertised hostname
-                                    String advertisedHostname = kafkaCluster.getExternalAdvertisedHostname(podNumber, null);
-                                    if (advertisedHostname != null) {
-                                        this.kafkaExternalAdvertisedHostnames.add(advertisedHostname);
-                                    }
-
-                                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, port));
+                                if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
+                                    serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                } else {
+                                    serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
                                 }
 
-                                this.kafkaExternalDnsNames.put(podNumber, dnsNames);
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
+                                }
 
-                                servicePromise.complete();
-                            } else {
+                                this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(podNumber, serviceAddress));
+                                this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, "9094"));
+
+                                // Collect the DNS names for certificates
+                                for (LoadBalancerIngress ingress : serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress())    {
+                                    if (ingress.getHostname() != null) {
+                                        dnsNames.add(ingress.getHostname());
+                                    } else {
+                                        dnsNames.add(ingress.getIp());
+                                    }
+                                }
+                            } else if (kafkaCluster.isExposedWithNodePort()) {
+                                // Get the advertised URL
+                                String port = serviceOperations.get(namespace, serviceName).getSpec().getPorts()
+                                    .get(0).getNodePort().toString();
+
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{}: Found port {} for Service {}", reconciliation, port, serviceName);
+                                }
+
+                                // For node ports, when the override is not set, we don't pass any advertised hostname
+                                String advertisedHostname = kafkaCluster.getExternalAdvertisedHostname(podNumber, null);
+                                if (advertisedHostname != null) {
+                                    this.kafkaExternalAdvertisedHostnames.add(advertisedHostname);
+                                }
+
+                                this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, port));
+                            }
+
+                            this.kafkaExternalDnsNames.put(podNumber, dnsNames);
+
+                            return Future.succeededFuture();
+                        },
+                            error -> {
                                 if (kafkaCluster.isExposedWithNodePort()) {
                                     log.warn("{}: Node port was not assigned for Service {}.", reconciliation, serviceName);
-                                    servicePromise.fail("Node port was not assigned for Service " + serviceName + ".");
-                                } else {
-                                    log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
-                                    servicePromise.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
+                                    return Future.failedFuture("Node port was not assigned for Service " + serviceName + ".");
                                 }
-                            }
-                        });
+                                log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
+                                return Future.failedFuture("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
+                            });
 
-                        serviceFutures.add(servicePromise.future());
+                        serviceFutures.add(serviceFuture);
                     }
 
                     CompositeFuture.join(serviceFutures).onComplete(res -> {
@@ -2062,10 +2034,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     String routeName = KafkaCluster.serviceName(name);
-                    Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
 
-                    address.onComplete(res -> {
-                        if (res.succeeded()) {
+                    routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs)
+                        .compose(v -> {
                             String bootstrapAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
                             this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
 
@@ -2078,12 +2049,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 log.trace("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, routeName);
                             }
 
-                            future.complete();
-                        } else {
-                            log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
-                            future.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
-                        }
-                    });
+                            return Future.succeededFuture();
+                        },
+                            error -> {
+                                log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
+                                return Future.failedFuture("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
+                            });
                 }, res -> {
                     if (res.succeeded()) {
                         blockingPromise.complete();
