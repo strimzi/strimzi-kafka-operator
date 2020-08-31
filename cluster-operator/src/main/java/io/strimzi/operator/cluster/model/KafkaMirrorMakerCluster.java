@@ -315,11 +315,11 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .withCommand("/opt/kafka/kafka_mirror_maker_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ProbeGenerator.of(livenessProbeOptions).defaultBuilder()
+                .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
                         .withNewExec()
                             .withCommand("/opt/kafka/kafka_mirror_maker_liveness.sh")
                         .endExec().build())
-                .withReadinessProbe(ProbeGenerator.of(readinessProbeOptions).defaultBuilder()
+                .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
                         .withNewExec()
                             // The mirror-maker-agent will create /tmp/mirror-maker-ready in the container
                             .withCommand("test", "-f", "/tmp/mirror-maker-ready")

@@ -1708,11 +1708,11 @@ public class KafkaCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ProbeGenerator.of(livenessProbeOptions).defaultBuilder()
+                .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
                         .withNewExec()
                             .withCommand("/opt/kafka/kafka_liveness.sh")
                         .endExec().build())
-                .withReadinessProbe(ProbeGenerator.of(readinessProbeOptions).defaultBuilder()
+                .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
                         .withNewExec()
                             // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
                             .withCommand("test", "-f", "/var/opt/kafka/kafka-ready")
