@@ -216,12 +216,12 @@ public class EntityUserOperatorTest {
         assertThat(container.getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
         assertThat(container.getImage(), is(entityUserOperator.getImage()));
         checkEnvVars(getExpectedEnvVars(), container.getEnv());
-        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(livenessProbe.getInitialDelaySeconds())));
-        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(new Integer(livenessProbe.getTimeoutSeconds())));
-        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(readinessProbe.getInitialDelaySeconds())));
-        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(new Integer(readinessProbe.getTimeoutSeconds())));
+        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(livenessProbe.getInitialDelaySeconds())));
+        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(livenessProbe.getTimeoutSeconds())));
+        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(readinessProbe.getInitialDelaySeconds())));
+        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(readinessProbe.getTimeoutSeconds())));
         assertThat(container.getPorts().size(), is(1));
-        assertThat(container.getPorts().get(0).getContainerPort(), is(new Integer(EntityUserOperator.HEALTHCHECK_PORT)));
+        assertThat(container.getPorts().get(0).getContainerPort(), is(Integer.valueOf(EntityUserOperator.HEALTHCHECK_PORT)));
         assertThat(container.getPorts().get(0).getName(), is(EntityUserOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(container.getVolumeMounts().get(0).getMountPath(), is("/opt/user-operator/custom-config/"));
