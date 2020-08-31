@@ -79,15 +79,6 @@ public class ResourceManager {
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
 
-    private static ResourceManager instance;
-
-    public static synchronized ResourceManager getInstance() {
-        if (instance == null) {
-            instance = new ResourceManager();
-        }
-        return instance;
-    }
-
     private ResourceManager() {}
 
     public static KubeClient kubeClient() {
