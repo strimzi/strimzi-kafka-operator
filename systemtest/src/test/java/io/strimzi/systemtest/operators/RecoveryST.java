@@ -11,6 +11,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
@@ -61,6 +62,7 @@ class RecoveryST extends AbstractST {
         String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
         kubeClient().deleteStatefulSet(kafkaStatefulSetName);
+        PodUtils.waitForPodsWithPrefixDeletion(kafkaStatefulSetName);
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
@@ -80,6 +82,7 @@ class RecoveryST extends AbstractST {
         String zookeeperStatefulSetUid = kubeClient().getStatefulSetUid(zookeeperStatefulSetName);
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
         kubeClient().deleteStatefulSet(zookeeperStatefulSetName);
+        PodUtils.waitForPodsWithPrefixDeletion(zookeeperStatefulSetName);
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
