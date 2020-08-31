@@ -85,7 +85,6 @@ public abstract class KafkaClientsResource {
         this.consumerGroup = consumerGroup;
     }
 
-    // TODO: some-how move to internal clients... =>>> create issue ....
     public static DoneableDeployment deployKafkaClients(String kafkaClusterName) {
         return deployKafkaClients(false, kafkaClusterName, null);
     }
@@ -263,59 +262,5 @@ public abstract class KafkaClientsResource {
                 "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
                 "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
                 "password=\"" + password + "\";\n";
-    }
-
-    //  TODO: move this to keycloak utils.. (removed it)
-    public static DoneableDeployment deployKeycloak() {
-        String keycloakName = "keycloak";
-
-        Map<String, String> keycloakLabels = new HashMap<>();
-        keycloakLabels.put("app", keycloakName);
-
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withLabels(keycloakLabels)
-                .withName(keycloakName)
-            .endMetadata()
-            .withNewSpec()
-                .withNewSelector()
-                    .withMatchLabels(keycloakLabels)
-                .endSelector()
-                .withReplicas(1)
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(keycloakLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers()
-                        .addNewContainer()
-                            .withName(keycloakName + "pod")
-                            .withImage("jboss/keycloak:8.0.1")
-                            .withPorts(
-                                new ContainerPortBuilder()
-                                    .withName("http")
-                                    .withContainerPort(8080)
-                                    .build(),
-                                new ContainerPortBuilder()
-                                    .withName("https")
-                                    .withContainerPort(8443)
-                                    .build()
-                            )
-                            .addNewEnv()
-                                .withName("KEYCLOAK_USER")
-                                .withValue("admin")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("KEYCLOAK_PASSWORD")
-                                .withValue("admin")
-                            .endEnv()
-                            // for enabling importing authorization script
-                            .withArgs("-Dkeycloak.profile.feature.upload_scripts=enabled")
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
     }
 }

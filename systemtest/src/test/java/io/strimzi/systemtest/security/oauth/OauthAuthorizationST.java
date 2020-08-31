@@ -116,13 +116,13 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJob(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
-        // TODO Comment
+        // team A client shouldn't be able to consume messages with wrong consumer group
         teamAOauthClientJob = new KafkaOauthClientsResource(teamAOauthClientJob, TOPIC_A, "bad_consumer_group");
         teamAOauthClientJob.consumerStrimziOauthTls(CLUSTER_NAME).done();
         assertThrows(WaitException.class, () -> ClientUtils.waitForClientFailure(TEAM_A_CONSUMER_NAME, NAMESPACE, 30_000));
         JobUtils.deleteJob(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
-        // TODO Comment
+        // team A client should be able to consume messages with correct consumer group
         teamAOauthClientJob = new KafkaOauthClientsResource(teamAOauthClientJob, TOPIC_A, "a-correct_consumer_group");
         teamAOauthClientJob.producerStrimziOauthTls(CLUSTER_NAME).done();
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
@@ -158,7 +158,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
         teamAOauthClientJob.producerStrimziOauthTls(CLUSTER_NAME).done();
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        // TODO comment
         teamBOauthClientJob = new KafkaOauthClientsResource(teamBOauthClientJob, topicName, "x-consumer_group_b");
         teamBOauthClientJob.consumerStrimziOauthTls(CLUSTER_NAME).done();
         ClientUtils.waitForClientSuccess(TEAM_B_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
