@@ -4,8 +4,7 @@
  */
 package io.strimzi.systemtest.connect;
 
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -52,10 +51,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -969,6 +965,47 @@ class ConnectST extends AbstractST {
             JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(pod, CLUSTER_NAME));
             assertThat(Integer.parseInt(json.getJsonObject("config").getString("tasks.max")), is(scaleTo));
         }
+    }
+
+    @Test
+    void testMountingSecretsAsVolumesForConnectorConfig() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("config.providers", "file");
+        config.put("config.providers.file.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
+
+        String dbLogin = "dbUsername: my-user \n" +
+                         "dbPassword: my-password";
+
+        Map<String, String> connectorProps = new HashMap<>();
+        connectorProps.put("connector.properties", Base64.getEncoder().encodeToString(dbLogin.getBytes()));
+
+        Secret connectSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName("my-secret")
+            .endMetadata()
+            .withType("Opaque")
+            .addToData(connectorProps)
+            .build();
+
+        kubeClient().createSecret(connectSecret);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .editSpec()
+                .addToConfig(config)
+                .withNewExternalConfiguration()
+                    .addNewVolume()
+                        .withNewName("connector-config")
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret").build())
+                    .endVolume()
+                .endExternalConfiguration()
+            .endSpec()
+            .done();
+        LOGGER.info("kk");
     }
 
     @BeforeAll
