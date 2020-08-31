@@ -3,6 +3,7 @@
 oc_installed=false
 kubectl_installed=false
 platform="kubectl"
+secrets="all"
 
 oc &>/dev/null
 
@@ -25,7 +26,7 @@ fi
 
 
 usage() {
-	echo "Usage: $0 --namespace=<string> --cluster=<string>" 1>&2;
+	echo "Usage: $0 --namespace=<string> --cluster=<string> --secrets=(off|hidden|all)" 1>&2;
 	exit 1; 
 }
 
@@ -40,6 +41,9 @@ while getopts "$optspec" optchar; do
                 namespace=*)
                     namespace=${OPTARG#*=}
                     ;;
+                secrets=*)
+                    secrets=${OPTARG#*=}
+                    ;;
                 *)
                     usage
                     ;;
@@ -51,6 +55,18 @@ shift $((OPTIND-1))
 if [ -z $cluster ] && [ -z $namespace ]; then
    echo "--cluster and --namespace are mandatory options."
    usage
+fi
+
+if [ -z $secrets ]; then
+  secrets="all"
+fi
+
+if [ "$secrets" != "all" ] && [ "$secrets" != "off" ] && [ "$secrets" != "hidden" ]; then
+  echo "Unknown secrets verbosity level. Use one of 'off', 'hidden' or 'all'."
+  echo " 'all' - secret keys and data values are reported"
+  echo " 'hidden' - secrets with only data keys"
+  echo " 'off' - secrets are not reported"
+  usage
 fi
 
 if [ -z $cluster ]; then
@@ -80,6 +96,40 @@ resources_to_fetch=(
 	"persistentvolumeclaims"
 	)
 
+if [ "$secrets" = "off" ]; then
+  resources_to_fetch=( "${resources_to_fetch[@]/secrets}" )
+fi
+
+get_masked_secrets() {
+	mkdir -p $direct/reports/"$1"
+	resources=$($platform get $1 -l strimzi.io/cluster=$cluster -o name -n $namespace)
+	for line in $resources; do
+		filename=`echo $line | cut -f 2 -d "/"`
+		echo "   "$line
+		original_data=`oc get $line -o=jsonpath='{.data}' | cut -c5-`
+		SAVEIFS=$IFS
+    IFS=$'\n'
+    original_data=($original_data)
+    IFS=$SAVEIFS
+
+		data_entries=()
+		for data in $original_data; do
+		  entry=`printf "${data}" | sed 's/\(\s*.*\s*\):\s*.*/\1/g'`
+      data_entries+=( "$entry" )
+		done;
+
+    secret=`$platform get $line -o yaml -n $namespace`
+
+		for data_key in "${data_entries[@]}"; do
+		   secret=`printf "$secret" | sed "s/\s*$data_key\s*:\s*.*/  $data_key: *****/"`
+		done;
+
+		printf "$secret" | sed 's/^\(\s*password\s*:\s*\).*\n/\1*****/' \
+		| sed 's/^\(\s*.*\.key\s*:\s*\).*/\1*****/' > $direct/reports/$1/"$filename".yaml
+	done;
+
+}
+
 nonnamespaced_resources_to_fetch=(
 	"clusterroles"
 	"clusterrolebindings"
@@ -98,7 +148,13 @@ get_namespaced_yamls() {
 }
 
 for res in "${resources_to_fetch[@]}"; do
-	get_namespaced_yamls "$res"
+  if [ "$res" = "secrets" ] && [ "$secrets" = "hidden" ]; then
+    get_masked_secrets "secrets"
+  else
+    if [ ! -z "$res" ]; then
+	    get_namespaced_yamls "$res"
+    fi
+	fi
 done;
 
 get_nonnamespaced_yamls() {
