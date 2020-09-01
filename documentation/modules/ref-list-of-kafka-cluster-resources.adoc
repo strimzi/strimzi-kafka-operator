@@ -68,7 +68,7 @@ These resources will be created only if Cluster Operator deployed Kafka Exporter
 
 `_cluster-name_-kafka-exporter`:: Deployment with Kafka Exporter.
 `_cluster-name_-kafka-exporter-_random-string_`:: Pod created by the Kafka Exporter Deployment.
-`_cluster-name_-kafka-exporter:: Service used to collect consumer lag metrics.
+`_cluster-name_-kafka-exporter`:: Service used to collect consumer lag metrics.
 `_cluster-name_-kafka-exporter`:: Service account used by the Kafka Exporter.
 
 .Cruise Control
@@ -79,7 +79,7 @@ These resources will be created only if Cluster Operator deployed Cruise Control
 `_cluster-name_-cruise-control-_random-string_`:: Pod created by the Cruise Control Deployment.
 `_cluster-name_-cruise-control-config`:: ConfigMap which contains the Cruise Control ancillary configuration and is mounted as a volume by the Cruise Control pods.
 `_cluster-name_-cruise-control-certs`:: Secret with Cruise Control operators keys for communication with Kafka and ZooKeeper.
-`_cluster-name_-cruise-control:: Service used to communicate with Cruise Control.
+`_cluster-name_-cruise-control`:: Service used to communicate with Cruise Control.
 `_cluster-name_-cruise-control`:: Service account used by the Cruise Control.
 `_cluster-name_-network-policy-cruise-control`:: Network policy managing access to the Cruise Control service.
 
