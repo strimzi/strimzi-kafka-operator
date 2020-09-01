@@ -23,7 +23,7 @@
 
 //log message format version
 :LogMsgVersLower: 2.5
-:LogMsgVersHigher: 2.4
+:LogMsgVersHigher: 2.6
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
