@@ -7,11 +7,11 @@
 
 Prometheus can extract metrics data from Kafka components and the Strimzi Operators.
 
-To use Prometheus to obtain metrics data and provide notifications, Prometheus and the Prometheus Alertmanager plugin must be deployed.
-Kafka resources must also be deployed or redeployed with Prometheus configuration to expose the metrics data.
+To use Prometheus to obtain metrics data and provide alerts, Prometheus and the Prometheus Alertmanager plugin must be deployed.
+Kafka resources must also be deployed or redeployed with metrics configuration to expose the metrics data.
 
 Prometheus scrapes the exposed metrics data for monitoring.
-Alertmanager issues notifications on conditions that indicate potential issues based on pre-defined alerting rules.
+Alertmanager issues alerts when conditions indicate potential problems, based on pre-defined alerting rules. 
 
 Sample metrics and alerting rules configuration files are provided with Strimzi.
 The sample alerting mechanism provided with Strimzi is configured to send notifications to a Slack channel.

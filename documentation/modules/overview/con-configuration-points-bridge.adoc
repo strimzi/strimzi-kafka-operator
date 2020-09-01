@@ -21,7 +21,7 @@ You can define a list of allowed resource origins and HTTP methods for interacti
 CORS allows for _simple_ and _preflighted_ requests between origin sources on different domains.
 
 * A simple request is a HTTP request that must have an allowed origin defined in its header.
-* A preflighted request sends an initial HTTP request before the actual request to check that the origin and the method are allowed.
+* A preflighted request sends an initial OPTIONS HTTP request before the actual request to check that the origin and the method are allowed.
 
 [discrete]
 == Example YAML showing Kafka Bridge configuration
