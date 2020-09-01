@@ -48,6 +48,13 @@ public class DnsNameGenerator {
                 serviceDnsName());
     }
 
+    public static String podDnsName(String namespace, String serviceName, String podName) {
+        return DnsNameGenerator.of(namespace, serviceName)
+                .podDnsName(podName);
+    }
+
+
+
     /**
      * Generates the DNS name of the pod without the cluster domain suffix
      * (i.e. usually without the cluster.local - but can be different on different clusters)
@@ -64,6 +71,11 @@ public class DnsNameGenerator {
                 podName,
                 serviceDnsNameWithoutClusterDomain());
 
+    }
+
+    public static String podDnsNameWithoutClusterDomain(String namespace, String serviceName, String podName) {
+        return DnsNameGenerator.of(namespace, serviceName)
+                .podDnsNameWithoutClusterDomain(podName);
     }
 
     /**
@@ -107,6 +119,8 @@ public class DnsNameGenerator {
                 KUBERNETES_SERVICE_DNS_DOMAIN);
     }
 
+
+
     /**
      * Generates the DNS name of the service without the cluster domain suffix
      * (i.e. usually without the cluster.local - but can be different on different clusters)
@@ -118,5 +132,10 @@ public class DnsNameGenerator {
         return String.format("%s.%s.svc",
                 serviceName,
                 namespace);
+    }
+
+    public static String serviceDnsNameWithoutClusterDomain(String namespace, String serviceName) {
+        return DnsNameGenerator.of(namespace, serviceName)
+                .serviceDnsNameWithoutClusterDomain();
     }
 }

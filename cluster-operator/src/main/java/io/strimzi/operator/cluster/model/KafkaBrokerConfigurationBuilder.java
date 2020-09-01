@@ -161,9 +161,9 @@ public class KafkaBrokerConfigurationBuilder {
         // Replication listener
         listeners.add("REPLICATION-9091://0.0.0.0:9091");
         advertisedListeners.add(String.format("REPLICATION-9091://%s:9091",
-                DnsNameGenerator.of(namespace, KafkaResources.brokersServiceName(clusterName))
-                        // Pod name constructed to be templatable for each individual ordinal
-                        .podDnsNameWithoutClusterDomain(KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
+                // Pod name constructed to be templatable for each individual ordinal
+                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
+                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
         ));
         securityProtocol.add("REPLICATION-9091:SSL");
         configureReplicationListener();
@@ -303,9 +303,9 @@ public class KafkaBrokerConfigurationBuilder {
     private String getAdvertisedListener(String clusterName, String namespace, String listenerName, int port)    {
         return String.format("%s://%s:%d",
                 listenerName,
-                DnsNameGenerator.of(namespace, KafkaResources.brokersServiceName(clusterName))
+                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
                         // Pod name constructed to be templatable for each individual ordinal
-                        .podDnsNameWithoutClusterDomain(KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}"),
+                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}"),
                 port);
     }
 

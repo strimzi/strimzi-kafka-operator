@@ -1515,8 +1515,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         Function<Integer, String> zkNodeAddress = (Integer i) ->
-                                DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(name))
-                                        .podDnsNameWithoutClusterDomain(zkCluster.getPodName(i));
+                                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace,
+                                        KafkaResources.zookeeperHeadlessServiceName(name), zkCluster.getPodName(i));
 
                         ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
@@ -3346,8 +3346,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         String getInternalServiceHostname(String serviceName)    {
-            return DnsNameGenerator.of(namespace, serviceName)
-                    .serviceDnsNameWithoutClusterDomain();
+            return DnsNameGenerator.serviceDnsNameWithoutClusterDomain(namespace, serviceName);
         }
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {

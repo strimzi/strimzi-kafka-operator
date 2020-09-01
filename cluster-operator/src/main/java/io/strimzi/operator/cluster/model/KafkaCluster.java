@@ -302,8 +302,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsName(String namespace, String cluster, String podName) {
-        return DnsNameGenerator.of(namespace, KafkaCluster.headlessServiceName(cluster))
-                .podDnsName(podName);
+        return DnsNameGenerator.podDnsName(namespace, KafkaCluster.headlessServiceName(cluster), podName);
     }
 
     public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, int podId) {
@@ -311,8 +310,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, String podName) {
-        return DnsNameGenerator.of(namespace, KafkaCluster.headlessServiceName(cluster))
-                .podDnsNameWithoutClusterDomain(podName);
+        return DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaCluster.headlessServiceName(cluster), podName);
     }
 
     /**

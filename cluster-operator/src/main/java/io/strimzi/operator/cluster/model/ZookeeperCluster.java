@@ -128,8 +128,10 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              DNS name of the pod
      */
     public static String podDnsName(String namespace, String cluster, int podId) {
-        DnsNameGenerator zkDnsNameGenerator = DnsNameGenerator.of(namespace, ZookeeperCluster.headlessServiceName(cluster));
-        return zkDnsNameGenerator.podDnsName(ZookeeperCluster.zookeeperPodName(cluster, podId));
+        return DnsNameGenerator.podDnsName(
+                namespace,
+                ZookeeperCluster.headlessServiceName(cluster),
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     /**
@@ -144,8 +146,10 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              DNS name of the pod without the cluster domain suffix
      */
     public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        DnsNameGenerator zkDnsNameGenerator = DnsNameGenerator.of(namespace, ZookeeperCluster.headlessServiceName(cluster));
-        return zkDnsNameGenerator.podDnsNameWithoutClusterDomain(ZookeeperCluster.zookeeperPodName(cluster, podId));
+        return DnsNameGenerator.podDnsNameWithoutClusterDomain(
+                namespace,
+                ZookeeperCluster.headlessServiceName(cluster),
+                ZookeeperCluster.zookeeperPodName(cluster, podId));
     }
 
     public static String zookeeperPodName(String cluster, int pod) {
