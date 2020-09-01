@@ -68,8 +68,8 @@ public class HelmResource {
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
         cmdKubeClient().applyContent(helmServiceAccount);
         KubeClusterResource.getInstance().setNamespace(oldNamespace);
-        ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         ResourceManager.getPointerResources().push(HelmResource::deleteClusterOperator);
+        ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
     }
 
@@ -79,5 +79,6 @@ public class HelmResource {
     public static void deleteClusterOperator() {
         ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
+        cmdKubeClient().delete(TestUtils.USER_PATH + "/../install/cluster-operator");
     }
 }
