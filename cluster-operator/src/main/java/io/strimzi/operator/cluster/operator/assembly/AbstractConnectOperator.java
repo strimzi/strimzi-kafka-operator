@@ -52,6 +52,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -93,6 +94,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
     protected final ConfigMapOperator configMapOperations;
+    protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
     protected final ServiceOperator serviceOperations;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     protected final List<LocalObjectReference> imagePullSecrets;
@@ -116,6 +118,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
         this.configMapOperations = supplier.configMapOperations;
+        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
         this.serviceOperations = supplier.serviceOperations;
         this.serviceAccountOperations = supplier.serviceAccountOperations;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;

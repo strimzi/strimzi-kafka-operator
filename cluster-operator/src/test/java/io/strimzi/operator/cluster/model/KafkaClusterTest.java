@@ -2536,7 +2536,7 @@ public class KafkaClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(KafkaCluster.initContainerServiceAccountName(cluster)));
+        assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));
     }
 
     @Test
@@ -2558,7 +2558,7 @@ public class KafkaClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(KafkaCluster.initContainerServiceAccountName(cluster)));
+        assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));
     }
 
     @Test

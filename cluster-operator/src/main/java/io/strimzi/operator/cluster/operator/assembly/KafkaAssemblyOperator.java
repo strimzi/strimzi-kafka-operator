@@ -1670,7 +1670,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaInitServiceAccount() {
             return withVoid(serviceAccountOperations.reconcile(namespace,
-                    KafkaCluster.initContainerServiceAccountName(kafkaCluster.getCluster()),
+                    kafkaCluster.getServiceAccountName(),
                     kafkaCluster.generateServiceAccount()));
         }
 
