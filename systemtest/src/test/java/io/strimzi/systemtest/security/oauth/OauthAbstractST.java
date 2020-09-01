@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.vertx.ext.web.client.WebClient;
@@ -79,7 +80,7 @@ public class OauthAbstractST extends AbstractST {
 
         for (Job job : kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).list().getItems()) {
             LOGGER.info("Deleting {} job", job.getMetadata().getName());
-            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).delete(job);
+            JobUtils.deleteJob(NAMESPACE, job.getMetadata().getName());
         }
     }
 
