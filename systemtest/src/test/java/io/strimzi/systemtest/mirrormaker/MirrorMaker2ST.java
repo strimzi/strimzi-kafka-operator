@@ -689,7 +689,7 @@ class MirrorMaker2ST extends AbstractST {
         // Deploy target kafka
         KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
         // Create topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, originalTopicName).done();
+        KafkaTopicResource.topic(kafkaClusterSourceName, originalTopicName, 3).done();
 
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
@@ -726,10 +726,11 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Checking if the mirrored topic name is same as the original one");
 
-        KafkaTopicList kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list();
-        assertNotNull(
-            kafkaTopicList.getItems().stream().filter(kafkaTopic -> kafkaTopic.getMetadata().getName().equals(originalTopicName)).findFirst()
-        );
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(originalTopicName).get();
+        assertNotNull(kafkaTopic);
+        assertThat(kafkaTopic.getMetadata().getName(), equalTo(originalTopicName));
+        assertThat(kafkaTopic.getSpec().getPartitions(), equalTo(3));
+        assertThat(kafkaTopic.getSpec().getReplicas(), equalTo(1));
     }
 
     @BeforeAll
