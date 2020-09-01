@@ -14,6 +14,7 @@
 * Support dynamically changeable logging configuration of Kafka Connect and Kafka Connect S2I
 * Support dynamically changeable logging configuration of Kafka brokers
 * Support dynamically changeable logging configuration of Kafka MirrorMaker2
+* Updated Jaeger tracing libraries to support the W3C trace context headers
 
 ### Deprecations and removals
 
