@@ -5,23 +5,27 @@
 [id='assembly-metrics-{context}']
 = Introducing Metrics to Kafka
 
-This section describes setup options for monitoring your Strimzi deployment.
+This section describes how to monitor your Strimzi deployment.
 
 Depending on your requirements, you can:
 
 * xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus and Grafana]
 * xref:assembly-kafka-exporter-{context}[Configure the `Kafka` resource to deploy Kafka Exporter with your Kafka cluster]
 
-When you have Prometheus and Grafana enabled, Kafka Exporter provides additional monitoring related to consumer lag.
+Kafka Exporter provides additional monitoring related to consumer lag.
 
-Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^] as described in the _Using Strimzi_ guide.
+Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^], as described in the _Using Strimzi_ guide.
+
+With Prometheus and Grafana set up, you can use the example Grafana dashboards provided by Strimzi for monitoring.
 
 .Additional resources
-* For more information about Prometheus, see the link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation].
-* For more information about Grafana, see the link:https://grafana.com/docs/guides/getting_started/[Grafana documentation].
-* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka.
-* link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache ZooKeeper.
+* link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation]
+* link:https://grafana.com/docs/guides/getting_started/[Grafana documentation]
+* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka
+* link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache ZooKeeper
 
+//Example metrics files
+include::modules/ref_metrics-config-files.adoc[leveloffset=+1]
 //How to set up Prometheus and Grafana
 include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 //How to set up Kafka Exporter

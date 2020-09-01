@@ -32,7 +32,10 @@ On MacOS, use:
 sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 
 . Edit the `PodMonitor` resource in `strimzi-pod-monitor.yaml` to define Prometheus jobs that will scrape the metrics data from pods.
-`PodMonitor` is used to scrape data directly from pods and is used for Apache Kafka, ZooKeeper, Operators, and Kafka Bridge. Update the `namespaceSelector.matchNames` property with the namespace where the pods to scrape the metrics from are running.
+
+Update the `namespaceSelector.matchNames` property with the namespace where the pods to scrape the metrics from are running.
++
+`PodMonitor` is used to scrape data directly from pods for Apache Kafka, ZooKeeper, Operators, the Kafka Bridge and Cruise Control.
 
 . The Grafana dashboards provided show metrics for CPU, memory and disk volume usage, which come directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
 An additional configuration is needed because the Prometheus operator does not have something like `PodMonitor` for scraping metrics directly from nodes.

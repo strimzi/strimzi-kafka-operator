@@ -5,50 +5,62 @@
 
 [id='ref-metrics-config-files-{context}']
 
-= Example Metrics files
+= Example Grafana dashboards
 
-You can find the example metrics configuration files in the `examples/metrics` directory.
+Example Grafana dashboards are provided for monitoring:
+
+* Kafka clusters — Kafka, Kafka ZooKeeper, Kafka Connect and Kafka Mirror Maker 2.0
+* Strimzi Operator information
+* xref:assembly-kafka-bridge-{context}[Kafka Bridge instances]
+* xref:assembly-cruise-control-{context}[Cruise Control data related to rebalancing operations]
+
+All dashboards provide JVM metrics, as well as metrics specific to the component.
+For example, the Grafana dashboard for Strimzi Operators provides information about the Operator such as the number of reconciliations or number of custom resources they are processing.
+
+= Example metrics files
+
+You can find the example Grafana dashboards and other metrics configuration files in the `examples/metrics` directory.
 
 [source]
 --
 metrics
-├── grafana-install
-│   ├── grafana.yaml <1>
-├── grafana-dashboards <2>
-│   ├── strimzi-kafka-connect.json
-│   ├── strimzi-kafka.json
-│   ├── strimzi-zookeeper.json
-│   ├── strimzi-kafka-mirror-maker-2.json
-│   ├── strimzi-operators.json
-│   ├── strimzi-kafka-bridge.json
+├── grafana-dashboards <1>
 │   ├── strimzi-cruise-control.json
-│   └── strimzi-kafka-exporter.json <3>
-├── kafka-connect-metrics.yaml <4>
-├── kafka-metrics.yaml <5>
-├── kafka-mirror-maker-2-metrics.yaml <6>
-├── kafka-bridge-metrics.yaml <7>
-├── kafka-cruise-control-metrics.yaml <8>
+│   ├── strimzi-kafka-bridge.json
+│   ├── strimzi-kafka-connect.json
+│   ├── strimzi-kafka-exporter.json <2>
+│   ├── strimzi-kafka-mirror-maker-2.json
+│   ├── strimzi-kafka.json
+│   ├── strimzi-operators.json
+│   └── strimzi-zookeeper.json
+├── grafana-install
+│   └── grafana.yaml <3>
 ├── prometheus-additional-properties
-│   └── prometheus-additional.yaml <9>
+│   └── prometheus-additional.yaml <4>
 ├── prometheus-alertmanager-config
-│   └── alert-manager-config.yaml <10>
-└── prometheus-install
-    ├── alert-manager.yaml <11>
-    ├── prometheus-rules.yaml <12>
-    ├── prometheus.yaml <13>
-    ├── strimzi-pod-monitor.yaml <14>
+│   └── alert-manager-config.yaml <5>
+├── prometheus-install
+│    ├── alert-manager.yaml <6>
+│    ├── prometheus-rules.yaml <7>
+│    ├── prometheus.yaml <8>
+│    ├── strimzi-pod-monitor.yaml <9>
+├── kafka-bridge-metrics.yaml <10>
+├── kafka-connect-metrics.yaml <11>
+├── kafka-cruise-control-metrics.yaml <12>
+├── kafka-metrics.yaml <13>
+└── kafka-mirror-maker-2-metrics.yaml <14>
 --
-<1> Installation file for the Grafana image
-<2> Grafana dashboards
-<3> Grafana dashboard specific to xref:assembly-kafka-exporter-{context}[Kafka Exporter]
-<4> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect
-<5> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper
-<6> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2.0
-<7> Kafka Bridge resource with metrics enabled
-<8> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control
-<9> Configuration to add roles for service monitoring
-<10> Hook definitions for sending notifications through Alertmanager
-<11> Resources for deploying and configuring Alertmanager
-<12> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
-<13> Installation file for the Prometheus image
-<14> Prometheus job definitions to scrape metrics data from pods
+<1> Grafana dashboards
+<2> Grafana dashboard specific to xref:assembly-kafka-exporter-{context}[Kafka Exporter]
+<3> Installation file for the Grafana image
+<4> Configuration to add roles for service monitoring
+<5> Hook definitions for sending notifications through Alertmanager
+<6> Resources for deploying and configuring Alertmanager
+<7> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus)
+<8> Installation file for the Prometheus image
+<9> Prometheus job definitions to scrape metrics data from pods
+<10> Kafka Bridge resource with metrics enabled
+<11> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect
+<12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control
+<13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper
+<14> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2.0
