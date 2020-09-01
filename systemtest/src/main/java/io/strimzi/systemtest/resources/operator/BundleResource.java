@@ -51,9 +51,6 @@ public class BundleResource {
         // Update images
         for (EnvVar envVar : envVars) {
             switch (envVar.getName()) {
-                case "STRIMZI_LOG_LEVEL":
-                    envVar.setValue(Environment.STRIMZI_LOG_LEVEL);
-                    break;
                 case "STRIMZI_NAMESPACE":
                     envVar.setValue(namespace);
                     envVar.setValueFrom(null);
@@ -76,6 +73,7 @@ public class BundleResource {
         }
 
         envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
+        envVars.add(new EnvVar("STRIMZI_LOG_LEVEL", Environment.STRIMZI_LOG_LEVEL, null));
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 

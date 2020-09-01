@@ -57,7 +57,7 @@ public class HelmResource {
                 entry("resources.requests.cpu", REQUESTS_CPU),
                 entry("resources.limits.memory", LIMITS_MEMORY),
                 entry("resources.limits.cpu", LIMITS_CPU),
-                entry("logLevel", Environment.STRIMZI_LOG_LEVEL),
+                entry("logLevelOverride", Environment.STRIMZI_LOG_LEVEL),
                 entry("fullReconciliationIntervalMs", Long.toString(reconciliationInterval)),
                 entry("operationTimeoutMs", Long.toString(operationTimeout)))
                 .collect(TestUtils.entriesToMap()));
