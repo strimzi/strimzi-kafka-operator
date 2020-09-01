@@ -763,6 +763,71 @@ spec:
                               type: string
                       description: Security context for the container.
                   description: Template for the Kafka Connect container.
+                initContainer:
+                  type: object
+                  properties:
+                    env:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            description: The environment variable key.
+                          value:
+                            type: string
+                            description: The environment variable value.
+                      description: Environment variables which should be applied to the container.
+                    securityContext:
+                      type: object
+                      properties:
+                        allowPrivilegeEscalation:
+                          type: boolean
+                        capabilities:
+                          type: object
+                          properties:
+                            add:
+                              type: array
+                              items:
+                                type: string
+                            drop:
+                              type: array
+                              items:
+                                type: string
+                        privileged:
+                          type: boolean
+                        procMount:
+                          type: string
+                        readOnlyRootFilesystem:
+                          type: boolean
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        windowsOptions:
+                          type: object
+                          properties:
+                            gmsaCredentialSpec:
+                              type: string
+                            gmsaCredentialSpecName:
+                              type: string
+                            runAsUserName:
+                              type: string
+                      description: Security context for the container.
+                  description: Template for the Kafka init container.
                 podDisruptionBudget:
                   type: object
                   properties:
@@ -904,6 +969,9 @@ spec:
             bootstrapServers:
               type: string
               description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+            clientRackInitImage:
+              type: string
+              description: The image of the init container used for initializing the `client.rack`.
             config:
               type: object
               description: 'The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
@@ -1003,6 +1071,16 @@ spec:
             insecureSourceRepository:
               type: boolean
               description: When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
+            rack:
+              type: object
+              properties:
+                topologyKey:
+                  type: string
+                  example: topology.kubernetes.io/zone
+                  description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
+              required:
+                - topologyKey
+              description: Configuration of the node label which will be used as the client.rack consumer configuration.
             resources:
               type: object
               properties:

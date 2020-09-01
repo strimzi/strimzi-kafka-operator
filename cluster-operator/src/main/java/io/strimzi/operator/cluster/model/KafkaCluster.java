@@ -14,10 +14,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
-import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
-import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
-import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -48,7 +44,6 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -124,11 +119,6 @@ import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_MET
 public class KafkaCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka";
 
-    protected static final String INIT_NAME = "kafka-init";
-    protected static final String INIT_VOLUME_NAME = "rack-volume";
-    protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
-    protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-    protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
 
@@ -1602,44 +1592,7 @@ public class KafkaCluster extends AbstractModel {
                         .endPreferredDuringSchedulingIgnoredDuringExecution()
                     .endPodAntiAffinity();
 
-            // We also need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
-            NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
-                    .withNewOperator("Exists")
-                    .withNewKey(rack.getTopologyKey())
-                    .build();
-
-            if (userAffinity != null
-                    && userAffinity.getNodeAffinity() != null
-                    && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution() != null
-                    && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms() != null) {
-                // User has specified some Node Selector Terms => we should enhance them
-                List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
-                List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
-
-                for (NodeSelectorTerm term : oldTerms) {
-                    NodeSelectorTerm enhancedTerm = new NodeSelectorTermBuilder(term)
-                            .addToMatchExpressions(selector)
-                            .build();
-                    enhancedTerms.add(enhancedTerm);
-                }
-
-                builder = builder
-                        .editOrNewNodeAffinity()
-                            .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                                .withNodeSelectorTerms(enhancedTerms)
-                            .endRequiredDuringSchedulingIgnoredDuringExecution()
-                        .endNodeAffinity();
-            } else {
-                // User has not specified any selector terms => we add our own
-                builder = builder
-                        .editOrNewNodeAffinity()
-                            .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
-                                .addNewNodeSelectorTerm()
-                                    .withMatchExpressions(selector)
-                                .endNodeSelectorTerm()
-                            .endRequiredDuringSchedulingIgnoredDuringExecution()
-                        .endNodeAffinity();
-            }
+            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
         }
 
         return builder.build();
@@ -1727,8 +1680,8 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected String getServiceAccountName() {
-        return initContainerServiceAccountName(cluster);
+    public String getServiceAccountName() {
+        return kafkaClusterName(cluster);
     }
 
     @Override
@@ -1897,27 +1850,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Get the name of the kafka service account given the name of the {@code kafkaResourceName}.
-     *
-     * @param kafkaResourceName The name of the Kafka resource.
-     * @return The name of the ServiceAccount.
-     */
-    public static String initContainerServiceAccountName(String kafkaResourceName) {
-        return kafkaClusterName(kafkaResourceName);
-    }
-
-    /**
-     * Get the name of the kafka init container role binding given the name of the {@code namespace} and {@code cluster}.
-     *
-     * @param namespace The namespace.
-     * @param cluster   The cluster name.
-     * @return The name of the init container's cluster role binding.
-     */
-    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
-        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
-    }
-
-    /**
      * Creates the ClusterRoleBinding which is used to bind the Kafka SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      *
@@ -1928,7 +1860,7 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null || isExposedWithNodePort()) {
             Subject ks = new SubjectBuilder()
                     .withKind("ServiceAccount")
-                    .withName(initContainerServiceAccountName(cluster))
+                    .withName(getServiceAccountName())
                     .withNamespace(assemblyNamespace)
                     .build();
 
@@ -1938,15 +1870,7 @@ public class KafkaCluster extends AbstractModel {
                     .withKind("ClusterRole")
                     .build();
 
-            return new ClusterRoleBindingBuilder()
-                    .withNewMetadata()
-                        .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                        .withOwnerReferences(createOwnerReference())
-                        .withLabels(labels.toMap())
-                    .endMetadata()
-                    .withSubjects(ks)
-                    .withRoleRef(roleRef)
-                    .build();
+            return getClusterRoleBinding(ks, roleRef);
         } else {
             return null;
         }
