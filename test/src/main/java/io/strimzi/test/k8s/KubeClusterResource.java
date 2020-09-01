@@ -340,4 +340,9 @@ public class KubeClusterResource {
     public boolean isNotKubernetes() {
         return cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift;
     }
+
+    /** Returns list of currently deployed resources */
+    public List<String> getListOfDeployedResources() {
+        return deploymentResources;
+    }
 }
