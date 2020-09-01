@@ -117,10 +117,16 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                     updateOrAdd(pathValueWithoutSlash, desiredMap, updatedCE);
                 }
             }
-
-            log.debug("Kafka Broker {} Logging Config Differs : {}", brokerId, d);
-            log.debug("Current Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
-            log.debug("Desired Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+            if ("remove".equals(op)) {
+                // there is a lot of properties set by default - not having them in desired causes very noisy log output
+                log.trace("Kafka Broker {} Logging Config Differs : {}", brokerId, d);
+                log.trace("Current Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
+                log.trace("Desired Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+            } else {
+                log.debug("Kafka Broker {} Logging Config Differs : {}", brokerId, d);
+                log.debug("Current Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
+                log.debug("Desired Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+            }
         }
         return updatedCE;
     }
