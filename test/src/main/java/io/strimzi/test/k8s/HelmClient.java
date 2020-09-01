@@ -44,11 +44,11 @@ public class HelmClient {
         String values = Stream.of(valuesMap).flatMap(m -> m.entrySet().stream())
                 .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(","));
-        Exec.exec(wait(namespace(command("install",
+        Exec.exec(null, wait(namespace(command("install",
                 releaseName,
                 "--set-string", values,
                 "--timeout", INSTALL_TIMEOUT_SECONDS,
-                chart.toString()))));
+                chart.toString()))), 0, true, true);
         return this;
     }
 
