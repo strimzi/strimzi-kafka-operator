@@ -32,7 +32,7 @@ public class MockCruiseControlTest {
 
     @BeforeAll
     public static void startUp() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.getCCServer(PORT);
+        ccServer = MockCruiseControl.server(PORT);
     }
 
     @BeforeEach

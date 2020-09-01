@@ -70,7 +70,7 @@ public class KafkaRebalanceStateMachineTest {
 
     @BeforeAll
     public static void before() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.getCCServer(CruiseControl.REST_API_PORT);
+        ccServer = MockCruiseControl.server(CruiseControl.REST_API_PORT);
     }
 
     @AfterAll
