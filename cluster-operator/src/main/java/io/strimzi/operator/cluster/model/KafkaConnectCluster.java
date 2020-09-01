@@ -519,7 +519,7 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
+        varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
 
