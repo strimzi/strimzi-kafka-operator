@@ -44,7 +44,7 @@ class RecoveryST extends AbstractST {
         String entityOperatorDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         String entityOperatorDeploymentUid = kubeClient().getDeploymentUid(entityOperatorDeploymentName);
         kubeClient().deleteDeployment(entityOperatorDeploymentName);
-
+        PodUtils.waitForPodsWithPrefixDeletion(entityOperatorDeploymentName);
         LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
         DeploymentUtils.waitForDeploymentRecovery(entityOperatorDeploymentName, entityOperatorDeploymentUid);
         DeploymentUtils.waitForDeploymentAndPodsReady(entityOperatorDeploymentName, 1);
@@ -191,7 +191,7 @@ class RecoveryST extends AbstractST {
         String kafkaBridgeDeploymentName = KafkaBridgeResources.deploymentName(CLUSTER_NAME);
         String kafkaBridgeDeploymentUid = kubeClient().getDeploymentUid(kafkaBridgeDeploymentName);
         kubeClient().deleteDeployment(kafkaBridgeDeploymentName);
-
+        PodUtils.waitForPodsWithPrefixDeletion(kafkaBridgeDeploymentName);
         LOGGER.info("Waiting for deployment {} recovery", kafkaBridgeDeploymentName);
         DeploymentUtils.waitForDeploymentRecovery(kafkaBridgeDeploymentName, kafkaBridgeDeploymentUid);
 
