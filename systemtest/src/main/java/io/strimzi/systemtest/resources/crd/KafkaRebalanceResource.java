@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
