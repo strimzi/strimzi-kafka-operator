@@ -5,7 +5,7 @@
 [id='ref-list-of-kafka-cluster-resources-{context}']
 = List of resources created as part of Kafka cluster
 
-The following resources will created by the Cluster Operator in the Kubernetes cluster:
+The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
 .Shared resources
 
@@ -21,7 +21,7 @@ The following resources will created by the Cluster Operator in the Kubernetes c
 `_cluster-name_-zookeeper-_idx_`:: Pods created by the Zookeeper StatefulSet.
 `_cluster-name_-zookeeper-nodes`:: Headless Service needed to have DNS resolve the ZooKeeper pods IP addresses directly.
 `_cluster-name_-zookeeper-client`:: Service used by Kafka brokers to connect to ZooKeeper nodes as clients.
-`_cluster-name_-zookeeper-config`:: ConfigMap which contains the ZooKeeper ancillary configuration and is mounted as a volume by the ZooKeeper node pods.
+`_cluster-name_-zookeeper-config`:: ConfigMap that contains the ZooKeeper ancillary configuration, and is mounted as a volume by the ZooKeeper node pods.
 `_cluster-name_-zookeeper-nodes`:: Secret with ZooKeeper node keys.
 `_cluster-name_-zookeeper`:: Service account used by the Zookeeper nodes.
 `_cluster-name_-zookeeper`:: Pod Disruption Budget configured for the ZooKeeper nodes.
@@ -44,49 +44,49 @@ The following resources will created by the Cluster Operator in the Kubernetes c
 `_cluster-name_-kafka`:: Pod Disruption Budget configured for the Kafka brokers.
 `_cluster-name_-network-policy-kafka`:: Network policy managing access to the Kafka services.
 `strimzi-_namespace-name_-_cluster-name_-kafka-init`:: Cluster role binding used by the Kafka brokers.
-`_cluster-name_-jmx`:: Secret with JMX username and password used to secure the Kafka broker port. Thsi resource will be created only when JMX is enabled in Kafka.
+`_cluster-name_-jmx`:: Secret with JMX username and password used to secure the Kafka broker port. This resource will be created only when JMX is enabled in Kafka.
 `data-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
 `data-_id_-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume `_id_` used for storing data for the Kafka broker pod `_idx_`. This resource is only created if persistent storage is selected for JBOD volumes when provisioning persistent volumes to store data.
 
 .Entity Operator
 
-These resource will be created only if Cluster Operator deployed Entity Operator.
+These resources are only created if the Entity Operator is deployed using the Cluster Operator.
 
 `_cluster-name_-entity-operator`:: Deployment with Topic and User Operators. 
-`_cluster-name_-entity-operator-_random-string_`:: Pod created by the Entity Operator Deployment.
+`_cluster-name_-entity-operator-_random-string_`:: Pod created by the Entity Operator deployment.
 `_cluster-name_-entity-topic-operator-config`:: ConfigMap with ancillary configuration for Topic Operators.
 `_cluster-name_-entity-user-operator-config`:: ConfigMap with ancillary configuration for User Operators.
-`_cluster-name_-entity-operator-certs`:: Secret with Entity operators keys for communication with Kafka and ZooKeeper.
+`_cluster-name_-entity-operator-certs`:: Secret with Entity Operator keys for communication with Kafka and ZooKeeper.
 `_cluster-name_-entity-operator`:: Service account used by the Entity Operator.
 `strimzi-_cluster-name_-topic-operator`:: Role binding used by the Entity Operator.
 `strimzi-_cluster-name_-user-operator`:: Role binding used by the Entity Operator.
 
 .Kafka Exporter
 
-These resources will be created only if Cluster Operator deployed Kafka Exporter.
+These resources are only created if the Kafka Exporter is deployed using the Cluster Operator.
 
 `_cluster-name_-kafka-exporter`:: Deployment with Kafka Exporter.
-`_cluster-name_-kafka-exporter-_random-string_`:: Pod created by the Kafka Exporter Deployment.
+`_cluster-name_-kafka-exporter-_random-string_`:: Pod created by the Kafka Exporter deployment.
 `_cluster-name_-kafka-exporter`:: Service used to collect consumer lag metrics.
 `_cluster-name_-kafka-exporter`:: Service account used by the Kafka Exporter.
 
 .Cruise Control
 
-These resources will be created only if Cluster Operator deployed Cruise Control.
+These resources are only created only if Cruise Control was deployed using the Cluster Operator.
 
-`_cluster-name_-cruise-control`:: Deployment with Cruise Control
-`_cluster-name_-cruise-control-_random-string_`:: Pod created by the Cruise Control Deployment.
-`_cluster-name_-cruise-control-config`:: ConfigMap which contains the Cruise Control ancillary configuration and is mounted as a volume by the Cruise Control pods.
-`_cluster-name_-cruise-control-certs`:: Secret with Cruise Control operators keys for communication with Kafka and ZooKeeper.
+`_cluster-name_-cruise-control`:: Deployment with Cruise Control.
+`_cluster-name_-cruise-control-_random-string_`:: Pod created by the Cruise Control deployment.
+`_cluster-name_-cruise-control-config`:: ConfigMap that contains the Cruise Control ancillary configuration, and is mounted as a volume by the Cruise Control pods.
+`_cluster-name_-cruise-control-certs`:: Secret with Cruise Control keys for communication with Kafka and ZooKeeper.
 `_cluster-name_-cruise-control`:: Service used to communicate with Cruise Control.
-`_cluster-name_-cruise-control`:: Service account used by the Cruise Control.
+`_cluster-name_-cruise-control`:: Service account used by Cruise Control.
 `_cluster-name_-network-policy-cruise-control`:: Network policy managing access to the Cruise Control service.
 
 .JMXTrans
 
-These resources will be created only if Cluster Operator deployed JMXTrans.
+These resources are only created if JMXTrans is deployed using the Cluster Operator.
 
 `_cluster-name_-jmxtrans`:: Deployment with JMXTrans.
-`_cluster-name_-jmxtrans-_random-string_`:: Pod created by the JMXTrans Deployment.
-`_cluster-name_-jmxtrans-config`:: ConfigMap which contains the JMXTrans ancillary configuration and is mounted as a volume by the JMXTrans pods.
-`_cluster-name_-jmxtrans`:: Service account used by the JMXTrans.
+`_cluster-name_-jmxtrans-_random-string_`:: Pod created by the JMXTrans deployment.
+`_cluster-name_-jmxtrans-config`:: ConfigMap that contains the JMXTrans ancillary configuration, and is mounted as a volume by the JMXTrans pods.
+`_cluster-name_-jmxtrans`:: Service account used by JMXTrans.
