@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.connect;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
@@ -40,7 +39,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -143,6 +141,8 @@ class ConnectST extends AbstractST {
     void testKafkaConnectWithFileSinkPlugin() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
@@ -150,7 +150,6 @@ class ConnectST extends AbstractST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec().done();
-        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
@@ -172,10 +171,6 @@ class ConnectST extends AbstractST {
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
-
-        LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -196,6 +191,8 @@ class ConnectST extends AbstractST {
 
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
 
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .withNewSpec()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
@@ -214,8 +211,6 @@ class ConnectST extends AbstractST {
                     .withReplicas(1)
                 .endSpec()
                 .done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -248,10 +243,6 @@ class ConnectST extends AbstractST {
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
-
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        LOGGER.info("Topic {} deleted", CONNECT_TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -293,9 +284,6 @@ class ConnectST extends AbstractST {
         assertThat(output, containsString("\"connector.class\":\"org.apache.kafka.connect.file.FileStreamSourceConnector\""));
         assertThat(output, containsString("\"tasks.max\":\"2\""));
         assertThat(output, containsString("\"topic\":\"" + TOPIC_NAME + "\""));
-
-        LOGGER.info("Deleting connector {} CR", connectorName);
-        cmdKubeClient().deleteByName("kafkaconnector", connectorName);
     }
 
 
@@ -377,6 +365,8 @@ class ConnectST extends AbstractST {
 
         KafkaUser kafkaUser = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
+
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
@@ -399,8 +389,6 @@ class ConnectST extends AbstractST {
                     .endKafkaClientAuthenticationTls()
                 .endSpec()
                 .done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -433,10 +421,6 @@ class ConnectST extends AbstractST {
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
-
-        LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
@@ -455,6 +439,8 @@ class ConnectST extends AbstractST {
             .done();
 
         KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
+
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editSpec()
@@ -478,8 +464,6 @@ class ConnectST extends AbstractST {
                     .endKafkaClientAuthenticationScramSha512()
                 .endSpec()
                 .done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_TOPIC_NAME).done();
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String kafkaConnectLogs = kubeClient().logs(kafkaConnectPodName);
@@ -510,10 +494,6 @@ class ConnectST extends AbstractST {
         );
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
-
-        LOGGER.info("Deleting topic {} from CR", CONNECT_TOPIC_NAME);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(CONNECT_TOPIC_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaTopicUtils.waitForKafkaTopicDeletion(CONNECT_TOPIC_NAME);
     }
 
     @Test
