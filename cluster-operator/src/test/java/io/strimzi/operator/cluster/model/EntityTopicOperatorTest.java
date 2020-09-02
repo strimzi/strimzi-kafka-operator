@@ -208,12 +208,12 @@ public class EntityTopicOperatorTest {
         assertThat(container.getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
         assertThat(container.getImage(), is(entityTopicOperator.getImage()));
         assertThat(container.getEnv(), is(getExpectedEnvVars()));
-        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(livenessProbe.getInitialDelaySeconds())));
-        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(new Integer(livenessProbe.getTimeoutSeconds())));
-        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(readinessProbe.getInitialDelaySeconds())));
-        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(new Integer(readinessProbe.getTimeoutSeconds())));
+        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(livenessProbe.getInitialDelaySeconds())));
+        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(livenessProbe.getTimeoutSeconds())));
+        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(readinessProbe.getInitialDelaySeconds())));
+        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(readinessProbe.getTimeoutSeconds())));
         assertThat(container.getPorts().size(), is(1));
-        assertThat(container.getPorts().get(0).getContainerPort(), is(new Integer(EntityTopicOperator.HEALTHCHECK_PORT)));
+        assertThat(container.getPorts().get(0).getContainerPort(), is(Integer.valueOf(EntityTopicOperator.HEALTHCHECK_PORT)));
         assertThat(container.getPorts().get(0).getName(), is(EntityTopicOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(
