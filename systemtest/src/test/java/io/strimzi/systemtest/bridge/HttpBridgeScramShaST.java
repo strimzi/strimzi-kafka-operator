@@ -5,14 +5,12 @@
 package io.strimzi.systemtest.bridge;
 
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -86,8 +84,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
-        deployClusterOperator(NAMESPACE);
+    void setup() {
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
@@ -135,8 +132,5 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                 .endTls()
             .endSpec()
             .done();
-
-        kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(CLUSTER_NAME),
-            TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), bridgePort, 1000, 1000);
     }
 }

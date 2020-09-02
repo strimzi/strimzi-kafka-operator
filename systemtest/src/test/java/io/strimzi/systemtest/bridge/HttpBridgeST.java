@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -49,7 +48,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(INTERNAL_CLIENTS_USED)
 class HttpBridgeST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
-    private static final String NAMESPACE = "bridge-cluster-test";
 
     @Test
     void testSendSimpleMessage() {
@@ -255,8 +253,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void createClassResources() throws Exception {
-        deployClusterOperator(NAMESPACE);
+    void createClassResources() {
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         // Deploy kafka
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
@@ -273,8 +270,5 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .endConsumer()
             .endSpec()
             .done();
-
-        kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(CLUSTER_NAME),
-            TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), bridgePort, 1000, 1000);
     }
 }

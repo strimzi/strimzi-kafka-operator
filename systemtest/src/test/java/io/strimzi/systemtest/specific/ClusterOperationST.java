@@ -32,7 +32,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ClusterOperationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperationST.class);
-    private KafkaBasicClientResource kafkaBasicClientResource;
 
     public static final String NAMESPACE = "cluster-operations-test";
 
@@ -60,6 +59,7 @@ public class ClusterOperationST extends AbstractST {
         topicNames.forEach(topicName -> KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, 3, 2).done());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+        KafkaBasicClientResource kafkaBasicClientResource;
 
         for (int i = 0; i < size; i++) {
             kafkaBasicClientResource = new KafkaBasicClientResource(producerNames.get(i), consumerNames.get(i),

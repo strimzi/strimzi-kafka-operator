@@ -39,4 +39,16 @@ public class JobUtils {
         kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(name).delete();
         waitForJobDeletion(name);
     }
+
+    /**
+     * Wait for specific Job failure
+     * @param jobName job name
+     * @param namespace namespace
+     * @param timeout timeout after which we assume that job failed
+     */
+    public static void waitForJobFailure(String jobName, String namespace, long timeout) {
+        LOGGER.info("Waiting for job: {} will be in error state", jobName);
+        TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
+            () -> kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(jobName).get().getStatus().getSucceeded().equals(1));
+    }
 }

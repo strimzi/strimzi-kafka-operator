@@ -37,7 +37,6 @@ import static org.hamcrest.Matchers.containsString;
 public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
-    private static final String NAMESPACE = "bridge-cors-cluster-test";
 
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
@@ -105,8 +104,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void beforeAll() throws Exception {
-        deployClusterOperator(NAMESPACE);
+    void beforeAll() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
