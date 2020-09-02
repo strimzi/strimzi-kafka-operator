@@ -163,6 +163,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
 
     String getResourceAsYaml(String resourceType, String resourceName);
 
+    String getResourcesAsYaml(String resourceType);
+
     void createResourceAndApply(String template, Map<String, String> params);
 
     String describe(String resourceType, String resourceName);
