@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -54,12 +55,14 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
@@ -676,6 +679,60 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mm2Status.getConditions().get(0).getType(), is(Ready.toString()));
         assertThat(actualObsGen, is(not(oldObsGen)));
         assertNull(mm2Status.getUrl());
+    }
+
+    @Test
+    void testIdentityReplicationPolicy() {
+        String originalTopicName = "original-topic";
+
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        // Create topic
+        KafkaTopicResource.topic(kafkaClusterSourceName, originalTopicName, 3).done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+            .editSpec()
+                .editMirror(0)
+                    .editSourceConnector()
+                        .addToConfig("replication.policy.class", "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy")
+                    .endSourceConnector()
+                .endMirror()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Sending and receiving messages via {}", kafkaClusterSourceName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withNamespaceName(NAMESPACE)
+            .withTopicName(originalTopicName)
+            .withClusterName(kafkaClusterSourceName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withUsingPodName(kafkaClientsPodName)
+            .build();
+
+        internalKafkaClient.assertSentAndReceivedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
+        LOGGER.info("Changing to {} and will try to receive messages", kafkaClusterTargetName);
+        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+
+        assertThat(internalKafkaClient.receiveMessagesPlain(), equalTo(MESSAGE_COUNT));
+
+        LOGGER.info("Checking if the mirrored topic name is same as the original one");
+
+        List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(kafkaClusterTargetName, 0);
+        assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(originalTopicName)).findAny());
+
+        List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(kafkaClusterTargetName, 0, originalTopicName);
+        assertThat(kafkaTopicSpec.get(0), equalTo("Topic:" + originalTopicName));
+        assertThat(kafkaTopicSpec.get(1), equalTo("PartitionCount:3"));
     }
 
     @BeforeAll
