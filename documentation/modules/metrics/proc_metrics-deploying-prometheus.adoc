@@ -32,7 +32,7 @@ On MacOS, use:
 sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 
 . Edit the `PodMonitor` resource in `strimzi-pod-monitor.yaml` to define Prometheus jobs that will scrape the metrics data from pods.
-
++
 Update the `namespaceSelector.matchNames` property with the namespace where the pods to scrape the metrics from are running.
 +
 `PodMonitor` is used to scrape data directly from pods for Apache Kafka, ZooKeeper, Operators, the Kafka Bridge and Cruise Control.

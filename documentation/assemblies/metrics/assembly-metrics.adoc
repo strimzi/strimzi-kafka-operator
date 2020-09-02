@@ -11,12 +11,12 @@ Depending on your requirements, you can:
 
 * xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus and Grafana]
 * xref:assembly-kafka-exporter-{context}[Configure the `Kafka` resource to deploy Kafka Exporter with your Kafka cluster]
-
++
 Kafka Exporter provides additional monitoring related to consumer lag.
 
-Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^], as described in the _Using Strimzi_ guide.
-
 With Prometheus and Grafana set up, you can use the example Grafana dashboards provided by Strimzi for monitoring.
+
+Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^], as described in the _Using Strimzi_ guide.
 
 .Additional resources
 * link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation]
