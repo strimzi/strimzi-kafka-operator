@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -726,11 +727,12 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Checking if the mirrored topic name is same as the original one");
 
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(originalTopicName).get();
-        assertNotNull(kafkaTopic);
-        assertThat(kafkaTopic.getMetadata().getName(), equalTo(originalTopicName));
-        assertThat(kafkaTopic.getSpec().getPartitions(), equalTo(3));
-        assertThat(kafkaTopic.getSpec().getReplicas(), equalTo(1));
+        List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(kafkaClusterTargetName, 0);
+        assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(originalTopicName)).findAny());
+
+        List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(kafkaClusterTargetName, 0, originalTopicName);
+        assertThat(kafkaTopicSpec.get(0), equalTo("Topic:" + originalTopicName));
+        assertThat(kafkaTopicSpec.get(1), equalTo("PartitionCount:3"));
     }
 
     @BeforeAll
