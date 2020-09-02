@@ -45,7 +45,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         // Create topic
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaClientsResource.producerStrimziBridge(producerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -65,7 +65,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     void testReceiveSimpleMessageTlsScramSha() {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaClientsResource.consumerStrimziBridge(consumerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        kafkaBridgeClientJob.consumerStrimziBridge().done();
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

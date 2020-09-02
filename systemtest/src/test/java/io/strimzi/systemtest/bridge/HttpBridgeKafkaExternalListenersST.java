@@ -44,7 +44,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(EXTERNAL_CLIENTS_USED)
 class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE = CLUSTER_NAME + "-bridge-external-service";
-    private static final String NAMESPACE = "bridge-external-cluster-test";
 
     @Test
     void testScramShaAuthWithWeirdUsername() {
@@ -146,7 +145,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         KubernetesResource.createServiceResource(service, NAMESPACE).done();
 
-        KafkaClientsResource.consumerStrimziBridge(consumerName, bridgeServiceName, bridgePort, TOPIC_NAME, MESSAGE_COUNT).done();
+        kafkaBridgeClientJob.consumerStrimziBridge().done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)

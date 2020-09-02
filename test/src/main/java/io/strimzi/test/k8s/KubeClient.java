@@ -358,6 +358,10 @@ public class KubeClient {
         return kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
     }
 
+    public boolean jobExists(String jobName) {
+        return client.batch().jobs().inNamespace(getNamespace()).list().getItems().stream().anyMatch(j -> j.getMetadata().getName().startsWith(jobName));
+    }
+
     /**
      * Gets deployment config status
      */

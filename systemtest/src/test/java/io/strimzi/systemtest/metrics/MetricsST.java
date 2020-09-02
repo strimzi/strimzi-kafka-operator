@@ -14,6 +14,8 @@ import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -312,8 +314,11 @@ public class MetricsST extends AbstractST {
         String consumerName = "bridge-consumer";
 
         // Attach consumer before producer
-        KafkaClientsResource.consumerStrimziBridge(consumerName, KafkaBridgeResources.serviceName(BRIDGE_CLUSTER), Constants.HTTP_BRIDGE_DEFAULT_PORT, bridgeTopic, 200).done();
-        KafkaClientsResource.producerStrimziBridge(producerName, KafkaBridgeResources.serviceName(BRIDGE_CLUSTER), Constants.HTTP_BRIDGE_DEFAULT_PORT, bridgeTopic, 200).done();
+        KafkaBridgeClientsResource kafkaBridgeClientsJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(BRIDGE_CLUSTER),
+            bridgeTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), Constants.HTTP_BRIDGE_DEFAULT_PORT, 200, 200);
+
+        kafkaBridgeClientsJob.producerStrimziBridge().done();
+        kafkaBridgeClientsJob.consumerStrimziBridge().done();
 
         TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");
