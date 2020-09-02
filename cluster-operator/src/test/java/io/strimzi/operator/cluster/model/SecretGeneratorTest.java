@@ -18,7 +18,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SecretGeneratorTest {
 
@@ -36,14 +35,8 @@ class SecretGeneratorTest {
     }
 
     @Test
-    void testCreationWithNullOwnerReferenceThrows() {
-        assertThrows(IllegalArgumentException.class, () -> SecretGenerator.of(NAME, NAMESPACE, LABELS, null, DATA));
-    }
-
-    @Test
     void testCreate() {
-        Secret secret = SecretGenerator.of(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, DATA)
-                .create();
+        Secret secret = SecretGenerator.create(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, DATA);
         assertThat(secret, is(notNullValue()));
         assertThat(secret.getMetadata().getName(), is(NAME));
         assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));
@@ -54,8 +47,7 @@ class SecretGeneratorTest {
 
     @Test
     void testCreateWithoutOwnerReference() {
-        Secret secret = SecretGenerator.of(NAME, NAMESPACE, LABELS, DATA)
-                .create();
+        Secret secret = SecretGenerator.create(NAME, NAMESPACE, LABELS, null, DATA);
         assertThat(secret, is(notNullValue()));
         assertThat(secret.getMetadata().getName(), is(NAME));
         assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));

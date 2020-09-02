@@ -41,10 +41,13 @@ public class CertificateRenewer {
     /**
      * Pre-configure the CertificateRenewer for generating signed certificates
      *
-     * @param clusterCa
+     * @param clusterCa the cluster CA used to sign any new certificates
      * @param commonName the common-name used in te certificate
      * @param keyCertName the keyCertName used to index data in the secret
-     * @param isMaintenanceTimeWindowsSatisfied
+     * @param isMaintenanceTimeWindowsSatisfied a boolean of whether the time window is satisfied, if it is and the certificate
+     *                                          is expired then a new one will be generated
+     *
+     * @return a certificate renewer capable of renewing a passed in Secret
      */
     public static CertificateRenewer of(ClusterCa clusterCa, String commonName, String keyCertName, boolean isMaintenanceTimeWindowsSatisfied) {
         return new CertificateRenewer(clusterCa, commonName, keyCertName, isMaintenanceTimeWindowsSatisfied);
@@ -58,12 +61,14 @@ public class CertificateRenewer {
      * @param namespace the namespace to write the secret to
      * @param labels the labels te secret should contain
      * @param ownerReference the OwnerReference for the secret
+     *
+     * @return signed certificate secret
      */
     public Secret signedCertificateSecret(Secret secret, String secretName, String namespace, Labels labels, OwnerReference ownerReference) {
         Map<String, String> signedCertData = new HashMap<>(4);
         CertAndKey certAndKey = null;
 
-        Optional<CertAndKey> regeneratedCert = maybeRegenerateCertificate(clusterCa, secret, commonName);
+        Optional<CertAndKey> regeneratedCert = maybeRegenerateCertificate(secret);
 
         // TODO ensure empty check is fine
         if (regeneratedCert.isPresent()) {
@@ -115,27 +120,24 @@ public class CertificateRenewer {
     /**
      * Regenerates certificate if required for any reason
      *
-     * @param clusterCa
-     * @param secret
-     * @param commonName
      * @return optional of new certificate and key of the generated certificate
      *         returns empty optional if renewal not required or throws an exception
      */
-    private Optional<CertAndKey> maybeRegenerateCertificate(ClusterCa clusterCa, Secret secret, String commonName) {
+    private Optional<CertAndKey> maybeRegenerateCertificate(Secret secret) {
         CertAndKey certAndKey = null;
         if (secret == null) {
             log.debug("Certificate for pod {} need to be regenerated because: certificate doesn't exist yet", keyCertName);
-            certAndKey = regenerateCertificate(clusterCa, commonName);
+            certAndKey = regenerateCertificate();
         } else {
             if (clusterCa.keyCreated() || clusterCa.certRenewed() || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt"))) {
                 log.debug("Certificate for pod {} need to be regenerated because: certificate needs to be renewed", keyCertName);
-                certAndKey = regenerateCertificate(clusterCa, commonName);
+                certAndKey = regenerateCertificate();
             }
         }
         return Optional.ofNullable(certAndKey);
     }
 
-    private CertAndKey regenerateCertificate(ClusterCa clusterCa, String commonName) {
+    private CertAndKey regenerateCertificate() {
         CertAndKey signedCert = null;
         try {
             signedCert = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
