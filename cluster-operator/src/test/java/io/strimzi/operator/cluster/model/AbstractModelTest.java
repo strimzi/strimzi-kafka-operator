@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -23,12 +24,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AbstractModelTest {
+
+    // Implement AbstractModel to test the abstract class
+    private class Model extends AbstractModel   {
+        public Model(HasMetadata resource) {
+            super(resource, "model-app");
+        }
+
+        @Override
+        protected String getDefaultLogConfigFileName() {
+            return null;
+        }
+
+        @Override
+        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+            return null;
+        }
+    }
 
     private static JvmOptions jvmOptions(String xmx, String xms) {
         JvmOptions result = new JvmOptions();
@@ -51,17 +68,7 @@ public class AbstractModelTest {
                 .withNewMetadata()
                 .endMetadata()
                 .build();
-        AbstractModel am = new AbstractModel(resource, "") {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
+        AbstractModel am = new Model(resource);
 
         am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(jvmOptions(xmx, xms));
@@ -151,17 +158,7 @@ public class AbstractModelTest {
                 .endMetadata()
                 .build();
 
-        AbstractModel am = new AbstractModel(kafka, "") {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
+        AbstractModel am = new Model(kafka);
 
         am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(opts);
@@ -184,17 +181,7 @@ public class AbstractModelTest {
                 .endMetadata()
                 .build();
 
-        AbstractModel am = new AbstractModel(kafka, "my-app") {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
+        AbstractModel am = new Model(kafka);
         am.setLabels(Labels.forStrimziCluster("foo"));
         am.setOwnerReference(kafka);
 
@@ -215,17 +202,7 @@ public class AbstractModelTest {
                 .endMetadata()
                 .build();
 
-        AbstractModel am = new AbstractModel(kafka, "my-app") {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return emptyList();
-            }
-        };
+        AbstractModel am = new Model(kafka);
         am.setLabels(Labels.forStrimziCluster("foo"));
 
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"), is(ImagePullPolicy.ALWAYS.toString()));

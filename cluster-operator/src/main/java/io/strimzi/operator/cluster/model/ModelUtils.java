@@ -15,9 +15,6 @@ import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Probe;
-import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -57,11 +54,6 @@ import java.util.Optional;
  * These are generally to be used within the classes that extend the AbstractModel class
  */
 public class ModelUtils {
-
-    public static final io.strimzi.api.kafka.model.Probe DEFAULT_TLS_SIDECAR_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
-            .withInitialDelaySeconds(TlsSidecar.DEFAULT_HEALTHCHECK_DELAY)
-            .withTimeoutSeconds(TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT)
-            .build();
 
     private ModelUtils() {}
 
@@ -236,99 +228,6 @@ public class ModelUtils {
             }
         }
         throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
-    }
-
-    /**
-     * @param pod The StatefulSet
-     * @param containerName The name of the container whoes environment variables are to be retrieved
-     * @param envVarName Name of the environment variable which we should get
-     * @return The environment of the Kafka container in the sts.
-     */
-    public static String getPodEnv(Pod pod, String containerName, String envVarName) {
-        if (pod != null) {
-            for (Container container : pod.getSpec().getContainers()) {
-                if (containerName.equals(container.getName())) {
-                    if (container.getEnv() != null) {
-                        for (EnvVar envVar : container.getEnv()) {
-                            if (envVarName.equals(envVar.getName()))    {
-                                return envVar.getValue();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public static List<EnvVar> envAsList(Map<String, String> env) {
-        ArrayList<EnvVar> result = new ArrayList<>(env.size());
-        for (Map.Entry<String, String> entry : env.entrySet()) {
-            result.add(new EnvVar(entry.getKey(), entry.getValue(), null));
-        }
-        return result;
-    }
-
-    protected static ProbeBuilder newProbeBuilder(io.strimzi.api.kafka.model.Probe userProbe) {
-        return new ProbeBuilder()
-                .withInitialDelaySeconds(userProbe.getInitialDelaySeconds())
-                .withTimeoutSeconds(userProbe.getTimeoutSeconds())
-                .withPeriodSeconds(userProbe.getPeriodSeconds())
-                .withSuccessThreshold(userProbe.getSuccessThreshold())
-                .withFailureThreshold(userProbe.getFailureThreshold());
-    }
-
-
-    protected static Probe createTcpSocketProbe(int port, io.strimzi.api.kafka.model.Probe userProbe) {
-        Probe probe = ModelUtils.newProbeBuilder(userProbe)
-                .withNewTcpSocket()
-                .withNewPort()
-                .withIntVal(port)
-                .endPort()
-                .endTcpSocket()
-                .build();
-        log.trace("Created TCP socket probe {}", probe);
-        return probe;
-    }
-
-    protected static Probe createHttpProbe(String path, String port, io.strimzi.api.kafka.model.Probe userProbe) {
-        Probe probe = ModelUtils.newProbeBuilder(userProbe).withNewHttpGet()
-                .withPath(path)
-                .withNewPort(port)
-                .endHttpGet()
-                .build();
-        log.trace("Created http probe {}", probe);
-        return probe;
-    }
-
-    static Probe createExecProbe(List<String> command, io.strimzi.api.kafka.model.Probe userProbe) {
-        Probe probe = newProbeBuilder(userProbe).withNewExec()
-                .withCommand(command)
-                .endExec()
-                .build();
-        log.trace("Created exec probe {}", probe);
-        return probe;
-    }
-
-    static Probe tlsSidecarReadinessProbe(TlsSidecar tlsSidecar) {
-        io.strimzi.api.kafka.model.Probe tlsSidecarReadinessProbe;
-        if (tlsSidecar != null && tlsSidecar.getReadinessProbe() != null) {
-            tlsSidecarReadinessProbe = tlsSidecar.getReadinessProbe();
-        } else {
-            tlsSidecarReadinessProbe = DEFAULT_TLS_SIDECAR_PROBE;
-        }
-        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessProbe);
-    }
-
-    static Probe tlsSidecarLivenessProbe(TlsSidecar tlsSidecar) {
-        io.strimzi.api.kafka.model.Probe tlsSidecarLivenessProbe;
-        if (tlsSidecar != null && tlsSidecar.getLivenessProbe() != null) {
-            tlsSidecarLivenessProbe = tlsSidecar.getLivenessProbe();
-        } else {
-            tlsSidecarLivenessProbe = DEFAULT_TLS_SIDECAR_PROBE;
-        }
-        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessProbe);
     }
 
     public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
