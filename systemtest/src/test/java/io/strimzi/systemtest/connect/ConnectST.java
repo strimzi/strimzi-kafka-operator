@@ -975,7 +975,6 @@ class ConnectST extends AbstractST {
 
     @BeforeAll
     void setup() throws Exception {
-        Exec.exec(null, Arrays.asList("docker", "images"), 0, true, false);
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
 
