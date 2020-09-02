@@ -104,7 +104,8 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void beforeAll() {
+    void beforeAll() throws Exception {
+        deployClusterOperator(NAMESPACE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
 
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();

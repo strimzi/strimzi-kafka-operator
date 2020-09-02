@@ -36,9 +36,7 @@ public class HttpBridgeAbstractST extends AbstractST {
     }
 
     @BeforeAll
-    void createClassResources() throws Exception {
-        deployClusterOperator(NAMESPACE);
-
+    void createBridgeClient() {
         kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(CLUSTER_NAME),
                 TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), bridgePort, 1000, 1000);
     }

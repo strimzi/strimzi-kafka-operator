@@ -83,6 +83,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources() throws Exception {
+        deployClusterOperator(NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka

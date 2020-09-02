@@ -25,6 +25,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -157,5 +158,10 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+    }
+
+    @BeforeAll
+    void createClassResources() throws Exception {
+        deployClusterOperator(NAMESPACE);
     }
 }

@@ -84,7 +84,8 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
+        deployClusterOperator(NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka

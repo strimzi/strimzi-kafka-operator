@@ -253,7 +253,8 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void createClassResources() {
+    void createClassResources() throws Exception {
+        deployClusterOperator(NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         // Deploy kafka
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
