@@ -763,8 +763,7 @@ public abstract class AbstractModel {
     }
 
     protected Secret createSecret(String name, Map<String, String> data) {
-        return SecretGenerator.of(name, namespace, labels, createOwnerReference(), data)
-            .create();
+        return SecretGenerator.create(name, namespace, labels, createOwnerReference(), data);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {

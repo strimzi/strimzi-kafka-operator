@@ -92,8 +92,7 @@ public class CertificateRenewer {
         }
 
         // return Secret with signed cert data
-        return SecretGenerator.of(secretName, namespace, labels, ownerReference, signedCertData)
-                .create();
+        return SecretGenerator.create(secretName, namespace, labels, ownerReference, signedCertData);
     }
 
     private CertAndKey getKeystoreAndPassword(Secret secret) {

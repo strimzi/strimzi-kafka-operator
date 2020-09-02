@@ -41,16 +41,23 @@ public class SecretGenerator {
     public Secret create() {
         SecretBuilder secret = new SecretBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withNamespace(namespace)
-                .withLabels(labels.toMap())
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
                 .endMetadata()
                 .withData(data);
+
         if (ownerReference != null) {
             secret.editMetadata()
                     .withOwnerReferences(ownerReference)
                 .endMetadata();
         }
+
         return secret.build();
+    }
+
+    public static Secret create(String name, String namespace, Labels labels, OwnerReference ownerReference, Map<String, String> data) {
+        return of(name, namespace, labels, data)
+                .create();
     }
 }

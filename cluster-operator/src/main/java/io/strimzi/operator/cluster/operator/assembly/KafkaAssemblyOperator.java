@@ -3169,29 +3169,36 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return reasons;
         }
 
+        /**
+         * Maintenance time window is considered satisfied if none are defined
+         * If any defined cron are satisfied then the time window is considered satisfied
+         * If no crons are satisfied then they are considered not satisfied
+         *
+         * @param dateSupplier
+         * @return
+         */
         private boolean isMaintenanceTimeWindowsSatisfied(Supplier<Date> dateSupplier) {
-            String currentCron = null;
-            try {
-                boolean isSatisfiedBy = getMaintenanceTimeWindows() == null || getMaintenanceTimeWindows().isEmpty();
-                if (!isSatisfiedBy) {
-                    Date date = dateSupplier.get();
-                    for (String cron : getMaintenanceTimeWindows()) {
-                        currentCron = cron;
-                        CronExpression cronExpression = new CronExpression(cron);
-                        // the user defines the cron expression in "UTC/GMT" timezone but CO pod
-                        // can be running on a different one, so setting it on the cron expression
-                        cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
-                        if (cronExpression.isSatisfiedBy(date)) {
-                            isSatisfiedBy = true;
-                            break;
-                        }
-                    }
-                }
-                return isSatisfiedBy;
-            } catch (ParseException e) {
-                log.warn("The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
-                return false;
+            boolean hasNoMaintenanceTimeWindows = getMaintenanceTimeWindows() == null || getMaintenanceTimeWindows().isEmpty();
+            if (hasNoMaintenanceTimeWindows) {
+                return true;
             }
+            Date date = dateSupplier.get();
+            for (String cron : getMaintenanceTimeWindows()) {
+                String currentCron = cron;
+                try {
+                    CronExpression cronExpression = new CronExpression(cron);
+                    // the user defines the cron expression in "UTC/GMT" timezone but CO pod
+                    // can be running on a different one, so setting it on the cron expression
+                    cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
+                    if (cronExpression.isSatisfiedBy(date)) {
+                        return true;
+                    }
+                } catch (ParseException e) {
+                    log.warn("The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
+                    return false;
+                }
+            }
+            return false;
         }
 
         private List<String> getMaintenanceTimeWindows() {
