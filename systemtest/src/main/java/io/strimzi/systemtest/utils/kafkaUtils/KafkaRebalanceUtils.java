@@ -6,8 +6,8 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
