@@ -378,7 +378,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      * Holds the mutable state during a reconciliation
      *
      * Ensures state from one reconciliation step can be persisted to others
-     * Reconciliations steps are functions are methods on ReconciliationState so they can return the ReconciliationState class
+     * Reconciliations steps are methods on ReconciliationState so they can return the ReconciliationState class
      */
     class ReconciliationState {
 
@@ -2049,11 +2049,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 log.trace("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, routeName);
                             }
 
+                            future.complete();
                             return Future.succeededFuture();
                         },
                             error -> {
                                 log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
-                                return Future.failedFuture("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
+                                future.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
+                                return Future.failedFuture(error);
                             });
                 }, res -> {
                     if (res.succeeded()) {
