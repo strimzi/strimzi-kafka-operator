@@ -13,25 +13,19 @@ import java.util.List;
 
 public class ProbeGenerator {
 
-    private final Probe probeConfig;
-
-    private ProbeGenerator(Probe probeConfig) {
-        this.probeConfig = probeConfig;
-    }
-
-    public static ProbeGenerator of(Probe probeConfig) {
-        if (probeConfig == null) {
-            throw new IllegalArgumentException();
-        }
-        return new ProbeGenerator(probeConfig);
-    }
+    private ProbeGenerator() { }
 
     /**
      * probeBuilder returns a ProbeBuilder pre-configured with the supplied properties
      *
+     * @param probeConfig the initial config for the ProbeBuilder
      * @return ProbeBuilder
      */
-    public ProbeBuilder defaultBuilder() {
+    public static ProbeBuilder defaultBuilder(Probe probeConfig) {
+        if (probeConfig == null) {
+            throw new IllegalArgumentException();
+        }
+
         return new ProbeBuilder()
                 .withInitialDelaySeconds(probeConfig.getInitialDelaySeconds())
                 .withTimeoutSeconds(probeConfig.getTimeoutSeconds())
@@ -40,16 +34,11 @@ public class ProbeGenerator {
                 .withFailureThreshold(probeConfig.getFailureThreshold());
     }
 
-    public static ProbeBuilder defaultBuilder(Probe probeConfig) {
-        return ProbeGenerator.of(probeConfig)
-                .defaultBuilder();
-    }
-
-    public io.fabric8.kubernetes.api.model.Probe httpProbe(String path, String port) {
+    public static io.fabric8.kubernetes.api.model.Probe httpProbe(Probe probeConfig, String path, String port) {
         if (path == null || path.isEmpty() || port == null || port.isEmpty()) {
             throw new IllegalArgumentException();
         }
-        io.fabric8.kubernetes.api.model.Probe probe = defaultBuilder()
+        io.fabric8.kubernetes.api.model.Probe probe = defaultBuilder(probeConfig)
                 .withNewHttpGet()
                     .withNewPath(path)
                     .withNewPort(port)
@@ -58,26 +47,16 @@ public class ProbeGenerator {
         return probe;
     }
 
-    public static io.fabric8.kubernetes.api.model.Probe httpProbe(Probe probeConfig, String path, String port) {
-        return ProbeGenerator.of(probeConfig)
-                .httpProbe(path, port);
-    }
-
-    public io.fabric8.kubernetes.api.model.Probe execProbe(List<String> command) {
+    public static io.fabric8.kubernetes.api.model.Probe execProbe(Probe probeConfig, List<String> command) {
         if (command == null || command.isEmpty()) {
             throw new IllegalArgumentException();
         }
-        io.fabric8.kubernetes.api.model.Probe probe = defaultBuilder()
+        io.fabric8.kubernetes.api.model.Probe probe = defaultBuilder(probeConfig)
                 .withNewExec()
                     .withCommand(command)
                 .endExec()
                 .build();
         return probe;
-    }
-
-    public static io.fabric8.kubernetes.api.model.Probe execProbe(Probe probeConfig, List<String> command) {
-        return ProbeGenerator.of(probeConfig)
-                .execProbe(command);
     }
 
     public static final io.strimzi.api.kafka.model.Probe DEFAULT_TLS_SIDECAR_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
@@ -90,8 +69,7 @@ public class ProbeGenerator {
         if (tlsSidecar != null && tlsSidecar.getReadinessProbe() != null) {
             tlsSidecarReadinessProbe = tlsSidecar.getReadinessProbe();
         }
-        return ProbeGenerator.of(tlsSidecarReadinessProbe)
-            .execProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"));
+        return ProbeGenerator.execProbe(tlsSidecarReadinessProbe, Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"));
     }
 
     protected static io.fabric8.kubernetes.api.model.Probe tlsSidecarLivenessProbe(TlsSidecar tlsSidecar) {
@@ -99,7 +77,6 @@ public class ProbeGenerator {
         if (tlsSidecar != null && tlsSidecar.getLivenessProbe() != null) {
             tlsSidecarLivenessProbe = tlsSidecar.getLivenessProbe();
         }
-        return ProbeGenerator.of(tlsSidecarLivenessProbe)
-            .execProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"));
+        return ProbeGenerator.execProbe(tlsSidecarLivenessProbe, Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"));
     }
 }

@@ -29,13 +29,12 @@ public class ProbeGeneratorTest {
 
     @Test
     public void testNullProbeConfigThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.of(null));
+        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.defaultBuilder(null));
     }
 
     @Test
     public void testDefaultBuilder() {
-        Probe probe = ProbeGenerator.of(DEFAULT_CONFIG)
-                .defaultBuilder()
+        Probe probe = ProbeGenerator.defaultBuilder(DEFAULT_CONFIG)
                 .build();
         assertThat(probe, is(new ProbeBuilder()
                 .withInitialDelaySeconds(1)
@@ -51,8 +50,7 @@ public class ProbeGeneratorTest {
     // Inherits defaults from the io.strimzi.api.kafka.model.Probe class
     @Test
     public void testDefaultBuilderNoValues() {
-        Probe probe = ProbeGenerator.of(new io.strimzi.api.kafka.model.ProbeBuilder().build())
-                .defaultBuilder()
+        Probe probe = ProbeGenerator.defaultBuilder(new io.strimzi.api.kafka.model.ProbeBuilder().build())
                 .build();
         assertThat(probe, is(new ProbeBuilder()
                 .withInitialDelaySeconds(15)
@@ -63,8 +61,7 @@ public class ProbeGeneratorTest {
 
     @Test
     public void testHttpProbe() {
-        Probe probe = ProbeGenerator.of(DEFAULT_CONFIG)
-                .httpProbe("path", "1001");
+        Probe probe = ProbeGenerator.httpProbe(DEFAULT_CONFIG, "path", "1001");
         assertThat(probe, is(new ProbeBuilder()
                 .withNewHttpGet()
                     .withNewPath("path")
@@ -81,22 +78,19 @@ public class ProbeGeneratorTest {
 
     @Test
     public void testHttpProbeMissingPathThrows() {
-        ProbeGenerator generator = ProbeGenerator.of(DEFAULT_CONFIG);
-        assertThrows(IllegalArgumentException.class, () -> generator.httpProbe(null, "1001"));
-        assertThrows(IllegalArgumentException.class, () -> generator.httpProbe("", "1001"));
+        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, null, "1001"));
+        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, "", "1001"));
     }
 
     @Test
     public void testHttpProbeMissingPortThrows() {
-        ProbeGenerator generator = ProbeGenerator.of(DEFAULT_CONFIG);
-        assertThrows(IllegalArgumentException.class, () -> generator.httpProbe("path", null));
-        assertThrows(IllegalArgumentException.class, () -> generator.httpProbe("path", ""));
+        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, "path", null));
+        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, "path", ""));
     }
 
     @Test
     public void testExecProbe() {
-        Probe probe = ProbeGenerator.of(DEFAULT_CONFIG)
-                .execProbe(Arrays.asList("command1", "command2"));
+        Probe probe = ProbeGenerator.execProbe(DEFAULT_CONFIG, Arrays.asList("command1", "command2"));
         assertThat(probe, is(new ProbeBuilder()
                 .withNewExec()
                     .addToCommand("command1", "command2")
@@ -112,9 +106,8 @@ public class ProbeGeneratorTest {
 
     @Test
     public void testExecProbeMissingCommandsThrows() {
-        ProbeGenerator generator = ProbeGenerator.of(DEFAULT_CONFIG);
-        assertThrows(IllegalArgumentException.class, () -> generator.execProbe(null));
-        assertThrows(IllegalArgumentException.class, () -> generator.execProbe(Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.execProbe(DEFAULT_CONFIG, null));
+        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.execProbe(DEFAULT_CONFIG, Collections.emptyList()));
     }
 
     private static final TlsSidecar TLS_SIDECAR = new TlsSidecarBuilder()
