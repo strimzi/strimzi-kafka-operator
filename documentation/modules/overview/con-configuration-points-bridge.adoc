@@ -15,8 +15,9 @@ HTTP-related configuration options set the port connection which the server list
 == CORS
 
 The Kafka Bridge supports the use of Cross-Origin Resource Sharing (CORS).
-CORS is a HTTP mechanism that allows browser access to selected resources from more than one origin.
-You can define a list of allowed resource origins and HTTP methods for interaction with the Kafka cluster.
+CORS is a HTTP mechanism that allows browser access to selected resources from more than one origin, for example, resources on different domains.
+If you choose to use CORS, you can define a list of allowed resource origins and HTTP methods for interaction with the Kafka cluster through the Kafka Bridge.
+The lists are defined in the `http` specification of the Kafka Bridge configuration.
 
 CORS allows for _simple_ and _preflighted_ requests between origin sources on different domains.
 
