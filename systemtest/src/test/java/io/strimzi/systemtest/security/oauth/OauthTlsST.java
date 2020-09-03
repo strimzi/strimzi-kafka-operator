@@ -288,7 +288,7 @@ public class OauthTlsST extends OauthAbstractST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
         KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
 
-        JobUtils.deleteJob(NAMESPACE, OAUTH_PRODUCER_NAME);
+        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
 

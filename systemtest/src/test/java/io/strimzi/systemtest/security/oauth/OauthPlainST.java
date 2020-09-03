@@ -186,7 +186,7 @@ public class OauthPlainST extends OauthAbstractST {
             Constants.GLOBAL_CLIENTS_POLL, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting the Job");
-                JobUtils.deleteJob(NAMESPACE, OAUTH_CONSUMER_NAME);
+                JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
                 KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
@@ -288,7 +288,7 @@ public class OauthPlainST extends OauthAbstractST {
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting the Job {}", OAUTH_CONSUMER_NAME);
-                JobUtils.deleteJob(NAMESPACE, OAUTH_CONSUMER_NAME);
+                JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
                 KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,

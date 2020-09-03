@@ -70,7 +70,7 @@ public class KubernetesResource {
             TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
-                        ResourceManager.kubeClient().getClient().batch().jobs().inNamespace(kubeClient().getNamespace()).createOrReplace(kubernetesJob);
+                        ResourceManager.kubeClient().createJob(kubernetesJob, kubeClient().getNamespace());
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
