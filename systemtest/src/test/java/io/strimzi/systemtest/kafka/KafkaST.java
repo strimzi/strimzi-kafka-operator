@@ -106,40 +106,39 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class KafkaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
-
+    private static final String TEMPLATE_PATH = TestUtils.USER_PATH + "/../examples/templates/cluster-operator";
     public static final String NAMESPACE = "kafka-cluster-test";
+    private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
 
     @Test
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
-        cluster.createCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator");
+        cluster.createCustomResources(TEMPLATE_PATH);
         String templateName = "strimzi-ephemeral";
-        String clusterName = "openshift-my-cluster";
-        cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", clusterName));
+        cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", OPENSHIFT_CLUSTER_NAME));
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(OPENSHIFT_CLUSTER_NAME), 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(OPENSHIFT_CLUSTER_NAME), 3);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(OPENSHIFT_CLUSTER_NAME), 1);
 
         //Testing docker images
-        testDockerImagesForKafkaCluster(clusterName, NAMESPACE, 3, 3, false);
+        testDockerImagesForKafkaCluster(OPENSHIFT_CLUSTER_NAME, NAMESPACE, 3, 3, false);
 
         //Testing labels
-        verifyLabelsForKafkaCluster(clusterName, templateName);
+        verifyLabelsForKafkaCluster(OPENSHIFT_CLUSTER_NAME, templateName);
 
-        LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
-        cmdKubeClient().deleteByName("Kafka", clusterName);
+        LOGGER.info("Deleting Kafka cluster {} after test", OPENSHIFT_CLUSTER_NAME);
+        cmdKubeClient().deleteByName("Kafka", OPENSHIFT_CLUSTER_NAME);
 
         //Wait for kafka deletion
-        cmdKubeClient().waitForResourceDeletion("Kafka", clusterName);
+        cmdKubeClient().waitForResourceDeletion("Kafka", OPENSHIFT_CLUSTER_NAME);
         kubeClient().listPods().stream()
-            .filter(p -> p.getMetadata().getName().startsWith(clusterName))
+            .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
             .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
 
-        StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(clusterName));
-        StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(clusterName));
-        DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
-        cluster.deleteCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator");
+        StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.kafkaStatefulSetName(OPENSHIFT_CLUSTER_NAME));
+        StatefulSetUtils.waitForStatefulSetDeletion(KafkaResources.zookeeperStatefulSetName(OPENSHIFT_CLUSTER_NAME));
+        DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(OPENSHIFT_CLUSTER_NAME));
     }
 
     @Test
@@ -1780,7 +1779,7 @@ class KafkaST extends AbstractST {
 
         basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
                 basicExternalKafkaClientTls.sendMessagesTls(),
-                basicExternalKafkaClientTls.sendMessagesTls()
+                basicExternalKafkaClientTls.receiveMessagesTls()
         );
 
         assertThrows(Exception.class, () -> {
@@ -1957,6 +1956,14 @@ class KafkaST extends AbstractST {
     @Override
     protected void tearDownEnvironmentAfterEach() throws Exception {
         super.tearDownEnvironmentAfterEach();
+        if (cluster.getListOfDeployedResources().contains(TEMPLATE_PATH)) {
+            cluster.deleteCustomResources(TEMPLATE_PATH);
+        }
+
+        kubeClient().listPods().stream()
+            .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
+            .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
+
         kubeClient().getClient().customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).delete();
         kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
