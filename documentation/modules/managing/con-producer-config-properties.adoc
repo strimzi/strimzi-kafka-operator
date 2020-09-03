@@ -110,7 +110,7 @@ Idempotence is useful for exactly once writes to a single partition.
 Transactions, when used with idempotence, allow exactly once writes across multiple partitions.
 
 Transactions guarantee that messages using the same transactional ID are produced once,
-and either _all_ are successfully written to the log or _none_ of them are.
+and either _all_ are successfully written to the respective logs or _none_ of them are.
 
 ----
 # ...
@@ -196,7 +196,7 @@ batch.size=16384 <2>
 buffer.memory=33554432 <3>
 # ...
 ----
-<1> The `linger` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The defaullt is `0'.`
+<1> The `linger` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0'.`
 <2> If a maximum `batch.size` in bytes is used, a request is sent when the maximum is reached, or messages have been queued for longer than `linger.ms` (whichever comes sooner).
 Adding the delay allows batches to accumulate messages up to the batch size.
 <3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression and in-flight requests.
