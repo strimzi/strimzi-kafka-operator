@@ -70,6 +70,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
         KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
+        // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
