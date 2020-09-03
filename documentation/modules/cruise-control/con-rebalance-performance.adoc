@@ -74,7 +74,9 @@ The relevant configurations are summarized below:
 | `replicationThrottle`
 
 | `default.replica.movement.strategies`             .2+| 
-  The list of strategies (in priority order) used to determine the order in which partition reassignment commands are executed for generated proposals. Use a comma separated string for server and a YAML array for `KafkaRebalance` resources.
+  The list of strategies (in priority order) used to determine the order in which partition reassignment commands are executed for generated proposals. 
+
+For the server setting, use a comma separated string with the fully qualified names of the strategy class (add `com.linkedin.kafka.cruisecontrol.executor.strategy.` to the start of each class name). For the `KafkaRebalance` resource setting use a YAML array of strategy class names.
 .2+| `BaseReplicaMovementStrategy`
 | `replicaMovementStrategies`
 
