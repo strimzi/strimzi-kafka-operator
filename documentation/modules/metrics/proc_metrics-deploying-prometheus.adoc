@@ -7,7 +7,7 @@
 = Deploying Prometheus
 
 To obtain monitoring data in your Kafka cluster,
-you can use your own Prometheus deployment or deploy Prometheus by applying the xref:ref-metrics-config-files-{context}[example resource file for the Prometheus docker image and the YAML files for Prometheus-related resources].
+you can use your own Prometheus deployment or deploy Prometheus by applying the xref:ref-metrics-config-files-{context}[example installation resource file for the Prometheus docker image and the YAML files for Prometheus-related resources].
 
 The deployment process creates a `ClusterRoleBinding` and discovers an Alertmanager instance in the namespace specified for the deployment.
 
@@ -37,15 +37,18 @@ Update the `namespaceSelector.matchNames` property with the namespace where the 
 +
 `PodMonitor` is used to scrape data directly from pods for Apache Kafka, ZooKeeper, Operators, the Kafka Bridge and Cruise Control.
 
-. The Grafana dashboards provided show metrics for CPU, memory and disk volume usage, which come directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
-An additional configuration is needed because the Prometheus operator does not have something like `PodMonitor` for scraping metrics directly from nodes.
+. Edit the `prometheus.yaml` installation file to include additional configuration for scraping metrics directly from nodes.
++
+The Grafana dashboards provided show metrics for CPU, memory and disk volume usage, which come directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
++
+The Prometheus Operator does not have something like `PodMonitor` for scraping the nodes, so the `prometheus-additional.yaml` file contains the additional configuration needed.
 
 .. Create a `Secret` resource:
 +
 [source,shell,subs="+quotes,attributes"]
 kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
 
-.. Edit the `additionalScrapeConfigs` property in the `prometheus.yaml` file to include the name of the `Secret` and the YAML file (`prometheus-additional.yaml`) that contains the additional configuration.
+.. Edit the `additionalScrapeConfigs` property in the `prometheus.yaml` file to include the name of the `Secret` and the `prometheus-additional.yaml` file.
 
 . Deploy the Prometheus resources:
 +
