@@ -115,7 +115,7 @@ public class ExamplesTest {
         }
     }
 
-    private void checkForJsonAnyGetter(Stack<String> path, Object resource, Class<?> cls, Method method) throws IllegalAccessException, InvocationTargetException {
+    protected void checkForJsonAnyGetter(Stack<String> path, Object resource, Class<?> cls, Method method) throws IllegalAccessException, InvocationTargetException {
         if (method.isAnnotationPresent(JsonAnyGetter.class)) {
             Map additionalProperties = (Map) method.invoke(resource);
             if (CustomResourceDefinitionSpec.class.equals(cls)) {
