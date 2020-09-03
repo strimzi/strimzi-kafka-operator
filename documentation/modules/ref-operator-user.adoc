@@ -145,7 +145,7 @@ If no authorization is specified, the User Operator does not provision any acces
 To use simple authorization, you set the `type` property to `simple` in `KafkaUser.spec`.
 Simple authorization uses the default Kafka authorization plugin, `SimpleAclAuthorizer`.
 
-Alternatively, if you are using OAuth 2.0 token based authentication, you can also xref:assembly-oauth-authorization_str[configure OAuth 2.0 authorization].
+Alternatively, if you are using OAuth 2.0 token-based authentication, you can also xref:assembly-oauth-authorization_str[configure OAuth 2.0 authorization].
 
 [discrete]
 === ACL rules
