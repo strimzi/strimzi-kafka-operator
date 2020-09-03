@@ -50,50 +50,51 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @Test
     void testManualTriggeringRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        String clusterName = CLUSTER_NAME + "-manual-rolling";
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.kafkaPersistent(clusterName, 3, 3).done();
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        String zkName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
+        String zkName = KafkaResources.zookeeperStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(clusterName, topicName).done();
         // ##############################
         // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-        KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
+        KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).done();
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
         KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
-            KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, ClientUtils.generateRandomConsumerGroup(), 1000);
+            KafkaResources.plainBootstrapAddress(clusterName), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, ClientUtils.generateRandomConsumerGroup(), 1000);
 
         kafkaBasicClientJob.producerStrimzi().done();
         kafkaBasicClientJob.consumerStrimzi().done();
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUser user = KafkaUserResource.tlsUser(clusterName, userName).done();
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
             .build();
@@ -154,7 +155,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
+        KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(newTopicName);
         internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
