@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -36,7 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.kafkaclients.AbstractKafkaClient.generateRandomConsumerGroup;
+import static io.strimzi.systemtest.utils.ClientUtils.generateRandomConsumerGroup;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 public class KafkaClientsResource {
@@ -429,59 +428,6 @@ public class KafkaClientsResource {
                                 .withName("JAEGER_SAMPLER_PARAM")
                                 .withValue("1")
                             .endEnv()
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
-    }
-
-    public static DoneableDeployment deployKeycloak() {
-        String keycloakName = "keycloak";
-
-        Map<String, String> keycloakLabels = new HashMap<>();
-        keycloakLabels.put("app", keycloakName);
-
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withLabels(keycloakLabels)
-                .withName(keycloakName)
-            .endMetadata()
-            .withNewSpec()
-                .withNewSelector()
-                    .withMatchLabels(keycloakLabels)
-                .endSelector()
-                .withReplicas(1)
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(keycloakLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers()
-                        .addNewContainer()
-                            .withName(keycloakName + "pod")
-                            .withImage("jboss/keycloak:8.0.1")
-                            .withPorts(
-                                new ContainerPortBuilder()
-                                    .withName("http")
-                                    .withContainerPort(8080)
-                                    .build(),
-                                new ContainerPortBuilder()
-                                    .withName("https")
-                                    .withContainerPort(8443)
-                                    .build()
-                            )
-                            .addNewEnv()
-                                .withName("KEYCLOAK_USER")
-                                .withValue("admin")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("KEYCLOAK_PASSWORD")
-                                .withValue("admin")
-                            .endEnv()
-                            // for enabling importing authorization script
-                            .withArgs("-Dkeycloak.profile.feature.upload_scripts=enabled")
                         .endContainer()
                     .endSpec()
                 .endTemplate()

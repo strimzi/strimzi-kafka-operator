@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -69,7 +70,7 @@ public class ResourceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
 
-    public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final String STRIMZI_PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
     public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     private static Stack<Runnable> classResources = new Stack<>();
@@ -77,15 +78,6 @@ public class ResourceManager {
     private static Stack<Runnable> pointerResources = classResources;
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
-
-    private static ResourceManager instance;
-
-    public static synchronized ResourceManager getInstance() {
-        if (instance == null) {
-            instance = new ResourceManager();
-        }
-        return instance;
-    }
 
     private ResourceManager() {}
 
@@ -132,7 +124,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((Kafka) resource);
                 });
@@ -143,7 +135,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaConnect) resource);
                 });
@@ -154,7 +146,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
@@ -165,7 +157,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
@@ -176,7 +168,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker2) resource);
                 });
@@ -187,7 +179,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaBridge) resource);
                 });
@@ -226,18 +218,18 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     kubeClient().deleteIngress((Ingress) resource);
                 });
                 break;
-            default :
+            default:
                 pointerResources.push(() -> {
                     LOGGER.info("Deleting {} {} in namespace {}",
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .cascading(true)
+                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                 });
         }
@@ -394,27 +386,31 @@ public class ResourceManager {
             } else {
                 List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
-                List<Condition> conditions = customResource.getStatus().getConditions();
-                if (conditions != null) {
-                    for (Condition condition : customResource.getStatus().getConditions()) {
-                        log.add("\tType: " + condition.getType() + "\n");
-                        log.add("\tMessage: " + condition.getMessage() + "\n");
-                    }
-                }
-
-                log.add("\nPods with conditions and messages:\n\n");
-
-                for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
-                    log.add(pod.getMetadata().getName() + ":");
-                    for (PodCondition podCondition : pod.getStatus().getConditions()) {
-                        if (podCondition.getMessage() != null) {
-                            log.add("\n\tType: " + podCondition.getType() + "\n");
-                            log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                if (customResource.getStatus() != null) {
+                    List<Condition> conditions = customResource.getStatus().getConditions();
+                    if (conditions != null) {
+                        for (Condition condition : customResource.getStatus().getConditions()) {
+                            if (condition.getMessage() != null) {
+                                log.add("\tType: " + condition.getType() + "\n");
+                                log.add("\tMessage: " + condition.getMessage() + "\n");
+                            }
                         }
                     }
-                    log.add("\n\n");
+
+                    log.add("\nPods with conditions and messages:\n\n");
+
+                    for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                        log.add(pod.getMetadata().getName() + ":");
+                        for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                            if (podCondition.getMessage() != null) {
+                                log.add("\n\tType: " + podCondition.getType() + "\n");
+                                log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                            }
+                        }
+                        log.add("\n\n");
+                    }
+                    LOGGER.info("{}", String.join("", log));
                 }
-                LOGGER.info("{}", String.join("", log));
             }
         }
     }
@@ -426,14 +422,14 @@ public class ResourceManager {
      * @param status - desired status
      * @return returns CR
      */
-    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status, long resourceTimeout) {
+    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Enum<?> status, long resourceTimeout) {
         LOGGER.info("Wait for {}: {} will have desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
 
         TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeout,
             () -> operation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
-                    .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status)),
+                    .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status.toString())),
             () -> logCurrentResourceStatus(operation.inNamespace(resource.getMetadata().getNamespace())
                     .withName(resource.getMetadata().getName())
                     .get()));
@@ -442,7 +438,7 @@ public class ResourceManager {
         return resource;
     }
 
-    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, String status) {
+    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Enum<?> status) {
         long resourceTimeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
         return waitForResourceStatus(operation, resource, status, resourceTimeout);
     }

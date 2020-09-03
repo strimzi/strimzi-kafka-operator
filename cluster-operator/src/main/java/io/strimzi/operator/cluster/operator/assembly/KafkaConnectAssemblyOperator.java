@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -21,12 +22,14 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -94,7 +97,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
         try {
             if (kafkaConnect.getSpec() == null) {
-                log.error("{}: Resource lacks spec property", reconciliation, kafkaConnect.getMetadata().getName());
+                log.error("{}: Resource {} lacks spec property", reconciliation, kafkaConnect.getMetadata().getName());
                 throw new InvalidResourceException("spec property is required");
             }
             connect = KafkaConnectCluster.fromCrd(kafkaConnect, versions);
@@ -102,9 +105,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, Future.failedFuture(e));
             return this.maybeUpdateStatusCommon(resourceOperator, kafkaConnect, reconciliation,
                     kafkaConnectStatus,
-                (connect1, status) -> {
-                    return new KafkaConnectBuilder(connect1).withStatus(status).build();
-                });
+                (connect1, status) ->
+                    new KafkaConnectBuilder(connect1).withStatus(status).build()
+                );
         }
 
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
@@ -112,7 +115,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 null);
 
         Map<String, String> annotations = new HashMap<>(1);
-        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
+
+        String desiredLogging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation);
 
@@ -137,6 +143,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     }
                 })
                 .compose(i -> connectServiceAccount(namespace, connect))
+                .compose(i -> connectInitServiceAccount(namespace, connect))
+                .compose(i -> connectInitClusterRoleBinding(namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnect))))
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
@@ -146,7 +154,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
 
@@ -178,5 +186,16 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return serviceAccountOperations.reconcile(namespace,
                 KafkaConnectResources.serviceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
+    }
+
+    private Future<ReconcileResult<ServiceAccount>> connectInitServiceAccount(String namespace, KafkaConnectCluster connectCluster) {
+        return serviceAccountOperations.reconcile(namespace,
+                connectCluster.getServiceAccountName(),
+                connectCluster.generateServiceAccount());
+    }
+
+    Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connectCluster) {
+        ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding();
+        return clusterRoleBindingOperations.reconcile(KafkaConnectCluster.initContainerClusterRoleBindingName(namespace, name), desired);
     }
 }

@@ -96,11 +96,11 @@ spec: <1>
 +
 or
 +
-* In the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_KAFKA_CONNECT_IMAGES` variable to point to the new container image, and then reinstall the Cluster Operator.
+* In the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_KAFKA_CONNECT_IMAGES` variable to point to the new container image, and then reinstall the Cluster Operator.
 
 .Additional resources
 
 See the _Using Strimzi_ guide for more information on:
 
 * link:{BookURLUsing}#assembly-configuring-container-images-deployment-configuration-kafka-connect[Container images and the `KafkaConnect.spec.image property`^]
-* link:{BookURLUsing}#ref-operators-cluster-operator-configuration-deploying-co[Cluster Operator configuration and the `STRIMZI_KAFKA_CONNECT_IMAGES` variable^]
+* link:{BookURLUsing}#ref-operator-cluster-str[Cluster Operator configuration and the `STRIMZI_KAFKA_CONNECT_IMAGES` variable^]

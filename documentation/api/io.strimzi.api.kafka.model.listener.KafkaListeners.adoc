@@ -1,0 +1,42 @@
+Configure types of Kafka listener.
+
+[id='property-listeners-{context}']
+.`listeners`
+You configure Kafka broker listeners using the `listeners` property in the `Kafka.spec.kafka` resource.
+The `listeners` property contains three sub-properties:
+
+* `plain`
+* `tls`
+* `external`
+
+Each listener is defined when the `listeners` object has the given property.
+
+An empty object ({}) means the default configuration is used.
+
+.Example`listeners` property configuration with all listeners enabled
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain: {}
+  tls: {}
+  external:
+    type: loadbalancer
+# ...
+----
+
+.An example of `listeners` property with only the plain listener enabled
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain: {}
+# ...
+----
+
+.Common listener configuration
+
+For all types of external listener, you can:
+
+* xref:con-common-configuration-listener-addresses-{context}[Override the advertised addresses]
+* xref:con-common-configuration-listener-network-policy-{context}[Restrict access to a listener at the network level]

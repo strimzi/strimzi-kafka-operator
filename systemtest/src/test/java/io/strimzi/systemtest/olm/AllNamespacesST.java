@@ -6,20 +6,20 @@ package io.strimzi.systemtest.olm;
 
 import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.strimzi.systemtest.Constants.OLM;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag(OLM)
 public class AllNamespacesST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
-
-    private static final Logger LOGGER = LogManager.getLogger(AllNamespacesST.class);
 
     @Test
     @Order(1)

@@ -1,4 +1,4 @@
-Use `KafkaMirrorMakerConsumerSpec` properties to configure a MirrorMaker consumer.
+Configures a MirrorMaker consumer.
 
 [id='property-consumer-streams-{context}']
 .`numStreams`

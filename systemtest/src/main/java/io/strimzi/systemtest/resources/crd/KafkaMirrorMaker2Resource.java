@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -23,11 +24,12 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaMirrorMaker2Resource {
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = "../examples/mirror-maker/kafka-mirror-maker-2.yaml";
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = "../examples/metrics/kafka-mirror-maker-2-metrics.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = TestUtils.USER_PATH + "/../examples/mirror-maker/kafka-mirror-maker-2.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
@@ -95,7 +97,7 @@ public class KafkaMirrorMaker2Resource {
                     .withTargetCluster(kafkaTargetClusterName)
                 .endMirror()
                 .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                    .addToLoggers("log4j.rootLogger", "DEBUG")
                 .endInlineLogging()
             .endSpec();
     }
@@ -126,7 +128,7 @@ public class KafkaMirrorMaker2Resource {
     }
 
     public static void deleteKafkaMirrorMaker2WithoutWait(String resourceName) {
-        kafkaMirrorMaker2Client().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
+        kafkaMirrorMaker2Client().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static KafkaMirrorMaker2 getKafkaMirrorMaker2FromYaml(String yamlPath) {
@@ -134,7 +136,7 @@ public class KafkaMirrorMaker2Resource {
     }
 
     private static KafkaMirrorMaker2 waitFor(KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        return ResourceManager.waitForResourceStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, Ready);
     }
 
     private static KafkaMirrorMaker2 deleteLater(KafkaMirrorMaker2 kafkaMirrorMaker2) {

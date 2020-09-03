@@ -14,6 +14,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClie
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.WaitException;
@@ -112,7 +113,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         assertThrows(WaitException.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
-        teamAOauthKafkaClient.setConsumerGroup("a_correct_consumer_group");
+        teamAOauthKafkaClient.setConsumerGroup("a-correct_consumer_group");
 
         assertThat(teamAOauthKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
@@ -135,7 +136,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
         );
     }
 
-    @Disabled("Will be fixed in the new PR.")
     @Description("As a member of team A, I can write to topics starting with 'x-' and " +
             "as a member of team B can read from topics starting with 'x-'")
     @Test
@@ -151,13 +151,14 @@ public class OauthAuthorizationST extends OauthAbstractST {
         assertThat(teamAOauthKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         teamBOauthKafkaClient.setTopicName(topicName);
-        teamBOauthKafkaClient.setConsumerGroup("x_consumer_group_b");
+        teamBOauthKafkaClient.setConsumerGroup("x-consumer_group_b");
 
         assertThat(teamBOauthKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
 
     @Description("As a superuser of team A and team B, i am able to break defined authorization rules")
     @Test
+    @Order(6)
     void testSuperUserWithOauthAuthorization() {
 
         LOGGER.info("Verifying that team B is not able write to topic starting with 'x-' because in kafka cluster" +
@@ -175,7 +176,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         teamAOauthKafkaClient.setTopicName(TOPIC_X);
         teamAOauthKafkaClient.setKafkaUsername(USER_NAME);
-        teamAOauthKafkaClient.setConsumerGroup("x_consumer_group_b1");
+        teamAOauthKafkaClient.setConsumerGroup("x-consumer_group_b1");
 
         assertThrows(WaitException.class, () -> teamAOauthKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
 
@@ -205,27 +206,21 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @Disabled("Will be implemented in next PR")
     @Test
-    @Order(6)
+    @Order(7)
     void testListTopics() {
         // TODO: in the new PR add AdminClient support with operations listTopics(), etc.
     }
 
     @Disabled("Will be implemented in next PR")
     @Test
-    @Order(7)
+    @Order(8)
     void testClusterVerification() {
         // TODO: create more examples via cluster wide stuff
     }
 
     @BeforeAll
     void setUp()  {
-        LOGGER.info("Replacing validIssuerUri: {} to pointing to kafka-authz realm", validIssuerUri);
-        LOGGER.info("Replacing jwksEndpointUri: {} to pointing to kafka-authz realm", jwksEndpointUri);
-        LOGGER.info("Replacing oauthTokenEndpointUri: {} to pointing to kafka-authz realm", oauthTokenEndpointUri);
-
-        validIssuerUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/kafka-authz";
-        jwksEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/kafka-authz/protocol/openid-connect/certs";
-        oauthTokenEndpointUri = "https://" + keycloakIpWithPortHttps + "/auth/realms/kafka-authz/protocol/openid-connect/token";
+        keycloakInstance.setRealm("kafka-authz", true);
 
         LOGGER.info("Setting producer and consumer properties");
 
@@ -242,10 +237,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withKafkaUsername(TEAM_A_CLIENT)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withConsumerGroupName("a_consumer_group")
+            .withConsumerGroupName("a-consumer_group")
             .withOauthClientId(TEAM_A_CLIENT)
             .withClientSecretName(TEAM_A_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         teamBOauthKafkaClient = new OauthExternalKafkaClient.Builder()
@@ -255,10 +250,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withKafkaUsername(TEAM_A_CLIENT)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withConsumerGroupName("x_" + CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+            .withConsumerGroupName("x-" + ClientUtils.generateRandomConsumerGroup())
             .withOauthClientId(TEAM_B_CLIENT)
             .withClientSecretName(TEAM_B_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -267,11 +262,11 @@ public class OauthAuthorizationST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().setExternal(
                 new KafkaListenerExternalNodePortBuilder()
                     .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(validIssuerUri)
-                        .withJwksEndpointUri(jwksEndpointUri)
-                        .withJwksExpirySeconds(JWKS_EXPIRE_SECONDS)
-                        .withJwksRefreshSeconds(JWKS_REFRESH_SECONDS)
-                        .withUserNameClaim(userNameClaim)
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
                         .withTlsTrustedCertificates(
                             new CertSecretSourceBuilder()
                                 .withSecretName(SECRET_OF_KEYCLOAK)
@@ -293,7 +288,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
                             .withCertificate(CERTIFICATE_OF_KEYCLOAK)
                             .build()
                     )
-                    .withTokenEndpointUri(oauthTokenEndpointUri)
+                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .build());
         });
 

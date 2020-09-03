@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
@@ -18,6 +19,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
@@ -356,7 +358,7 @@ public class KafkaAssemblyOperatorMockTest {
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String secret: secrets) {
-                    client.secrets().inNamespace(NAMESPACE).withName(secret).cascading(true).delete();
+                    client.secrets().inNamespace(NAMESPACE).withName(secret).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                     assertThat("Expected secret " + secret + " to not exist",
                             client.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(nullValue()));
                 }
@@ -381,7 +383,7 @@ public class KafkaAssemblyOperatorMockTest {
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 for (String service : services) {
-                    client.services().inNamespace(NAMESPACE).withName(service).cascading(true).delete();
+                    client.services().inNamespace(NAMESPACE).withName(service).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                     assertThat("Expected service " + service + " to be not exist",
                             client.services().inNamespace(NAMESPACE).withName(service).get(), is(nullValue()));
                 }
@@ -440,7 +442,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).cascading(true).delete();
+                client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                 assertThat("Expected sts " + statefulSet + " should not exist",
                         client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(nullValue()));
 
@@ -494,7 +496,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private Resource<Kafka, DoneableKafka> kafkaAssembly(String namespace, String name) {
         CustomResourceDefinition crd = client.customResourceDefinitions().withName(Kafka.CRD_NAME).get();
-        return client.customResources(crd, Kafka.class, KafkaList.class, DoneableKafka.class)
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), Kafka.class, KafkaList.class, DoneableKafka.class)
                 .inNamespace(namespace).withName(name);
     }
 
@@ -667,7 +669,7 @@ public class KafkaAssemblyOperatorMockTest {
                                     .getMetadata().getAnnotations(),
                             hasEntry(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, String.valueOf(!originalKafkaDeleteClaim.get())));
                 }
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).cascading(true).delete();
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                 LOGGER.info("Reconciling again -> delete");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))

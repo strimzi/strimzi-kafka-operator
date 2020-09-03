@@ -11,7 +11,9 @@ We advise use of OAuth 2.0 over an encrypted interface through configuration of 
 Plain listeners are not recommended.
 
 If the authorization server is using certificates signed by the trusted CA and matching the OAuth 2.0 server hostname, TLS connection works using the default settings.
-Otherwise, you have two connection options for your listener configuration when delegating token validation to the authorization server:
+Otherwise, you may need to configure the truststore with prober certificates or disable the certificate hostname validation.
+
+When configuring the Kafka broker you have two options for the mechanism used to validate the access token during OAuth 2.0 authentication of the newly connected Kafka client:
 
 * xref:example-1[Configuring fast local JWT token validation]
 * xref:example-2[Configuring token validation using an introspection endpoint]
@@ -21,8 +23,7 @@ Otherwise, you have two connection options for your listener configuration when 
 For more information on the configuration of OAuth 2.0 authentication for Kafka broker listeners, see:
 
 * xref:appendix_crds#type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
-* xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[Kafka broker listeners]
-* xref:assembly-kafka-authentication-and-authorization-deployment-configuration-kafka[Authentication and Authorization]
+* xref:assembly-securing-access-{context}[Managing access to Kafka]
 
 .Prerequisites
 
@@ -56,23 +57,27 @@ external:
     validIssuerUri: <__https://<auth-server-address>/auth/realms/external__> <2>
     jwksEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/certs__> <3>
     userNameClaim: preferred_username <4>
-    tlsTrustedCertificates: <5>
+    maxSecondsWithoutReauthentication: 3600 <5>
+    tlsTrustedCertificates: <6>
     - secretName: oauth-server-cert
       certificate: ca.crt
-    disableTlsHostnameVerification: true <6>
-    jwksExpirySeconds: 360 <7>
-    jwksRefreshSeconds: 300 <8>
-    enableECDSA: "true" <9>
+    disableTlsHostnameVerification: true <7>
+    jwksExpirySeconds: 360 <8>
+    jwksRefreshSeconds: 300 <9>
+    jwksMinRefreshPauseSeconds: 1 <10>
+    enableECDSA: "true" <11>
 ----
 <1> Listener type set to `oauth`.
 <2> URI of the token issuer used for authentication.
 <3> URI of the JWKS certificate endpoint used for local JWT validation.
 <4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authentication flow and the authorization server used.
-<5> (Optional) Trusted certificates for TLS connection to the authorization server.
-<6> (Optional) Disable TLS hostname verification. Default is `false`.
-<7> The duration the JWKs certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
-<8> The period between refreshes of JWKs certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
-<9> (Optional) If ECDSA is used for signing JWT tokens on authorization server, then this needs to be enabled. It installs additional crypto providers using BouncyCastle crypto library. Default is `false`.
+<5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
+<6> (Optional) Trusted certificates for TLS connection to the authorization server.
+<7> (Optional) Disable TLS hostname verification. Default is `false`.
+<8> The duration the JWKS certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
+<9> The period between refreshes of JWKS certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
+<10> The minimum pause in seconds between consecutive attempts to refresh JWKS public keys. When an unknown signing key is encountered, the JWKS keys refresh is scheduled outside the regular periodic schedule with at least the specified pause since the last refresh attempt. The refreshing of keys follows the rule of exponential backoff, retrying on unsuccessful refreshes with ever increasing pause, until it reaches `jwksRefreshSeconds`. The default value is 1.
+<11> (Optional) If ECDSA is used for signing JWT tokens on authorization server, then this needs to be enabled. It installs additional crypto providers using BouncyCastle crypto library. Default is `false`.
 
 [[example-2]]
 .Example 2: Configuring token validation using an introspection endpoint
@@ -89,12 +94,14 @@ external:
       secretName: my-cluster-oauth
       key: clientSecret
     userNameClaim: preferred_username <4>
+    maxSecondsWithoutReauthentication: 3600 <5>
 ----
 --
 <1> URI of the token introspection endpoint.
 <2> Client ID to identify the client.
 <3> Client Secret and client ID is used for authentication.
 <4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authorization server used.
+<5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
 +

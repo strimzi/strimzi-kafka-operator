@@ -1,0 +1,101 @@
+// Module included in the following assemblies:
+//
+// assembly-securing-kafka-brokers.adoc
+
+[id='con-securing-kafka-authentication-{context}']
+= Listener authentication
+
+For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` listener types.
+
+For clients outside the Kubernetes cluster, you create `external` listeners and specify a connection mechanism, which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+For more information on the configuration options for connecting an external client, see xref:assembly-configuring-external-listeners-str[Configuring external listeners].
+
+Supported authentication options:
+
+. Mutual TLS authentication (only on the listeners with TLS enabled encryption)
+. SCRAM-SHA-512 authentication
+. xref:assembly-oauth-authentication_str[OAuth 2.0 token based authentication]
+
+The authentication option you choose depends on how you wish to authenticate client access to Kafka brokers.
+
+.Kafka listener authentication options
+image::listener-config-options.png[options for listener authentication configuration]
+
+The listener `authentication` property is used to specify an authentication mechanism specific to that listener.
+
+The listener authentication mechanism is defined by the `type` field.
+If no `authentication` property is specified then the listener does not authenticate clients which connect through that listener.
+The listener will accept all connections without authentication.
+
+Authentication must be configured when using the User Operator to manage `KafkaUsers`.
+
+The following example shows:
+
+* A `plain` listener configured for SCRAM-SHA-512 authentication
+* A `tls` listener with mutual TLS authentication
+* An `external` listener with mutual TLS authentication
+
+.An example showing listener authentication configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain:
+    authentication:
+      type: scram-sha-512
+  tls:
+    authentication:
+      type: tls
+  external:
+    type: loadbalancer
+    tls: true
+    authentication:
+      type: tls
+# ...
+----
+
+[id='con-mutual-tls-authentication-{context}']
+== Mutual TLS authentication
+
+Mutual TLS authentication is always used for the communication between Kafka brokers and ZooKeeper pods.
+
+Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication.
+For mutual, or two-way, authentication, both the server and the client present certificates.
+When you configure mutual authentication, the broker authenticates the client (client authentication) and the client authenticates the broker (server authentication).
+
+NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another.
+For example, when HTTPS is used between a web browser and a web server, the browser obtains proof of the identity of the web server.
+
+[id='con-scram-sha-authentication-{context}']
+== SCRAM-SHA-512 authentication
+
+SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords.
+Strimzi can configure Kafka to use SASL (Simple Authentication and Security Layer) SCRAM-SHA-512 to provide authentication on both unencrypted and encrypted client connections.
+
+When SCRAM-SHA-512 authentication is used with a TLS client connection, the TLS protocol provides the encryption, but is not used for authentication.
+
+The following properties of SCRAM make it safe to use SCRAM-SHA-512 even on unencrypted connections:
+
+* The passwords are not sent in the clear over the communication channel.
+Instead the client and the server are each challenged by the other to offer proof that they know the password of the authenticating user.
+
+* The server and client each generate a new challenge for each authentication exchange.
+This means that the exchange is resilient against replay attacks.
+
+When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12-character password consisting of upper and lowercase ASCII letters and numbers.
+
+[id='assembly-kafka-broker-listener-network-policies-{context}']
+== Network policies
+
+Strimzi automatically creates a `NetworkPolicy` resource for every listener that is enabled on a Kafka broker.
+By default, a `NetworkPolicy` grants access to a listener to all applications and namespaces.
+
+If you want to restrict access to a listener at the network level to only selected applications or namespaces,
+use the `networkPolicyPeers` property.
+
+Use network policies as part of the listener authentication configuration.
+Each listener can have a different `networkPolicyPeers` configuration.
+
+For more information, refer to the xref:con-common-configuration-listener-network-policy-reference[Listener network policies] section and the {K8sNetworkPolicyPeerAPI}.
+
+NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in order to use network policies in Strimzi.

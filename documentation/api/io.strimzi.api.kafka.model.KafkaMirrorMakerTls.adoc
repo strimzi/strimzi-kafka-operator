@@ -1,4 +1,4 @@
-Use the `KafkaMirrorMakerTls` properties to configure TLS trusted certificates for connecting MirrorMaker to the cluster.
+Configures TLS trusted certificates for connecting MirrorMaker to the cluster.
 
 .`trustedCertificates`
 Having xref:type-KafkaClientAuthenticationTls-reference[set `tls` to configure TLS encryption], use the

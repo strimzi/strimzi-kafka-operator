@@ -141,7 +141,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     @Override
-    protected String getServiceAccountName() {
+    public String getServiceAccountName() {
         return KafkaMirrorMaker2Resources.serviceAccountName(cluster);
     }
 

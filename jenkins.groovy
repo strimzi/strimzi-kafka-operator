@@ -16,6 +16,7 @@ def downloadOcOrigin() {
 
     sh(script: "tar xzf openshift.tar.gz -C /tmp/openshift --strip-components 1")
     sh(script: "sudo cp /tmp/openshift/oc /usr/bin/oc")
+    sh(script: "sudo cp /tmp/openshift/kubectl /usr/bin/kubectl")
     sh(script: "sudo rm -rf /tmp/openshift/")
     sh(script: "sudo rm -rf openshift.tar.gz")
 }

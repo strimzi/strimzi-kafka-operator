@@ -49,9 +49,10 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
                 .withKind("ClusterRole")
                 .build();
 
+
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withLabels(singletonMap("state", "new"))
                 .endMetadata()
                     .withSubjects(ks)
@@ -76,7 +77,7 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
 
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withLabels(singletonMap("state", "modified"))
                 .endMetadata()
                 .withSubjects(ks)

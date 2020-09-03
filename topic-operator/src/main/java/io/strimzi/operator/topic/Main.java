@@ -6,7 +6,6 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.operator.common.Util;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,12 +40,6 @@ public class Main {
     }
 
     private void deploy(Config config) {
-        // Workaround for https://github.com/fabric8io/kubernetes-client/issues/2212
-        // Can be removed after upgrade to Fabric8 4.10.2 or higher or to Java 11
-        if (Util.shouldDisableHttp2()) {
-            System.setProperty("http2.disable", "true");
-        }
-
         DefaultKubernetesClient kubeClient = new DefaultKubernetesClient();
         Crds.registerCustomKinds();
         VertxOptions options = new VertxOptions().setMetricsOptions(

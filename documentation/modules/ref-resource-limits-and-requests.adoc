@@ -8,7 +8,6 @@
 Resource limits and requests are configured using the `resources` property in the following resources:
 
 * `Kafka.spec.kafka`
-* `Kafka.spec.kafka.tlsSidecar`
 * `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`

@@ -1,0 +1,31 @@
+Configures overrides for route external listeners.
+
+[id='property-route-listener-overrides-{context}']
+.`overrides`
+
+By default, the route hosts are automatically assigned by OpenShift.
+However, you can override the assigned route hosts by specifying the requested hosts in the `overrides` property.
+
+Strimzi does not perform any validation that the requested hosts are available; you must ensure that they are free and can be used.
+
+.Example of an external listener of type `routes` configured with overrides for OpenShift route hosts
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: route
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        host: bootstrap.myrouter.com
+      brokers:
+      - broker: 0
+        host: broker-0.myrouter.com
+      - broker: 1
+        host: broker-1.myrouter.com
+      - broker: 2
+        host: broker-2.myrouter.com
+# ...
+----

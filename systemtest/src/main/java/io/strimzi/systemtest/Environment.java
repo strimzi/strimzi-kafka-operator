@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,6 +32,10 @@ public class Environment {
      * Specify the system test configuration file path from an environmental variable
      */
     private static final String CONFIG_FILE_PATH_ENVAR = "ST_CONFIG_PATH";
+    /**
+     * Specify secret name of private registries, with the container registry credentials to be able pull images.
+     */
+    private static final String STRIMZI_IMAGE_PULL_SECRET_ENV = "SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET";
     /**
      * Specify organization which owns image used in system tests.
      */
@@ -97,11 +102,11 @@ public class Environment {
 
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
-    private static final String ST_KAFKA_VERSION_DEFAULT = "2.5.0";
+    private static final String ST_KAFKA_VERSION_DEFAULT = "2.6.0";
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "docker.io";
-    private static final String TEST_LOG_DIR_DEFAULT = "../systemtest/target/logs/";
+    private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
@@ -115,6 +120,7 @@ public class Environment {
     private static final String CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = "bundle";
 
     private static String config;
+    public static final String SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET = getOrDefault(STRIMZI_IMAGE_PULL_SECRET_ENV, "");
     public static final String STRIMZI_ORG = getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     public static final String STRIMZI_REGISTRY = getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
@@ -142,9 +148,7 @@ public class Environment {
     // ClusterOperator installation type variable
     public static final String CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
 
-
-    private Environment() {
-    }
+    private Environment() { }
 
     static {
         String debugFormat = "{}: {}";

@@ -27,13 +27,14 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
-import net.joshka.junit.json.params.JsonFileSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -41,13 +42,18 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -81,17 +87,21 @@ public class StrimziUpgradeST extends AbstractST {
     private final String topicName = "my-topic";
     private final String userName = "my-user";
     private final int upgradeTopicCount = 40;
-    // ExpectedTopicCount contains additionally consumer-offset topic and my-topic
-    private int expectedTopicCount = upgradeTopicCount + 2;
+    // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
+    private final int expectedTopicCount = upgradeTopicCount + 3;
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip";
 
-    @ParameterizedTest()
-    @JsonFileSource(resources = "/StrimziUpgradeST.json")
-    void testUpgradeStrimziVersion(JsonObject parameters) throws Exception {
+
+    @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
+    @MethodSource("loadJsonUpgradeData")
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testUpgradeStrimziVersion(String from, String to, JsonObject parameters) throws Exception {
 
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
+
+        LOGGER.debug("Running upgrade test from version {} to {}", from, to);
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
@@ -122,11 +132,9 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testChainUpgrade() throws Exception {
-        ClassLoader classLoader = getClass().getClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream("StrimziUpgradeST.json");
-        JsonReader jsonReader = Json.createReader(inputStream);
-        JsonArray parameters = jsonReader.readArray();
+        JsonArray parameters = readUpgradeJson();
 
         int consumedMessagesCount = MESSAGE_COUNT;
 
@@ -168,7 +176,7 @@ public class StrimziUpgradeST extends AbstractST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        coDir = new File(dir, "strimzi-0.18.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-0.19.0/install/cluster-operator/");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
@@ -177,7 +185,7 @@ public class StrimziUpgradeST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withVersion(null)
-                    .addToConfig("log.message.format.version", "2.4")
+                    .addToConfig("log.message.format.version", "2.5")
                 .endKafka()
             .endSpec().done();
 
@@ -197,7 +205,7 @@ public class StrimziUpgradeST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.5.0"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.6.0"));
     }
 
     @SuppressWarnings("MethodLength")
@@ -267,9 +275,8 @@ public class StrimziUpgradeST extends AbstractST {
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
                 KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
-                // Add continuous topic to expectedTopicCunt which will be check after upgrade procedures
-                expectedTopicCount += 1;
             }
+
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
             KafkaClientsResource.producerStrimzi(producerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration).done();
             KafkaClientsResource.consumerStrimzi(consumerName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, "", continuousConsumerGroup).done();
@@ -315,7 +322,7 @@ public class StrimziUpgradeST extends AbstractST {
         // Modify + apply installation files
         LOGGER.info("Going to update CO from {} to {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         if ("HEAD".equals(testParameters.getString("toVersion"))) {
-            coDir = new File("../install/cluster-operator");
+            coDir = new File(TestUtils.USER_PATH + "/../install/cluster-operator");
         } else {
             url = testParameters.getString("urlTo");
             dir = FileUtils.downloadAndUnzip(url);
@@ -341,7 +348,7 @@ public class StrimziUpgradeST extends AbstractST {
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
@@ -392,7 +399,7 @@ public class StrimziUpgradeST extends AbstractST {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else if (f.getName().matches("050-Deployment.*")) {
+            } else if (f.getName().matches(".*Deployment.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
             } else {
                 cmdKubeClient().apply(f);
@@ -513,6 +520,24 @@ public class StrimziUpgradeST extends AbstractST {
                     .endSpec()
                 .endTemplate()
             .endSpec().done();
+    }
+
+    private static Stream<Arguments> loadJsonUpgradeData() throws FileNotFoundException {
+        JsonArray upgradeData = readUpgradeJson();
+        List<Arguments> parameters = new LinkedList<>();
+
+        upgradeData.forEach(jsonData -> {
+            JsonObject data = (JsonObject) jsonData;
+            parameters.add(Arguments.of(data.getString("fromVersion"), data.getString("toVersion"), data));
+        });
+
+        return parameters.stream();
+    }
+
+    private static JsonArray readUpgradeJson() throws FileNotFoundException {
+        InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json");
+        JsonReader reader = Json.createReader(fis);
+        return reader.readArray();
     }
 
     @BeforeEach

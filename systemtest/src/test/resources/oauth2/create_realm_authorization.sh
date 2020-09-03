@@ -8,14 +8,14 @@ URL=$3
 
 TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token" | awk -F '\"' '{print $4}')
 
-curl -v --insecure "https://$URL/auth/admin/realms" \
+RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -H 'Postman-Token: 3a6cd746-03b5-46fe-a54a-014fc7c51983' \
   -H 'cache-control: no-cache' \
   -d '{
   "realm": "kafka-authz",
-  "accessTokenLifespan": 300,
+  "accessTokenLifespan": 120,
   "ssoSessionIdleTimeout": 864000,
   "ssoSessionMaxLifespan": 864000,
   "enabled": true,
@@ -202,10 +202,10 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             ]
           },
           {
-            "name": "Group:x_*",
+            "name": "Group:x-*",
             "type": "Group",
             "ownerManagedAccess": false,
-            "displayName": "Consumer groups that start with x_",
+            "displayName": "Consumer groups that start with x-",
             "attributes": {},
             "uris": [],
             "scopes": [
@@ -255,10 +255,10 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             ]
           },
           {
-            "name": "Group:a_*",
+            "name": "Group:a-*",
             "type": "Group",
             "ownerManagedAccess": false,
-            "displayName": "Groups that start with a_",
+            "displayName": "Groups that start with a-",
             "attributes": {},
             "uris": [],
             "scopes": [
@@ -330,7 +330,6 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             "name": "Topic:b-*",
             "type": "Topic",
             "ownerManagedAccess": false,
-            "displayName": "Topic that start with b-",
             "attributes": {},
             "uris": [],
             "scopes": [
@@ -460,16 +459,6 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             }
           },
           {
-            "name": "Default Policy",
-            "description": "A policy that grants access only for users within this realm",
-            "type": "js",
-            "logic": "POSITIVE",
-            "decisionStrategy": "AFFIRMATIVE",
-            "config": {
-              "code": "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
-            }
-          },
-          {
             "name": "Dev Team B",
             "type": "role",
             "logic": "POSITIVE",
@@ -526,7 +515,7 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             }
           },
           {
-            "name": "Dev Team B owns topics that start with b- on cluster any cluster",
+            "name": "Dev Team B owns topics that start with b- on cluster cluster2",
             "type": "resource",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
@@ -547,23 +536,23 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             }
           },
           {
-            "name": "Dev Team B can update consumer group offsets that start with x_ on any cluster",
+            "name": "Dev Team B can update consumer group offsets that start with x- on any cluster",
             "type": "scope",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "resources": "[\"Group:x_*\"]",
+              "resources": "[\"Group:x-*\"]",
               "scopes": "[\"Describe\",\"Read\"]",
               "applyPolicies": "[\"Dev Team B\"]"
             }
           },
           {
-            "name": "Dev Team A can use consumer groups that start with a_ on any cluster",
+            "name": "Dev Team A can use consumer groups that start with a- on any cluster",
             "type": "resource",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "resources": "[\"Group:a_*\"]",
+              "resources": "[\"Group:a-*\"]",
               "applyPolicies": "[\"Dev Team A\"]"
             }
           },
@@ -675,4 +664,11 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
       "fullScopeAllowed": true
     }
   ]
-}'
+}')
+
+if [[ ${RESULT} != "" && ${RESULT} != *"Conflict detected"* ]]; then
+  echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Realm wasn't imported!"
+  exit 1
+fi
+
+echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Realm was successfully imported!"

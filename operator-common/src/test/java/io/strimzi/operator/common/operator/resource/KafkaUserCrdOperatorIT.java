@@ -45,11 +45,12 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
         return "kafka-user-crd-it-namespace";
     }
 
-    protected KafkaUser getResource() {
+    @Override
+    protected KafkaUser getResource(String resourceName) {
         return new KafkaUserBuilder()
                 .withApiVersion(KafkaUser.RESOURCE_GROUP + "/" + KafkaUser.V1BETA1)
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

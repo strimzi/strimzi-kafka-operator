@@ -47,6 +47,14 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     }
 
     @Override
+    public void handleAfterEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
+        String testClass = extensionContext.getRequiredTestClass().getName();
+        String testMethod = extensionContext.getRequiredTestMethod().getName();
+        collectLogs(testClass, testMethod);
+        throw throwable;
+    }
+
+    @Override
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         String testClass = extensionContext.getRequiredTestClass().getName();
         collectLogs(testClass, "");
@@ -72,5 +80,6 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         logCollector.collectStatefulSets();
         logCollector.collectReplicaSets();
         logCollector.collectStrimzi();
+        logCollector.collectClusterInfo();
     }
 }

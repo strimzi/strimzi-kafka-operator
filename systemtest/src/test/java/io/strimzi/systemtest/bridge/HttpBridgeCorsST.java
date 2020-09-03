@@ -4,129 +4,120 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.Matchers.containsString;
 
+@Tag(BRIDGE)
 public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
-    public static final String NAMESPACE = "bridge-cluster-test";
-    private static final String CORS_ORIGIN = "https://strimzi.io";
+    private static final String NAMESPACE = "bridge-cors-cluster-test";
 
-    protected static String bridgeExternalService = CLUSTER_NAME + "-bridge-external-service";
-    private static String bridgeHost;
-    private static int bridgePort;
+    private static final String ALLOWED_ORIGIN = "https://strimzi.io";
+    private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
 
     @Test
-    void testCorsOriginAllowed(VertxTestContext context) {
+    void testCorsOriginAllowed() {
         final String kafkaBridgeUser = "bridge-user-example";
-        final String topicName = "topic-simple-receive";
-        final String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String groupId = ClientUtils.generateRandomConsumerGroup();
 
         JsonObject config = new JsonObject();
         config.put("name", kafkaBridgeUser);
         config.put("format", "json");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        // Create topics json
-        JsonArray topic = new JsonArray();
-        topic.add(topicName);
-        JsonObject topics = new JsonObject();
-        topics.put("topics", topic);
+        Map<String, String> additionalHeaders = new HashMap<>();
+        additionalHeaders.put("Origin", ALLOWED_ORIGIN);
+        additionalHeaders.put("Access-Control-Request-Method", HttpMethod.POST.toString());
 
-        client.request(HttpMethod.OPTIONS, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
-            .putHeader("Origin", CORS_ORIGIN)
-            .putHeader("Access-Control-Request-Method", "POST")
-            .putHeader("Content-length", String.valueOf(topics.toBuffer().length()))
-            .putHeader("Content-type", Constants.KAFKA_BRIDGE_JSON)
-            .sendJsonObject(config, ar -> context.verify(() -> {
-                assertThat(ar.result().statusCode(), is(200));
-                assertThat(ar.result().getHeader("access-control-allow-origin"), is(CORS_ORIGIN));
-                assertThat(ar.result().getHeader("access-control-allow-headers"), is("access-control-allow-origin,origin,x-requested-with,content-type,access-control-allow-methods,accept"));
-                List<String> list = Arrays.asList(ar.result().getHeader("access-control-allow-methods").split(","));
-                assertThat(list, hasItem("POST"));
-                client.request(HttpMethod.POST, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
-                    .putHeader("Origin", CORS_ORIGIN)
-                    .send(ar2 -> context.verify(() -> {
-                        assertThat(ar2.result().statusCode(), is(404));
-                        context.completeNow();
-                    }));
-            }));
+        String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
+        String headers = BridgeUtils.addHeadersToString(additionalHeaders, Constants.KAFKA_BRIDGE_JSON_JSON);
+        String response = cmdKubeClient().execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        LOGGER.info("Response from Bridge: {}", response);
+        String allowedHeaders = "access-control-allow-origin,origin,x-requested-with,content-type,access-control-allow-methods,accept";
+
+        LOGGER.info("Checking if response from Bridge is correct");
+        assertThat(response, containsString("200 OK"));
+        assertThat(BridgeUtils.getHeaderValue("access-control-allow-origin", response), is(ALLOWED_ORIGIN));
+        assertThat(BridgeUtils.getHeaderValue("access-control-allow-headers", response), is(allowedHeaders));
+        assertThat(BridgeUtils.getHeaderValue("access-control-allow-methods", response), containsString(HttpMethod.POST.toString()));
+
+        url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
+        headers = BridgeUtils.addHeadersToString(Collections.singletonMap("Origin", ALLOWED_ORIGIN));
+        response = cmdKubeClient().execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
+        LOGGER.info("Response from Bridge: {}", response);
+
+        assertThat(response, containsString("404"));
     }
 
     @Test
-    void testCorsForbidden(VertxTestContext context) {
+    void testCorsForbidden() {
         final String kafkaBridgeUser = "bridge-user-example";
-        final String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String groupId = ClientUtils.generateRandomConsumerGroup();
 
-        final String notAllowedOrigin = "https://evil.io";
+        Map<String, String> additionalHeaders = new HashMap<>();
+        additionalHeaders.put("Origin", NOT_ALLOWED_ORIGIN);
+        additionalHeaders.put("Access-Control-Request-Method", HttpMethod.POST.toString());
 
-        client.request(HttpMethod.OPTIONS, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
-            .putHeader("Origin", notAllowedOrigin)
-            .putHeader("Access-Control-Request-Method", "POST")
-            .send(ar -> context.verify(() -> {
-                assertThat(ar.result().statusCode(), is(403));
-                assertThat(ar.result().statusMessage(), is("CORS Rejected - Invalid origin"));
-                client.request(HttpMethod.POST, bridgePort, bridgeHost, "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription")
-                    .putHeader("Origin", notAllowedOrigin)
-                    .send(ar2 -> context.verify(() -> {
-                        assertThat(ar2.result().statusCode(), is(403));
-                        assertThat(ar2.result().statusMessage(), is("CORS Rejected - Invalid origin"));
-                        context.completeNow();
-                    }));
-            }));
+        String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
+        String headers = BridgeUtils.addHeadersToString(additionalHeaders);
+        String response = cmdKubeClient().execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        LOGGER.info("Response from Bridge: {}", response);
+
+        LOGGER.info("Checking if response from Bridge is correct");
+        assertThat(response, containsString("403"));
+        assertThat(response, containsString("CORS Rejected - Invalid origin"));
+
+        additionalHeaders.remove("Access-Control-Request-Method", HttpMethod.POST.toString());
+        headers = BridgeUtils.addHeadersToString(additionalHeaders);
+        response = cmdKubeClient().execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
+        LOGGER.info("Response from Bridge: {}", response);
+
+        LOGGER.info("Checking if response from Bridge is correct");
+        assertThat(response, containsString("403"));
+        assertThat(response, containsString("CORS Rejected - Invalid origin"));
     }
 
     @BeforeAll
-    static void beforeAll() throws InterruptedException {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                        .endKafkaListenerExternalNodePort()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+    void beforeAll() throws Exception {
+        deployClusterOperator(NAMESPACE);
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
 
         KafkaBridgeResource.kafkaBridgeWithCors(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME),
-            1, CORS_ORIGIN, null).done();
+            1, ALLOWED_ORIGIN, null).done();
 
         KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
-        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
-        KubernetesResource.createServiceResource(service, NAMESPACE).done();
-        ServiceUtils.waitForNodePortService(bridgeExternalService);
-
-        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
-        bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
+        bridgeUrl = KafkaBridgeResources.url(CLUSTER_NAME, NAMESPACE, bridgePort);
     }
 }

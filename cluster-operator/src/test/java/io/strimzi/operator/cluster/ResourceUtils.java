@@ -442,7 +442,8 @@ public class ResourceUtils {
                     .withNamespace(namespace)
                     .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                             "my-user-label", "cromulent"))
-                    .build())
+                    .withAnnotations(emptyMap())
+                .build())
                 .withNewSpec()
                 .endSpec()
                 .build();
@@ -458,6 +459,7 @@ public class ResourceUtils {
                         .withNamespace(namespace)
                         .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
+                        .withAnnotations(emptyMap())
                         .build())
                 .withNewSpec()
                 .endSpec()
@@ -610,7 +612,7 @@ public class ResourceUtils {
     public static AdminClientProvider adminClientProvider() {
         return new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String hostname, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
                 Admin mock = mock(AdminClient.class);
                 DescribeClusterResult dcr;
                 try {

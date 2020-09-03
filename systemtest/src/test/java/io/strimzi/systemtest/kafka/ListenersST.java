@@ -24,6 +24,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -62,7 +63,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
 public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
@@ -341,6 +341,7 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testOverrideNodePortConfiguration() {
         int brokerNodePort = 32000;
         int brokerId = 0;
@@ -500,6 +501,8 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomSoloCertificatesForNodePort() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -570,6 +573,8 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomChainCertificatesForNodePort() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -642,6 +647,8 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomSoloCertificatesForLoadBalancer() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -712,6 +719,8 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomChainCertificatesForLoadBalancer() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -786,6 +795,8 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
     void testCustomSoloCertificatesForRoute() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -856,6 +867,8 @@ public class ListenersST extends AbstractST {
     }
 
     @Test
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
     void testCustomChainCertificatesForRoute() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -928,6 +941,8 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -1125,6 +1140,8 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertNodePortAndTlsRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -1318,6 +1335,8 @@ public class ListenersST extends AbstractST {
     }
 
     @Test
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertRouteAndTlsRollingUpdate() {
@@ -1399,7 +1418,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient.setCaCertName(null);
-        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
@@ -1481,7 +1500,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient.setCaCertName(null);
-        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),

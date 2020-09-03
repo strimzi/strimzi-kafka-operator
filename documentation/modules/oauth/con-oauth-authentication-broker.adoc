@@ -25,7 +25,7 @@ The credentials are not typically required when using public authorization serve
 
 == OAuth 2.0 authentication configuration in the Kafka cluster
 
-To use OAuth 2.0 authentication in the Kafka cluster, you specify for example a TLS listener configuration for your Kafka cluster custom resource with the authentication method `oauth`:
+To use OAuth 2.0 authentication in the Kafka cluster, you specify, for example, a TLS listener configuration for your Kafka cluster custom resource with the authentication method `oauth`:
 
 .Assigining the authentication method type for OAuth 2.0
 [source,yaml,subs="+quotes, attributes"]
@@ -41,7 +41,7 @@ spec:
           #...
 ----
 
-You can configure `plain`, `tls` and `external` listeners, as described in xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[Kafka broker listeners],
+You can configure `plain`, `tls` and `external` listeners,
 but it is recommended not to use `plain` listeners or `external` listeners with disabled TLS encryption with OAuth 2.0 as this creates a vulnerability to network eavesdropping and unauthorized access through token theft.
 
 You configure an `external` listener with `type: oauth` for a secure transport layer to communicate with the client.
@@ -64,7 +64,7 @@ listeners:
 
 The `tls` property is _true_ by default, so it can be left out.
 
-When you've defined the type of authentication as OAuth 2.0, you add configuration based on the type of validation, either as xref:con-oauth-authentication-broker-fast-local[fast local JWT validation] or xref:con-oauth-authentication-broker-intro-local[token validation using an introspection endpoint].
+When you have defined the type of authentication as OAuth 2.0, you add configuration based on the type of validation, either as xref:con-oauth-authentication-broker-fast-local[fast local JWT validation] or xref:con-oauth-authentication-broker-intro-local[token validation using an introspection endpoint].
 
 The procedure to configure OAuth 2.0 for listeners, with descriptions and examples, is described in xref:proc-oauth-authentication-broker-config-{context}[Configuring OAuth 2.0 support for Kafka brokers].
 
@@ -79,7 +79,7 @@ The local check ensures that a token:
 * Is valid (not expired)
 * Has an issuer that matches a `validIssuerURI`
 
-You specify a `validIssuerUrI` attribute when you configure the listener, so that any tokens not issued by the authorization server are rejected.
+You specify a `validIssuerURI` attribute when you configure the listener, so that any tokens not issued by the authorization server are rejected.
 
 The authorization server does not need to be contacted during fast local JWT token validation.
 You activate fast local JWT token validation by specifying a `jwksEndpointUri` attribute, the endpoint exposed by the OAuth 2.0 authorization server.
@@ -107,6 +107,7 @@ spec:
           validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
           jwksEndpointUri: <__https://<auth-server-address>/auth/realms/tls/protocol/openid-connect/certs__>
           userNameClaim: preferred_username
+          maxSecondsWithoutReauthentication: 3600
           tlsTrustedCertificates:
           - secretName: oauth-server-cert
             certificate: ca.crt
@@ -140,6 +141,7 @@ spec:
           validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
           introspectionEndpointUri: <__https://<auth-server-address>/auth/realms/tls/protocol/openid-connect/token/introspect__>
           userNameClaim: preferred_username
+          maxSecondsWithoutReauthentication: 3600
           tlsTrustedCertificates:
           - secretName: oauth-server-cert
             certificate: ca.crt

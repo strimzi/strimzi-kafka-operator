@@ -2,16 +2,16 @@
 //
 // master.adoc
 
-[id="configuration-points_{context}"]
+[id="management-tasks-{context}"]
 = Managing Strimzi
 
 This chapter covers tasks to maintain a deployment of Strimzi.
 
+//using kubectl commands and status
+include::assembly-working-with-resources.adoc[leveloffset=+1]
+
 //Discover internal bootstrap service and HTTP Bridge
 include::modules/con-service-discovery.adoc[leveloffset=+1]
-
-//Check the status of a resource
-include::assembly-resource-status-access.adoc[leveloffset=+1]
 
 //Recover a cluster from a PV
 include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]

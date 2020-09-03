@@ -55,9 +55,6 @@ metadata:
 spec:
   replicas: 1
   serviceAccountName: prometheus-server
-  serviceMonitorSelector:
-    matchLabels:
-      app: strimzi
   podMonitorSelector:
     matchLabels:
       app: strimzi

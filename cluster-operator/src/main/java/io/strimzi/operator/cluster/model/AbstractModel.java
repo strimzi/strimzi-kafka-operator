@@ -43,6 +43,10 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -60,6 +64,7 @@ import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -87,6 +92,15 @@ public abstract class AbstractModel {
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
 
+    /**
+     * Init container related configuration
+     */
+    protected static final String INIT_NAME = "kafka-init";
+    protected static final String INIT_VOLUME_NAME = "rack-volume";
+    protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
+    protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
+    protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
+
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
@@ -109,7 +123,6 @@ public abstract class AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
-    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
@@ -1156,25 +1169,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generate a Map with Prometheus annotations
-     *
-     * @return Map with Prometheus annotations using the default port (9404) and path (/metrics)
-     */
-    protected Map<String, String> prometheusAnnotations()    {
-        if (isMetricsEnabled) {
-            Map<String, String> annotations = new HashMap<>(3);
-
-            annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
-            annotations.put("prometheus.io/scrape", "true");
-            annotations.put("prometheus.io/path", METRICS_PATH);
-
-            return annotations;
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Creates the PodDisruptionBudget
      *
      * @return The default PodDisruptionBudget
@@ -1285,6 +1279,30 @@ public abstract class AbstractModel {
                 }
             }
         }
+    }
+
+    protected ClusterRoleBinding getClusterRoleBinding(Subject subject, RoleRef roleRef) {
+
+        return new ClusterRoleBindingBuilder()
+                .withNewMetadata()
+                .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                .withOwnerReferences(createOwnerReference())
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .withSubjects(subject)
+                .withRoleRef(roleRef)
+                .build();
+    }
+
+    /**
+     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
+     *
+     * @param namespace The namespace.
+     * @param cluster   The cluster name.
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
+        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
     }
 
     /**

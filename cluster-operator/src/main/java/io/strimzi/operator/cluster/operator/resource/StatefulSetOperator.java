@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -333,7 +334,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             long pollingIntervalMs = 1_000;
             long timeoutMs = operationTimeoutMs;
 
-            operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
+            operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
 
             Future<Void> deletedFut = waitFor(namespace, name, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
@@ -372,7 +373,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
                 try {
-                    Boolean deleted = operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
+                    Boolean deleted = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
 
                     if (deleted) {
                         log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);

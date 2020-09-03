@@ -13,6 +13,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -52,17 +54,17 @@ public class KafkaConnectorUtils {
      * @param connectorName name of KafkaConnector
      * @param state desired state
      */
-    public static void waitForConnectorStatus(String connectorName, String state) {
+    public static void waitForConnectorStatus(String connectorName, Enum<?>  state) {
         KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get();
         ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
     }
 
     public static void waitForConnectorReady(String connectorName) {
-        waitForConnectorStatus(connectorName, "Ready");
+        waitForConnectorStatus(connectorName, Ready);
     }
 
     public static void waitForConnectorNotReady(String connectorName) {
-        waitForConnectorStatus(connectorName, "NotReady");
+        waitForConnectorStatus(connectorName, NotReady);
     }
 
     public static String getCreatedConnectors(String connectPodName) {

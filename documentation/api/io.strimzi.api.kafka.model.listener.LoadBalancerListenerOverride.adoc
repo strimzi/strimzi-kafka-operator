@@ -1,0 +1,66 @@
+Configures overrides for node port external listeners.
+
+[id='property-loadbalancer-listener-dns-annotations-{context}']
+.`dnsAnnotations`
+
+Use the `dnsAnnotations` property to add additional annotations to the loadbalancer services.
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
+
+.Example of an external listener of type `loadbalancer` using `dnsAnnotations`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: loadbalancer
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      brokers:
+      - broker: 0
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 1
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 2
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+# ...
+----
+
+[id='property-loadbalancer-listener-ip-{context}']
+.`loadBalancerIP`
+
+Use the `loadBalancerIP` property to request a specific IP address when creating a loadbalancer.
+Use this property when you need to use a loadbalancer with a specific IP address.
+The `loadBalancerIP` field is ignored if the cloud provider does not support the feature.
+
+.Example of an external listener of type `loadbalancer` with specific loadbalancer IP address requests
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: loadbalancer
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        loadBalancerIP: 172.29.3.10
+      brokers:
+      - broker: 0
+        loadBalancerIP: 172.29.3.1
+      - broker: 1
+        loadBalancerIP: 172.29.3.2
+      - broker: 2
+        loadBalancerIP: 172.29.3.3
+# ...
+----

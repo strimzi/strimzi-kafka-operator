@@ -125,4 +125,7 @@ admin.security.protocol=${SECURITY_PROTOCOL}
 ${TLS_CONFIGURATION}
 ${TLS_AUTH_CONFIGURATION}
 ${SASL_AUTH_CONFIGURATION}
+
+# Additional configuration
+client.rack=${STRIMZI_RACK_ID}
 EOF

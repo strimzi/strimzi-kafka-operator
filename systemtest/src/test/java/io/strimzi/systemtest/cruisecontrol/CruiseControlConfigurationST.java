@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -29,11 +30,15 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -42,10 +47,12 @@ import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -58,6 +65,8 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
     private static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
+    private static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
+    private static final String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
 
     private static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     private static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
@@ -195,7 +204,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         EnvVar cruiseControlConfiguration = null;
 
         for (EnvVar envVar : Objects.requireNonNull(cruiseControlContainer).getEnv()) {
-            if (envVar.getName().equals("CRUISE_CONTROL_CONFIGURATION")) {
+            if (envVar.getName().equals(CRUISE_CONTROL_CONFIGURATION_ENV)) {
                 cruiseControlConfiguration = envVar;
             }
         }
@@ -206,14 +215,18 @@ public class CruiseControlConfigurationST extends AbstractST {
         containerConfiguration.load(configurationContainerStream);
 
         LOGGER.info("Verifying that all configuration in the cruise control container matching the cruise control file {} properties", CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
+        List<String> checkCCProperties = Arrays.asList(
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOWS.getName(),
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS.getName(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOWS.getName(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS.getName(),
+                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS.getName(),
+                "goals", "default.goals");
 
-        assertThat(containerConfiguration.getProperty("num.partition.metrics.windows"), is(fileConfiguration.getProperty("num.partition.metrics.windows")));
-        assertThat(containerConfiguration.getProperty("completed.user.task.retention.time.ms"), is(fileConfiguration.getProperty("completed.user.task.retention.time.ms")));
-        assertThat(containerConfiguration.getProperty("num.broker.metrics.windows"), is(fileConfiguration.getProperty("num.broker.metrics.windows")));
-        assertThat(containerConfiguration.getProperty("broker.metrics.window.ms"), is(fileConfiguration.getProperty("broker.metrics.window.ms")));
-        assertThat(containerConfiguration.getProperty("default.goals"), is(fileConfiguration.getProperty("default.goals")));
-        assertThat(containerConfiguration.getProperty("partition.metrics.window.ms"), is(fileConfiguration.getProperty("partition.metrics.window.ms")));
-        assertThat(containerConfiguration.getProperty("goals"), is(fileConfiguration.getProperty("goals")));
+        for (String propertyName : checkCCProperties) {
+            assertThat(containerConfiguration.stringPropertyNames(), hasItem(propertyName));
+            assertThat(containerConfiguration.getProperty(propertyName), is(fileConfiguration.getProperty(propertyName)));
+        }
     }
 
     @Order(5)
@@ -224,6 +237,56 @@ public class CruiseControlConfigurationST extends AbstractST {
         String cruiseControlConfigurationFileContent = cmdKubeClient().execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
 
         assertThat(cruiseControlConfigurationFileContent, not(nullValue()));
+    }
+
+    @Order(6)
+    @Test
+    void testConfigurationPerformanceOptions() throws IOException {
+        Container cruiseControlContainer;
+        EnvVar cruiseControlConfiguration;
+
+        Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
+        Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
+                put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getName(), 2);
+                put(CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getName(), 5);
+                put(CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getName(), 1000);
+                put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getName(), -1);
+            }};
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            LOGGER.info("Changing cruise control performance tuning options");
+            kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder()
+                    .addToConfig(performanceTuningOpts)
+                    .build());
+        });
+
+        LOGGER.info("Verifying that CC pod is rolling, after changing options");
+        DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(CLUSTER_NAME), 1, cruiseControlSnapShot);
+
+        LOGGER.info("Verifying that Kafka pods did not roll");
+        StatefulSetUtils.waitForNoRollingUpdate(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaSnapShot);
+
+        LOGGER.info("Verifying new configuration in the Kafka CR");
+        Pod cruiseControlPod = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0);
+
+        // Get CruiseControl resource properties
+        cruiseControlContainer = cruiseControlPod.getSpec().getContainers().stream()
+                .filter(container -> container.getName().equals(CRUISE_CONTROL_CONTAINER_NAME))
+                .findFirst().orElse(null);
+
+        cruiseControlConfiguration = Objects.requireNonNull(cruiseControlContainer).getEnv().stream()
+                .filter(envVar -> envVar.getName().equals(CRUISE_CONTROL_CONFIGURATION_ENV))
+                .findFirst().orElse(null);
+
+        InputStream configurationContainerStream = new ByteArrayInputStream(
+                Objects.requireNonNull(cruiseControlConfiguration).getValue().getBytes(StandardCharsets.UTF_8));
+        Properties containerConfiguration = new Properties();
+        containerConfiguration.load(configurationContainerStream);
+
+        LOGGER.info("Verifying Cruise control performance options are set in Kafka CR");
+        performanceTuningOpts.forEach((key, value) ->
+                assertThat(containerConfiguration, hasEntry(key, value.toString())));
     }
     
     @BeforeAll

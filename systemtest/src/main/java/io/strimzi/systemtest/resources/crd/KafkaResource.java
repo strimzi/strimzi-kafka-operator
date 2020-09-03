@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -30,15 +31,20 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaResource {
-    private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = "../examples/cruise-control/kafka-cruise-control.yaml";
-    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
-    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
+    private static final String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-metrics.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-cruise-control-metrics.yaml";
+    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-ephemeral.yaml";
+    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-persistent.yaml";
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaClient() {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
@@ -82,8 +88,8 @@ public class KafkaResource {
 
     public static DoneableKafka kafkaJBOD(String name, int kafkaReplicas, int zookeeperReplicas, JbodStorage jbodStorage) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).
-            editSpec()
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .editSpec()
                 .editKafka()
                     .withStorage(jbodStorage)
                 .endKafka()
@@ -107,6 +113,31 @@ public class KafkaResource {
     public static DoneableKafka kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    public static DoneableKafka kafkaAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG);
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    public static DoneableKafka kafkaWithMetricsAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
+
+        Map<String, String> rule = new HashMap<>();
+        rule.put("pattern", "kafka.cruisecontrol<name=(.+)><>(\\w+)");
+        rule.put("name", "kafka_cruisecontrol_$1_$2");
+        rule.put("type", "GAUGE");
+
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .editSpec()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
+                .withNewCruiseControl()
+                    .addToMetrics("lowercaseOutputName", true)
+                    .addToMetrics("rules", Collections.singletonList(rule))
+                .endCruiseControl()
+            .endSpec()
+            .build());
     }
 
     public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
@@ -136,7 +167,7 @@ public class KafkaResource {
                         .withNewTls().endTls()
                     .endListeners()
                     .withNewInlineLogging()
-                        .addToLoggers("kafka.root.logger.level", "DEBUG")
+                        .addToLoggers("log4j.rootLogger", "DEBUG")
                     .endInlineLogging()
                 .endKafka()
                 .editZookeeper()
@@ -205,7 +236,7 @@ public class KafkaResource {
      * @param resourceName kafka cluster name
      */
     public static void deleteKafkaWithoutWait(String resourceName) {
-        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
+        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath) {
@@ -226,7 +257,7 @@ public class KafkaResource {
         if (kafka.getSpec().getCruiseControl() != null) {
             timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
         }
-        return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, "Ready", timeout);
+        return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, Ready, timeout);
     }
 
     private static Kafka deleteLater(Kafka kafka) {

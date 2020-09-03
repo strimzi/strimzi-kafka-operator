@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
+import java.util.Random;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -24,6 +25,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ClientUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ClientUtils.class);
+    private static final String CONSUMER_GROUP_NAME = "my-consumer-group-";
+    private static Random rng = new Random();
 
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
@@ -58,8 +61,18 @@ public class ClientUtils {
     }
 
     private static long timeoutForClientFinishJob(int messagesCount) {
-        // need to add at least 1-2minutes for finishing the job
+        // need to add at least 2minutes for finishing the job
         return (long) messagesCount * 1000 + Duration.ofMinutes(2).toMillis();
+    }
+
+    /**
+     * Method which generates random consumer group name
+     * @return consumer group name with pattern: my-consumer-group-*-*
+     */
+    public static String generateRandomConsumerGroup() {
+        int salt = rng.nextInt(Integer.MAX_VALUE);
+
+        return CONSUMER_GROUP_NAME + salt;
     }
 }
 

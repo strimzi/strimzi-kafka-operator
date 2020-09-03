@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
-import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -50,14 +49,10 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.TlsSidecarBuilder;
-import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfigurationBuilder;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
@@ -135,15 +130,9 @@ public class KafkaClusterTest {
             add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
         }};
 
-    private final TlsSidecar tlsSidecar = new TlsSidecarBuilder()
-            .withLivenessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
-            .withReadinessProbe(new ProbeBuilder().withInitialDelaySeconds(tlsHealthDelay).withTimeoutSeconds(tlsHealthTimeout).build())
-            .build();
-
     private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog))
             .editSpec()
                 .editKafka()
-                    .withTlsSidecar(tlsSidecar)
                     .withNewJvmOptions()
                         .addAllToJavaSystemProperties(javaSystemProperties)
                     .endJvmOptions()
@@ -193,21 +182,18 @@ public class KafkaClusterTest {
 
         assertThat(headful.getSpec().getType(), is("ClusterIP"));
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(headful.getSpec().getPorts().size(), is(4));
+        assertThat(headful.getSpec().getPorts().size(), is(3));
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headful.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
-        assertThat(headful.getSpec().getPorts().get(3).getName(), is(AbstractModel.METRICS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
-        assertThat(headful.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
 
-        assertThat(headful.getMetadata().getAnnotations(), is(Util.mergeLabelsOrAnnotations(kc.getInternalDiscoveryAnnotation(), kc.prometheusAnnotations())));
+        assertThat(headful.getMetadata().getAnnotations(), is(Util.mergeLabelsOrAnnotations(kc.getInternalDiscoveryAnnotation())));
 
         assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
         assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
@@ -231,13 +217,13 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headful.getSpec().getPorts().size(), is(3));
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headful.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headful.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headful.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headful.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
 
         assertThat(headful.getMetadata().getAnnotations().containsKey("prometheus.io/port"), is(false));
@@ -266,16 +252,16 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(4));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(3).getName(), is(KafkaCluster.JMX_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(new Integer(KafkaCluster.JMX_PORT)));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(Integer.valueOf(KafkaCluster.JMX_PORT)));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
@@ -297,13 +283,13 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(3));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.CLIENT_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.CLIENT_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_PORT)));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(new Integer(KafkaCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(KafkaCluster.CLIENT_TLS_PORT)));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
@@ -361,7 +347,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         StatefulSet sts = kc.generateStatefulSet(false, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit().getAmount(), is(sizeLimit));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
     @Test
@@ -438,22 +424,22 @@ public class KafkaClusterTest {
 
         List<Container> containers = sts.getSpec().getTemplate().getSpec().getContainers();
 
-        assertThat(containers.size(), is(2));
+        assertThat(containers.size(), is(1));
 
         // checks on the main Kafka container
-        assertThat(sts.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(sts.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
         assertThat(containers.get(0).getImage(), is(image));
-        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(new Integer(10)));
-        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(new Integer(4)));
-        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(new Integer(33)));
-        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(new Integer(10)));
-        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(new Integer(4)));
-        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(new Integer(33)));
+        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
+        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
+        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
+        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
+        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
+        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
         assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
         assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaCluster.BROKER_CERTS_VOLUME_MOUNT));
@@ -461,18 +447,6 @@ public class KafkaClusterTest {
         assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME_MOUNT));
         assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME));
         assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME_MOUNT));
-        // checks on the TLS sidecar
-        Container tlsSidecarContainer = containers.get(1);
-        assertThat(tlsSidecarContainer.getImage(), is(image));
-        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT), is(ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
-        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL), is(TlsSidecarLogLevel.NOTICE.toValue()));
-        assertThat(tlsSidecarContainer.getVolumeMounts().get(0).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
-        assertThat(tlsSidecarContainer.getVolumeMounts().get(0).getMountPath(), is(KafkaCluster.TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT));
-        assertThat(tlsSidecarContainer.getVolumeMounts().get(1).getMountPath(), is(KafkaCluster.TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT));
-        assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(tlsHealthDelay)));
-        assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(new Integer(tlsHealthTimeout)));
-        assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(tlsHealthDelay)));
-        assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(new Integer(tlsHealthTimeout)));
 
         if (cm.getSpec().getKafka().getRack() != null) {
 
@@ -1183,9 +1157,9 @@ public class KafkaClusterTest {
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(new Integer(32101)));
-        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(new Integer(32001)));
-        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(new Integer(32001)));
+        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32101)));
+        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32001)));
+        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(Integer.valueOf(32001)));
     }
 
     @Test
@@ -1214,10 +1188,10 @@ public class KafkaClusterTest {
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(new Integer(32101)));
-        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(new Integer(32001)));
+        assertThat(kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32101)));
+        assertThat(kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort(), is(Integer.valueOf(32001)));
 
-        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(new Integer(32001)));
+        assertThat(((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort(), is(Integer.valueOf(32001)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(0), is("advertised.host"));
     }
 
@@ -1612,15 +1586,15 @@ public class KafkaClusterTest {
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
-        assertThat(rules.get(0).getFrom().size(), is(0));
+        assertThat(rules.get(0).getFrom(), is(nullValue()));
 
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_TLS_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
-        assertThat(rules.get(0).getFrom().size(), is(0));
+        assertThat(rules.get(0).getFrom(), is(nullValue()));
 
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.EXTERNAL_PORT))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
-        assertThat(rules.get(0).getFrom().size(), is(0));
+        assertThat(rules.get(0).getFrom(), is(nullValue()));
     }
 
     @Test
@@ -1641,9 +1615,6 @@ public class KafkaClusterTest {
 
         StatefulSet sts = kc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
-        Lifecycle lifecycle = sts.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
-        assertThat(lifecycle, is(notNullValue()));
-        assertThat(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/kafka_stunnel_pre_stop.sh"), is(true));
     }
 
     @Test
@@ -1655,71 +1626,6 @@ public class KafkaClusterTest {
 
         StatefulSet sts = kc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
-        Lifecycle lifecycle = sts.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
-        assertThat(lifecycle, is(notNullValue()));
-        assertThat(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/kafka_stunnel_pre_stop.sh"), is(true));
-    }
-
-    /**
-     * Verify the lookup order is:<ul>
-     * <li>Kafka.spec.kafka.tlsSidecar.image</li>
-     * <li>Kafka.spec.kafka.image</li>
-     * <li>image for default version of Kafka</li></ul>
-     */
-    @Test
-    public void testStunnelImage() {
-        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
-
-        Kafka kafka = new KafkaBuilder(resource)
-                .editSpec()
-                    .editKafka()
-                        .editOrNewTlsSidecar()
-                            .withImage("foo1")
-                        .endTlsSidecar()
-                        .withImage("foo2")
-                    .endKafka()
-                .endSpec()
-            .build();
-        assertThat(KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage(), is("foo1"));
-
-        kafka = new KafkaBuilder(resource)
-                .editSpec()
-                    .editKafka()
-                        .editOrNewTlsSidecar()
-                            .withImage(null)
-                        .endTlsSidecar()
-                        .withImage("foo2")
-                    .endKafka()
-                .endSpec()
-                .build();
-        assertThat(KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage(), is("foo2"));
-
-        kafka = new KafkaBuilder(resource)
-                .editSpec()
-                    .editKafka()
-                        .editOrNewTlsSidecar()
-                            .withImage(null)
-                        .endTlsSidecar()
-                        .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
-                        .withImage(null)
-                    .endKafka()
-                .endSpec()
-                .build();
-        assertThat(KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
-
-        kafka = new KafkaBuilder(resource)
-                .editSpec()
-                    .editKafka()
-                        .editOrNewTlsSidecar()
-                            .withImage(null)
-                        .endTlsSidecar()
-                        .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
-                        .withImage(null)
-                    .endKafka()
-                .endSpec()
-            .build();
-        assertThat(KafkaCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
     }
 
     @Test
@@ -1799,7 +1705,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         StatefulSet sts = kc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -1877,12 +1783,10 @@ public class KafkaClusterTest {
         StatefulSet sts = kc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
         sts = kc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
     @Test
@@ -1919,13 +1823,13 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        assertThat(kc.getExternalServiceAdvertisedPortOverride(0), is(new Integer(10000)));
+        assertThat(kc.getExternalServiceAdvertisedPortOverride(0), is(Integer.valueOf(10000)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(0), is("my-host-0.cz"));
 
-        assertThat(kc.getExternalServiceAdvertisedPortOverride(1), is(new Integer(10001)));
+        assertThat(kc.getExternalServiceAdvertisedPortOverride(1), is(Integer.valueOf(10001)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(1), is("my-host-1.cz"));
 
-        assertThat(kc.getExternalServiceAdvertisedPortOverride(2), is(new Integer(10002)));
+        assertThat(kc.getExternalServiceAdvertisedPortOverride(2), is(Integer.valueOf(10002)));
         assertThat(kc.getExternalServiceAdvertisedHostOverride(2), is("my-host-2.cz"));
     }
 
@@ -2632,7 +2536,7 @@ public class KafkaClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(KafkaCluster.initContainerServiceAccountName(cluster)));
+        assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));
     }
 
     @Test
@@ -2654,7 +2558,7 @@ public class KafkaClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(KafkaCluster.initContainerServiceAccountName(cluster)));
+        assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));
     }
 
     @Test
@@ -2760,81 +2664,6 @@ public class KafkaClusterTest {
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
-
-    }
-
-    @Test
-    public void testTlsSideCarContainerEnvVars() {
-
-        ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvOneKey = "TEST_ENV_1";
-        String testEnvOneValue = "test.env.one";
-        envVar1.setName(testEnvOneKey);
-        envVar1.setValue(testEnvOneValue);
-
-        ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = "TEST_ENV_2";
-        String testEnvTwoValue = "test.env.two";
-        envVar2.setName(testEnvTwoKey);
-        envVar2.setValue(testEnvTwoValue);
-
-        List<ContainerEnvVar> testEnvs = new ArrayList<>();
-        testEnvs.add(envVar1);
-        testEnvs.add(envVar2);
-        ContainerTemplate tlsContainer = new ContainerTemplate();
-        tlsContainer.setEnv(testEnvs);
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                .editKafka()
-                .withNewTemplate()
-                .withTlsSidecarContainer(tlsContainer)
-                .endTemplate()
-                .endKafka()
-                .endSpec()
-                .build();
-
-        List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getTlsSidevarEnvVars();
-
-        assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
-                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(true));
-        assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
-                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
-
-    }
-
-    @Test
-    public void testTlsSidecarContainerEnvVarsConflict() {
-        ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvOneKey = KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT;
-        String testEnvOneValue = "test.env.one";
-        envVar1.setName(testEnvOneKey);
-        envVar1.setValue(testEnvOneValue);
-
-        List<ContainerEnvVar> testEnvs = new ArrayList<>();
-        testEnvs.add(envVar1);
-        ContainerTemplate tlsContainer = new ContainerTemplate();
-        tlsContainer.setEnv(testEnvs);
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                .editKafka()
-                .withNewTemplate()
-                .withTlsSidecarContainer(tlsContainer)
-                .endTemplate()
-                .endKafka()
-                .endSpec()
-                .build();
-
-        List<EnvVar> kafkaEnvVars = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS).getTlsSidevarEnvVars();
-
-        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
-                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
 
     }
 
@@ -2963,42 +2792,6 @@ public class KafkaClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
                         hasProperty("name", equalTo(KafkaCluster.KAFKA_NAME)),
-                        hasProperty("securityContext", equalTo(securityContext))
-                )));
-    }
-
-    @Test
-    public void testTlsSidecarContainerSecurityContext() {
-
-        SecurityContext securityContext = new SecurityContextBuilder()
-                .withPrivileged(false)
-                .withNewReadOnlyRootFilesystem(false)
-                .withAllowPrivilegeEscalation(false)
-                .withRunAsNonRoot(true)
-                .withNewCapabilities()
-                    .addNewDrop("ALL")
-                .endCapabilities()
-                .build();
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withNewTemplate()
-                            .withNewTlsSidecarContainer()
-                                .withSecurityContext(securityContext)
-                            .endTlsSidecarContainer()
-                        .endTemplate()
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
-
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
-                hasItem(allOf(
-                        hasProperty("name", equalTo(KafkaCluster.TLS_SIDECAR_NAME)),
                         hasProperty("securityContext", equalTo(securityContext))
                 )));
     }
@@ -3465,6 +3258,7 @@ public class KafkaClusterTest {
                                         .withClientId("my-client-id")
                                         .withValidIssuerUri("http://valid-issuer")
                                         .withIntrospectionEndpointUri("http://introspection")
+                                        .withMaxSecondsWithoutReauthentication(3600)
                                         .withNewClientSecret()
                                             .withSecretName("my-secret-secret")
                                             .withKey("my-secret-key")
@@ -3480,6 +3274,8 @@ public class KafkaClusterTest {
                                 .withTokenEndpointUri("http://token-endpoint-uri")
                                 .withDisableTlsHostnameVerification(true)
                                 .withDelegateToKafkaAcls(false)
+                                .withGrantsRefreshPeriodSeconds(90)
+                                .withGrantsRefreshPoolSize(4)
                                 .withTlsTrustedCertificates(cert1, cert2)
                                 .build())
                 .endKafka()

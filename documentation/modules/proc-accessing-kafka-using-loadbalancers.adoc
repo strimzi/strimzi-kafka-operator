@@ -64,6 +64,3 @@ kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
-
-.Additional resources
-* For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

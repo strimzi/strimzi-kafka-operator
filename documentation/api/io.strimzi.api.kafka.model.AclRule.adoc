@@ -1,0 +1,93 @@
+Configures access control rule for a `KafkaUser` when brokers are using the `AclAuthorizer`.
+
+.Example `KafkaUser` configuration with authorization
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Read
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
+      - resource:
+          type: group
+          name: my-group
+          patternType: prefix
+        operation: Read
+----
+
+
+[id='property-acl-resource-{context}']
+.`resource`
+
+Use the `resource` property to specify the resource that the rule applies to.
+
+Simple authorization supports four resource types, which are specified in the `type` property:
+
+* Topics (`topic`)
+* Consumer Groups (`group`)
+* Clusters (`cluster`)
+* Transactional IDs (`transactionalId`)
+
+For Topic, Group, and Transactional ID resources you can specify the name of the resource the rule applies to in the `name` property.
+
+Cluster type resources have no name.
+
+A name is specified as a `literal` or a `prefix` using the `patternType` property.
+
+* Literal names are taken exactly as they are specified in the `name` field.
+* Prefix names use the value from the `name` as a prefix, and will apply the rule to all resources with names starting with the value.
+
+[id='property-acl-type-{context}']
+.`type`
+
+The `type` of rule, which is to `allow` or `deny` (not currently supported) an operation.
+
+The `type` field is optional.
+If `type` is unspecified, the ACL rule is treated as an `allow` rule.
+
+[id='property-acl-operation-{context}']
+.`operation`
+
+Specify an `operation` for the rule to allow or deny.
+
+The following operations are supported:
+
+* Read
+* Write
+* Delete
+* Alter
+* Describe
+* All
+* IdempotentWrite
+* ClusterAction
+* Create
+* AlterConfigs
+* DescribeConfigs
+
+Only certain operations work with each resource.
+
+For more details about `AclAuthorizer`, ACLs and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
+
+[id='property-acl-host-{context}']
+.`host`
+
+Use the `host` property to specify a remote host from which the rule is allowed or denied.
+
+Use an asterisk (`\*`) to allow or deny the operation from all hosts.
+The `host` field is optional. If `host` is unspecified, the `*` value is used by default.

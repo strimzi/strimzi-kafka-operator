@@ -1,0 +1,61 @@
+// Module included in the following assemblies:
+//
+// assembly-securing-kafka-clients.adoc
+
+[id='con-securing-client-authorization-{context}']
+= User authorization
+
+User authorization is configured using the `authorization` property in `KafkaUser.spec`.
+The authorization type enabled for a user is specified using the `type` field.
+
+To use simple authorization, you set the `type` property to `simple` in `KafkaUser.spec.authorization`.
+Simple authorization uses the default Kafka authorization plugin, `AclAuthorizer`.
+
+Alternatively, you can use xref:type-KafkaAuthorizationOpa-reference[OPA authorization],
+or if you are already using OAuth 2.0 token based authentication,
+you can also use xref:assembly-oauth-authorization_str[OAuth 2.0 authorization].
+
+If no authorization is specified, the User Operator does not provision any access rights for the user.
+Whether such a `KafkaUser` can still access resources depends on the authorizer being used.
+For example, for the `AclAuthorizer` this is determined by its `allow.everyone.if.no.acl.found` configuration.
+
+== ACL rules
+
+`AclAuthorizer` uses ACL rules to manage access to Kafka brokers.
+
+ACL rules grant access rights to the user, which you specify in the `acls` property.
+
+For more information about the `AclRule` object, see the xref:type-AclRule-reference[`AclRule` schema reference].
+
+== Super user access to Kafka brokers
+
+If a user is added to a list of super users in a Kafka broker configuration,
+the user is allowed unlimited access to the cluster regardless of any authorization constraints defined in ACLs in `KafkaUser`.
+
+For more information on configuring super user access to brokers, see xref:con-securing-kafka-authorization-{context}[Kafka authorization].
+
+== User quotas
+
+You can configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not exceed access to Kafka brokers based on a byte threshold or a time limit of CPU utilization.
+
+.An example `KafkaUser` with user quotas
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  quotas:
+    producerByteRate: 1048576 <1>
+    consumerByteRate: 2097152 <2>
+    requestPercentage: 55 <3>
+----
+<1> Byte-per-second quota on the amount of data the user can push to a Kafka broker
+<2> Byte-per-second quota on the amount of data the user can fetch from a Kafka broker
+<3> CPU utilization limit as a percentage of time for a client group
+
+For more information on these properties, see the xref:type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference].

@@ -29,4 +29,4 @@ The Topic Operator and User Operator function within the Entity Operator on depl
 
 .Example architecture for the Cluster Operator
 
-image:cluster-operator.png[Cluster Operator]
+image:cluster-operator.png[The Cluster Operator creates and deploys Kafka and ZooKeeper clusters]

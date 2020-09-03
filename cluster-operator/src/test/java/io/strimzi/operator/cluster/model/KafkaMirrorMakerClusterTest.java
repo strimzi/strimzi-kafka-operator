@@ -201,7 +201,7 @@ public class KafkaMirrorMakerClusterTest {
         Map<String, String> expectedLabels = expectedLabels();
         assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
-        assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(dep.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaMirrorMakerResources.deploymentName(this.cluster)));
@@ -601,7 +601,7 @@ public class KafkaMirrorMakerClusterTest {
         KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = mmc.generateDeployment(emptyMap(), true, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -730,15 +730,15 @@ public class KafkaMirrorMakerClusterTest {
         Probe readinessProbe = cont.getReadinessProbe();
 
         assertThat(livenessProbe.getExec().getCommand().get(0), is("/opt/kafka/kafka_mirror_maker_liveness.sh"));
-        assertThat(livenessProbe.getInitialDelaySeconds(), is(new Integer(60)));
-        assertThat(livenessProbe.getTimeoutSeconds(), is(new Integer(5)));
+        assertThat(livenessProbe.getInitialDelaySeconds(), is(Integer.valueOf(60)));
+        assertThat(livenessProbe.getTimeoutSeconds(), is(Integer.valueOf(5)));
 
         assertThat(readinessProbe.getExec().getCommand().size(), is(3));
         assertThat(readinessProbe.getExec().getCommand().get(0), is("test"));
         assertThat(readinessProbe.getExec().getCommand().get(1), is("-f"));
         assertThat(readinessProbe.getExec().getCommand().get(2), is("/tmp/mirror-maker-ready"));
-        assertThat(readinessProbe.getInitialDelaySeconds(), is(new Integer(60)));
-        assertThat(readinessProbe.getTimeoutSeconds(), is(new Integer(5)));
+        assertThat(readinessProbe.getInitialDelaySeconds(), is(Integer.valueOf(60)));
+        assertThat(readinessProbe.getTimeoutSeconds(), is(Integer.valueOf(5)));
 
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_READINESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("10"), is(true));
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_LIVENESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("10"), is(true));
@@ -768,17 +768,17 @@ public class KafkaMirrorMakerClusterTest {
         Probe readinessProbe = cont.getReadinessProbe();
 
         assertThat(livenessProbe.getExec().getCommand().get(0), is("/opt/kafka/kafka_mirror_maker_liveness.sh"));
-        assertThat(livenessProbe.getInitialDelaySeconds(), is(new Integer(120)));
-        assertThat(livenessProbe.getTimeoutSeconds(), is(new Integer(10)));
-        assertThat(livenessProbe.getPeriodSeconds(), is(new Integer(60)));
+        assertThat(livenessProbe.getInitialDelaySeconds(), is(Integer.valueOf(120)));
+        assertThat(livenessProbe.getTimeoutSeconds(), is(Integer.valueOf(10)));
+        assertThat(livenessProbe.getPeriodSeconds(), is(Integer.valueOf(60)));
 
         assertThat(readinessProbe.getExec().getCommand().size(), is(3));
         assertThat(readinessProbe.getExec().getCommand().get(0), is("test"));
         assertThat(readinessProbe.getExec().getCommand().get(1), is("-f"));
         assertThat(readinessProbe.getExec().getCommand().get(2), is("/tmp/mirror-maker-ready"));
-        assertThat(readinessProbe.getInitialDelaySeconds(), is(new Integer(121)));
-        assertThat(readinessProbe.getTimeoutSeconds(), is(new Integer(11)));
-        assertThat(readinessProbe.getPeriodSeconds(), is(new Integer(61)));
+        assertThat(readinessProbe.getInitialDelaySeconds(), is(Integer.valueOf(121)));
+        assertThat(readinessProbe.getTimeoutSeconds(), is(Integer.valueOf(11)));
+        assertThat(readinessProbe.getPeriodSeconds(), is(Integer.valueOf(61)));
 
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_READINESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("61"), is(true));
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_LIVENESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("60"), is(true));

@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
@@ -16,8 +17,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A representation of a single ACL rule for SimpleAclAuthorizer
+ * A representation of a single ACL rule for AclAuthorizer
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

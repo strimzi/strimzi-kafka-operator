@@ -18,6 +18,14 @@ public class Annotations {
 
     public static final String STRIMZI_DOMAIN = "strimzi.io/";
     public static final String STRIMZI_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "logging";
+    /**
+     * Annotations for rolling a cluster whenever the logging (or it's part) has changed.
+     * By changing the annotation we force a restart since the pod will be out of date compared to the statefulset.
+     */
+    public static final String ANNO_STRIMZI_LOGGING_HASH = STRIMZI_DOMAIN + "logging-hash";
+    public static final String ANNO_STRIMZI_LOGGING_APPENDERS_HASH = STRIMZI_DOMAIN + "logging-appenders-hash";
+    public static final String ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH = STRIMZI_DOMAIN + "logging-appenders-hash";
+
     public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = STRIMZI_DOMAIN + "use-connector-resources";
     public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = STRIMZI_DOMAIN + "manual-rolling-update";
     // this annotation with related possible values (approve, stop, refresh) is set by the user for interacting

@@ -46,6 +46,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -193,14 +194,11 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kmm2.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(svc.getSpec().getPorts().size(), is(2));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaMirrorMaker2Cluster.REST_API_PORT)));
+        assertThat(svc.getSpec().getPorts().size(), is(1));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaMirrorMaker2Cluster.REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaMirrorMaker2Cluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(svc.getSpec().getPorts().get(1).getName(), is(AbstractModel.METRICS_PORT_NAME));
-        assertThat(svc.getSpec().getPorts().get(1).getPort(), is(new Integer(KafkaCluster.METRICS_PORT)));
-        assertThat(svc.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
-        assertThat(svc.getMetadata().getAnnotations(), is(kmm2.prometheusAnnotations()));
+        assertThat(svc.getMetadata().getAnnotations().size(), is(0));
 
         checkOwnerReference(kmm2.createOwnerReference(), svc);
     }
@@ -219,7 +217,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kmm2.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaMirrorMaker2Cluster.REST_API_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaMirrorMaker2Cluster.REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaMirrorMaker2Cluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
@@ -239,24 +237,24 @@ public class KafkaMirrorMaker2ClusterTest {
         Map<String, String> expectedDeploymentLabels = expectedLabels();
         assertThat(dep.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
-        assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(dep.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         Container cont = getContainer(dep);
         assertThat(cont.getName(), is(KafkaMirrorMaker2Resources.deploymentName(this.cluster)));
         assertThat(cont.getImage(), is(kmm2.image));
         assertThat(cont.getEnv(), is(getExpectedEnvVars()));
-        assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(cont.getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(cont.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
+        assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(cont.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(cont.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
         assertThat(cont.getPorts().size(), is(2));
-        assertThat(cont.getPorts().get(0).getContainerPort(), is(new Integer(KafkaMirrorMaker2Cluster.REST_API_PORT)));
+        assertThat(cont.getPorts().get(0).getContainerPort(), is(Integer.valueOf(KafkaMirrorMaker2Cluster.REST_API_PORT)));
         assertThat(cont.getPorts().get(0).getName(), is(KafkaMirrorMaker2Cluster.REST_API_PORT_NAME));
         assertThat(cont.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
-        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal(), is(new Integer(1)));
-        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal(), is(new Integer(0)));
+        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal(), is(Integer.valueOf(1)));
+        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal(), is(Integer.valueOf(0)));
         assertThat(AbstractModel.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TLS), is(nullValue()));
         checkOwnerReference(kmm2.createOwnerReference(), dep);
     }
@@ -1005,7 +1003,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = kmm2.generateDeployment(emptyMap(), true, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -1444,7 +1442,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector(), is(nullValue()));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
-        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(emptyMap()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(nullValue()));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
     }

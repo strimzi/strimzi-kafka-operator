@@ -10,6 +10,8 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.cmdClient.Kubectl;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A {@link KubeCluster} implementation for any {@code Kubernetes} cluster.
@@ -18,6 +20,7 @@ public class Kubernetes implements KubeCluster {
 
     public static final String CMD = "kubectl";
     private static final String OLM_NAMESPACE = "operators";
+    private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
 
     @Override
     public boolean isAvailable() {
@@ -29,7 +32,7 @@ public class Kubernetes implements KubeCluster {
         try {
             return Exec.exec(CMD, "cluster-info").exitStatus() && !Exec.exec(CMD, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
-            e.printStackTrace();
+            LOGGER.debug("Error:", e);
             return false;
         }
     }

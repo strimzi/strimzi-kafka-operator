@@ -16,6 +16,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -38,20 +39,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
@@ -88,7 +95,7 @@ public class MetricsST extends AbstractST {
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPartitions, kafkaMetricsData);
-        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(291.0));
+        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(420.0));
     }
 
     @Test
@@ -127,6 +134,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(CONNECT)
     void testKafkaConnectRequests() {
         Pattern connectRequests = Pattern.compile("kafka_connect_node_request_total\\{clientid=\".*\",} ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectRequests, kafkaConnectMetricsData);
@@ -134,6 +142,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(CONNECT)
     void testKafkaConnectResponse() {
         Pattern connectResponse = Pattern.compile("kafka_connect_node_response_total\\{clientid=\".*\",} ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaConnectMetricsData);
@@ -141,6 +150,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(CONNECT)
     void testKafkaConnectIoNetwork() {
         Pattern connectIoNetwork = Pattern.compile("kafka_connect_network_io_total\\{clientid=\".*\",} ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectIoNetwork, kafkaConnectMetricsData);
@@ -161,7 +171,6 @@ public class MetricsST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(5000)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         internalKafkaClient.setPodName(defaultKafkaClientsPodName);
@@ -284,6 +293,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER2)
     void testMirrorMaker2Metrics() {
         kafkaMirrorMaker2MetricsData = MetricsUtils.collectKafkaMirrorMaker2PodsMetrics(MIRROR_MAKER_CLUSTER);
         Pattern connectResponse = Pattern.compile("kafka_connect_worker_connector_count ([\\d.][^\\n]+)");
@@ -329,6 +339,30 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
+    @Test
+    @Tag(CRUISE_CONTROL)
+    void testCruiseControlMetrics() {
+
+        String cruiseControlMetrics = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, "/metrics");
+
+        Matcher regex = Pattern.compile("^([^#].*)\\s+([^\\s]*)$", Pattern.MULTILINE).matcher(cruiseControlMetrics);
+
+        LOGGER.info("Verifying that we have more than 0 groups");
+
+        assertThat(regex.groupCount(), greaterThan(0));
+
+        while (regex.find()) {
+
+            String metricKey = regex.group(1);
+            Object metricValue = regex.group(2);
+
+            LOGGER.debug("{} -> {}", metricKey, metricValue);
+
+            assertThat(metricKey, not(nullValue()));
+            assertThat(metricValue, not(nullValue()));
+        }
+    }
+
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {
         ArrayList<String> command = new ArrayList<>();
         command.add("cat");
@@ -357,18 +391,20 @@ public class MetricsST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() throws Exception {
+        LOGGER.info("Setting up Environment for MetricsST");
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithMetrics(CLUSTER_NAME, 3, 3)
-                .editOrNewSpec()
-                    .editEntityOperator()
-                        .editUserOperator()
-                            .withReconciliationIntervalSeconds(30)
-                        .endUserOperator()
-                    .endEntityOperator()
-                .endSpec()
-                .done();
+        KafkaResource.kafkaWithMetricsAndCruiseControlWithMetrics(CLUSTER_NAME, 3, 3)
+            .editOrNewSpec()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withReconciliationIntervalSeconds(30)
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
+
         KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
@@ -402,6 +438,9 @@ public class MetricsST extends AbstractST {
         list.add("heartbeats");
         list.add(TOPIC_NAME);
         list.add(bridgeTopic);
+        list.add(CruiseControlUtils.CRUISE_CONTROL_METRICS_TOPIC);
+        list.add(CruiseControlUtils.CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
+        list.add(CruiseControlUtils.CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         return list;
     }
 }

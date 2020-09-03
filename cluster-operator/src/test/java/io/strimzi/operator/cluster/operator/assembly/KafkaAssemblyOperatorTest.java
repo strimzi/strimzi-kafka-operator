@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
@@ -140,7 +139,7 @@ public class KafkaAssemblyOperatorTest {
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
         LOG_ZOOKEEPER_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "INFO"));
-        LOG_CONNECT_CONFIG.setLoggers(singletonMap("connect.root.logger.level", "INFO"));
+        LOG_CONNECT_CONFIG.setLoggers(singletonMap("log4j.rootLogger", "INFO"));
     }
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
@@ -619,10 +618,6 @@ public class KafkaAssemblyOperatorTest {
                         ZookeeperCluster.serviceName(kafkaName),
                         KafkaCluster.serviceName(kafkaName),
                         KafkaCluster.headlessServiceName(kafkaName));
-
-                if (metrics)    {
-                    expectedServices.add(KafkaExporterResources.serviceName(kafkaName));
-                }
 
                 if (kafkaListeners != null && kafkaListeners.getExternal() != null) {
                     expectedServices.add(KafkaCluster.externalBootstrapServiceName(kafkaName));

@@ -1,0 +1,11 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-securing-access.adoc
+
+[id='assembly-securing-kafka-brokers-{context}']
+= Security options for Kafka
+
+Use the `Kafka` resource to configure the mechanisms used for Kafka authentication and authorization.
+
+include::../modules/con-securing-kafka-authentication.adoc[leveloffset=+1]
+include::../modules/con-securing-kafka-authorization.adoc[leveloffset=+1]

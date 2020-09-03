@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
@@ -79,7 +80,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
-        when(mockClient.customResources(any(), any(), any(), any())).thenReturn(op);
+        when(mockClient.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(op);
     }
 
     @Override

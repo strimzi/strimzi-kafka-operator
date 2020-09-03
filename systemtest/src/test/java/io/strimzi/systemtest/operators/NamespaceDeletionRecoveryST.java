@@ -30,8 +30,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Random;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -49,6 +49,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private String storageClassName = "retain";
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -70,7 +71,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).createOrReplace(kafkaTopic);
         }
 
-        String consumerGroup = "group-" + new Random().nextInt(Integer.MAX_VALUE);
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
@@ -98,7 +98,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(consumerGroup)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
@@ -107,6 +106,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testTopicNotAvailable() throws InterruptedException {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -120,7 +120,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         recreatePvcAndUpdatePv(persistentVolumeClaimList);
         recreateClusterOperator();
 
-        String consumerGroup = "group-" + new Random().nextInt(Integer.MAX_VALUE);
         // Recreate Kafka Cluster
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -168,7 +167,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(consumerGroup)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
@@ -177,11 +175,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     private void prepareEnvironmentForRecovery(String topicName, int messageCount) {
-        String consumerGroup = "group-" + new Random().nextInt(Integer.MAX_VALUE);
         // Setup Test environment with Kafka and store some messages
         prepareEnvForOperator(NAMESPACE);
         applyRoleBindings(NAMESPACE);
-        // 050-Deployment
+        // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
@@ -211,7 +208,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(consumerGroup)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
@@ -236,7 +232,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Recreate CO
         cluster.applyClusterOperatorInstallFiles();
         applyRoleBindings(NAMESPACE);
-        // 050-Deployment
+        // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
     }
 

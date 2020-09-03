@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
@@ -30,6 +31,179 @@ public class KafkaClusterOAuthValidationTest {
                 .endZookeeper()
             .endSpec()
             .build();
+
+    @Test
+    public void testOAuthValidationWithIntrospectionMinimalPlain() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withNewPlain()
+                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                        .withClientId("my-client-id")
+                        .withValidIssuerUri("http://valid-issuer")
+                        .withIntrospectionEndpointUri("http://introspection")
+                        .withNewClientSecret()
+                        .withSecretName("my-secret-secret")
+                        .withKey("my-secret-key")
+                        .endClientSecret().build())
+                .endPlain()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test
+    public void testOAuthValidationWithJwksAndKeycloakAuthzAndManyOptionsPlain() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withAuthorization(new KafkaAuthorizationKeycloakBuilder()
+                        .withTokenEndpointUri("http://token-endpoint")
+                        .withClientId("my-client-id")
+                        .withDelegateToKafkaAcls(true)
+                        .withGrantsRefreshPeriodSeconds(60)
+                        .withGrantsRefreshPoolSize(5)
+                        .withSuperUsers("CN=my-cluster-kafka,O=io.strimzi",
+                                "CN=my-cluster-entity-operator,O=io.strimzi",
+                                "CN=my-cluster-kafka-exporter,O=io.strimzi",
+                                "CN=my-cluster-cruise-control,O=io.strimzi",
+                                "CN=cluster-operator,O=io.strimzi",
+                                "alice",
+                                "CN=alice")
+                        .build()
+                )
+                .withNewListeners()
+                .withNewPlain()
+                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                        .withClientId("my-client-id")
+                        .withValidIssuerUri("http://valid-issuer")
+                        .withJwksEndpointUri("http://jwks-endpoint")
+                        .withJwksRefreshSeconds(30)
+                        .withJwksExpirySeconds(90)
+                        .withJwksMinRefreshPauseSeconds(5)
+                        .withMaxSecondsWithoutReauthentication(1800)
+                        .withNewClientSecret()
+                        .withSecretName("my-secret-secret")
+                        .withKey("my-secret-key")
+                        .endClientSecret().build())
+                .endPlain()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
+    @Test
+    public void testOAuthValidationWithJwksMinRefreshPauseAndIntrospectionPlain() {
+        assertThrows(InvalidResourceException.class, () -> {
+            Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                    .editSpec()
+                    .editKafka()
+                    .withNewListeners()
+                    .withNewPlain()
+                    .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                            .withClientId("my-client-id")
+                            .withValidIssuerUri("http://valid-issuer")
+                            .withIntrospectionEndpointUri("http://introspection")
+                            .withJwksMinRefreshPauseSeconds(5)
+                            .withNewClientSecret()
+                            .withSecretName("my-secret-secret")
+                            .withKey("my-secret-key")
+                            .endClientSecret().build())
+                    .endPlain()
+                    .endListeners()
+                    .endKafka()
+                    .endSpec()
+                    .build();
+
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+    }
+
+    @Test
+    public void testOAuthValidationWithJwksExpiryAndIntrospectionPlain() {
+        assertThrows(InvalidResourceException.class, () -> {
+            Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                    .editSpec()
+                    .editKafka()
+                    .withNewListeners()
+                    .withNewPlain()
+                    .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                            .withClientId("my-client-id")
+                            .withValidIssuerUri("http://valid-issuer")
+                            .withIntrospectionEndpointUri("http://introspection")
+                            .withJwksExpirySeconds(120)
+                            .withNewClientSecret()
+                            .withSecretName("my-secret-secret")
+                            .withKey("my-secret-key")
+                            .endClientSecret().build())
+                    .endPlain()
+                    .endListeners()
+                    .endKafka()
+                    .endSpec()
+                    .build();
+
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+    }
+
+    @Test
+    public void testOAuthValidationWithJwksRefreshAndIntrospectionPlain() {
+        assertThrows(InvalidResourceException.class, () -> {
+            Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                    .editSpec()
+                    .editKafka()
+                    .withNewListeners()
+                    .withNewPlain()
+                    .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                            .withClientId("my-client-id")
+                            .withValidIssuerUri("http://valid-issuer")
+                            .withIntrospectionEndpointUri("http://introspection")
+                            .withJwksRefreshSeconds(60)
+                            .withNewClientSecret()
+                            .withSecretName("my-secret-secret")
+                            .withKey("my-secret-key")
+                            .endClientSecret().build())
+                    .endPlain()
+                    .endListeners()
+                    .endKafka()
+                    .endSpec()
+                    .build();
+
+            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        });
+    }
+
+    @Test
+    public void testOAuthValidationWithReauthAndIntrospectionPlain() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withNewPlain()
+                .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
+                        .withClientId("my-client-id")
+                        .withValidIssuerUri("http://valid-issuer")
+                        .withIntrospectionEndpointUri("http://introspection")
+                        .withMaxSecondsWithoutReauthentication(1800)
+                        .withNewClientSecret()
+                        .withSecretName("my-secret-secret")
+                        .withKey("my-secret-key")
+                        .endClientSecret().build())
+                .endPlain()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
 
     @Test
     public void testOAuthValidationMissingValidIssuerUriPlain() {

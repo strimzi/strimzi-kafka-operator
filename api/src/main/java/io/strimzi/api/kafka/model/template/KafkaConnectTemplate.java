@@ -35,6 +35,7 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
     private ResourceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate connectContainer;
+    private ContainerTemplate initContainer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")
@@ -85,6 +86,16 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     public void setConnectContainer(ContainerTemplate connectContainer) {
         this.connectContainer = connectContainer;
+    }
+
+    @Description("Template for the Kafka init container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getInitContainer() {
+        return initContainer;
+    }
+
+    public void setInitContainer(ContainerTemplate initContainer) {
+        this.initContainer = initContainer;
     }
 
     @Override
