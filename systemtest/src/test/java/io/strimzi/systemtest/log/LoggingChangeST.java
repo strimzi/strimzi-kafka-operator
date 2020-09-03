@@ -13,8 +13,10 @@ import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -569,7 +571,7 @@ class LoggingChangeST extends AbstractST {
 
     @Test
     @Tag(ROLLING_UPDATE)
-    void testDynamicallySetConnectLoggingLevels() throws InterruptedException {
+    void testDynamicallySetConnectLoggingLevels() {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
         loggers.put("log4j.rootLogger", "OFF");
@@ -577,6 +579,7 @@ class LoggingChangeST extends AbstractST {
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editSpec()
                 .withInlineLogging(ilOff)
@@ -599,7 +602,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+            () -> cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
                         + ":8083/admin/loggers/root").out().contains("DEBUG")
         );
 
@@ -636,7 +639,7 @@ class LoggingChangeST extends AbstractST {
         });
 
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka", "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
+            () -> cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "http://" + KafkaConnectResources.serviceName(CLUSTER_NAME)
                         + ":8083/admin/loggers/root").out().contains("OFF")
         );
 
@@ -854,7 +857,7 @@ class LoggingChangeST extends AbstractST {
 
     @Test
     @Tag(ROLLING_UPDATE)
-    void testDynamicallySetMM2LoggingLevels() throws InterruptedException {
+    void testDynamicallySetMM2LoggingLevels() {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
         loggers.put("log4j.rootLogger", "OFF");
@@ -864,6 +867,8 @@ class LoggingChangeST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME + "-target", 3).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, CLUSTER_NAME + "-target", CLUSTER_NAME + "-source", 1, false).done();
+        String kafkaMM2PodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
+        String mm2LogCheckCmd = "http://localhost:8083/admin/loggers/root";
 
         Map<String, String> mm2Snapshot = DeploymentUtils.depSnapshot(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
 
@@ -878,8 +883,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME + "-source", 0), "kafka", "curl", "http://" + KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)
-                        + ":8083/admin/loggers/root").out().contains("DEBUG")
+            () -> cmdKubeClient().execInPod(kafkaMM2PodName, "curl", mm2LogCheckCmd).out().contains("DEBUG")
         );
 
         String log4jConfig =
@@ -915,8 +919,7 @@ class LoggingChangeST extends AbstractST {
         });
 
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME + "-source", 0), "kafka", "curl", "http://" + KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)
-                        + ":8083/admin/loggers/root").out().contains("OFF")
+            () -> cmdKubeClient().execInPod(kafkaMM2PodName, "curl", mm2LogCheckCmd).out().contains("OFF")
         );
 
         assertThat("MirrorMaker2 pod should not roll", DeploymentUtils.depSnapshot(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)), equalTo(mm2Snapshot));
