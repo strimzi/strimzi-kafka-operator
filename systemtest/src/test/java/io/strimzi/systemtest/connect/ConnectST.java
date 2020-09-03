@@ -4,8 +4,16 @@
  */
 package io.strimzi.systemtest.connect;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -52,6 +60,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,6 +82,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -969,6 +979,97 @@ class ConnectST extends AbstractST {
             JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(pod, CLUSTER_NAME));
             assertThat(Integer.parseInt(json.getJsonObject("config").getString("tasks.max")), is(scaleTo));
         }
+    }
+
+    @Test
+    void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
+        String secretPassword = "password";
+        String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
+
+        String secretEnv = "MY_CONNECTOR_SECRET";
+        String configMapEnv = "MY_CONNECT_CONFIG_MAP";
+
+        String configMapVolumeName = "connect-config-map";
+        String secretVolumeName = "connect-secret";
+
+        String configMapKey = "my-key";
+        String secretKey = "my-secret-key";
+
+        Secret connectSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName("my-secret")
+            .endMetadata()
+            .withType("Opaque")
+            .addToData(secretKey, encodedPassword)
+            .build();
+
+        ConfigMap configMap = new ConfigMapBuilder()
+            .editOrNewMetadata()
+                .withName("my-config-map")
+            .endMetadata()
+            .addToData(configMapKey, "my-value")
+            .build();
+
+        kubeClient().createSecret(connectSecret);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .editSpec()
+                .withNewExternalConfiguration()
+                    .addNewVolume()
+                        .withNewName(secretVolumeName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret").build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(configMapVolumeName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-config-map").build())
+                    .endVolume()
+                    .addNewEnv()
+                        .withNewName(secretEnv)
+                        .withNewValueFrom()
+                            .withSecretKeyRef(
+                                new SecretKeySelectorBuilder()
+                                    .withKey(secretKey)
+                                    .withName(connectSecret.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                    .addNewEnv()
+                        .withNewName(configMapEnv)
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(
+                                new ConfigMapKeySelectorBuilder()
+                                    .withKey(configMapKey)
+                                    .withName(configMap.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                .endExternalConfiguration()
+            .endSpec()
+            .done();
+
+        String connectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Check if the ENVs contains desired values");
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo(secretPassword));
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo("my-value"));
+
+        LOGGER.info("Check if volumes contains desired values");
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapVolumeName + "/" + configMapKey).out().trim(),
+            equalTo("my-value")
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + secretVolumeName + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
     }
 
     @BeforeAll
