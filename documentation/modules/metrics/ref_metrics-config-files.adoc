@@ -46,7 +46,7 @@ metrics
 <5> Resources for deploying and configuring Alertmanager.
 <6> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
 <7> Installation resource file for the Prometheus image.
-<8> PodMonitor definitions that translate to jobs for the Prometheus operator to be able to scrape metrics data directly from pods.
+<8> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
 <9> Kafka Bridge resource with metrics enabled.
 <10> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
 <11> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.

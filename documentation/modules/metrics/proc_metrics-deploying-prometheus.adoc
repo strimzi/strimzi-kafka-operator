@@ -41,7 +41,7 @@ Update the `namespaceSelector.matchNames` property with the namespace where the 
 +
 The Grafana dashboards provided show metrics for CPU, memory and disk volume usage, which come directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
 +
-The Prometheus Operator does not have something like `PodMonitor` for scraping the nodes, so the `prometheus-additional.yaml` file contains the additional configuration needed.
+The Prometheus Operator does not have a monitoring API like `PodMonitor` for scraping the nodes, so the `prometheus-additional.yaml` file contains the additional configuration needed.
 
 .. Create a `Secret` resource:
 +
