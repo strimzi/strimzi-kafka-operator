@@ -983,25 +983,32 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    void testMountingSecretAndConfigMapAsVolumes() {
+    void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
         String secretPassword = "password";
         String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
+
         String secretEnv = "MY_CONNECTOR_SECRET";
         String configMapEnv = "MY_CONNECT_CONFIG_MAP";
+
+        String configMapVolumeName = "connect-config-map";
+        String secretVolumeName = "connect-secret";
+
+        String configMapKey = "my-key";
+        String secretKey = "my-secret-key";
 
         Secret connectSecret = new SecretBuilder()
             .withNewMetadata()
                 .withName("my-secret")
             .endMetadata()
             .withType("Opaque")
-            .addToData("my-secret-key", encodedPassword)
+            .addToData(secretKey, encodedPassword)
             .build();
 
         ConfigMap configMap = new ConfigMapBuilder()
             .editOrNewMetadata()
                 .withName("my-config-map")
             .endMetadata()
-            .addToData("my-key", "my-value")
+            .addToData(configMapKey, "my-value")
             .build();
 
         kubeClient().createSecret(connectSecret);
@@ -1016,11 +1023,11 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .withNewExternalConfiguration()
                     .addNewVolume()
-                        .withNewName("connect-secret")
+                        .withNewName(secretVolumeName)
                         .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret").build())
                     .endVolume()
                     .addNewVolume()
-                        .withNewName("connect-config-map")
+                        .withNewName(configMapVolumeName)
                         .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-config-map").build())
                     .endVolume()
                     .addNewEnv()
@@ -1028,7 +1035,7 @@ class ConnectST extends AbstractST {
                         .withNewValueFrom()
                             .withSecretKeyRef(
                                 new SecretKeySelectorBuilder()
-                                    .withKey("my-secret-key")
+                                    .withKey(secretKey)
                                     .withName(connectSecret.getMetadata().getName())
                                     .withOptional(false)
                                     .build())
@@ -1039,7 +1046,7 @@ class ConnectST extends AbstractST {
                         .withNewValueFrom()
                             .withConfigMapKeyRef(
                                 new ConfigMapKeySelectorBuilder()
-                                    .withKey("my-key")
+                                    .withKey(configMapKey)
                                     .withName(configMap.getMetadata().getName())
                                     .withOptional(false)
                                     .build())
@@ -1051,9 +1058,19 @@ class ConnectST extends AbstractST {
 
         String connectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        LOGGER.info("Check if the ENVs are correctly contains desired values");
+        LOGGER.info("Check if the ENVs contains desired values");
         assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo(secretPassword));
         assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo("my-value"));
+
+        LOGGER.info("Check if volumes contains desired values");
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapVolumeName + "/" + configMapKey).out().trim(),
+            equalTo("my-value")
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + secretVolumeName + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
     }
 
     @BeforeAll
