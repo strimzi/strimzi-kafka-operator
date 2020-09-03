@@ -6,12 +6,14 @@ package io.strimzi.systemtest.connect;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -982,7 +984,8 @@ class ConnectST extends AbstractST {
 
     @Test
     void testMountingSecretAndConfigMapAsVolumes() {
-        String secretPassword = Base64.getEncoder().encodeToString("password".getBytes());
+        String secretPassword = "password";
+        String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
         String secretEnv = "MY_CONNECTOR_SECRET";
         String configMapEnv = "MY_CONNECT_CONFIG_MAP";
 
@@ -991,7 +994,7 @@ class ConnectST extends AbstractST {
                 .withName("my-secret")
             .endMetadata()
             .withType("Opaque")
-            .addToData("my-secret-key", secretPassword)
+            .addToData("my-secret-key", encodedPassword)
             .build();
 
         ConfigMap configMap = new ConfigMapBuilder()
@@ -1022,14 +1025,24 @@ class ConnectST extends AbstractST {
                     .endVolume()
                     .addNewEnv()
                         .withNewName(secretEnv)
-                        .editOrNewValueFrom()
-                            .withNewSecretKeyRef("my-secret-key", connectSecret.getMetadata().getName(), false)
+                        .withNewValueFrom()
+                            .withSecretKeyRef(
+                                new SecretKeySelectorBuilder()
+                                    .withKey("my-secret-key")
+                                    .withName(connectSecret.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
                         .endValueFrom()
                     .endEnv()
                     .addNewEnv()
                         .withNewName(configMapEnv)
-                        .editOrNewValueFrom()
-                            .withNewConfigMapKeyRef("my-key", configMap.getMetadata().getName(), false)
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(
+                                new ConfigMapKeySelectorBuilder()
+                                    .withKey("my-key")
+                                    .withName(configMap.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
                         .endValueFrom()
                     .endEnv()
                 .endExternalConfiguration()
@@ -1039,7 +1052,7 @@ class ConnectST extends AbstractST {
         String connectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         LOGGER.info("Check if the ENVs are correctly contains desired values");
-        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo("password"));
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo(secretPassword));
         assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo("my-value"));
     }
 
