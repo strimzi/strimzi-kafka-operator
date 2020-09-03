@@ -52,7 +52,7 @@ public class HelmResource {
                 entry("kafkaInit.image.tag", Environment.STRIMZI_TAG),
                 entry("jmxTrans.image.tag", Environment.STRIMZI_TAG),
                 entry("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion()),
-                entry("image.pullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
+                entry("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
                 entry("resources.requests.memory", REQUESTS_MEMORY),
                 entry("resources.requests.cpu", REQUESTS_CPU),
                 entry("resources.limits.memory", LIMITS_MEMORY),
