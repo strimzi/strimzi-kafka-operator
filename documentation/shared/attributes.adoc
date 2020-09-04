@@ -136,8 +136,8 @@
 :KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
 
 // Tracing versions
-:JaegerClientVersion: 1.1.0
-:OpenTracingKafkaClient: 0.1.12
+:JaegerClientVersion: 1.3.2
+:OpenTracingKafkaClient: 0.1.13
 
 // Section enablers
 :Helm:
