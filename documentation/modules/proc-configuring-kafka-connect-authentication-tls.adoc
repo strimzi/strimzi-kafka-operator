@@ -5,6 +5,8 @@
 [id='proc-configuring-kafka-connect-authentication-tls-{context}']
 = Configuring TLS client authentication in Kafka Connect
 
+You can configure Kafka Connect to connect to Kafka brokers using TLS client authentication.
+
 .Prerequisites
 
 * A Kubernetes cluster
