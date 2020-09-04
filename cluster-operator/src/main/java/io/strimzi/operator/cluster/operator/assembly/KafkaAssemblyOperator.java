@@ -56,6 +56,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
@@ -1513,10 +1514,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
                         }
 
-                        Function<Integer, String> zkNodeAddress = (Integer i) -> ModelUtils.podDnsNameWithoutClusterDomain(
-                                namespace,
-                                KafkaResources.zookeeperHeadlessServiceName(name),
-                                zkCluster.getPodName(i));
+                        Function<Integer, String> zkNodeAddress = (Integer i) ->
+                                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace,
+                                        KafkaResources.zookeeperHeadlessServiceName(name), zkCluster.getPodName(i));
 
                         ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
@@ -3346,7 +3346,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         String getInternalServiceHostname(String serviceName)    {
-            return ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, serviceName);
+            return DnsNameGenerator.serviceDnsNameWithoutClusterDomain(namespace, serviceName);
         }
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {

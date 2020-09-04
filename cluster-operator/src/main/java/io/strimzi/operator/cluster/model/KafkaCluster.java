@@ -302,10 +302,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsName(String namespace, String cluster, String podName) {
-        return ModelUtils.podDnsName(
-                namespace,
-                KafkaCluster.headlessServiceName(cluster),
-                podName);
+        return DnsNameGenerator.podDnsName(namespace, KafkaCluster.headlessServiceName(cluster), podName);
     }
 
     public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, int podId) {
@@ -313,10 +310,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, String podName) {
-        return ModelUtils.podDnsNameWithoutClusterDomain(
-                namespace,
-                KafkaCluster.headlessServiceName(cluster),
-                podName);
+        return DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaCluster.headlessServiceName(cluster), podName);
     }
 
     /**
@@ -1617,7 +1611,7 @@ public class KafkaCluster extends AbstractModel {
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
+        varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
 
@@ -1747,7 +1741,7 @@ public class KafkaCluster extends AbstractModel {
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
+        varList.addAll(getRequiredEnvVars());
 
         // Add user defined environment variables to the Kafka broker containers
         addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);

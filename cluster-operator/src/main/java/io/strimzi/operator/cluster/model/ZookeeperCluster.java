@@ -128,7 +128,7 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              DNS name of the pod
      */
     public static String podDnsName(String namespace, String cluster, int podId) {
-        return ModelUtils.podDnsName(
+        return DnsNameGenerator.podDnsName(
                 namespace,
                 ZookeeperCluster.headlessServiceName(cluster),
                 ZookeeperCluster.zookeeperPodName(cluster, podId));
@@ -146,7 +146,7 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              DNS name of the pod without the cluster domain suffix
      */
     public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        return ModelUtils.podDnsNameWithoutClusterDomain(
+        return DnsNameGenerator.podDnsNameWithoutClusterDomain(
                 namespace,
                 ZookeeperCluster.headlessServiceName(cluster),
                 ZookeeperCluster.zookeeperPodName(cluster, podId));
@@ -550,7 +550,7 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
+        varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateZookeeperContainerEnvVars);
 
