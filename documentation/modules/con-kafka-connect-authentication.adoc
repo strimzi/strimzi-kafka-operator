@@ -19,13 +19,9 @@ The following sections explain how each authentication mechanism works.
 
 == TLS Client authentication
 
-To use TLS client authentication, set the `authentication.type` property to `tls`.
+To use TLS client authentication, set the `spec.authentication.type` property to `tls`.
 TLS client authentication uses a TLS certificate to authenticate.
 The certificate is specified in the `certificateAndKey` property and is always loaded from a Kubernetes Secret.
-In the Secret, the certificate must be stored in X509 format under two different keys: public and private.
-
-NOTE: TLS client authentication can be used only with TLS connections.
-For more details about TLS configuration in Kafka Connect see xref:assembly-kafka-connect-tls-{context}[].
 
 .Example showing TLS client authentication for Kafka Connect
 [source,yaml,subs=attributes+]
@@ -45,12 +41,23 @@ spec:
   # ...
 ----
 
+In the Kubernetes Secret:
+
+* The certificate must be stored in X509 format under the field named by the `certificate`
+* The private key must be stored under the field named by the `key` property, as shown in the preceding example
+
 To use this method, see xref:proc-configuring-kafka-connect-authentication-tls-{context}[].
+
+NOTE: TLS client authentication can be used only with TLS connections.
+For more details about TLS configuration in Kafka Connect see xref:assembly-kafka-connect-tls-{context}[].
 
 == SASL-based SCRAM-SHA-512 authentication
 
-To configure Kafka Connect to use SASL-based SCRAM-SHA-512 authentication, set the `authentication.type` property to `scram-sha-512`.
-This authentication mechanism requires a client username and password. The password is contained in a Secret.
+To configure Kafka Connect to use SASL-based SCRAM-SHA-512 authentication, set the `spec.authentication.type` property to `scram-sha-512`.
+This authentication mechanism requires a client username and password.
+
+The password is contained in a Secret. 
+The name of the Secret is supplied as the value of the `secretName` property, and the field within the Secret is supplied as the `password` property.
 
 The `KafkaConnect` or `KafkaConnectS2I` custom resource references the Secret and its fields under the `passwordSecret` property. 
 
