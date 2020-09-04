@@ -156,7 +156,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
      */
     private static void removeProperty(Collection<AlterConfigOp> alterConfigOps, String pathValueWithoutSlash, ConfigEntry entry) {
         if (!pathValueWithoutSlash.contains("log4j.appender") && !pathValueWithoutSlash.equals("root") && !"ERROR".equals(entry.value())) {
-            alterConfigOps.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, "ERROR"), AlterConfigOp.OpType.SET));
+            alterConfigOps.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
             log.trace("{} not set in desired, setting to ERROR", entry.name());
         }
     }
