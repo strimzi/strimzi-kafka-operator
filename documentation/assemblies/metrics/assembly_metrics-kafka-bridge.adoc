@@ -20,7 +20,7 @@ You can enable the Kafka Bridge metrics in the `KafkaBridge` resource using the 
 You can configure this property as part of a deployment or redeployment of the Kafka Bridge.
 
 For example:
-+
+
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
