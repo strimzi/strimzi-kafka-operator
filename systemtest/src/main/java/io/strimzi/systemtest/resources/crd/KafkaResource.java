@@ -14,9 +14,8 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
-import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.systemtest.Constants;
@@ -159,10 +158,20 @@ public class KafkaResource {
                     .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
-                    .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
-                            .withNewPlain().endPlain()
-                            .withNewTls().endTls()
-                            .build()))
+                    .withNewListeners()
+                        .addNewListValue()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                        .endListValue()
+                        .addNewListValue()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                        .endListValue()
+                    .endListeners()
                     .withNewInlineLogging()
                         .addToLoggers("log4j.rootLogger", "DEBUG")
                     .endInlineLogging()

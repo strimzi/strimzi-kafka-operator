@@ -105,7 +105,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 class KafkaST extends AbstractST {
-
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
     private static final String TEMPLATE_PATH = TestUtils.USER_PATH + "/../examples/templates/cluster-operator";
     public static final String NAMESPACE = "kafka-cluster-test";
@@ -547,10 +546,8 @@ class KafkaST extends AbstractST {
                 "1Gi", "500m", "384Mi", "25m");
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "30m");
-
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "topic-operator",
                 "-Xmx2G", "-Xms1024M", null, null);
-
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "user-operator",
                 "-Xmx1G", "-Xms512M", null, null);
 
@@ -1583,6 +1580,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @Tag(LOADBALANCER_SUPPORTED)
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicConfigurationWithExternalListeners() {
         int kafkaReplicas = 2;
         int zkReplicas = 1;
@@ -1719,7 +1717,6 @@ class KafkaST extends AbstractST {
 
         kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
-
 
         // change dynamically changeable option
         updatedKafkaConfig.put("unclean.leader.election.enable", "true");
