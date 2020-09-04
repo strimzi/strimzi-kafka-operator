@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -178,7 +179,7 @@ public class CruiseControlIsolatedST extends AbstractST {
                 .withName(CLUSTER_NAME).get().getSpec().getCruiseControl().getConfig();
         assertThat(actualStrategies, anEmptyMap());
 
-        String ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, CRUISE_CONTROL_CONTAINER_NAME, "cat", CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        String ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
 
         Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
@@ -195,7 +196,7 @@ public class CruiseControlIsolatedST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(CLUSTER_NAME), 1, kafkaRebalanceSnapshot);
 
         ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
-        ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, CRUISE_CONTROL_CONTAINER_NAME, "cat", CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }
 

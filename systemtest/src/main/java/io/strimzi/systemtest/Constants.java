@@ -250,4 +250,13 @@ public interface Constants {
      * Tag for tests where OLM is used for deploying CO
      */
     String OLM = "olm";
+
+    /**
+     * Cruise Control related parameters
+     */
+    String CRUISE_CONTROL_NAME = "Cruise Control";
+    String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
+    String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
+    String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
+    String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
 }

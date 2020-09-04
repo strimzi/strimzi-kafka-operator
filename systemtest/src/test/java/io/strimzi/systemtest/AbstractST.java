@@ -72,12 +72,11 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
+    protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
+    private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
+
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
-
-    protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
-
-    private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
     protected static final String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
@@ -86,13 +85,7 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
-
-    protected static final String CRUISE_CONTROL_NAME = "Cruise Control";
-    protected static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
-    protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
-    protected static final String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
-    protected static final String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
-    protected static final String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
+    public static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
 
     protected String testClass;
     protected String testName;
