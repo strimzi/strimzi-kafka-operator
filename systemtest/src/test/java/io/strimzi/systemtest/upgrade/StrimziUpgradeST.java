@@ -377,8 +377,8 @@ public class StrimziUpgradeST extends AbstractST {
             ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
             // ##############################
             // Delete jobs to make same names available for next upgrade run during chain upgrade
-            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(producerName).delete();
-            kubeClient().getClient().batch().jobs().inNamespace(NAMESPACE).withName(consumerName).delete();
+            kubeClient().deleteJob(producerName);
+            kubeClient().deleteJob(consumerName);
         }
 
         // Check errors in CO log
