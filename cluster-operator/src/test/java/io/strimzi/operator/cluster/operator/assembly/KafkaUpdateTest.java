@@ -110,6 +110,7 @@ public class KafkaUpdateTest {
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
                             .endListValue()
                             .addNewListValue()
                                 .withName("tls")

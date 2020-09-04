@@ -995,6 +995,7 @@ class KafkaST extends AbstractST {
                             .withName("plain")
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName("external")
@@ -1606,6 +1607,7 @@ class KafkaST extends AbstractST {
                             .withName("plain")
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
                         .endListValue()
                         .addNewListValue()
                             .withName("external")
@@ -1645,6 +1647,7 @@ class KafkaST extends AbstractST {
                             .withName("plain")
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName("external")
@@ -1704,6 +1707,7 @@ class KafkaST extends AbstractST {
                             .withName("plain")
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
                             .build()
             ));
             kafkaClusterSpec.setListeners(lst);
@@ -1753,6 +1757,7 @@ class KafkaST extends AbstractST {
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
                             .endListValue()
                             .addNewListValue()
                                 .withName("external")

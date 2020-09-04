@@ -414,6 +414,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
@@ -442,6 +443,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                 .endKafkaListenerAuthenticationScramSha512Auth()
                 .build();
@@ -894,6 +896,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
                     .withNewValidIssuerUri("http://valid-issuer")
                     .withNewJwksEndpointUri("http://jwks")
@@ -934,6 +937,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
@@ -972,6 +976,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
                     .withNewValidIssuerUri("https://valid-issuer")
                     .withNewJwksEndpointUri("https://jwks")
@@ -1011,6 +1016,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withName("plain")
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
                     .withNewValidIssuerUri("https://valid-issuer")
                     .withNewIntrospectionEndpointUri("https://intro")

@@ -15,6 +15,7 @@ spec:
     - name: "plain"
       port: 9092
       type: "internal"
+      tls: false
       authentication:
         type: "scram-sha-512"
       networkPolicyPeers:

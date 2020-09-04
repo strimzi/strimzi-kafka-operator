@@ -93,16 +93,15 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
     public static class Deserializer extends JsonDeserializer<ArrayOrObjectKafkaListeners> {
         @Override
         public ArrayOrObjectKafkaListeners deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
-            ArrayOrObjectKafkaListeners kafkaListeners;
             ObjectCodec oc = jsonParser.getCodec();
+
             if (jsonParser.currentToken() == JsonToken.START_ARRAY) {
-                kafkaListeners = new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<List<GenericKafkaListener>>() { }));
+                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<List<GenericKafkaListener>>() { }));
             } else if (jsonParser.currentToken() == JsonToken.START_OBJECT) {
-                kafkaListeners = new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<KafkaListeners>() { }));
+                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<KafkaListeners>() { }));
             } else {
                 throw new RuntimeException("Failed to deserialize ArrayOrObjectKafkaListeners. Please check .spec.kafka.listeners configuration.");
             }
-            return kafkaListeners;
         }
     }
 }

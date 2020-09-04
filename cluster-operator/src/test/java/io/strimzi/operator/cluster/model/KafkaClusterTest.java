@@ -1300,7 +1300,7 @@ public class KafkaClusterTest {
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
                                 .withNewConfiguration()
-                                    .withPreferredAddressType(NodeAddressType.INTERNAL_DNS)
+                                    .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                                 .endConfiguration()
                             .endListValue()
                         .endListeners()
@@ -1788,6 +1788,7 @@ public class KafkaClusterTest {
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withNetworkPolicyPeers(peer1)
+                                .withTls(false)
                             .endListValue()
                             .addNewListValue()
                                 .withName("tls")
@@ -1838,6 +1839,7 @@ public class KafkaClusterTest {
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
                             .endListValue()
                             .addNewListValue()
                                 .withName("tls")
@@ -3150,6 +3152,7 @@ public class KafkaClusterTest {
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
                                 .withAuth(
                                         new KafkaListenerAuthenticationOAuthBuilder()
                                                 .withClientId("my-client-id")
@@ -3200,6 +3203,7 @@ public class KafkaClusterTest {
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
                                 .withAuth(
                                         new KafkaListenerAuthenticationOAuthBuilder()
                                                 .withClientId("my-client-id")
@@ -3270,6 +3274,7 @@ public class KafkaClusterTest {
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
                                 .withAuth(
                                         new KafkaListenerAuthenticationOAuthBuilder()
                                                 .withClientId("my-client-id")
@@ -3518,6 +3523,7 @@ public class KafkaClusterTest {
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
                                 .withAuth(
                                         new KafkaListenerAuthenticationOAuthBuilder()
                                                 .withClientId("my-client-id")

@@ -153,10 +153,10 @@ spec:
                           name:
                             type: string
                             pattern: ^[a-z0-9]{1,25}$
-                            description: Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given Kafka cluster. The name can consist of lowercase characters and numbers and be up to 25 characters long.
+                            description: Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 25 characters long.
                           port:
                             type: integer
-                            description: Port number used by the listener. The port number has to be unique within given Kafka cluster. The port number will be used for the listener inside Kafka. But depending on the listener type, it might not be the port number where the Kafka clients connect.
+                            description: Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Depending on the listener type, it might not be the port number where the Kafka clients connect.
                           type:
                             type: string
                             enum:
@@ -165,10 +165,10 @@ spec:
                               - loadbalancer
                               - nodeport
                               - ingress
-                            description: "Type of the external listener. Currently the supported types are `internal, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n* `internal` type exposes Kafka internally only within Kubernetes cluster.* `route` type uses OpenShift Routes to expose Kafka.* `loadbalancer` type uses LoadBalancer type services to expose Kafka.* `nodeport` type uses NodePort type services to expose Kafka.* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.."
+                            description: "Type of the listener. Currently the supported types are `internal, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.\n."
                           tls:
                             type: boolean
-                            description: Enables TLS encryption on the listener. By default set to `false` for disabled TLS encryption.
+                            description: Enables TLS encryption on the listener. This is a required property.
                           authentication:
                             type: object
                             properties:
@@ -266,7 +266,7 @@ spec:
                                 description: Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
                             required:
                               - type
-                            description: Authentication configuration for Kafka brokers.
+                            description: Authentication configuration for this listener.
                           configuration:
                             type: object
                             properties:
@@ -287,29 +287,12 @@ spec:
                                   - key
                                   - secretName
                                 description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
-                              preferredAddressType:
-                                type: string
-                                enum:
-                                  - ExternalIP
-                                  - ExternalDNS
-                                  - InternalIP
-                                  - InternalDNS
-                                  - Hostname
-                                description: |-
-                                  Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
-                                  * `ExternalDNS`
-                                  * `ExternalIP`
-                                  * `InternalDNS`
-                                  * `InternalIP`
-                                  * `Hostname`
-
-                                  This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener..
                               externalTrafficPolicy:
                                 type: string
                                 enum:
                                   - Local
                                   - Cluster
-                                description: Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` type listener.
+                                description: Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` or `nodeport` type listener.
                               loadBalancerSourceRanges:
                                 type: array
                                 items:
@@ -371,6 +354,23 @@ spec:
                               class:
                                 type: string
                                 description: Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
+                              preferredNodePortAddressType:
+                                type: string
+                                enum:
+                                  - ExternalIP
+                                  - ExternalDNS
+                                  - InternalIP
+                                  - InternalDNS
+                                  - Hostname
+                                description: |-
+                                  Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
+                                  * `ExternalDNS`
+                                  * `ExternalIP`
+                                  * `InternalDNS`
+                                  * `InternalIP`
+                                  * `Hostname`
+
+                                  This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener..
                               useServiceDnsDomain:
                                 type: boolean
                                 description: Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses with contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` type listener.
@@ -430,6 +430,7 @@ spec:
                           - name
                           - port
                           - type
+                          - tls
                     - type: object
                       properties:
                         plain:

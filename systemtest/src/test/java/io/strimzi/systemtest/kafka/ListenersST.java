@@ -191,6 +191,7 @@ public class ListenersST extends AbstractST {
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withName("plain")
                                 .withPort(9092)
+                                .withTls(false)
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                                 .endKafkaListenerAuthenticationScramSha512Auth()
                             .endListValue()

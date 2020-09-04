@@ -216,25 +216,6 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Internal method for generating the advertised listener string for the internal interfaces.
-     *
-     * @param clusterName   Name of the Kafka STS
-     * @param namespace Namespace where the lcuster is deployed
-     * @param listenerName  Name of the listener in the Kafka broker configuration
-     * @param port  Port on which is this listener listening
-     *
-     * @return  String with advertised listener configuration
-     */
-    /*private String getAdvertisedListener(String clusterName, String namespace, String listenerName, int port)    {
-        return String.format("%s://%s:%d",
-                listenerName,
-                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
-                        // Pod name constructed to be templatable for each individual ordinal
-                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}"),
-                port);
-    }*/
-
-    /**
      * Configures TLS for a specific listener. This method is used only internally.
      *
      * @param listenerName  The name of the listener under which it is used in the KAfka broker configuration file

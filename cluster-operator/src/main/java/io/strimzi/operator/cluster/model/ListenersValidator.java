@@ -52,7 +52,7 @@ public class ListenersValidator {
         List<String> names = getNames(listeners);
 
         if (names.size() != listeners.size())   {
-            errors.add("every listener needs to have unique name");
+            errors.add("every listener needs to have a unique name");
         }
 
         List<String> invalidNames = names.stream().filter(name -> !LISTENER_NAME_PATTERN.matcher(name).matches()).collect(Collectors.toList());
@@ -61,7 +61,7 @@ public class ListenersValidator {
         }
 
         if (ports.size() != listeners.size())   {
-            errors.add("every listener needs to have unique port number");
+            errors.add("every listener needs to have a unique port number");
         }
 
         if (!Collections.disjoint(ports, FORBIDDEN_PORTS))    {
@@ -118,7 +118,7 @@ public class ListenersValidator {
 
             if (conf.getBootstrap() == null
                     || conf.getBootstrap().getHost() == null)   {
-                errors.add("listener " + listener.getName() + " is missing bootstrap host name which is required for Ingress based listeners");
+                errors.add("listener " + listener.getName() + " is missing a bootstrap host name which is required for Ingress based listeners");
             }
 
             if (conf.getBrokers() != null) {
@@ -127,16 +127,16 @@ public class ListenersValidator {
                     GenericKafkaListenerConfigurationBroker broker = conf.getBrokers().stream().filter(b -> b.getBroker() == id).findFirst().orElse(null);
 
                     if (broker == null || broker.getHost() == null) {
-                        errors.add("listener " + listener.getName() + " is missing broker host name for broker with ID " + i + " which is required for Ingress based listeners");
+                        errors.add("listener " + listener.getName() + " is missing a broker host name for broker with ID " + i + " which is required for Ingress based listeners");
                     }
                 }
             } else {
-                errors.add("listener " + listener.getName() + " is missing broker configuration with host names which is required for Ingress based listeners");
+                errors.add("listener " + listener.getName() + " is missing a broker configuration with host names which is required for Ingress based listeners");
             }
 
 
         } else {
-            errors.add("listener " + listener.getName() + " is missing configuration with host names which is required for Ingress based listeners");
+            errors.add("listener " + listener.getName() + " is missing a configuration with host names which is required for Ingress based listeners");
         }
     }
 
@@ -174,7 +174,7 @@ public class ListenersValidator {
      */
     private static void validatePreferredAddressType(Set<String> errors, GenericKafkaListener listener) {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
-                && listener.getConfiguration().getPreferredAddressType() != null)    {
+                && listener.getConfiguration().getPreferredNodePortAddressType() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure preferredAddressType because it is not NodePort based listener");
         }
     }
@@ -186,9 +186,9 @@ public class ListenersValidator {
      * @param listener  Listener which needs to be validated
      */
     private static void validateExternalTrafficPolicy(Set<String> errors, GenericKafkaListener listener) {
-        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
+        if (!(KafkaListenerType.LOADBALANCER.equals(listener.getType()) || KafkaListenerType.NODEPORT.equals(listener.getType()))
                 && listener.getConfiguration().getExternalTrafficPolicy() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure externalTrafficPolicy because it is not LoadBalancer based listener");
+            errors.add("listener " + listener.getName() + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener");
         }
     }
 

@@ -132,46 +132,48 @@ public class ListenersConvertor {
         newListener.setType(KafkaListenerType.LOADBALANCER);
         newListener.setTls(oldListener.isTls());
 
-        if (oldListener.getConfiguration() != null || oldListener.getOverrides() != null) {
-            GenericKafkaListenerConfiguration configuration = new GenericKafkaListenerConfiguration();
-
-            if (oldListener.getConfiguration() != null) {
-                configuration.setBrokerCertChainAndKey(oldListener.getConfiguration().getBrokerCertChainAndKey());
-            }
-
-            if (oldListener.getOverrides() != null) {
-                if (oldListener.getOverrides().getBootstrap() != null) {
-                    GenericKafkaListenerConfigurationBootstrap bootstrapConfiguration = new GenericKafkaListenerConfigurationBootstrap();
-                    bootstrapConfiguration.setLoadBalancerIP(oldListener.getOverrides().getBootstrap().getLoadBalancerIP());
-                    bootstrapConfiguration.setDnsAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
-
-                    if (oldListener.getOverrides().getBootstrap().getAddress() != null) {
-                        bootstrapConfiguration.setAlternativeNames(Collections.singletonList(oldListener.getOverrides().getBootstrap().getAddress()));
-                    }
-
-                    configuration.setBootstrap(bootstrapConfiguration);
-                }
-
-                if (oldListener.getOverrides().getBrokers() != null) {
-                    List<GenericKafkaListenerConfigurationBroker> brokers = new ArrayList<>(oldListener.getOverrides().getBrokers().size());
-
-                    for (LoadBalancerListenerBrokerOverride oldBroker : oldListener.getOverrides().getBrokers()) {
-                        GenericKafkaListenerConfigurationBroker brokerConfiguration = new GenericKafkaListenerConfigurationBroker();
-                        brokerConfiguration.setBroker(oldBroker.getBroker());
-                        brokerConfiguration.setLoadBalancerIP(oldBroker.getLoadBalancerIP());
-                        brokerConfiguration.setDnsAnnotations(oldBroker.getDnsAnnotations());
-                        brokerConfiguration.setAdvertisedHost(oldBroker.getAdvertisedHost());
-                        brokerConfiguration.setAdvertisedPort(oldBroker.getAdvertisedPort());
-
-                        brokers.add(brokerConfiguration);
-                    }
-
-                    configuration.setBrokers(brokers);
-                }
-            }
-
-            newListener.setConfiguration(configuration);
+        if (oldListener.getConfiguration() == null && oldListener.getOverrides() == null) {
+            return;
         }
+
+        GenericKafkaListenerConfiguration configuration = new GenericKafkaListenerConfiguration();
+
+        if (oldListener.getConfiguration() != null) {
+            configuration.setBrokerCertChainAndKey(oldListener.getConfiguration().getBrokerCertChainAndKey());
+        }
+
+        if (oldListener.getOverrides() != null) {
+            if (oldListener.getOverrides().getBootstrap() != null) {
+                GenericKafkaListenerConfigurationBootstrap bootstrapConfiguration = new GenericKafkaListenerConfigurationBootstrap();
+                bootstrapConfiguration.setLoadBalancerIP(oldListener.getOverrides().getBootstrap().getLoadBalancerIP());
+                bootstrapConfiguration.setDnsAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
+
+                if (oldListener.getOverrides().getBootstrap().getAddress() != null) {
+                    bootstrapConfiguration.setAlternativeNames(Collections.singletonList(oldListener.getOverrides().getBootstrap().getAddress()));
+                }
+
+                configuration.setBootstrap(bootstrapConfiguration);
+            }
+
+            if (oldListener.getOverrides().getBrokers() != null) {
+                List<GenericKafkaListenerConfigurationBroker> brokers = new ArrayList<>(oldListener.getOverrides().getBrokers().size());
+
+                for (LoadBalancerListenerBrokerOverride oldBroker : oldListener.getOverrides().getBrokers()) {
+                    GenericKafkaListenerConfigurationBroker brokerConfiguration = new GenericKafkaListenerConfigurationBroker();
+                    brokerConfiguration.setBroker(oldBroker.getBroker());
+                    brokerConfiguration.setLoadBalancerIP(oldBroker.getLoadBalancerIP());
+                    brokerConfiguration.setDnsAnnotations(oldBroker.getDnsAnnotations());
+                    brokerConfiguration.setAdvertisedHost(oldBroker.getAdvertisedHost());
+                    brokerConfiguration.setAdvertisedPort(oldBroker.getAdvertisedPort());
+
+                    brokers.add(brokerConfiguration);
+                }
+
+                configuration.setBrokers(brokers);
+            }
+        }
+
+        newListener.setConfiguration(configuration);
     }
 
     /**
@@ -184,47 +186,49 @@ public class ListenersConvertor {
         newListener.setType(KafkaListenerType.NODEPORT);
         newListener.setTls(oldListener.isTls());
 
-        if (oldListener.getConfiguration() != null || oldListener.getOverrides() != null) {
-            GenericKafkaListenerConfiguration configuration = new GenericKafkaListenerConfiguration();
-
-            if (oldListener.getConfiguration() != null) {
-                configuration.setBrokerCertChainAndKey(oldListener.getConfiguration().getBrokerCertChainAndKey());
-                configuration.setPreferredAddressType(oldListener.getConfiguration().getPreferredAddressType());
-            }
-
-            if (oldListener.getOverrides() != null) {
-                if (oldListener.getOverrides().getBootstrap() != null) {
-                    GenericKafkaListenerConfigurationBootstrap bootstrapConfiguration = new GenericKafkaListenerConfigurationBootstrap();
-                    bootstrapConfiguration.setNodePort(oldListener.getOverrides().getBootstrap().getNodePort());
-                    bootstrapConfiguration.setDnsAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
-
-                    if (oldListener.getOverrides().getBootstrap().getAddress() != null) {
-                        bootstrapConfiguration.setAlternativeNames(Collections.singletonList(oldListener.getOverrides().getBootstrap().getAddress()));
-                    }
-
-                    configuration.setBootstrap(bootstrapConfiguration);
-                }
-
-                if (oldListener.getOverrides().getBrokers() != null) {
-                    List<GenericKafkaListenerConfigurationBroker> brokers = new ArrayList<>(oldListener.getOverrides().getBrokers().size());
-
-                    for (NodePortListenerBrokerOverride oldBroker : oldListener.getOverrides().getBrokers()) {
-                        GenericKafkaListenerConfigurationBroker brokerConfiguration = new GenericKafkaListenerConfigurationBroker();
-                        brokerConfiguration.setBroker(oldBroker.getBroker());
-                        brokerConfiguration.setNodePort(oldBroker.getNodePort());
-                        brokerConfiguration.setDnsAnnotations(oldBroker.getDnsAnnotations());
-                        brokerConfiguration.setAdvertisedHost(oldBroker.getAdvertisedHost());
-                        brokerConfiguration.setAdvertisedPort(oldBroker.getAdvertisedPort());
-
-                        brokers.add(brokerConfiguration);
-                    }
-
-                    configuration.setBrokers(brokers);
-                }
-            }
-
-            newListener.setConfiguration(configuration);
+        if (oldListener.getConfiguration() == null && oldListener.getOverrides() == null) {
+            return;
         }
+
+        GenericKafkaListenerConfiguration configuration = new GenericKafkaListenerConfiguration();
+
+        if (oldListener.getConfiguration() != null) {
+            configuration.setBrokerCertChainAndKey(oldListener.getConfiguration().getBrokerCertChainAndKey());
+            configuration.setPreferredNodePortAddressType(oldListener.getConfiguration().getPreferredAddressType());
+        }
+
+        if (oldListener.getOverrides() != null) {
+            if (oldListener.getOverrides().getBootstrap() != null) {
+                GenericKafkaListenerConfigurationBootstrap bootstrapConfiguration = new GenericKafkaListenerConfigurationBootstrap();
+                bootstrapConfiguration.setNodePort(oldListener.getOverrides().getBootstrap().getNodePort());
+                bootstrapConfiguration.setDnsAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
+
+                if (oldListener.getOverrides().getBootstrap().getAddress() != null) {
+                    bootstrapConfiguration.setAlternativeNames(Collections.singletonList(oldListener.getOverrides().getBootstrap().getAddress()));
+                }
+
+                configuration.setBootstrap(bootstrapConfiguration);
+            }
+
+            if (oldListener.getOverrides().getBrokers() != null) {
+                List<GenericKafkaListenerConfigurationBroker> brokers = new ArrayList<>(oldListener.getOverrides().getBrokers().size());
+
+                for (NodePortListenerBrokerOverride oldBroker : oldListener.getOverrides().getBrokers()) {
+                    GenericKafkaListenerConfigurationBroker brokerConfiguration = new GenericKafkaListenerConfigurationBroker();
+                    brokerConfiguration.setBroker(oldBroker.getBroker());
+                    brokerConfiguration.setNodePort(oldBroker.getNodePort());
+                    brokerConfiguration.setDnsAnnotations(oldBroker.getDnsAnnotations());
+                    brokerConfiguration.setAdvertisedHost(oldBroker.getAdvertisedHost());
+                    brokerConfiguration.setAdvertisedPort(oldBroker.getAdvertisedPort());
+
+                    brokers.add(brokerConfiguration);
+                }
+
+                configuration.setBrokers(brokers);
+            }
+        }
+
+        newListener.setConfiguration(configuration);
     }
 
     /**

@@ -696,6 +696,7 @@ class SecurityST extends AbstractST {
                             .withName("plain")
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
                             .withNewKafkaListenerAuthenticationScramSha512Auth()
                             .endKafkaListenerAuthenticationScramSha512Auth()
                             .withNetworkPolicyPeers(

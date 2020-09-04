@@ -190,17 +190,22 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [options="header"]
 |====
 |Property                   |Description
-|name                1.2+<.<|Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given Kafka cluster. The name can consist of lowercase characters and numbers and be up to 25 characters long.
+|name                1.2+<.<|Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 25 characters long.
 |string
-|port                1.2+<.<|Port number used by the listener. The port number has to be unique within given Kafka cluster. The port number will be used for the listener inside Kafka. But depending on the listener type, it might not be the port number where the Kafka clients connect.
+|port                1.2+<.<|Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Depending on the listener type, it might not be the port number where the Kafka clients connect.
 |integer
-|type                1.2+<.<|Type of the external listener. Currently the supported types are `internal, `route`, `loadbalancer`, `nodeport` and `ingress`. 
+|type                1.2+<.<|Type of the listener. Currently the supported types are `internal, `route`, `loadbalancer`, `nodeport` and `ingress`. 
 
-* `internal` type exposes Kafka internally only within Kubernetes cluster.* `route` type uses OpenShift Routes to expose Kafka.* `loadbalancer` type uses LoadBalancer type services to expose Kafka.* `nodeport` type uses NodePort type services to expose Kafka.* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka..
+* `internal` type exposes Kafka internally only within the Kubernetes cluster.
+* `route` type uses OpenShift Routes to expose Kafka.
+* `loadbalancer` type uses LoadBalancer type services to expose Kafka.
+* `nodeport` type uses NodePort type services to expose Kafka.
+* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.
+.
 |string (one of [ingress, internal, route, loadbalancer, nodeport])
-|tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `false` for disabled TLS encryption.
+|tls                 1.2+<.<|Enables TLS encryption on the listener. This is a required property.
 |boolean
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|authentication      1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 |configuration       1.2+<.<|Additional listener configuration.
 |xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
@@ -333,10 +338,20 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 [options="header"]
 |====
-|Property                         |Description
-|brokerCertChainAndKey     1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
+|Property                             |Description
+|brokerCertChainAndKey         1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|preferredAddressType      1.2+<.<|Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
+|externalTrafficPolicy         1.2+<.<|Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` or `nodeport` type listener.
+|string (one of [Local, Cluster])
+|loadBalancerSourceRanges      1.2+<.<|A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/This field can be used only with `loadbalancer` type listener.
+|string array
+|bootstrap                     1.2+<.<|Bootstrap configuration.
+|xref:type-GenericKafkaListenerConfigurationBootstrap-{context}[`GenericKafkaListenerConfigurationBootstrap`]
+|brokers                       1.2+<.<|Per-broker configurations.
+|xref:type-GenericKafkaListenerConfigurationBroker-{context}[`GenericKafkaListenerConfigurationBroker`] array
+|class                         1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
+|string
+|preferredNodePortAddressType  1.2+<.<|Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
 * `ExternalDNS`
 * `ExternalIP`
 * `InternalDNS`
@@ -345,17 +360,7 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener..
 |string (one of [ExternalDNS, ExternalIP, Hostname, InternalIP, InternalDNS])
-|externalTrafficPolicy     1.2+<.<|Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` type listener.
-|string (one of [Local, Cluster])
-|loadBalancerSourceRanges  1.2+<.<|A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/This field can be used only with `loadbalancer` type listener.
-|string array
-|bootstrap                 1.2+<.<|Bootstrap configuration.
-|xref:type-GenericKafkaListenerConfigurationBootstrap-{context}[`GenericKafkaListenerConfigurationBootstrap`]
-|brokers                   1.2+<.<|Per-broker configurations.
-|xref:type-GenericKafkaListenerConfigurationBroker-{context}[`GenericKafkaListenerConfigurationBroker`] array
-|class                     1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
-|string
-|useServiceDnsDomain       1.2+<.<|Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses with contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` type listener.
+|useServiceDnsDomain           1.2+<.<|Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses with contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` type listener.
 |boolean
 |====
 

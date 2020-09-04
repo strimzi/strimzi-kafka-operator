@@ -424,7 +424,7 @@ public class ListenersConvertorTest {
         assertThat(newListener.getConfiguration().getBrokerCertChainAndKey().getCertificate(), is("cert"));
         assertThat(newListener.getConfiguration().getBrokerCertChainAndKey().getKey(), is("key"));
         assertThat(newListener.getConfiguration().getBrokerCertChainAndKey().getSecretName(), is("secretName"));
-        assertThat(newListener.getConfiguration().getPreferredAddressType(), is(NodeAddressType.EXTERNAL_IP));
+        assertThat(newListener.getConfiguration().getPreferredNodePortAddressType(), is(NodeAddressType.EXTERNAL_IP));
         assertThat(newListener.getConfiguration().getBootstrap().getNodePort(), is(31000));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().size(), is(1));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().get(0), is("my-bootstrap-dns"));

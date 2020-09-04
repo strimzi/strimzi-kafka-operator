@@ -34,9 +34,21 @@ public class ListenersUtils {
     public static boolean hasListenerWithOAuth(List<GenericKafkaListener> listeners)    {
         return listeners.stream()
                 .filter(listener -> listener.getAuth() != null && KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType()))
-                .map(listener -> true)
                 .findFirst()
-                .orElse(false);
+                .isPresent();
+    }
+
+    /**
+     * Returns list of all listeners with given type
+     *
+     * @param listeners List of all listeners
+     * @param type      Type of the listeners which should be returned
+     * @return          List of internal listeners
+     */
+    private static List<GenericKafkaListener> listenersByType(List<GenericKafkaListener> listeners, KafkaListenerType type)    {
+        return listeners.stream()
+                .filter(listener -> type == listener.getType())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -46,9 +58,7 @@ public class ListenersUtils {
      * @return          List of internal listeners
      */
     public static List<GenericKafkaListener> internalListeners(List<GenericKafkaListener> listeners)    {
-        return listeners.stream()
-                .filter(listener -> KafkaListenerType.INTERNAL == listener.getType())
-                .collect(Collectors.toList());
+        return listenersByType(listeners, KafkaListenerType.INTERNAL);
     }
 
     /**
@@ -70,9 +80,7 @@ public class ListenersUtils {
      * @return          List of route listeners
      */
     public static List<GenericKafkaListener> routeListeners(List<GenericKafkaListener> listeners)    {
-        return listeners.stream()
-                .filter(listener -> KafkaListenerType.ROUTE == listener.getType())
-                .collect(Collectors.toList());
+        return listenersByType(listeners, KafkaListenerType.ROUTE);
     }
 
     /**
@@ -82,9 +90,7 @@ public class ListenersUtils {
      * @return          List of load balancer listeners
      */
     public static List<GenericKafkaListener> loadBalancerListeners(List<GenericKafkaListener> listeners)    {
-        return listeners.stream()
-                .filter(listener -> KafkaListenerType.LOADBALANCER == listener.getType())
-                .collect(Collectors.toList());
+        return listenersByType(listeners, KafkaListenerType.LOADBALANCER);
     }
 
     /**
@@ -94,9 +100,7 @@ public class ListenersUtils {
      * @return          List of node port listeners
      */
     public static List<GenericKafkaListener> nodePortListeners(List<GenericKafkaListener> listeners)    {
-        return listeners.stream()
-                .filter(listener -> KafkaListenerType.NODEPORT == listener.getType())
-                .collect(Collectors.toList());
+        return listenersByType(listeners, KafkaListenerType.NODEPORT);
     }
 
     /**
@@ -106,24 +110,88 @@ public class ListenersUtils {
      * @return          List of ingress listeners
      */
     public static List<GenericKafkaListener> ingressListeners(List<GenericKafkaListener> listeners)    {
+        return listenersByType(listeners, KafkaListenerType.INGRESS);
+    }
+
+    /**
+     * Returns true if the list has a listener of given type and false otherwise.
+     *
+     * @param listeners List of all listeners
+     * @param type      Type of the listeners which should be returned
+     * @return          Whether a listener of given type was found or not
+     */
+    private static boolean hasListenerOfType(List<GenericKafkaListener> listeners, KafkaListenerType type)    {
         return listeners.stream()
-                .filter(listener -> KafkaListenerType.INGRESS == listener.getType())
-                .collect(Collectors.toList());
+                .filter(listener -> type == listener.getType())
+                .findFirst()
+                .isPresent();
+    }
+
+    /**
+     * Check whether we have at least one interface for access from outside of Kubernetes
+     *
+     * @param listeners List of all listeners
+     * @return          List of external listeners
+     */
+    public static boolean hasExternalListener(List<GenericKafkaListener> listeners)    {
+        return listeners.stream()
+                .filter(listener -> KafkaListenerType.INTERNAL != listener.getType())
+                .findFirst()
+                .isPresent();
+    }
+
+    /**
+     * Checks whether we have at least one Route listener
+     *
+     * @param listeners List of all listeners
+     * @return          True if at least one Route listener exists. False otherwise.
+     */
+    public static boolean hasRouteListener(List<GenericKafkaListener> listeners)    {
+        return hasListenerOfType(listeners, KafkaListenerType.ROUTE);
+    }
+
+    /**
+     * Checks whether we have at least one Load Balancer listener
+     *
+     * @param listeners List of all listeners
+     * @return          True if at least one Load Balancer listener exists. False otherwise.
+     */
+    public static boolean hasLoadBalancerListener(List<GenericKafkaListener> listeners)    {
+        return hasListenerOfType(listeners, KafkaListenerType.LOADBALANCER);
+    }
+
+    /**
+     * Checks whether we have at least one NodePort listener
+     *
+     * @param listeners List of all listeners
+     * @return          True if at least one NodePort listener exists. False otherwise.
+     */
+    public static boolean hasNodePortListener(List<GenericKafkaListener> listeners)    {
+        return hasListenerOfType(listeners, KafkaListenerType.NODEPORT);
+    }
+
+    /**
+     * Checks whether we have at least one Ingress listener
+     *
+     * @param listeners List of all listeners
+     * @return          True if at least one Ingress listener exists. False otherwise.
+     */
+    public static boolean hasIngressListener(List<GenericKafkaListener> listeners)    {
+        return hasListenerOfType(listeners, KafkaListenerType.INGRESS);
     }
 
     /**
      * Returns list of all additional DNS addresses for certificates
      *
      * @param listeners List of all listeners
-     * @return          List of external listeners
+     * @return          List of alternative DNS names for bootstrap
      */
     public static List<String> alternativeNames(List<GenericKafkaListener> listeners)    {
         return listeners.stream()
                 .filter(listener -> listener.getConfiguration() != null
                         && listener.getConfiguration().getBootstrap() != null
                         && listener.getConfiguration().getBootstrap().getAlternativeNames() != null)
-                .map(listener -> listener.getConfiguration().getBootstrap().getAlternativeNames())
-                .flatMap(List::stream)
+                .flatMap(listener -> listener.getConfiguration().getBootstrap().getAlternativeNames().stream())
                 .distinct()
                 .collect(Collectors.toList());
     }
@@ -450,7 +518,7 @@ public class ListenersUtils {
      */
     public static NodeAddressType preferredNodeAddressType(GenericKafkaListener listener)    {
         if (listener.getConfiguration() != null) {
-            return listener.getConfiguration().getPreferredAddressType();
+            return listener.getConfiguration().getPreferredNodePortAddressType();
         } else {
             return null;
         }

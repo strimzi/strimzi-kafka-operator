@@ -48,7 +48,7 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
 
     @Description("Name of the listener. " +
             "The name will be used to identify the listener and the related Kubernetes objects. " +
-            "The name has to be unique within given Kafka cluster. " +
+            "The name has to be unique within given a Kafka cluster. " +
             "The name can consist of lowercase characters and numbers and be up to 25 characters long.")
     @JsonProperty(required = true)
     @Pattern(LISTENER_NAME_REGEX)
@@ -61,9 +61,9 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("Port number used by the listener. " +
-            "The port number has to be unique within given Kafka cluster. " +
+            "The port number has to be unique within a given Kafka cluster. " +
             "The port number will be used for the listener inside Kafka. " +
-            "But depending on the listener type, it might not be the port number where the Kafka clients connect.")
+            "Depending on the listener type, it might not be the port number where the Kafka clients connect.")
     @JsonProperty(required = true)
     public int getPort() {
         return port;
@@ -73,13 +73,13 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
         this.port = port;
     }
 
-    @Description("Type of the external listener. " +
+    @Description("Type of the listener. " +
             "Currently the supported types are `internal, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n" +
-            "* `internal` type exposes Kafka internally only within Kubernetes cluster." +
-            "* `route` type uses OpenShift Routes to expose Kafka." +
-            "* `loadbalancer` type uses LoadBalancer type services to expose Kafka." +
-            "* `nodeport` type uses NodePort type services to expose Kafka." +
-            "* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.")
+            "* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n" +
+            "* `route` type uses OpenShift Routes to expose Kafka.\n" +
+            "* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n" +
+            "* `nodeport` type uses NodePort type services to expose Kafka.\n" +
+            "* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.\n")
     @JsonProperty(required = true)
     public KafkaListenerType getType() {
         return type;
@@ -89,7 +89,7 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
         this.type = type;
     }
 
-    @Description("Authentication configuration for Kafka brokers")
+    @Description("Authentication configuration for this listener")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("authentication")
     public KafkaListenerAuthentication getAuth() {
@@ -101,8 +101,8 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("Enables TLS encryption on the listener. " +
-            "By default set to `false` for disabled TLS encryption.")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+            "This is a required property.")
+    @JsonProperty(required = true)
     public boolean isTls() {
         return tls;
     }

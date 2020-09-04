@@ -61,6 +61,7 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
@@ -225,7 +226,7 @@ public class KafkaCluster extends AbstractModel {
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
-    public static final io.strimzi.api.kafka.model.Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
             .withInitialDelaySeconds(15).build();
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
@@ -1746,7 +1747,7 @@ public class KafkaCluster extends AbstractModel {
      * @return true when the Kafka cluster is exposed.
      */
     public boolean isExposed() {
-        return !ListenersUtils.externalListeners(listeners).isEmpty();
+        return ListenersUtils.hasExternalListener(listeners);
     }
 
     /**
@@ -1755,7 +1756,7 @@ public class KafkaCluster extends AbstractModel {
      * @return true when the Kafka cluster is exposed using OpenShift routes.
      */
     public boolean isExposedWithRoute() {
-        return !ListenersUtils.routeListeners(listeners).isEmpty();
+        return ListenersUtils.hasRouteListener(listeners);
     }
 
     /**
@@ -1764,7 +1765,7 @@ public class KafkaCluster extends AbstractModel {
      * @return true when the Kafka cluster is exposed using load balancer.
      */
     public boolean isExposedWithLoadBalancer() {
-        return !ListenersUtils.loadBalancerListeners(listeners).isEmpty();
+        return ListenersUtils.hasLoadBalancerListener(listeners);
     }
 
     /**
@@ -1773,7 +1774,7 @@ public class KafkaCluster extends AbstractModel {
      * @return true when the Kafka cluster is exposed to the outside using NodePort.
      */
     public boolean isExposedWithNodePort() {
-        return !ListenersUtils.nodePortListeners(listeners).isEmpty();
+        return ListenersUtils.hasNodePortListener(listeners);
     }
 
     /**
@@ -1782,7 +1783,7 @@ public class KafkaCluster extends AbstractModel {
      * @return true when the Kafka cluster is exposed using Kubernetes Ingress.
      */
     public boolean isExposedWithIngress() {
-        return !ListenersUtils.ingressListeners(listeners).isEmpty();
+        return ListenersUtils.hasIngressListener(listeners);
     }
 
     /**

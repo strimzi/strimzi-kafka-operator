@@ -39,7 +39,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
 
     private CertAndKeySecretSource brokerCertChainAndKey;
     private String ingressClass;
-    private NodeAddressType preferredAddressType;
+    private NodeAddressType preferredNodePortAddressType;
     private ExternalTrafficPolicy externalTrafficPolicy;
     private List<String> loadBalancerSourceRanges = new ArrayList<>(0);
     private Boolean useServiceDnsDomain;
@@ -85,19 +85,19 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
             "In case no address will be found for this address type, the other types will be used in the default order." +
             "This field can be used only with `nodeport` type listener.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public NodeAddressType getPreferredAddressType() {
-        return preferredAddressType;
+    public NodeAddressType getPreferredNodePortAddressType() {
+        return preferredNodePortAddressType;
     }
 
-    public void setPreferredAddressType(NodeAddressType preferredAddressType) {
-        this.preferredAddressType = preferredAddressType;
+    public void setPreferredNodePortAddressType(NodeAddressType preferredNodePortAddressType) {
+        this.preferredNodePortAddressType = preferredNodePortAddressType;
     }
 
     @Description("Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. " +
             "`Cluster` may cause a second hop to another node and obscures the client source IP. " +
             "`Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). " +
             "If unspecified, Kubernetes will use `Cluster` as the default." +
-            "This field can be used only with `loadbalancer` type listener.")
+            "This field can be used only with `loadbalancer` or `nodeport` type listener.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ExternalTrafficPolicy getExternalTrafficPolicy() {
         return externalTrafficPolicy;
