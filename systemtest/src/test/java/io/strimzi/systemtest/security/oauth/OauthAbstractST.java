@@ -78,7 +78,7 @@ public class OauthAbstractST extends AbstractST {
     @AfterEach
     void tearDown() {
 
-        for (Job job : kubeClient().getJobList(NAMESPACE).getItems()) {
+        for (Job job : kubeClient().getJobList().getItems()) {
             LOGGER.info("Deleting {} job", job.getMetadata().getName());
             JobUtils.deleteJobWithWait(NAMESPACE, job.getMetadata().getName());
         }

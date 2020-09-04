@@ -35,7 +35,7 @@ public class JobUtils {
      * @param name name of the job
      */
     public static void deleteJobWithWait(String namespace, String name) {
-        kubeClient().deleteJob(name, namespace);
+        kubeClient().deleteJob(name);
         waitForJobDeletion(name);
     }
 
@@ -48,6 +48,6 @@ public class JobUtils {
     public static void waitForJobFailure(String jobName, String namespace, long timeout) {
         LOGGER.info("Waiting for job: {} will be in error state", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
-            () -> !kubeClient().getJobStatus(jobName, namespace));
+            () -> !kubeClient().getJobStatus(jobName));
     }
 }

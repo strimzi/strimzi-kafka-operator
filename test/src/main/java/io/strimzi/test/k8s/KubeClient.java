@@ -300,10 +300,6 @@ public class KubeClient {
         client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
-    public Deployment createOrReplaceDeployment(Deployment deployment) {
-        return client.apps().deployments().inNamespace(getNamespace()).createOrReplace(deployment);
-    }
-
     // ================================
     // ---------> DEPLOYMENT <---------
     // ================================
@@ -342,6 +338,10 @@ public class KubeClient {
 
     public void deleteDeployment(String deploymentName) {
         client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+    }
+
+    public Deployment createOrReplaceDeployment(Deployment deployment) {
+        return client.apps().deployments().inNamespace(getNamespace()).createOrReplace(deployment);
     }
 
     // =======================================
@@ -423,56 +423,31 @@ public class KubeClient {
     }
 
     public Job createJob(Job job) {
-        return createJob(job, getNamespace());
+        return client.batch().jobs().inNamespace(getNamespace()).createOrReplace(job);
     }
-
-    public Job createJob(Job job, String namespace) {
-        return client.batch().jobs().inNamespace(namespace).createOrReplace(job);
-    }
-
 
     public Job replaceJob(Job job) {
-        return replaceJob(job, getNamespace());
-    }
-
-    public Job replaceJob(Job job, String namespace) {
-        return client.batch().jobs().inNamespace(namespace).createOrReplace(job);
+        return client.batch().jobs().inNamespace(getNamespace()).createOrReplace(job);
     }
 
     public Boolean deleteJob(String jobName) {
-        return deleteJob(jobName, getNamespace());
-    }
-
-    public Boolean deleteJob(String jobName, String namespace) {
-        return client.batch().jobs().inNamespace(namespace).withName(jobName).delete();
+        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).delete();
     }
 
     public Job getJob(String jobName) {
-        return getJob(jobName, getNamespace());
-    }
-
-    public Job getJob(String jobName, String namespace) {
-        return client.batch().jobs().inNamespace(namespace).withName(jobName).get();
+        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get();
     }
 
     public Boolean getJobStatus(String jobName) {
-        return getJobStatus(jobName, getNamespace());
+        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus().getSucceeded().equals(1);
     }
 
-    public Boolean getJobStatus(String jobName, String namespace) {
-        return client.batch().jobs().inNamespace(namespace).withName(jobName).get().getStatus().getSucceeded().equals(1);
-    }
-
-    public JobList getJobList(String namespace) {
-        return client.batch().jobs().inNamespace(namespace).list();
+    public JobList getJobList() {
+        return client.batch().jobs().inNamespace(getNamespace()).list();
     }
 
     public List<Job> listJobs(String namePrefix) {
-        return listJobs(namePrefix, getNamespace());
-    }
-
-    public List<Job> listJobs(String namePrefix, String namespace) {
-        return client.batch().jobs().inNamespace(namespace).list().getItems().stream()
+        return client.batch().jobs().inNamespace(getNamespace()).list().getItems().stream()
             .filter(job -> job.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
     }
 

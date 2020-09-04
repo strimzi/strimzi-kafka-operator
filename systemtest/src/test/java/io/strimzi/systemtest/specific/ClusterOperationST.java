@@ -78,8 +78,8 @@ public class ClusterOperationST extends AbstractST {
         });
 
         producerNames.forEach(producerName -> ClientUtils.waitTillContinuousClientsFinish(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
-        producerNames.forEach(producerName -> kubeClient().deleteJob(producerName, NAMESPACE));
-        consumerNames.forEach(consumerName -> kubeClient().deleteJob(consumerName, NAMESPACE));
+        producerNames.forEach(producerName -> kubeClient().deleteJob(producerName));
+        consumerNames.forEach(consumerName -> kubeClient().deleteJob(consumerName));
     }
 
     @BeforeAll
