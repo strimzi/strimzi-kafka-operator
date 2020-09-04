@@ -45,13 +45,21 @@ public class HelmResource {
 
     public static void clusterOperator(long operationTimeout, long reconciliationInterval) {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
-                entry("imageRepositoryOverride", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
+                // image repository config
+                entry("image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
+                entry("topicOperator.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
+                entry("userOperator.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
+                entry("kafkaInit.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
+                entry("jmxTrans.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
+                entry("kafkaBridge.image.repository", Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_ORG_DEFAULT),
+                // image tags config
                 entry("image.tag", Environment.STRIMZI_TAG),
                 entry("topicOperator.image.tag", Environment.STRIMZI_TAG),
                 entry("userOperator.image.tag", Environment.STRIMZI_TAG),
                 entry("kafkaInit.image.tag", Environment.STRIMZI_TAG),
                 entry("jmxTrans.image.tag", Environment.STRIMZI_TAG),
                 entry("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion()),
+                // Additional config
                 entry("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
                 entry("resources.requests.memory", REQUESTS_MEMORY),
                 entry("resources.requests.cpu", REQUESTS_CPU),
