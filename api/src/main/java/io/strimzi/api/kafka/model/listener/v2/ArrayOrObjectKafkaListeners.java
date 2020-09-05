@@ -75,14 +75,15 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
     public static class Serializer extends JsonSerializer<ArrayOrObjectKafkaListeners> {
         @Override
         public void serialize(ArrayOrObjectKafkaListeners value, JsonGenerator generator, SerializerProvider provider) throws IOException {
-            if (value != null) {
-                if (value.listValue != null)    {
-                    generator.writeObject(value.listValue);
-                } else if (value.objectValue != null)  {
-                    generator.writeObject(value.objectValue);
-                } else {
-                    generator.writeNull();
-                }
+            if (value == null)  {
+                generator.writeNull();
+                return;
+            }
+
+            if (value.listValue != null)    {
+                generator.writeObject(value.listValue);
+            } else if (value.objectValue != null)  {
+                generator.writeObject(value.objectValue);
             } else {
                 generator.writeNull();
             }

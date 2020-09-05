@@ -465,8 +465,6 @@ spec:
                                     if the cloud provider does not support the feature.This
                                     field can be used only with `loadbalancer` type
                                     listener.
-                              required:
-                              - host
                               description: Bootstrap configuration.
                             brokers:
                               type: array
@@ -518,7 +516,6 @@ spec:
                                       `loadbalancer` type listener.
                                 required:
                                 - broker
-                                - host
                               description: Per-broker configurations.
                             class:
                               type: string

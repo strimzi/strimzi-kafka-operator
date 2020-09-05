@@ -318,8 +318,6 @@ spec:
                                   loadBalancerIP:
                                     type: string
                                     description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
-                                required:
-                                  - host
                                 description: Bootstrap configuration.
                               brokers:
                                 type: array
@@ -349,7 +347,6 @@ spec:
                                       description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
                                   required:
                                     - broker
-                                    - host
                                 description: Per-broker configurations.
                               class:
                                 type: string

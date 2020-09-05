@@ -43,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -216,7 +217,9 @@ class RollingUpdateST extends AbstractST {
                     .build());
         });
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+        // This might need to wait for the previous reconciliation to timeout and for the KafkaRoller to timeout.
+        // Therefore we use longer timeout.
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, Duration.ofMinutes(12).toMillis());
 
         internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
@@ -596,15 +599,15 @@ class RollingUpdateST extends AbstractST {
             kafka.getSpec().getKafka()
                     .setListeners(new ArrayOrObjectKafkaListeners(asList(
                             new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .build(),
+                            new GenericKafkaListenerBuilder()
                                     .withName("tls")
                                     .withPort(9093)
                                     .withType(KafkaListenerType.INTERNAL)
-                                    .withTls(true)
-                                    .build(),
-                            new GenericKafkaListenerBuilder()
-                                    .withName("external")
-                                    .withPort(9094)
-                                    .withType(KafkaListenerType.NODEPORT)
                                     .withTls(true)
                                     .withNewConfiguration()
                                         .withNewBootstrap()

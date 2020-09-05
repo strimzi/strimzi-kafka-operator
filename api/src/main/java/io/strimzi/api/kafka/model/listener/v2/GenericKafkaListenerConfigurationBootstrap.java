@@ -5,7 +5,6 @@
 package io.strimzi.api.kafka.model.listener.v2;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
@@ -53,7 +52,7 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
     @Description("The bootstrap host. " +
             "This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. " +
             "This field can be used only with `route` (optional) or `ingress` (required) type listeners.")
-    @JsonProperty(required = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getHost() {
         return host;
     }

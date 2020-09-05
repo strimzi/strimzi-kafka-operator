@@ -77,7 +77,7 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
     @Description("The broker host. " +
             "This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. " +
             "This field can be used only with `route` (optional) or `ingress` (required) type listeners.")
-    @JsonProperty(required = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getHost() {
         return host;
     }
