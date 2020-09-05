@@ -766,7 +766,7 @@ public class KafkaAssemblyOperatorTest {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withListValue(kafkaListeners)
+                            .withGenericKafkaListeners(kafkaListeners)
                         .endListeners()
                     .endKafka()
                     .withEntityOperator(eoConfig)
