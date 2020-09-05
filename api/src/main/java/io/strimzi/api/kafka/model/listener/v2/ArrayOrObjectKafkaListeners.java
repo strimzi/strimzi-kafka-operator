@@ -36,27 +36,27 @@ import java.util.List;
 public class ArrayOrObjectKafkaListeners implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final List<GenericKafkaListener> listValue;
-    private final KafkaListeners objectValue;
+    private final List<GenericKafkaListener> genericKafkaListeners;
+    private final KafkaListeners kafkaListeners;
 
-    public ArrayOrObjectKafkaListeners(List<GenericKafkaListener> listValue)   {
-        this.listValue = listValue;
-        this.objectValue = null;
+    public ArrayOrObjectKafkaListeners(List<GenericKafkaListener> genericKafkaListeners)   {
+        this.genericKafkaListeners = genericKafkaListeners;
+        this.kafkaListeners = null;
     }
 
-    public ArrayOrObjectKafkaListeners(KafkaListeners objectValue)   {
-        this.listValue = null;
-        this.objectValue = objectValue;
-    }
-
-    @Alternative()
-    public List<GenericKafkaListener> getListValue() {
-        return listValue;
+    public ArrayOrObjectKafkaListeners(KafkaListeners kafkaListeners)   {
+        this.genericKafkaListeners = null;
+        this.kafkaListeners = kafkaListeners;
     }
 
     @Alternative()
-    public KafkaListeners getObjectValue() {
-        return objectValue;
+    public List<GenericKafkaListener> getGenericKafkaListeners() {
+        return genericKafkaListeners;
+    }
+
+    @Alternative()
+    public KafkaListeners getKafkaListeners() {
+        return kafkaListeners;
     }
 
     /**
@@ -65,10 +65,10 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
      * @return  List of new listeners
      */
     public List<GenericKafkaListener> newOrConverted()  {
-        if (listValue != null)  {
-            return listValue;
+        if (genericKafkaListeners != null)  {
+            return genericKafkaListeners;
         } else {
-            return ListenersConvertor.convertToNewFormat(objectValue);
+            return ListenersConvertor.convertToNewFormat(kafkaListeners);
         }
     }
 
@@ -80,10 +80,10 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
                 return;
             }
 
-            if (value.listValue != null)    {
-                generator.writeObject(value.listValue);
-            } else if (value.objectValue != null)  {
-                generator.writeObject(value.objectValue);
+            if (value.genericKafkaListeners != null)    {
+                generator.writeObject(value.genericKafkaListeners);
+            } else if (value.kafkaListeners != null)  {
+                generator.writeObject(value.kafkaListeners);
             } else {
                 generator.writeNull();
             }

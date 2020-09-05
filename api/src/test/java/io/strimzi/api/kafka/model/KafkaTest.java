@@ -37,11 +37,11 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
     public void testNewListeners()    {
         Kafka model = TestUtils.fromYaml("Kafka-with-array" + ".yaml", Kafka.class);
 
-        assertThat(model.getSpec().getKafka().getListeners().getListValue(), is(notNullValue()));
-        assertThat(model.getSpec().getKafka().getListeners().getListValue().size(), is(2));
-        assertThat(model.getSpec().getKafka().getListeners().getObjectValue(), is(nullValue()));
+        assertThat(model.getSpec().getKafka().getListeners().getGenericKafkaListeners(), is(notNullValue()));
+        assertThat(model.getSpec().getKafka().getListeners().getGenericKafkaListeners().size(), is(2));
+        assertThat(model.getSpec().getKafka().getListeners().getKafkaListeners(), is(nullValue()));
 
-        List<GenericKafkaListener> listeners = model.getSpec().getKafka().getListeners().getListValue();
+        List<GenericKafkaListener> listeners = model.getSpec().getKafka().getListeners().getGenericKafkaListeners();
 
         assertThat(listeners.get(0).getAuth().getType(), is("scram-sha-512"));
         assertThat(listeners.get(1).getAuth().getType(), is("tls"));
@@ -51,10 +51,10 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
     public void testOldListeners()    {
         Kafka model = TestUtils.fromYaml("Kafka" + ".yaml", Kafka.class);
 
-        assertThat(model.getSpec().getKafka().getListeners().getListValue(), is(nullValue()));
-        assertThat(model.getSpec().getKafka().getListeners().getObjectValue(), is(notNullValue()));
+        assertThat(model.getSpec().getKafka().getListeners().getGenericKafkaListeners(), is(nullValue()));
+        assertThat(model.getSpec().getKafka().getListeners().getKafkaListeners(), is(notNullValue()));
 
-        KafkaListeners listeners = model.getSpec().getKafka().getListeners().getObjectValue();
+        KafkaListeners listeners = model.getSpec().getKafka().getListeners().getKafkaListeners();
 
         assertThat(listeners.getPlain(), is(notNullValue()));
         assertThat(listeners.getTls(), is(notNullValue()));
