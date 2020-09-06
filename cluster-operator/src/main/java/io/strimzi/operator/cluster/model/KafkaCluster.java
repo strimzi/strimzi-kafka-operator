@@ -818,7 +818,8 @@ public class KafkaCluster extends AbstractModel {
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
                 List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
-                if (loadBalancerSourceRanges != null) {
+                if (loadBalancerSourceRanges != null
+                        && !loadBalancerSourceRanges.isEmpty()) {
                     service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
                 } else if (templateExternalBootstrapServiceLoadBalancerSourceRanges != null) {
                     service.getSpec().setLoadBalancerSourceRanges(templateExternalBootstrapServiceLoadBalancerSourceRanges);
@@ -881,7 +882,8 @@ public class KafkaCluster extends AbstractModel {
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
                 List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
-                if (loadBalancerSourceRanges != null) {
+                if (loadBalancerSourceRanges != null
+                        && !loadBalancerSourceRanges.isEmpty()) {
                     service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
                 } else if (templatePerPodServiceLoadBalancerSourceRanges != null) {
                     service.getSpec().setLoadBalancerSourceRanges(templatePerPodServiceLoadBalancerSourceRanges);
