@@ -317,52 +317,6 @@ public class ListenersUtils {
     }
 
     /**
-     * Finds bootstrap service load balancer IP
-     *
-     * @param listener  Listener for which the load balancer IP should be found
-     * @return          Load Balancer or null if not specified
-     */
-    public static String bootstrapLoadBalancerIP(GenericKafkaListener listener)    {
-        if (listener.getConfiguration() != null
-                && listener.getConfiguration().getBootstrap() != null) {
-            return listener.getConfiguration().getBootstrap().getLoadBalancerIP();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Finds bootstrap service DNS annotations
-     *
-     * @param listener  Listener for which the load balancer IP should be found
-     * @return          Map with DNS annotations or empty map if not specified
-     */
-    public static Map<String, String> bootstrapDnsAnnotations(GenericKafkaListener listener)    {
-        if (listener.getConfiguration() != null
-                && listener.getConfiguration().getBootstrap() != null
-                && listener.getConfiguration().getBootstrap().getDnsAnnotations() != null) {
-            return listener.getConfiguration().getBootstrap().getDnsAnnotations();
-        } else {
-            return Collections.emptyMap();
-        }
-    }
-
-    /**
-     * Finds bootstrap host
-     *
-     * @param listener  Listener for which the host should be found
-     * @return          Host name or null if not specified
-     */
-    public static String bootstrapHost(GenericKafkaListener listener)    {
-        if (listener.getConfiguration() != null
-                && listener.getConfiguration().getBootstrap() != null) {
-            return listener.getConfiguration().getBootstrap().getHost();
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Finds broker service node port
      *
      * @param listener  Listener for which the port should be found
@@ -377,6 +331,21 @@ public class ListenersUtils {
                     .map(GenericKafkaListenerConfigurationBroker::getNodePort)
                     .findAny()
                     .orElse(null);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds bootstrap service load balancer IP
+     *
+     * @param listener  Listener for which the load balancer IP should be found
+     * @return          Load Balancer or null if not specified
+     */
+    public static String bootstrapLoadBalancerIP(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null
+                && listener.getConfiguration().getBootstrap() != null) {
+            return listener.getConfiguration().getBootstrap().getLoadBalancerIP();
         } else {
             return null;
         }
@@ -403,22 +372,53 @@ public class ListenersUtils {
     }
 
     /**
+     * Finds bootstrap service DNS annotations
+     *
+     * @param listener  Listener for which the load balancer IP should be found
+     * @return          Map with DNS annotations or empty map if not specified
+     */
+    public static Map<String, String> bootstrapAnnotations(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null
+                && listener.getConfiguration().getBootstrap() != null
+                && listener.getConfiguration().getBootstrap().getAnnotations() != null) {
+            return listener.getConfiguration().getBootstrap().getAnnotations();
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
      * Finds broker service DNS annotations
      *
      * @param listener  Listener for which the load balancer IP should be found
      * @param pod       Pod ID for which we should get the configuration option
      * @return          Map with DNS annotations or empty map if not specified
      */
-    public static Map<String, String> brokerDnsAnnotations(GenericKafkaListener listener, int pod)    {
+    public static Map<String, String> brokerAnnotations(GenericKafkaListener listener, int pod)    {
         if (listener.getConfiguration() != null
                 && listener.getConfiguration().getBrokers() != null) {
             return listener.getConfiguration().getBrokers().stream()
-                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getDnsAnnotations() != null)
-                    .map(GenericKafkaListenerConfigurationBroker::getDnsAnnotations)
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getAnnotations() != null)
+                    .map(GenericKafkaListenerConfigurationBroker::getAnnotations)
                     .findAny()
                     .orElse(Collections.emptyMap());
         } else {
             return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Finds bootstrap host
+     *
+     * @param listener  Listener for which the host should be found
+     * @return          Host name or null if not specified
+     */
+    public static String bootstrapHost(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null
+                && listener.getConfiguration().getBootstrap() != null) {
+            return listener.getConfiguration().getBootstrap().getHost();
+        } else {
+            return null;
         }
     }
 
@@ -492,7 +492,7 @@ public class ListenersUtils {
         if (listener.getConfiguration() != null) {
             return listener.getConfiguration().getLoadBalancerSourceRanges();
         } else {
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -545,7 +545,7 @@ public class ListenersUtils {
      *
      * @return Service type
      */
-    public static String getServiceType(GenericKafkaListener listener) {
+    public static String serviceType(GenericKafkaListener listener) {
         if (listener.getType() == KafkaListenerType.NODEPORT) {
             return "NodePort";
         } else if (listener.getType() == KafkaListenerType.LOADBALANCER) {

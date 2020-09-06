@@ -443,13 +443,6 @@ spec:
                                     resource to specify the desired hostname. This
                                     field can be used only with `route` (optional)
                                     or `ingress` (required) type listeners.
-                                dnsAnnotations:
-                                  type: object
-                                  description: Annotations that will be added to the
-                                    `Ingress` or `Service` resource. You can use this
-                                    field to configure DNS providers such as External
-                                    DNS. This field can be used only with `loadbalancer`,
-                                    `nodeport`, or `ingress` type listeners.
                                 nodePort:
                                   type: integer
                                   description: Node port for the bootstrap service.
@@ -465,6 +458,13 @@ spec:
                                     if the cloud provider does not support the feature.This
                                     field can be used only with `loadbalancer` type
                                     listener.
+                                annotations:
+                                  type: object
+                                  description: Annotations that will be added to the
+                                    `Ingress` or `Service` resource. You can use this
+                                    field to configure DNS providers such as External
+                                    DNS. This field can be used only with `loadbalancer`,
+                                    `nodeport`, or `ingress` type listeners.
                               description: Bootstrap configuration.
                             brokers:
                               type: array
@@ -491,14 +491,6 @@ spec:
                                       resource to specify the desired hostname. This
                                       field can be used only with `route` (optional)
                                       or `ingress` (required) type listeners.
-                                  dnsAnnotations:
-                                    type: object
-                                    description: Annotations that will be added to
-                                      the `Ingress` or `Service` resource. You can
-                                      use this field to configure DNS providers such
-                                      as External DNS. This field can be used only
-                                      with `loadbalancer`, `nodeport`, or `ingress`
-                                      type listeners.
                                   nodePort:
                                     type: integer
                                     description: Node port for the per-broker service.
@@ -514,6 +506,14 @@ spec:
                                       is ignored if the cloud provider does not support
                                       the feature.This field can be used only with
                                       `loadbalancer` type listener.
+                                  annotations:
+                                    type: object
+                                    description: Annotations that will be added to
+                                      the `Ingress` or `Service` resource. You can
+                                      use this field to configure DNS providers such
+                                      as External DNS. This field can be used only
+                                      with `loadbalancer`, `nodeport`, or `ingress`
+                                      type listeners.
                                 required:
                                 - broker
                               description: Per-broker configurations.

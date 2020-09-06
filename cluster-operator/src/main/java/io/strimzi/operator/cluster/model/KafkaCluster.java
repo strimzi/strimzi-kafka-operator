@@ -802,11 +802,11 @@ public class KafkaCluster extends AbstractModel {
 
             Service service = createService(
                     serviceName,
-                    ListenersUtils.getServiceType(listener),
+                    ListenersUtils.serviceType(listener),
                     ports,
                     getLabelsWithStrimziName(name, templateExternalBootstrapServiceLabels),
                     getSelectorLabels(),
-                    Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapDnsAnnotations(listener), templateExternalBootstrapServiceAnnotations)
+                    Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapAnnotations(listener), templateExternalBootstrapServiceAnnotations)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
@@ -865,11 +865,11 @@ public class KafkaCluster extends AbstractModel {
 
             Service service = createService(
                     serviceName,
-                    ListenersUtils.getServiceType(listener),
+                    ListenersUtils.serviceType(listener),
                     ports,
                     getLabelsWithStrimziName(name, templatePerPodServiceLabels),
                     selector,
-                    Util.mergeLabelsOrAnnotations(ListenersUtils.brokerDnsAnnotations(listener, pod), templatePerPodServiceAnnotations)
+                    Util.mergeLabelsOrAnnotations(ListenersUtils.brokerAnnotations(listener, pod), templatePerPodServiceAnnotations)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
@@ -1008,7 +1008,7 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             String host = ListenersUtils.bootstrapHost(listener);
-            Map<String, String> dnsAnnotations = ListenersUtils.bootstrapDnsAnnotations(listener);
+            Map<String, String> dnsAnnotations = ListenersUtils.bootstrapAnnotations(listener);
             String ingressClass = ListenersUtils.ingressClass(listener);
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
@@ -1063,7 +1063,7 @@ public class KafkaCluster extends AbstractModel {
         for (GenericKafkaListener listener : ingressListeners)   {
             String ingressName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
             String host = ListenersUtils.brokerHost(listener, pod);
-            Map<String, String> dnsAnnotations = ListenersUtils.brokerDnsAnnotations(listener, pod);
+            Map<String, String> dnsAnnotations = ListenersUtils.brokerAnnotations(listener, pod);
             String ingressClass = ListenersUtils.ingressClass(listener);
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()

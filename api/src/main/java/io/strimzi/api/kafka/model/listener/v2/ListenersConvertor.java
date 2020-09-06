@@ -146,7 +146,7 @@ public class ListenersConvertor {
             if (oldListener.getOverrides().getBootstrap() != null) {
                 GenericKafkaListenerConfigurationBootstrap bootstrapConfiguration = new GenericKafkaListenerConfigurationBootstrap();
                 bootstrapConfiguration.setLoadBalancerIP(oldListener.getOverrides().getBootstrap().getLoadBalancerIP());
-                bootstrapConfiguration.setDnsAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
+                bootstrapConfiguration.setAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
 
                 if (oldListener.getOverrides().getBootstrap().getAddress() != null) {
                     bootstrapConfiguration.setAlternativeNames(Collections.singletonList(oldListener.getOverrides().getBootstrap().getAddress()));
@@ -162,7 +162,7 @@ public class ListenersConvertor {
                     GenericKafkaListenerConfigurationBroker brokerConfiguration = new GenericKafkaListenerConfigurationBroker();
                     brokerConfiguration.setBroker(oldBroker.getBroker());
                     brokerConfiguration.setLoadBalancerIP(oldBroker.getLoadBalancerIP());
-                    brokerConfiguration.setDnsAnnotations(oldBroker.getDnsAnnotations());
+                    brokerConfiguration.setAnnotations(oldBroker.getDnsAnnotations());
                     brokerConfiguration.setAdvertisedHost(oldBroker.getAdvertisedHost());
                     brokerConfiguration.setAdvertisedPort(oldBroker.getAdvertisedPort());
 
@@ -201,7 +201,7 @@ public class ListenersConvertor {
             if (oldListener.getOverrides().getBootstrap() != null) {
                 GenericKafkaListenerConfigurationBootstrap bootstrapConfiguration = new GenericKafkaListenerConfigurationBootstrap();
                 bootstrapConfiguration.setNodePort(oldListener.getOverrides().getBootstrap().getNodePort());
-                bootstrapConfiguration.setDnsAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
+                bootstrapConfiguration.setAnnotations(oldListener.getOverrides().getBootstrap().getDnsAnnotations());
 
                 if (oldListener.getOverrides().getBootstrap().getAddress() != null) {
                     bootstrapConfiguration.setAlternativeNames(Collections.singletonList(oldListener.getOverrides().getBootstrap().getAddress()));
@@ -217,7 +217,7 @@ public class ListenersConvertor {
                     GenericKafkaListenerConfigurationBroker brokerConfiguration = new GenericKafkaListenerConfigurationBroker();
                     brokerConfiguration.setBroker(oldBroker.getBroker());
                     brokerConfiguration.setNodePort(oldBroker.getNodePort());
-                    brokerConfiguration.setDnsAnnotations(oldBroker.getDnsAnnotations());
+                    brokerConfiguration.setAnnotations(oldBroker.getDnsAnnotations());
                     brokerConfiguration.setAdvertisedHost(oldBroker.getAdvertisedHost());
                     brokerConfiguration.setAdvertisedPort(oldBroker.getAdvertisedPort());
 
@@ -301,7 +301,7 @@ public class ListenersConvertor {
                 if (oldListener.getConfiguration().getBootstrap() != null) {
                     GenericKafkaListenerConfigurationBootstrap bootstrapConfiguration = new GenericKafkaListenerConfigurationBootstrap();
                     bootstrapConfiguration.setHost(oldListener.getConfiguration().getBootstrap().getHost());
-                    bootstrapConfiguration.setDnsAnnotations(oldListener.getConfiguration().getBootstrap().getDnsAnnotations());
+                    bootstrapConfiguration.setAnnotations(oldListener.getConfiguration().getBootstrap().getDnsAnnotations());
 
                     if (oldListener.getConfiguration().getBootstrap().getAddress() != null) {
                         bootstrapConfiguration.setAlternativeNames(Collections.singletonList(oldListener.getConfiguration().getBootstrap().getAddress()));
@@ -317,7 +317,7 @@ public class ListenersConvertor {
                         GenericKafkaListenerConfigurationBroker brokerConfiguration = new GenericKafkaListenerConfigurationBroker();
                         brokerConfiguration.setBroker(oldBroker.getBroker());
                         brokerConfiguration.setHost(oldBroker.getHost());
-                        brokerConfiguration.setDnsAnnotations(oldBroker.getDnsAnnotations());
+                        brokerConfiguration.setAnnotations(oldBroker.getDnsAnnotations());
                         brokerConfiguration.setAdvertisedHost(oldBroker.getAdvertisedHost());
                         brokerConfiguration.setAdvertisedPort(oldBroker.getAdvertisedPort());
 

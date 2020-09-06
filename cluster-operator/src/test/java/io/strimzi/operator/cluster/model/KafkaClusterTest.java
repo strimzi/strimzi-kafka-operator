@@ -1111,17 +1111,17 @@ public class KafkaClusterTest {
     @Test
     public void testExternalLoadBalancersWithDnsAnnotations() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
-                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
+                .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
-                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
+                .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig2 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(2)
-                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
+                .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
@@ -1199,17 +1199,17 @@ public class KafkaClusterTest {
     @Test
     public void testExternalNodePortWithDnsAnnotations() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
-                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
+                .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
-                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
+                .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig2 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(2)
-                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
+                .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
@@ -2646,7 +2646,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withNewBootstrap()
                                         .withHost("my-kafka-bootstrap.com")
-                                        .withDnsAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
                                     .endBootstrap()
                                     .withBrokers(broker0, broker1, broker2)
                                 .endConfiguration()
@@ -2748,7 +2748,7 @@ public class KafkaClusterTest {
                                     .withNewIngressClass("nginx-internal")
                                     .withNewBootstrap()
                                         .withHost("my-kafka-bootstrap.com")
-                                        .withDnsAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
                                     .endBootstrap()
                                     .withBrokers(broker0, broker1, broker2)
                                 .endConfiguration()
@@ -2791,7 +2791,7 @@ public class KafkaClusterTest {
                                     .withNewIngressClass("nginx-internal")
                                     .withNewBootstrap()
                                         .withHost("my-kafka-bootstrap.com")
-                                        .withDnsAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
                                     .endBootstrap()
                                     .withBrokers(broker0)
                                 .endConfiguration()

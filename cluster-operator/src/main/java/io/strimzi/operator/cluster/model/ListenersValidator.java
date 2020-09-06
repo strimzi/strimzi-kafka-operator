@@ -253,8 +253,8 @@ public class ListenersValidator {
      */
     private static void validateBootstrapDnsAnnotations(Set<String> errors, GenericKafkaListener listener) {
         if ((!KafkaListenerType.LOADBALANCER.equals(listener.getType()) && !KafkaListenerType.NODEPORT.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
-                && listener.getConfiguration().getBootstrap().getDnsAnnotations() != null
-                && !listener.getConfiguration().getBootstrap().getDnsAnnotations().isEmpty())    {
+                && listener.getConfiguration().getBootstrap().getAnnotations() != null
+                && !listener.getConfiguration().getBootstrap().getAnnotations().isEmpty())    {
             errors.add("listener " + listener.getName() + " cannot configure bootstrap.dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener");
         }
     }
@@ -310,8 +310,8 @@ public class ListenersValidator {
      */
     private static void validateBrokerDnsAnnotations(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
         if ((!KafkaListenerType.LOADBALANCER.equals(listener.getType()) && !KafkaListenerType.NODEPORT.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
-                && broker.getDnsAnnotations() != null
-                && !broker.getDnsAnnotations().isEmpty())    {
+                && broker.getAnnotations() != null
+                && !broker.getAnnotations().isEmpty())    {
             errors.add("listener " + listener.getName() + " cannot configure brokers[].dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener");
         }
     }

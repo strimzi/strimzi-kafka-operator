@@ -36,7 +36,7 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
     private String advertisedHost;
     private Integer advertisedPort;
     private String host;
-    private Map<String, String> dnsAnnotations = new HashMap<>(0);
+    private Map<String, String> annotations = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
 
@@ -90,12 +90,12 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
             "You can use this field to configure DNS providers such as External DNS. " +
             "This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<String, String> getDnsAnnotations() {
-        return dnsAnnotations;
+    public Map<String, String> getAnnotations() {
+        return annotations;
     }
 
-    public void setDnsAnnotations(Map<String, String> dnsAnnotations) {
-        this.dnsAnnotations = dnsAnnotations;
+    public void setAnnotations(Map<String, String> annotations) {
+        this.annotations = annotations;
     }
 
     @Description("Node port for the per-broker service. " +

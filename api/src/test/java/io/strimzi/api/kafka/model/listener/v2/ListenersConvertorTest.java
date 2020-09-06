@@ -342,18 +342,18 @@ public class ListenersConvertorTest {
         assertThat(newListener.getConfiguration().getBootstrap().getLoadBalancerIP(), is("64.23.234.148"));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().size(), is(1));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().get(0), is("my-bootstrap-dns"));
-        assertThat(newListener.getConfiguration().getBootstrap().getDnsAnnotations().get("anno"), is("my-dns"));
+        assertThat(newListener.getConfiguration().getBootstrap().getAnnotations().get("anno"), is("my-dns"));
         assertThat(newListener.getConfiguration().getBrokers().size(), is(2));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getBroker(), is(0));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getAdvertisedHost(), is("my-advertised-host-0"));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getAdvertisedPort(), is(1234));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getLoadBalancerIP(), is("64.23.234.149"));
-        assertThat(newListener.getConfiguration().getBrokers().get(0).getDnsAnnotations().get("anno"), is("my-dns-0"));
+        assertThat(newListener.getConfiguration().getBrokers().get(0).getAnnotations().get("anno"), is("my-dns-0"));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getBroker(), is(1));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getAdvertisedHost(), is("my-advertised-host-1"));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getAdvertisedPort(), is(1234));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getLoadBalancerIP(), is("64.23.234.150"));
-        assertThat(newListener.getConfiguration().getBrokers().get(1).getDnsAnnotations().get("anno"), is("my-dns-1"));
+        assertThat(newListener.getConfiguration().getBrokers().get(1).getAnnotations().get("anno"), is("my-dns-1"));
     }
 
     @Test
@@ -428,18 +428,18 @@ public class ListenersConvertorTest {
         assertThat(newListener.getConfiguration().getBootstrap().getNodePort(), is(31000));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().size(), is(1));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().get(0), is("my-bootstrap-dns"));
-        assertThat(newListener.getConfiguration().getBootstrap().getDnsAnnotations().get("anno"), is("my-dns"));
+        assertThat(newListener.getConfiguration().getBootstrap().getAnnotations().get("anno"), is("my-dns"));
         assertThat(newListener.getConfiguration().getBrokers().size(), is(2));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getBroker(), is(0));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getAdvertisedHost(), is("my-advertised-host-0"));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getAdvertisedPort(), is(1234));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getNodePort(), is(32000));
-        assertThat(newListener.getConfiguration().getBrokers().get(0).getDnsAnnotations().get("anno"), is("my-dns-0"));
+        assertThat(newListener.getConfiguration().getBrokers().get(0).getAnnotations().get("anno"), is("my-dns-0"));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getBroker(), is(1));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getAdvertisedHost(), is("my-advertised-host-1"));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getAdvertisedPort(), is(1234));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getNodePort(), is(32001));
-        assertThat(newListener.getConfiguration().getBrokers().get(1).getDnsAnnotations().get("anno"), is("my-dns-1"));
+        assertThat(newListener.getConfiguration().getBrokers().get(1).getAnnotations().get("anno"), is("my-dns-1"));
     }
 
     @Test
@@ -511,17 +511,17 @@ public class ListenersConvertorTest {
         assertThat(newListener.getConfiguration().getBootstrap().getHost(), is("my-bootstrap-host"));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().size(), is(1));
         assertThat(newListener.getConfiguration().getBootstrap().getAlternativeNames().get(0), is("my-bootstrap-dns"));
-        assertThat(newListener.getConfiguration().getBootstrap().getDnsAnnotations().get("anno"), is("my-dns"));
+        assertThat(newListener.getConfiguration().getBootstrap().getAnnotations().get("anno"), is("my-dns"));
         assertThat(newListener.getConfiguration().getBrokers().size(), is(2));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getBroker(), is(0));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getAdvertisedHost(), is("my-advertised-host-0"));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getAdvertisedPort(), is(1234));
         assertThat(newListener.getConfiguration().getBrokers().get(0).getHost(), is("my-host-0"));
-        assertThat(newListener.getConfiguration().getBrokers().get(0).getDnsAnnotations().get("anno"), is("my-dns-0"));
+        assertThat(newListener.getConfiguration().getBrokers().get(0).getAnnotations().get("anno"), is("my-dns-0"));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getBroker(), is(1));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getAdvertisedHost(), is("my-advertised-host-1"));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getAdvertisedPort(), is(1234));
         assertThat(newListener.getConfiguration().getBrokers().get(1).getHost(), is("my-host-1"));
-        assertThat(newListener.getConfiguration().getBrokers().get(1).getDnsAnnotations().get("anno"), is("my-dns-1"));
+        assertThat(newListener.getConfiguration().getBrokers().get(1).getAnnotations().get("anno"), is("my-dns-1"));
     }
 }

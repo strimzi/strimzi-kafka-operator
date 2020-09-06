@@ -313,15 +313,15 @@ spec:
                                   host:
                                     type: string
                                     description: The bootstrap host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
-                                  dnsAnnotations:
-                                    type: object
-                                    description: Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
                                   nodePort:
                                     type: integer
                                     description: Node port for the bootstrap service. This field can be used only with `nodeport` type listener.
                                   loadBalancerIP:
                                     type: string
                                     description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+                                  annotations:
+                                    type: object
+                                    description: Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
                                 description: Bootstrap configuration.
                               brokers:
                                 type: array
@@ -340,15 +340,15 @@ spec:
                                     host:
                                       type: string
                                       description: The broker host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
-                                    dnsAnnotations:
-                                      type: object
-                                      description: Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
                                     nodePort:
                                       type: integer
                                       description: Node port for the per-broker service. This field can be used only with `nodeport` type listener.
                                     loadBalancerIP:
                                       type: string
                                       description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+                                    annotations:
+                                      type: object
+                                      description: Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
                                   required:
                                     - broker
                                 description: Per-broker configurations.
