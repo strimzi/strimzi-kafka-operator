@@ -1000,7 +1000,7 @@ class KafkaST extends AbstractST {
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .build()
-            ));
+            ), null);
             kafka.getSpec().getKafka().setListeners(lst);
         });
 
@@ -1653,7 +1653,7 @@ class KafkaST extends AbstractST {
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .build()
-            ));
+            ), null);
             kafkaClusterSpec.setListeners(lst);
         });
 
@@ -1707,7 +1707,7 @@ class KafkaST extends AbstractST {
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
                             .build()
-            ));
+            ), null);
             kafkaClusterSpec.setListeners(lst);
         });
 
@@ -1815,7 +1815,7 @@ class KafkaST extends AbstractST {
                             .withNewKafkaListenerAuthenticationTlsAuth()
                             .endKafkaListenerAuthenticationTlsAuth()
                             .build()
-            ));
+            ), null);
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setListeners(lst);
         });
@@ -1843,7 +1843,7 @@ class KafkaST extends AbstractST {
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
                             .build()
-            ));
+            ), null);
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setListeners(lst);
         });

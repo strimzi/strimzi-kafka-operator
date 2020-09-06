@@ -39,13 +39,8 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
     private final List<GenericKafkaListener> genericKafkaListeners;
     private final KafkaListeners kafkaListeners;
 
-    public ArrayOrObjectKafkaListeners(List<GenericKafkaListener> genericKafkaListeners)   {
+    public ArrayOrObjectKafkaListeners(List<GenericKafkaListener> genericKafkaListeners, KafkaListeners kafkaListeners)   {
         this.genericKafkaListeners = genericKafkaListeners;
-        this.kafkaListeners = null;
-    }
-
-    public ArrayOrObjectKafkaListeners(KafkaListeners kafkaListeners)   {
-        this.genericKafkaListeners = null;
         this.kafkaListeners = kafkaListeners;
     }
 
@@ -97,9 +92,9 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
             ObjectCodec oc = jsonParser.getCodec();
 
             if (jsonParser.currentToken() == JsonToken.START_ARRAY) {
-                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<List<GenericKafkaListener>>() { }));
+                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<List<GenericKafkaListener>>() { }), null);
             } else if (jsonParser.currentToken() == JsonToken.START_OBJECT) {
-                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<KafkaListeners>() { }));
+                return new ArrayOrObjectKafkaListeners(null, oc.readValue(jsonParser, new TypeReference<KafkaListeners>() { }));
             } else {
                 throw new RuntimeException("Failed to deserialize ArrayOrObjectKafkaListeners. Please check .spec.kafka.listeners configuration.");
             }

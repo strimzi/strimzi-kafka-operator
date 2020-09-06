@@ -62,7 +62,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
+                        .withListeners(new ArrayOrObjectKafkaListeners(null, new KafkaListenersBuilder()
                                 .withNewPlain()
                                 .endPlain()
                                 .build()))

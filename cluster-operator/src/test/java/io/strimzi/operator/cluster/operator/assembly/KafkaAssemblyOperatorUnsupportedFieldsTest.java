@@ -159,7 +159,7 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
+                        .withListeners(new ArrayOrObjectKafkaListeners(null, new KafkaListenersBuilder()
                                 .withNewPlain()
                                 .endPlain()
                                 .build()))

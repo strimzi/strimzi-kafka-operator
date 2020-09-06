@@ -7,6 +7,7 @@ package io.strimzi.systemtest.kafka;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerBuilder;
@@ -447,6 +448,7 @@ public class ListenersST extends AbstractST {
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
                         .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
@@ -520,6 +522,7 @@ public class ListenersST extends AbstractST {
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
                         .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
@@ -1124,7 +1127,7 @@ public class ListenersST extends AbstractST {
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
                             .build()
-            )));
+            ), null));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1238,7 +1241,7 @@ public class ListenersST extends AbstractST {
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .build()
-            )));
+            ), null));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1365,7 +1368,7 @@ public class ListenersST extends AbstractST {
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
                             .build()
-            )));
+            ), null));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1476,7 +1479,7 @@ public class ListenersST extends AbstractST {
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .build()
-            )));
+            ), null));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1602,7 +1605,7 @@ public class ListenersST extends AbstractST {
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
                             .build()
-            )));
+            ), null));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1706,7 +1709,7 @@ public class ListenersST extends AbstractST {
                             .withType(KafkaListenerType.ROUTE)
                             .withTls(true)
                             .build()
-            )));
+            ), null));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);

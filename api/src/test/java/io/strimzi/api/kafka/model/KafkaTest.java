@@ -5,11 +5,18 @@
 package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
+import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,6 +38,83 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
     @Test
     public void testArrayRoundTrip()    {
         rt("Kafka-with-array");
+    }
+
+    @Test
+    public void testOldListenerSerialization() throws URISyntaxException {
+        KafkaListeners listeners = new KafkaListenersBuilder()
+                .withNewTls()
+                    .withAuth(new KafkaListenerAuthenticationTls())
+                .endTls()
+                .build();
+
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewZookeeper()
+                        .withReplicas(1)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(1)
+                        .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(this.getClass().getResource("Kafka-old-listener-serialization.yaml").toURI().getPath())));
+    }
+
+    @Test
+    public void testNewListenerSerialization() throws URISyntaxException {
+        List<GenericKafkaListener> listeners = Collections.singletonList(
+                new GenericKafkaListenerBuilder()
+                        .withName("lst")
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                .build()
+        );
+
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewZookeeper()
+                        .withReplicas(1)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(1)
+                        .withListeners(new ArrayOrObjectKafkaListeners(listeners, null))
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(this.getClass().getResource("Kafka-new-listener-serialization.yaml").toURI().getPath())));
     }
 
     @Test
