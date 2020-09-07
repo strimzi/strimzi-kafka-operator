@@ -266,7 +266,7 @@ public class KafkaUtils {
      * @return all supported kafka properties
      */
     public static Map<String, ConfigModel> readConfigModel(String kafkaVersion) {
-        String name = "../cluster-operator/src/main/resources/kafka-" + kafkaVersion + "-config-model.json";
+        String name = TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafka-" + kafkaVersion + "-config-model.json";
         try {
             try (InputStream in = new FileInputStream(name)) {
                 ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
