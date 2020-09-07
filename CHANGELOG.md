@@ -85,7 +85,7 @@ listeners:
     tls: true
   - name: external
     port: 9094
-    type: loadlablancer
+    type: loadbalancer
     tls: true
 ```
 
