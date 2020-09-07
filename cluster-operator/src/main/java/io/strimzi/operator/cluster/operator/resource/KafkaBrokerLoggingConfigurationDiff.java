@@ -119,18 +119,17 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
             }
 
             int e = name.length();
-            int b = e;
-            while (b > -1) {
-                b = name.lastIndexOf('.', e);
-                if (b == -1) {
+            while (e > -1) {
+                e = name.lastIndexOf('.', e);
+                if (e == -1) {
                     level = config.get("root");
                 } else {
-                    level = config.get(name.substring(0, b));
+                    level = config.get(name.substring(0, e));
                 }
                 if (level != null) {
                     return LoggingLevel.valueOf(level.split(",")[0]);
                 }
-                e = b - 1;
+                e -= 1;
             }
             // still here? Not even root logger defined?
             return LoggingLevel.INFO;
