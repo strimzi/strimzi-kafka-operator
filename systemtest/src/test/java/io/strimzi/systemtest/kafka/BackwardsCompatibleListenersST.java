@@ -50,7 +50,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated() {
-        String kafkaUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String KafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaListeners listeners = new KafkaListenersBuilder()
@@ -68,7 +68,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUsername).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
@@ -80,7 +80,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUser)
+            .withKafkaUsername(KafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
@@ -148,6 +148,9 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls() {
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
         KafkaListeners listeners = new KafkaListenersBuilder()
                 .withNewKafkaListenerExternalNodePort()
                     .withAuth(new KafkaListenerAuthenticationTls())
@@ -162,14 +165,15 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .endSpec()
             .done();
 
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
+                .withTopicName(topicName)
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(USER_NAME)
+                .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
                 .build();
 
@@ -183,6 +187,9 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls() {
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
         KafkaListeners listeners = new KafkaListenersBuilder()
                 .withNewKafkaListenerExternalLoadBalancer()
                     .withAuth(new KafkaListenerAuthenticationTls())
@@ -197,16 +204,17 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .endSpec()
             .done();
 
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
         ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
+                .withTopicName(topicName)
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(USER_NAME)
+                .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
                 .build();
 
@@ -220,6 +228,9 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
     void testRouteTls() {
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
         KafkaListeners listeners = new KafkaListenersBuilder()
                 .withNewKafkaListenerExternalRoute()
                     .withAuth(new KafkaListenerAuthenticationTls())
@@ -234,16 +245,15 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
+                .withTopicName(topicName)
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(USER_NAME)
+                .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
                 .build();
 
