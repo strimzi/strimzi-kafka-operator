@@ -6,10 +6,10 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerConfiguration;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

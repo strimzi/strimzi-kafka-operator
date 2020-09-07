@@ -8,10 +8,10 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
-import io.strimzi.api.kafka.model.listener.v2.ArrayOrObjectKafkaListeners;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
+import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 

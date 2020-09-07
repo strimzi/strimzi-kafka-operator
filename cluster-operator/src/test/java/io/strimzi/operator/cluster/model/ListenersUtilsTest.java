@@ -5,10 +5,10 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListener;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.v2.GenericKafkaListenerConfigurationBrokerBuilder;
-import io.strimzi.api.kafka.model.listener.v2.KafkaListenerType;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import org.junit.jupiter.api.Test;
 
