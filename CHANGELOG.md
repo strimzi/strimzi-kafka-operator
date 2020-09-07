@@ -15,6 +15,10 @@
 * Support dynamically changeable logging configuration of Kafka brokers
 * Support dynamically changeable logging configuration of Kafka MirrorMaker2
 * Add support for `client.rack` property for Kafka Connect to use `fetch from closest replica` feature. 
+* Refactored operators Grafana dashboard
+  * Fixed bug on maximum reconcile time graph
+  * Removed the avarage reconsile time graph
+  * Rearranged graphs
 
 ### Deprecations and removals
 
