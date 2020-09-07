@@ -14,18 +14,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
     private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
-
-    private static final HashSet VALID_LOGGER_LEVELS = new HashSet<>(Arrays.asList("INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF"));
 
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
         this.diff = diff(brokerId, desired, brokerConfigs);
@@ -104,21 +100,43 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
      */
     @Override
     public boolean isEmpty() {
-        return  diff.size() == 0;
+        return diff.size() == 0;
     }
 
-    private static boolean isValidLoggerLevel(String level) {
-        return VALID_LOGGER_LEVELS.contains(level);
-    }
-
+    /**
+     * This internal class calculates the logging level of an arbitrary category based on the logging configuration.
+     *
+     * It takes Log4j properties configuration in the form of a map of key:value pairs,
+     * where key is the category name, and the value is whatever comes to the right of '=' sign in log4j.properties,
+     * which is either a logging level, or a logging level followed by a comma, and followed by the appender name.
+     */
     static class LoggingLevelResolver {
 
-        Map<String, String> config;
+        private final Map<String, String> config;
 
         LoggingLevelResolver(Map<String, String> loggingConfig) {
             this.config = loggingConfig;
         }
 
+        /**
+         * The method that returns the logging level of the category
+         * based on logging configuration, taking inheritance into account.
+         *
+         * For example, if looking for a logging level for 'io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder',
+         * the following configuration lookups are performed until one is found:
+         * <ul>
+         *     <li>io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder</li>
+         *     <li>io.strimzi.kafka.oauth.server</li>
+         *     <li>io.strimzi.kafka.oauth</li>
+         *     <li>io.strimzi.kafka</li>
+         *     <li>io.strimzi</li>
+         *     <li>io</li>
+         *     <li>root</li>
+         * </ul>
+         *
+         * @param name The logging category name
+         * @return The logging level
+         */
         LoggingLevel resolveLevel(String name) {
             String level = config.get(name);
             if (level != null) {
