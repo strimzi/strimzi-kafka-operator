@@ -70,7 +70,14 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         LoggingLevelResolver levelResolver = new LoggingLevelResolver(desiredMap);
 
         for (ConfigEntry entry: brokerConfigs.entries()) {
-            LoggingLevel desiredLevel = levelResolver.resolveLevel(entry.name());
+            LoggingLevel desiredLevel;
+            try {
+                desiredLevel = levelResolver.resolveLevel(entry.name());
+            } catch (IllegalArgumentException e) {
+                log.warn("Skipping {} - it is configured with an unsupported value (\"{}\")", entry.name(), e.getMessage());
+                continue;
+            }
+
             if (!desiredLevel.name().equals(entry.value())) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(entry.name(), desiredLevel.name()), AlterConfigOp.OpType.SET));
                 log.trace("{} has a deprecated value. Setting to {}", entry.name(), desiredLevel.name());
@@ -143,7 +150,6 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         WARN,
         INFO,
         DEBUG,
-        TRACE,
-        OFF
+        TRACE
     }
 }
