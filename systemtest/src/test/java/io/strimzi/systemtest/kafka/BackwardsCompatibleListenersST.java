@@ -50,7 +50,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated() {
-        String KafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaListeners listeners = new KafkaListenersBuilder()
@@ -68,7 +68,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUsername).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
@@ -80,7 +80,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(KafkaUsername)
+            .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
