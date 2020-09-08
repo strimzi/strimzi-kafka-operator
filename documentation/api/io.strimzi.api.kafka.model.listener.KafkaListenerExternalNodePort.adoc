@@ -9,10 +9,10 @@ An additional `NodePort` type of service is created to serve as a Kafka bootstra
 ----
 # ...
 listeners:
-  external:
+  - name: external
+    port: 9094
     type: nodeport
-    authentication:
-      type: tls
+    tls: false
 # ...
 ----
 
@@ -33,17 +33,18 @@ Each Kafka broker pod is then accessible on a separate port.
 [id='property-nodeport-listener-tls-{context}']
 .`tls`
 
-By default, TLS encryption is enabled.
-To disable it, set the `tls` property to `false`.
+By default, TLS encryption is not enabled.
+To enable it, set the `tls` property to `true`.
 
-.Example of an external listener of type `nodeport` and disabled TLS encryption
+.Example of an external listener of type `nodeport` and enabled TLS encryption
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
-  external:
+  - name: external
+    port: 9094
     type: nodeport
-    tls: false
+    tls: true
 # ...
 ----
 

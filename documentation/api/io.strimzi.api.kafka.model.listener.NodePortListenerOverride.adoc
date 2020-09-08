@@ -13,12 +13,13 @@ Strimzi does not perform any validation on the requested ports; you must ensure 
 ----
 # ...
 listeners:
-  external:
+  - name: external
+    port: 9094
     type: nodeport
     tls: true
     authentication:
       type: tls
-    overrides:
+    configuration:
       bootstrap:
         nodePort: 32100
       brokers:
@@ -32,37 +33,38 @@ listeners:
 ----
 
 [id='property-nodeport-listener-dns-annotations-{context}']
-.`dnsAnnotations`
+.`annotations`
 
-Use the `dnsAnnotations` property to add additional annotations to the node port services.
+Use the `annotations` property to add additional annotations to the node port services.
 You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the cluster nodes.
 
-.Example of an external listener of type `nodeport` using `dnsAnnotations`
+.Example of an external listener of type `nodeport` using `annotations`
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
-  external:
+  - name: external
+    port: 9094
     type: nodeport
     tls: true
     authentication:
       type: tls
-    overrides:
+    configuration:
       bootstrap:
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
       brokers:
       - broker: 0
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
       - broker: 1
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
       - broker: 2
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
 # ...

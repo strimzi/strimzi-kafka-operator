@@ -13,15 +13,23 @@ Each listener is defined when the `listeners` object has the given property.
 
 An empty object ({}) means the default configuration is used.
 
-.Example`listeners` property configuration with all listeners enabled
+.Example `listeners` property configuration with all listeners enabled
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
-  plain: {}
-  tls: {}
-  external:
+  - name: plain
+    port: 9092
+    type: service
+    tls: false
+  - name: plain
+    port: 9092
+    type: service
+    tls: false
+  - name: external
+    port: 9094
     type: loadbalancer
+    tls: true
 # ...
 ----
 
@@ -30,7 +38,10 @@ listeners:
 ----
 # ...
 listeners:
-  plain: {}
+  - name: plain
+    port: 9092
+    type: service
+    tls: false
 # ...
 ----
 

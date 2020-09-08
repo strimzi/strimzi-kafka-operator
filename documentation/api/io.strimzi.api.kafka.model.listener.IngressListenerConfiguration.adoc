@@ -16,8 +16,10 @@ Strimzi will not perform any validation that the requested hosts are available a
 ----
 # ...
 listeners:
-  external:
+  - name: external
+    port: 9094
     type: ingress
+    tls: true
     authentication:
       type: tls
     configuration:
@@ -34,39 +36,41 @@ listeners:
 ----
 
 [id='property-ingress-listener-dns-annotations-{context}']
-.`dnsAnnotations`
+.`annotations`
 
-Use the `dnsAnnotations` property to add additional annotations to the ingress resources.
+Use the `annotations` property to add additional annotations to the ingress resources.
 You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the ingress resources.
 
-.Example of an external listener of type `ingress` using `dnsAnnotations`
+.Example of an external listener of type `ingress` using `annotations`
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
-  external:
+  - name: external
+    port: 9094
     type: ingress
+    tls: true
     authentication:
       type: tls
     configuration:
       bootstrap:
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: bootstrap.myingress.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
         host: bootstrap.myingress.com
       brokers:
       - broker: 0
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: broker-0.myingress.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
         host: broker-0.myingress.com
       - broker: 1
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: broker-1.myingress.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
         host: broker-1.myingress.com
       - broker: 2
-        dnsAnnotations:
+        annotations:
           external-dns.alpha.kubernetes.io/hostname: broker-2.myingress.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
         host: broker-2.myingress.com

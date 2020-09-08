@@ -15,7 +15,10 @@ spec:
   kafka:
     # ...
     listeners:
-      plain: {}
+      - name: plain
+        port: 9092
+        type: service
+        tls: false
     # ...
   zookeeper:
     # ...
