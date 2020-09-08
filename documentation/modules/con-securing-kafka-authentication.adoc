@@ -5,9 +5,13 @@
 [id='con-securing-kafka-authentication-{context}']
 = Listener authentication
 
-For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` listener types.
+Listener configuration is specified as an array within a `Kafka` resource, which makes configuration very flexible,
+and allows you to configure multiple listeners.
 
-For clients outside the Kubernetes cluster, you create `external` listeners and specify a connection mechanism, which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` _internal_ listeners.
+
+For clients outside the Kubernetes cluster, you create _external_ listeners,
+and specify a connection mechanism, which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
 For more information on the configuration options for connecting an external client, see xref:assembly-configuring-external-listeners-str[Configuring external listeners].
 
 Supported authentication options:
@@ -23,7 +27,6 @@ image::listener-config-options.png[options for listener authentication configura
 
 The listener `authentication` property is used to specify an authentication mechanism specific to that listener.
 
-The listener authentication mechanism is defined by the `type` field.
 If no `authentication` property is specified then the listener does not authenticate clients which connect through that listener.
 The listener will accept all connections without authentication.
 
@@ -40,13 +43,20 @@ The following example shows:
 ----
 # ...
 listeners:
-  plain:
+  - name: plain
+    port: 9092
+    type: internal
+    tls: true
     authentication:
       type: scram-sha-512
-  tls:
+  - name: tls
+    port: 9093
+    type: internal
+    tls: true
     authentication:
       type: tls
-  external:
+  - name: external
+    port: 9094
     type: loadbalancer
     tls: true
     authentication:

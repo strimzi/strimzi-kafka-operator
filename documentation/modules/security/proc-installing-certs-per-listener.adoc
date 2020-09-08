@@ -35,17 +35,21 @@ kubectl create secret generic _my-secret_ --from-file=_my-listener-key.key_ --fr
 ----
 # ...
 listeners:
-  plain: {}
-  external:
+  - name: plain
+    port: 9092
+    type: internal
+    tls: false
+  - name: external
+    port: 9094
     type: loadbalancer
+    tls: true
+    authentication:
+      type: tls
     configuration:
       brokerCertChainAndKey:
         secretName: my-secret
         certificate: my-listener-certificate.crt
         key: my-listener-key.key
-    tls: true
-    authentication:
-      type: tls
 # ...
 ----
 +
@@ -54,15 +58,21 @@ listeners:
 ----
 # ...
 listeners:
-  plain: {}
-  tls:
+  - name: plain
+    port: 9092
+    type: internal
+    tls: false
+  - name: tls
+    port: 9093
+    type: internal
+    tls: true
+    authentication:
+      type: tls
     configuration:
       brokerCertChainAndKey:
         secretName: my-secret
         certificate: my-listener-certificate.pem
         key: my-listener-key.key
-    authentication:
-      type: tls
 # ...
 ----
 
@@ -81,4 +91,4 @@ NOTE: A rolling update is also started if you update a Kafka listener certificat
 
 * xref:ref-alternative-subjects-certs-for-listeners-{context}[]
 * xref:type-KafkaListeners-reference[]
-* xref:kafka-listener-certificates-{context}[] 
+* xref:kafka-listener-certificates-{context}[]

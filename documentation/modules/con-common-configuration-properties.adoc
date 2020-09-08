@@ -406,11 +406,14 @@ Overriding the advertised host and ports is available for all types of external 
 ----
 # ...
 listeners:
-  external:
+  #...
+  - name: external
+    port: 9094
     type: route
+    tls: true
     authentication:
       type: tls
-    overrides:
+    configuration:
       brokers:
       - broker: 0
         advertisedHost: example.hostname.0
@@ -433,11 +436,13 @@ Adding the additional bootstrap address is available for all types of external l
 ----
 # ...
 listeners:
-  external:
+  - name: external
+    port: 9094
     type: route
+    tls: true
     authentication:
       type: tls
-    overrides:
+    configuration:
       bootstrap:
         address: example.hostname
 # ...
@@ -453,7 +458,10 @@ The following example shows a `networkPolicyPeers` configuration for a `plain` a
 ----
 # ...
 listeners:
-  plain:
+  - name: plain
+    port: 9092
+    type: internal
+    tls: true
     authentication:
       type: scram-sha-512
     networkPolicyPeers:
@@ -463,7 +471,10 @@ listeners:
       - podSelector:
           matchLabels:
             app: kafka-sasl-producer
-  tls:
+  - name: tls
+    port: 9093
+    type: internal
+    tls: true
     authentication:
       type: tls
     networkPolicyPeers:

@@ -44,8 +44,10 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: ingress
+        tls: true
         authentication:
           type: tls
         configuration: <1>

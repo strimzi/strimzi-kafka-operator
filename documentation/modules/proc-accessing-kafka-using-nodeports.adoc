@@ -29,7 +29,8 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: nodeport
         tls: true
         authentication:

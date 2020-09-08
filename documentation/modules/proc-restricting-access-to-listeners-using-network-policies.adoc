@@ -16,7 +16,7 @@ You can restrict access to a listener to only selected applications by using the
 
 . Open the `Kafka` resource.
 
-. In the `networkPolicyPeers` field, define the application pods or namespaces that will be allowed to access the Kafka cluster.
+. In the `networkPolicyPeers` property, define the application pods or namespaces that will be allowed to access the Kafka cluster.
 +
 For example, to configure a `tls` listener to allow connections only from application pods with the label `app` set to `kafka-client`:
 +
@@ -28,7 +28,12 @@ spec:
   kafka:
     # ...
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
         networkPolicyPeers:
           - podSelector:
               matchLabels:

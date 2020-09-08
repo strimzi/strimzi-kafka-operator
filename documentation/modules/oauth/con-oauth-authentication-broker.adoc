@@ -34,11 +34,15 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   kafka:
+    # ...
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
           type: *oauth*
-          #...
+      #...
 ----
 
 You can configure `plain`, `tls` and `external` listeners,
@@ -51,18 +55,16 @@ You configure an `external` listener with `type: oauth` for a secure transport l
 ----
 # ...
 listeners:
-  tls:
-    authentication:
-      type: oauth
-  external:
+  - name: external
+    port: 9094
     type: loadbalancer
     tls: true
     authentication:
-      *type: oauth*
+      type: *oauth*
     #...
 ----
 
-The `tls` property is _true_ by default, so it can be left out.
+The `tls` property is _false_ by default, so it must be enabled.
 
 When you have defined the type of authentication as OAuth 2.0, you add configuration based on the type of validation, either as xref:con-oauth-authentication-broker-fast-local[fast local JWT validation] or xref:con-oauth-authentication-broker-intro-local[token validation using an introspection endpoint].
 
@@ -100,10 +102,14 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   kafka:
+    #...
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
-          type: oauth
+          type: *oauth*
           validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
           jwksEndpointUri: <__https://<auth-server-address>/auth/realms/tls/protocol/openid-connect/certs__>
           userNameClaim: preferred_username
@@ -111,6 +117,7 @@ spec:
           tlsTrustedCertificates:
           - secretName: oauth-server-cert
             certificate: ca.crt
+    #...
 ----
 
 [[con-oauth-authentication-broker-intro-local]]
@@ -131,9 +138,12 @@ kind: Kafka
 spec:
   kafka:
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
-          type: oauth
+          type: *oauth*
           clientId: kafka-broker
           clientSecret:
             secretName: my-cluster-oauth

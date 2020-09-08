@@ -31,10 +31,10 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: loadbalancer
-        authentication:
-          type: tls
+        tls: true
         # ...
     # ...
   zookeeper:
