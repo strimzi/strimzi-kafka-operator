@@ -8,7 +8,7 @@ Kafka listeners use authentication to ensure a secure client connection to the K
 
 Supported authentication mechanisms:
 
-* TLS client authentication
+* Mutual TLS client authentication (on listeners with TLS enabled encryption)
 * SASL SCRAM-SHA-512
 * OAuth 2.0 token based authentication
 
