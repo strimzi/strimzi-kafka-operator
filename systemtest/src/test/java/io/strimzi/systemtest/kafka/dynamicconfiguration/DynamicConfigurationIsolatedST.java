@@ -104,12 +104,6 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                 .editKafka()
                     .editListeners()
                         .addNewGenericKafkaListener()
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withName("plain")
-                            .withPort(9092)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
                             .withName("external")
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
@@ -142,6 +136,12 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(false)
+                    .build(),
+                new GenericKafkaListenerBuilder()
+                    .withName("tls")
+                    .withPort(9093)
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withTls(true)
                     .build(),
                 new GenericKafkaListenerBuilder()
                     .withName("external")
@@ -183,10 +183,10 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName("tls")
-                    .withPort(9093)
+                    .withName("plain")
+                    .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
-                    .withTls(true)
+                    .withTls(false)
                     .build(),
                 new GenericKafkaListenerBuilder()
                     .withName("external")
