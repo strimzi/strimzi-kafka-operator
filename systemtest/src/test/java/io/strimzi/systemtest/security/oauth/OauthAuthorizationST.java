@@ -32,16 +32,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
-@Tag(NODEPORT_SUPPORTED)
-@Tag(EXTERNAL_CLIENTS_USED)
+@Tag(INTERNAL_CLIENTS_USED)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);

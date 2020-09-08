@@ -12,27 +12,22 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.Base64;
 
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
-@Tag(NODEPORT_SUPPORTED)
-@ExtendWith(VertxExtension.class)
 public class OauthAbstractST extends AbstractST {
 
     public static final String NAMESPACE = "oauth2-cluster-test";
