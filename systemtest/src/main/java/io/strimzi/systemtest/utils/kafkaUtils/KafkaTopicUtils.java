@@ -18,6 +18,7 @@ import java.util.Random;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaTopicUtils {
@@ -81,7 +82,15 @@ public class KafkaTopicUtils {
     public static void waitForKafkaTopicDeletion(String topicName) {
         LOGGER.info("Waiting for KafkaTopic {} deletion", topicName);
         TestUtils.waitFor("KafkaTopic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
-            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null,
+            () -> {
+                if (KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("KafkaTopic {} is not deleted yet! Triggering force delete by cmd client!", topicName);
+                    cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
+                    return false;
+                }
+            },
             () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
         );
     }
