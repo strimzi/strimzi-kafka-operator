@@ -14,7 +14,7 @@ data:
     appender.console.layout.type = PatternLayout
     appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n
 
-    rootLogger.level = INFO
+    rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}
     rootLogger.appenderRefs = stdout
     rootLogger.appenderRef.console.ref = STDOUT
     rootLogger.additivity = false
