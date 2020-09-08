@@ -88,6 +88,7 @@ public class Environment {
      * OLM env variables
      */
     private static final String OLM_OPERATOR_NAME_ENV = "OLM_OPERATOR_NAME";
+    private static final String OLM_OPERATOR_DEPLOYMENT_NAME_ENV = "OLM_OPERATOR_DEPLOYMENT_NAME";
     private static final String OLM_SOURCE_NAME_ENV = "OLM_SOURCE_NAME";
     private static final String OLM_APP_BUNDLE_PREFIX_ENV = "OLM_APP_BUNDLE_PREFIX";
     private static final String OLM_OPERATOR_VERSION_ENV = "OLM_OPERATOR_VERSION";
@@ -113,6 +114,7 @@ public class Environment {
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
     public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi";
+    public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = Constants.STRIMZI_DEPLOYMENT_NAME;
     public static final String OLM_SOURCE_NAME_DEFAULT = "strimzi-source";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi";
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "v0.18.0";
@@ -140,6 +142,7 @@ public class Environment {
     public static final String OPERATOR_IMAGE_PULL_POLICY = getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
     // OLM env variables
     public static final String OLM_OPERATOR_NAME = getOrDefault(OLM_OPERATOR_NAME_ENV, OLM_OPERATOR_NAME_DEFAULT);
+    public static final String OLM_OPERATOR_DEPLOYMENT_NAME = getOrDefault(OLM_OPERATOR_DEPLOYMENT_NAME_ENV, OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
     public static final String OLM_OPERATOR_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION_DEFAULT);
