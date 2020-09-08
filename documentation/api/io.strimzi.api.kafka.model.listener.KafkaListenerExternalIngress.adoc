@@ -9,10 +9,8 @@ Kafka clients can use these `Ingress` resources to connect to Kafka on port 443.
 ----
 # ...
 listeners:
-  - name: external
-    port: 9094
+  external:
     type: ingress
-    tls: true
     authentication:
       type: tls
     configuration:
@@ -30,12 +28,6 @@ listeners:
 
 NOTE: External listeners using `Ingress` have been currently tested only with the {NginxIngressController}.
 
-[id='property-ingress-listener-tls-{context}']
-.`tls`
-
-By default, TLS encryption is not enabled.
-To enable it, set the `tls` property to `true`.
-
 .`configuration`
 
 You must specify the hostnames used by the bootstrap and per-broker services using the xref:type-IngressListenerConfiguration-reference[`IngressListenerConfiguration` properties].
@@ -51,12 +43,8 @@ You can change the `Ingress` class using the `class` property.
 ----
 # ...
 listeners:
-  - name: external
-    port: 9094
+  external:
     type: ingress
-    tls: true
-    authentication:
-      type: tls
     class: nginx-internal
     # ...
 # ...

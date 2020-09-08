@@ -13,13 +13,11 @@ Strimzi does not perform any validation that the requested hosts are available; 
 ----
 # ...
 listeners:
-  - name: external
-    port: 9094
+  external:
     type: route
-    tls: true
     authentication:
       type: tls
-    configuration:
+    overrides:
       bootstrap:
         host: bootstrap.myrouter.com
       brokers:

@@ -1,36 +1,36 @@
 Configures overrides for node port external listeners.
 
 [id='property-loadbalancer-listener-dns-annotations-{context}']
-.`annotations`
+.`dnsAnnotations`
 
-Use the `annotations` property to add additional annotations to the loadbalancer services.
+Use the `dnsAnnotations` property to add additional annotations to the loadbalancer services.
 You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
 
-.Example of an external listener of type `loadbalancer` using `annotations`
+.Example of an external listener of type `loadbalancer` using `dnsAnnotations`
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
-  - name: external
-    port: 9094
+  external:
     type: loadbalancer
-    tls: true
-    configuration:
+    authentication:
+      type: tls
+    overrides:
       bootstrap:
-        annotations:
+        dnsAnnotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
       brokers:
       - broker: 0
-        annotations:
+        dnsAnnotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
       - broker: 1
-        annotations:
+        dnsAnnotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
       - broker: 2
-        annotations:
+        dnsAnnotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
 # ...

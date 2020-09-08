@@ -3,20 +3,16 @@ A dedicated `Route` is created for every Kafka broker pod.
 An additional `Route` is created to serve as a Kafka bootstrap address.
 Kafka clients can use these `Routes` to connect to Kafka on port 443.
 
+TLS encryption is always used with `Routes`.
+
 .Example of an external listener of type `route`
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
-  - name: external
-    port: 9094
+  external:
     type: route
-    tls: true
+    authentication:
+      type: tls
 # ...
 ----
-
-[id='property-route-listener-tls-{context}']
-.`tls`
-
-By default, TLS encryption is not enabled.
-TLS encryption is always used with `Routes`, so the `tls` property must be set to `true`.

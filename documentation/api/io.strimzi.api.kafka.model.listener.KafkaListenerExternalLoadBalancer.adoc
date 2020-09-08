@@ -8,10 +8,8 @@ Loadbalancers listen to connections on port 9094.
 ----
 # ...
 listeners:
-  - name: external
-    port: 9094
+  external:
     type: loadbalancer
-    tls: true
     authentication:
       type: tls
 # ...
@@ -20,5 +18,5 @@ listeners:
 [id='property-loadbalancer-listener-tls-{context}']
 .`tls`
 
-By default, TLS encryption is not enabled.
-To enable it, set the `tls` property to `true`.
+By default, TLS encryption is enabled.
+To disable it, set the `tls` property to `false`.
