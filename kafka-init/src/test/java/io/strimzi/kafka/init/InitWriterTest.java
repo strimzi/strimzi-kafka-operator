@@ -92,7 +92,12 @@ public class InitWriterTest {
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeExternalAddress(), is(true));
-        assertThat(readFile(addressFolder + "/external.address"), is("my.external.address"));
+        assertThat(readFile(addressFolder + "/external.address"), is("export STRIMZI_NODEPORT_DEFAULT_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_EXTERNALIP_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_EXTERNALDNS_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_INTERNALIP_ADDRESS=192.168.2.94\n" +
+                "export STRIMZI_NODEPORT_INTERNALDNS_ADDRESS=my.internal.address\n" +
+                "export STRIMZI_NODEPORT_HOSTNAME_ADDRESS=my.external.address\n"));
     }
 
     @Test

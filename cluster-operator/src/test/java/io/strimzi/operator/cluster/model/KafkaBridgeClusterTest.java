@@ -150,7 +150,7 @@ public class KafkaBridgeClusterTest {
         Service svc = kbc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kbc.getServiceName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kbc.getName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
@@ -925,7 +925,7 @@ public class KafkaBridgeClusterTest {
         Service svc = kb.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kb.getServiceName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kb.getName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(1874)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));

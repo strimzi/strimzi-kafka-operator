@@ -300,7 +300,6 @@ spec:
           type: "integer"
           example: "42"
           minimum: 42
-          deprecated: true
           description: "An example int property."
         listOfArray:
           type: "array"

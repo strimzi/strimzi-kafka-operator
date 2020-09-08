@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -56,10 +58,10 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kuberne
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withNewListeners()
-                            .withNewPlain()
-                            .endPlain()
-                        .endListeners()
+                        .withListeners(new ArrayOrObjectKafkaListeners(null, new KafkaListenersBuilder()
+                                .withNewPlain()
+                                .endPlain()
+                                .build()))
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()

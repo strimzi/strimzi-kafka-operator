@@ -129,16 +129,16 @@ public class StatefulSetUtils {
     }
 
     /**
+     * Wait until the STS is ready and all of its Pods are also ready with custom timeout.
      *
-     * Wait until the STS is ready and all of its Pods are also ready.
      * @param statefulSetName The name of the StatefulSet
      * @param expectPods The number of pods expected.
      */
-    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods) {
+    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods, long timeout) {
         String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
 
         LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
-        TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+        TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
             () -> kubeClient().getStatefulSetStatus(statefulSetName),
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
 
@@ -146,6 +146,16 @@ public class StatefulSetUtils {
         PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(statefulSetName), expectPods, true,
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
         LOGGER.info("StatefulSet {} is ready", statefulSetName);
+    }
+
+    /**
+     * Wait until the STS is ready and all of its Pods are also ready with default timeout.
+     *
+     * @param statefulSetName The name of the StatefulSet
+     * @param expectPods The number of pods expected.
+     */
+    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods) {
+        waitForAllStatefulSetPodsReady(statefulSetName, expectPods, READINESS_TIMEOUT);
     }
 
     /**

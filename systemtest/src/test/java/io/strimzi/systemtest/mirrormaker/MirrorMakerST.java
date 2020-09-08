@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -178,9 +179,13 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewTls()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -190,9 +195,13 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewTls()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -306,7 +315,13 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationScramSha512())
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -316,7 +331,13 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationScramSha512())
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();

@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.security;
 
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -112,11 +114,14 @@ public class OpaIntegrationST extends AbstractST {
                         .withUrl("http://opa:8181/v1/data/kafka/simple/authz/allow")
                         .addNewSuperUser("CN=" + OPA_SUPERUSER)
                     .endKafkaAuthorizationOpa()
-                    .editListeners()
-                        .editOrNewTls()
-                            .withNewKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerAuthenticationTlsAuth()
-                        .endTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec()

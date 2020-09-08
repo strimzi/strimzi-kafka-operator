@@ -7,6 +7,7 @@ package io.strimzi.systemtest.security.oauth;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -234,8 +235,12 @@ public class OauthAuthorizationST extends OauthAbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewKafkaListenerAuthenticationOAuth()
                                 .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
                                 .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
@@ -249,7 +254,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                     .withNewKafkaAuthorizationKeycloak()
                         .withClientId(KAFKA_CLIENT_ID)

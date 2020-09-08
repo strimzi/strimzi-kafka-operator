@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -238,6 +239,20 @@ public class KafkaAssemblyOperatorMockTest {
                     .withNewKafka()
                         .withReplicas(kafkaReplicas)
                         .withStorage(kafkaStorage)
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endGenericKafkaListener()
+                        .endListeners()
                         .withMetrics(singletonMap("foo", "bar"))
                         .withResources(resources)
                     .endKafka()

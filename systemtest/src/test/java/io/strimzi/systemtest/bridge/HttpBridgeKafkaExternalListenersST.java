@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -106,12 +107,20 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewKafkaListenerExternalNodePort()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withAuth(auth)
-                        .endKafkaListenerExternalNodePort()
-                        .withNewTls()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
                             .withAuth(auth)
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
                 .endSpec()

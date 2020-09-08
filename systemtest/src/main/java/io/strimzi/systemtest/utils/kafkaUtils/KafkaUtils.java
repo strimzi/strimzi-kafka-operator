@@ -52,6 +52,21 @@ public class KafkaUtils {
         ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }
 
+    /**
+     * Waits for the Kafka Status to be updated after changed. It checks the generation and observed generation to
+     * ensure the status is up to date.
+     *
+     * @param clusterName   Name of the Kafka cluster which should be checked
+     */
+    public static void waitForKafkaStatusUpdate(String clusterName)   {
+        LOGGER.info("Waiting for Kafka status to be updated");
+        TestUtils.waitFor("KafkaStatus update", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            Kafka k = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+            return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
+        });
+    }
+
+
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message, long timeout) {
         TestUtils.waitFor("Kafka Status with message [" + message + "]",
             Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {

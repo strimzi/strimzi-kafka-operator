@@ -9,10 +9,8 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.PodAffinityTerm;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -67,11 +65,14 @@ public class SpecificST extends AbstractST {
                     .withNewRack()
                         .withTopologyKey(rackKey)
                     .endRack()
-                .editListeners()
-                    .withNewKafkaListenerExternalLoadBalancer()
-                        .withTls(false)
-                    .endKafkaListenerExternalLoadBalancer()
-                .endListeners()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(false)
+                        .endGenericKafkaListener()
+                    .endListeners()
                 .endKafka()
             .endSpec().done();
 
@@ -119,26 +120,25 @@ public class SpecificST extends AbstractST {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
 
-        LoadBalancerListenerBootstrapOverride bootstrapOverride = new LoadBalancerListenerBootstrapOverrideBuilder()
-            .withLoadBalancerIP(bootstrapOverrideIP)
-            .build();
-
-        LoadBalancerListenerBrokerOverride brokerOverride0 = new LoadBalancerListenerBrokerOverrideBuilder()
-            .withBroker(0)
-            .withLoadBalancerIP(brokerOverrideIP)
-            .build();
-
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                            .withTls(false)
-                        .withNewOverrides()
-                            .withBootstrap(bootstrapOverride)
-                            .withBrokers(brokerOverride0)
-                        .endOverrides()
-                        .endKafkaListenerExternalLoadBalancer()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBootstrap()
+                                    .withLoadBalancerIP(brokerOverrideIP)
+                                .endBootstrap()
+                                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                        .withBroker(0)
+                                        .withLoadBalancerIP(brokerOverrideIP)
+                                        .build())
+                            .endConfiguration()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -202,19 +202,17 @@ public class SpecificST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(false)
-                        .endKafkaListenerExternalLoadBalancer()
+                            .withNewConfiguration()
+                                .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
+                            .endConfiguration()
+                        .endGenericKafkaListener()
                     .endListeners()
-                    .withNewTemplate()
-                        .withNewExternalBootstrapService()
-                            .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
-                        .endExternalBootstrapService()
-                        .withNewPerPodService()
-                            .withLoadBalancerSourceRanges(ipWithPrefix)
-                        .endPerPodService()
-                    .endTemplate()
                 .endKafka()
             .endSpec()
             .done();

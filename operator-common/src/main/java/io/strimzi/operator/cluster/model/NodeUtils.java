@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.NodeAddress;
+import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,7 +29,7 @@ public class NodeUtils {
      *
      * @return  Address of the node
      */
-    public static String findAddress(List<NodeAddress> addresses, String preferredAddressType)   {
+    public static String findAddress(List<NodeAddress> addresses, NodeAddressType preferredAddressType)   {
         if (addresses == null)  {
             return null;
         }
@@ -40,8 +41,8 @@ public class NodeUtils {
                 }));
 
         // If user set preferred address type, we should check it first
-        if (preferredAddressType != null && addressMap.containsKey(preferredAddressType)) {
-            return addressMap.get(preferredAddressType);
+        if (preferredAddressType != null && addressMap.containsKey(preferredAddressType.toValue())) {
+            return addressMap.get(preferredAddressType.toValue());
         }
 
         if (addressMap.containsKey("ExternalDNS"))  {

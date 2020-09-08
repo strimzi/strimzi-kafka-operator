@@ -27,9 +27,9 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.listener.KafkaListeners;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -89,6 +89,7 @@ import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -104,7 +105,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 class KafkaST extends AbstractST {
-
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
     private static final String TEMPLATE_PATH = TestUtils.USER_PATH + "/../examples/templates/cluster-operator";
     public static final String NAMESPACE = "kafka-cluster-test";
@@ -546,10 +546,8 @@ class KafkaST extends AbstractST {
                 "1Gi", "500m", "384Mi", "25m");
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "30m");
-
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "topic-operator",
                 "-Xmx2G", "-Xms1024M", null, null);
-
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "user-operator",
                 "-Xmx1G", "-Xms512M", null, null);
 
@@ -989,7 +987,21 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Editing kafka with external listener");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalLoadBalancer());
+            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
+                            .build()
+            ), null);
+            kafka.getSpec().getKafka().setListeners(lst);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME)));
@@ -1568,6 +1580,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(NODEPORT_SUPPORTED)
     @Tag(LOADBALANCER_SUPPORTED)
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicConfigurationWithExternalListeners() {
         int kafkaReplicas = 2;
         int zkReplicas = 1;
@@ -1588,10 +1601,18 @@ class KafkaST extends AbstractST {
                 .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
-                        .withNewPlain()
-                        .endPlain()
+                        .addNewGenericKafkaListener()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
+                        .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(kafkaConfig)
                 .endKafka()
@@ -1619,13 +1640,21 @@ class KafkaST extends AbstractST {
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            KafkaListeners kl = new KafkaListenersBuilder()
-                    .withNewKafkaListenerExternalNodePort()
-                    .endKafkaListenerExternalNodePort()
-                    .withNewPlain()
-                    .endPlain()
-                    .build();
-            kafkaClusterSpec.setListeners(kl);
+            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
+                            .build()
+            ), null);
+            kafkaClusterSpec.setListeners(lst);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
@@ -1671,11 +1700,15 @@ class KafkaST extends AbstractST {
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            KafkaListeners kl = new KafkaListenersBuilder()
-                    .withNewPlain()
-                    .endPlain()
-                    .build();
-            kafkaClusterSpec.setListeners(kl);
+            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build()
+            ), null);
+            kafkaClusterSpec.setListeners(lst);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
@@ -1684,7 +1717,6 @@ class KafkaST extends AbstractST {
 
         kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
-
 
         // change dynamically changeable option
         updatedKafkaConfig.put("unclean.leader.election.enable", "true");
@@ -1718,9 +1750,18 @@ class KafkaST extends AbstractST {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withNewKafkaListenerExternalLoadBalancer()
+                            .addNewGenericKafkaListener()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
-                            .endKafkaListenerExternalLoadBalancer()
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.LOADBALANCER)
+                                .withTls(false)
+                            .endGenericKafkaListener()
                         .endListeners()
                         .withConfig(kafkaConfig)
                     .endKafka()
@@ -1765,14 +1806,18 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaListeners updatedKl = new KafkaListenersBuilder()
-                    .withNewKafkaListenerExternalNodePort()
-                        .withNewKafkaListenerAuthenticationTlsAuth()
-                        .endKafkaListenerAuthenticationTlsAuth()
-                    .endKafkaListenerExternalNodePort()
-                    .build();
+            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .build()
+            ), null);
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setListeners(updatedKl);
+            kafkaClusterSpec.setListeners(lst);
         });
 
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -1791,13 +1836,16 @@ class KafkaST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
-            KafkaListeners updatedKl = new KafkaListenersBuilder()
-                    .withNewKafkaListenerExternalNodePort()
-                        .withTls(false)
-                    .endKafkaListenerExternalNodePort()
-                    .build();
+            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(false)
+                            .build()
+            ), null);
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setListeners(updatedKl);
+            kafkaClusterSpec.setListeners(lst);
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);

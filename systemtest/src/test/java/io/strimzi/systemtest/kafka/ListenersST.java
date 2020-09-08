@@ -7,11 +7,12 @@ package io.strimzi.systemtest.kafka;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRouteBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
@@ -49,15 +50,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -127,11 +129,21 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewTls()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withName("plain")
+                                .withPort(9092)
+                                .withTls(false)
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withName("tls")
+                                .withPort(9093)
+                                .withTls(true)
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
-                            .endTls()
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec().done();
@@ -182,10 +194,14 @@ public class ListenersST extends AbstractST {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withNewPlain()
+                            .addNewGenericKafkaListener()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withName("plain")
+                                .withPort(9092)
+                                .withTls(false)
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                                 .endKafkaListenerAuthenticationScramSha512Auth()
-                            .endPlain()
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec().done();
@@ -249,10 +265,14 @@ public class ListenersST extends AbstractST {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .editOrNewTls()
+                            .addNewGenericKafkaListener()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withName("tls")
+                                .withPort(9093)
+                                .withTls(true)
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                                 .endKafkaListenerAuthenticationScramSha512Auth()
-                            .endTls()
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -297,10 +317,19 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withName("tls")
+                            .withPort(9093)
+                            .withTls(true)
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withName("external")
+                            .withPort(9094)
                             .withTls(false)
-                        .endKafkaListenerExternalNodePort()
+                        .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
@@ -356,16 +385,28 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                            .withTls(false)
-                                .withNewOverrides()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withName("tls")
+                                .withPort(9093)
+                                .withTls(true)
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withName("external")
+                                .withPort(9094)
+                                .withTls(false)
+                                .withNewConfiguration()
                                     .withNewBootstrap()
                                         .withNodePort(clusterBootstrapNodePort)
                                     .endBootstrap()
-                                    .withBrokers(nodePortListenerBrokerOverride)
-                                .endOverrides()
-                            .endKafkaListenerExternalNodePort()
+                                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                            .withBroker(brokerId)
+                                            .withNodePort(brokerNodePort)
+                                            .build())
+                                .endConfiguration()
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -401,9 +442,14 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                    .withNewKafkaListenerExternalNodePort()
-                    .endKafkaListenerExternalNodePort()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
+                        .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
@@ -434,10 +480,13 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
-                        .endKafkaListenerExternalLoadBalancer()
+                        .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
@@ -467,9 +516,14 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
+                        .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
@@ -509,8 +563,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -518,8 +576,12 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
-                        .withNewKafkaListenerExternalNodePort()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -527,7 +589,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endKafkaListenerExternalNodePort()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -581,8 +643,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -590,8 +656,12 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
-                        .withNewKafkaListenerExternalNodePort()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -599,7 +669,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endKafkaListenerExternalNodePort()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -655,8 +725,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -664,8 +738,12 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
-                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -673,7 +751,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endKafkaListenerExternalLoadBalancer()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -727,8 +805,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -736,8 +818,12 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
-                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -745,7 +831,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endKafkaListenerExternalLoadBalancer()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -804,8 +890,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                         .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -813,8 +903,12 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
-                        .withNewKafkaListenerExternalRoute()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.ROUTE)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -822,7 +916,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endKafkaListenerExternalRoute()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -876,8 +970,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -885,8 +983,12 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
-                        .withNewKafkaListenerExternalRoute()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.ROUTE)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -894,7 +996,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endKafkaListenerExternalRoute()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -950,9 +1052,19 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -988,28 +1100,40 @@ public class ListenersST extends AbstractST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalLoadBalancerBuilder()
-                .withNewConfiguration()
-                    .withNewBrokerCertChainAndKey()
-                        .withSecretName(customCertServer1)
-                        .withKey("ca.key")
-                        .withCertificate("ca.crt")
-                    .endBrokerCertChainAndKey()
-                .endConfiguration()
-                .build());
-            kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
-                .withNewConfiguration()
-                    .withNewBrokerCertChainAndKey()
-                        .withSecretName(customCertServer2)
-                        .withKey("ca.key")
-                        .withCertificate("ca.crt")
-                    .endBrokerCertChainAndKey()
-                .endConfiguration()
-                .build());
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer2)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer1)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build()
+            ), null));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
@@ -1097,13 +1221,33 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(5 * MESSAGE_COUNT));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
-                .withTls(true)
-                .build());
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer2)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.LOADBALANCER)
+                            .withTls(true)
+                            .build()
+            ), null));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
@@ -1149,9 +1293,19 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalNodePort()
-                        .endKafkaListenerExternalNodePort()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -1187,29 +1341,40 @@ public class ListenersST extends AbstractST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
-                .withNewConfiguration()
-                    .withNewBrokerCertChainAndKey()
-                        .withSecretName(customCertServer1)
-                        .withKey("ca.key")
-                        .withCertificate("ca.crt")
-                    .endBrokerCertChainAndKey()
-                .endConfiguration()
-                .build());
-
-            kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
-                .withNewConfiguration()
-                    .withNewBrokerCertChainAndKey()
-                        .withSecretName(customCertServer2)
-                        .withKey("ca.key")
-                        .withCertificate("ca.crt")
-                    .endBrokerCertChainAndKey()
-                .endConfiguration()
-                .build());
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer2)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer1)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build()
+            ), null));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
@@ -1294,13 +1459,33 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(5 * MESSAGE_COUNT));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
-                .withTls(true)
-                .build());
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer2)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(true)
+                            .build()
+            ), null));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
@@ -1345,9 +1530,19 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalRoute()
-                        .endKafkaListenerExternalRoute()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.ROUTE)
+                            .withTls(true)
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -1383,28 +1578,40 @@ public class ListenersST extends AbstractST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalRouteBuilder()
-                .withNewConfiguration()
-                    .withNewBrokerCertChainAndKey()
-                        .withSecretName(customCertServer1)
-                        .withKey("ca.key")
-                        .withCertificate("ca.crt")
-                    .endBrokerCertChainAndKey()
-                .endConfiguration()
-                .build());
-            kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
-                .withNewConfiguration()
-                    .withNewBrokerCertChainAndKey()
-                        .withSecretName(customCertServer2)
-                        .withKey("ca.key")
-                        .withCertificate("ca.crt")
-                    .endBrokerCertChainAndKey()
-                .endConfiguration()
-                .build());
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer2)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.ROUTE)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer1)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build()
+            ), null));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
@@ -1482,11 +1689,33 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(5 * MESSAGE_COUNT));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalRouteBuilder().build());
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
+                    new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewConfiguration()
+                                .withNewBrokerCertChainAndKey()
+                                    .withSecretName(customCertServer2)
+                                    .withKey("ca.key")
+                                    .withCertificate("ca.crt")
+                                .endBrokerCertChainAndKey()
+                            .endConfiguration()
+                            .build(),
+                    new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.ROUTE)
+                            .withTls(true)
+                            .build()
+            ), null));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
@@ -1522,8 +1751,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(nonExistingCertName)
@@ -1531,14 +1764,14 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().build());
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, "Secret " + nonExistingCertName + ".*does not exist.*");
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, ".*Secret " + nonExistingCertName + " with custom TLS certificate does not exist.*");
 
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
@@ -1551,8 +1784,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -1560,7 +1797,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate(nonExistingCertName)
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().build());
@@ -1568,7 +1805,7 @@ public class ListenersST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
-                "Secret " + customCertServer1 + ".*does not contain certificate under the key " + nonExistingCertName + ".*");
+                ".*Secret " + customCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
 
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
@@ -1581,8 +1818,12 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -1590,7 +1831,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().build());
@@ -1598,7 +1839,7 @@ public class ListenersST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
-                "Secret " + customCertServer1 + ".*does not contain.*private key under the key " + nonExistingCertKey + ".*");
+                ".*Secret " + customCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
 
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }

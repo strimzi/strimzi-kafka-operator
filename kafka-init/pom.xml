@@ -20,6 +20,10 @@
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
         </dependency>
         <dependency>

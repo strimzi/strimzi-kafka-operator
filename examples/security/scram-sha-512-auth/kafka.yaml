@@ -7,7 +7,10 @@ spec:
     version: 2.6.0
     replicas: 3
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
           type: scram-sha-512
     authorization:

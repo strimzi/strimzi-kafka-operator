@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
-import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -80,7 +80,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
-    private KafkaListeners listeners;
+    private ArrayOrObjectKafkaListeners listeners;
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -272,11 +272,11 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     @Description("Configures listeners of Kafka brokers")
     @JsonProperty(required = true)
-    public KafkaListeners getListeners() {
+    public ArrayOrObjectKafkaListeners getListeners() {
         return listeners;
     }
 
-    public void setListeners(KafkaListeners listeners) {
+    public void setListeners(ArrayOrObjectKafkaListeners listeners) {
         this.listeners = listeners;
     }
 

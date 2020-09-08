@@ -12,8 +12,9 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
@@ -55,6 +56,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -96,8 +98,12 @@ public class KafkaStatusTest {
                     .withNewKafka()
                         .withReplicas(3)
                         .withNewListeners()
-                            .withNewPlain()
-                            .endPlain()
+                            .addNewGenericKafkaListener()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                            .endGenericKafkaListener()
                         .endListeners()
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
@@ -407,9 +413,13 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .editOrNewListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                            .endKafkaListenerExternalNodePort()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -505,12 +515,12 @@ public class KafkaStatusTest {
 
     @Test
     public void testKafkaListenerNodePortAddressInStatusWithOverrides(VertxTestContext context) throws ParseException {
-        NodePortListenerBrokerOverride broker0 = new NodePortListenerBrokerOverrideBuilder()
+        GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .withAdvertisedHost("my-address-0")
                 .build();
 
-        NodePortListenerBrokerOverride broker1 = new NodePortListenerBrokerOverrideBuilder()
+        GenericKafkaListenerConfigurationBroker broker1 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(1)
                 .withAdvertisedHost("my-address-1")
                 .build();
@@ -518,12 +528,16 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .editOrNewListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                                .withNewOverrides()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                                .withNewConfiguration()
                                     .withBrokers(broker0, broker1)
-                                .endOverrides()
-                            .endKafkaListenerExternalNodePort()
+                                .endConfiguration()
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -622,12 +636,16 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .editOrNewListeners()
-                            .withNewKafkaListenerExternalNodePort()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
                                 .withNewConfiguration()
-                                    .withPreferredAddressType(NodeAddressType.INTERNAL_DNS)
+                                    .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                                 .endConfiguration()
-                            .endKafkaListenerExternalNodePort()
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -726,9 +744,13 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .editOrNewListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                            .endKafkaListenerExternalNodePort()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -826,9 +848,13 @@ public class KafkaStatusTest {
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withReplicas(1)
-                        .editOrNewListeners()
-                            .withNewKafkaListenerExternalNodePort()
-                            .endKafkaListenerExternalNodePort()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -890,7 +916,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getType(), is("external"));
 
-            assertThat(status.getListeners().get(0).getAddresses(), is(nullValue()));
+            assertThat(status.getListeners().get(0).getAddresses(), is(emptyList()));
             assertThat(status.getListeners().get(0).getBootstrapServers(), is(nullValue()));
 
             async.flag();
@@ -1095,7 +1121,7 @@ public class KafkaStatusTest {
 
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
-            reconcileState.externalBootstrapNodePort = 31234;
+            reconcileState.kafkaBootstrapNodePorts.put("external-9094", 31234);
 
             return reconcileState.getKafkaClusterDescription()
                     .compose(state -> state.kafkaNodePortExternalListenerStatus())

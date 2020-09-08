@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -766,10 +767,19 @@ public class TracingST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalNodePort()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
                                 .withTls(false)
-                            .endKafkaListenerExternalNodePort()
+                            .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
                 .endSpec()
