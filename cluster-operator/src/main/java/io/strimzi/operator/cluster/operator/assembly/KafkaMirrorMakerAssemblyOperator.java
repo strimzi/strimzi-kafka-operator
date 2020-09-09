@@ -14,10 +14,14 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.StatusDiff;
@@ -25,6 +29,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -44,7 +49,7 @@ import java.util.Map;
  *     <li>A Kafka Mirror Maker Deployment and related Services</li>
  * </ul>
  */
-public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> {
+public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>, KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> {
 
     private static final Logger log = LogManager.getLogger(KafkaMirrorMakerAssemblyOperator.class.getName());
 
@@ -69,22 +74,16 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     }
 
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker assemblyResource) {
-        Promise<Void> createOrUpdatePromise = Promise.promise();
-
+    protected Future<KafkaMirrorMakerStatus> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker assemblyResource) {
         String namespace = reconciliation.namespace();
         KafkaMirrorMakerCluster mirror;
         KafkaMirrorMakerStatus kafkaMirrorMakerStatus = new KafkaMirrorMakerStatus();
-        if (assemblyResource.getSpec() == null) {
-            log.error("{} spec cannot be null", assemblyResource.getMetadata().getName());
-            return Future.failedFuture("Spec cannot be null");
-        }
+
         try {
             mirror = KafkaMirrorMakerCluster.fromCrd(assemblyResource, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, Future.failedFuture(e));
-            updateStatus(assemblyResource, reconciliation, kafkaMirrorMakerStatus);
-            return Future.failedFuture(e);
+            return Future.failedFuture(new ReconciliationException(kafkaMirrorMakerStatus, e));
         }
 
         ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(mirror.getLogging() instanceof ExternalLogging ?
@@ -93,6 +92,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         Map<String, String> annotations = new HashMap<>(1);
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
+
+        Promise<KafkaMirrorMakerStatus> createOrUpdatePromise = Promise.promise();
 
         boolean mirrorHasZeroReplicas = mirror.getReplicas() == 0;
 
@@ -111,75 +112,25 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                         kafkaMirrorMakerStatus.setReplicas(mirror.getReplicas());
                         kafkaMirrorMakerStatus.setLabelSelector(mirror.getSelectorLabels().toSelectorString());
 
-                        updateStatus(assemblyResource, reconciliation, kafkaMirrorMakerStatus).onComplete(statusResult -> {
-                            // If both features succeeded, createOrUpdate succeeded as well
-                            // If one or both of them failed, we prefer the reconciliation failure as the main error
-                            if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                                createOrUpdatePromise.complete();
-                            } else if (reconciliationResult.failed()) {
-                                createOrUpdatePromise.fail(reconciliationResult.cause());
-                            } else {
-                                createOrUpdatePromise.fail(statusResult.cause());
-                            }
-                        });
+                        if (reconciliationResult.succeeded())   {
+                            createOrUpdatePromise.complete(kafkaMirrorMakerStatus);
+                        } else {
+                            createOrUpdatePromise.fail(new ReconciliationException(kafkaMirrorMakerStatus, reconciliationResult.cause()));
+                        }
                 }
             );
+
         return createOrUpdatePromise.future();
     }
 
-    /**
-     * Updates the Status field of the Kafka Mirror Maker CR. It diffs the desired status against the current status and calls
-     * the update only when there is any difference in non-timestamp fields.
-     *
-     * @param kafkaMirrorMakerAssembly The CR of Kafka Mirror Maker
-     * @param reconciliation Reconciliation information
-     * @param desiredStatus The KafkaMirrorMakerStatus which should be set
-     *
-     * @return
-     */
-    Future<Void> updateStatus(KafkaMirrorMaker kafkaMirrorMakerAssembly, Reconciliation reconciliation, KafkaMirrorMakerStatus desiredStatus) {
-        Promise<Void> updateStatusPromise = Promise.promise();
+    @Override
+    protected KafkaMirrorMaker copyResource(KafkaMirrorMaker res) {
+        return new KafkaMirrorMakerBuilder(res).build();
+    }
 
-        resourceOperator.getAsync(kafkaMirrorMakerAssembly.getMetadata().getNamespace(), kafkaMirrorMakerAssembly.getMetadata().getName()).onComplete(getRes -> {
-            if (getRes.succeeded()) {
-                KafkaMirrorMaker mirrorMaker = getRes.result();
-
-                if (mirrorMaker != null) {
-                    if (StatusUtils.isResourceV1alpha1(mirrorMaker)) {
-                        log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, mirrorMaker.getApiVersion());
-                        updateStatusPromise.complete();
-                    } else {
-                        KafkaMirrorMakerStatus currentStatus = mirrorMaker.getStatus();
-
-                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                        if (!ksDiff.isEmpty()) {
-                            KafkaMirrorMaker resourceWithNewStatus = new KafkaMirrorMakerBuilder(mirrorMaker).withStatus(desiredStatus).build();
-
-                            ((CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
-                                if (updateRes.succeeded()) {
-                                    log.debug("{}: Completed status update", reconciliation);
-                                    updateStatusPromise.complete();
-                                } else {
-                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                    updateStatusPromise.fail(updateRes.cause());
-                                }
-                            });
-                        } else {
-                            log.debug("{}: Status did not change", reconciliation);
-                            updateStatusPromise.complete();
-                        }
-                    }
-                } else {
-                    log.error("{}: Current Kafka Mirror Maker resource not found", reconciliation);
-                    updateStatusPromise.fail("Current Kafka Mirror Maker resource not found");
-                }
-            } else {
-                log.error("{}: Failed to get the current Kafka Mirror Maker resource and its status", reconciliation, getRes.cause());
-                updateStatusPromise.fail(getRes.cause());
-            }
-        });
-        return updateStatusPromise.future();
+    @Override
+    protected KafkaMirrorMakerStatus createStatus() {
+        return new KafkaMirrorMakerStatus();
     }
 
     Future<ReconcileResult<ServiceAccount>> mirrorMakerServiceAccount(String namespace, KafkaMirrorMakerCluster mirror) {

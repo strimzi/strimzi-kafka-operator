@@ -38,6 +38,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperatorWithStatus;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
@@ -124,7 +125,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
  * </code></pre>
  */
 public class KafkaRebalanceAssemblyOperator
-        extends AbstractOperator<KafkaRebalance, AbstractWatchableResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>>> {
+        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableResourceOperatorWithStatus<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>>> {
 
     private static final Logger log = LogManager.getLogger(KafkaRebalanceAssemblyOperator.class.getName());
 
@@ -907,12 +908,22 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaRebalance resource) {
-        return reconcileRebalance(reconciliation, resource);
+    protected Future<KafkaRebalanceStatus> createOrUpdate(Reconciliation reconciliation, KafkaRebalance resource) {
+        return reconcileRebalance(reconciliation, resource).map(v -> (KafkaRebalanceStatus) null);
     }
 
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return reconcileRebalance(reconciliation, null).map(v -> Boolean.TRUE);
+    }
+
+    @Override
+    protected KafkaRebalance copyResource(KafkaRebalance res) {
+        return new KafkaRebalanceBuilder(res).build();
+    }
+
+    @Override
+    protected KafkaRebalanceStatus createStatus() {
+        return new KafkaRebalanceStatus();
     }
 }

@@ -7,6 +7,7 @@ package io.strimzi.operator.common.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import org.apache.logging.log4j.Logger;
 
@@ -15,15 +16,19 @@ import java.lang.reflect.Member;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ValidationVisitor implements ResourceVisitor.Visitor {
-
     private final Logger logger;
     private final HasMetadata resource;
+    private final Set<String> unknownFields;
+    private final Set<String> deprecatedFields;
 
-    public ValidationVisitor(HasMetadata resource, Logger logger) {
+    public ValidationVisitor(HasMetadata resource, Logger logger, Set<String> unknownFields, Set<String> deprecatedFields) {
         this.resource = resource;
         this.logger = logger;
+        this.unknownFields = unknownFields;
+        this.deprecatedFields = deprecatedFields;
     }
 
     String context() {
@@ -68,6 +73,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                                                                           M member,
                                                                           Object propertyValue,
                                                                           String propertyName) {
+        // Look for deprecated field
         DeprecatedProperty deprecated = member.getAnnotation(DeprecatedProperty.class);
         if (deprecated != null
             && isPresent(member, propertyValue)) {
@@ -84,7 +90,28 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
             if (!deprecated.removalVersion().isEmpty()) {
                 msg += " This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
             }
+
+            deprecatedFields.add(msg);
             logger.warn("{}: {}", context(), msg);
+        }
+
+        // Look for deprecated objects. With OneOf, the field might not be deprecated, but the used value might be
+        // replaced with something new
+        if (propertyValue != null) {
+            DeprecatedType deprecatedType = propertyValue.getClass().getAnnotation(DeprecatedType.class);
+            if (deprecatedType != null
+                    && isPresent(member, propertyValue)) {
+                String msg = String.format("In API version %s the object %s at path %s has been deprecated. ",
+                        resource.getApiVersion(),
+                        propertyName,
+                        path(path, propertyName));
+                if (deprecatedType.replacedWithType() != null) {
+                    msg += "This object has been replaced with " + deprecatedType.replacedWithType().getSimpleName() + ".";
+                }
+
+                deprecatedFields.add(msg);
+                logger.warn("{}: {}", context(), msg);
+            }
         }
     }
 
@@ -103,11 +130,13 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         if (object instanceof UnknownPropertyPreserving) {
             Map<String, Object> properties = ((UnknownPropertyPreserving) object).getAdditionalProperties();
             if (properties != null && !properties.isEmpty()) {
-                logger.warn("{}: Contains object at path {} with {}: {}",
-                        context(),
+                String msg = String.format("Contains object at path %s with %s: %s",
                         String.join(".", path),
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
+
+                unknownFields.add(msg);
+                logger.warn("{}: {}", context(), msg);
             }
         }
     }

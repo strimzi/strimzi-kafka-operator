@@ -14,6 +14,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +37,12 @@ public class ValidationVisitorTest {
                 .endMetadata()
                 .withApiVersion("v1alpha1")
             .build();
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger));
+
+        Set<String> unknownFields = new HashSet<>();
+        Set<String> deprecatedFields = new HashSet<>();
+
+        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, unknownFields, deprecatedFields));
+
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
             && ("Kafka resource testname in namespace testnamespace: " +
                 "Contains object at path spec.kafka with an unknown property: foo").equals(lm.formattedMessage()));
@@ -44,6 +54,26 @@ public class ValidationVisitorTest {
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property tolerations at path spec.zookeeper.tolerations has been deprecated. " +
                 "This feature should now be configured at path spec.zookeeper.template.pod.tolerations.").equals(lm.formattedMessage()));
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && ("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
+                "This object has been replaced with GenericKafkaListener.").equals(lm.formattedMessage()));
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && ("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
+                "This object has been replaced with EntityTopicOperatorSpec.").equals(lm.formattedMessage()));
+
+        assertThat(unknownFields, hasItem("Kafka resource testname in namespace testnamespace: " +
+                "Contains object at path spec.kafka with an unknown property: foo"));
+        assertThat(deprecatedFields, hasItem("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
+                "This feature should now be configured at path spec.entityOperator.topicOperator."));
+        assertThat(deprecatedFields, hasItem("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
+                "This object has been replaced with GenericKafkaListener."));
+        assertThat(deprecatedFields, hasItem("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
+                "This object has been replaced with EntityTopicOperatorSpec."));
     }
 
     @Test
@@ -53,12 +83,20 @@ public class ValidationVisitorTest {
         TestLogger logger = new TestLogger((Logger) LogManager.getLogger(ValidationVisitorTest.class));
         HasMetadata resource = new KafkaBuilder()
                 .withNewMetadata()
-                .withName("testname")
-                .withNamespace("testnamespace")
+                    .withName("testname")
+                    .withNamespace("testnamespace")
                 .endMetadata()
                 .withApiVersion("v1alpha1")
                 .build();
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger));
+
+        Set<String> unknownFields = new HashSet<>();
+        Set<String> deprecatedFields = new HashSet<>();
+
+        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, unknownFields, deprecatedFields));
+
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && ("Kafka resource testname in namespace testnamespace: " +
+                "Contains object at path spec.kafka with an unknown property: foo").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property affinity at path spec.zookeeper.affinity has been deprecated. " +
@@ -79,6 +117,19 @@ public class ValidationVisitorTest {
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
                 "This feature should now be configured at path spec.entityOperator.topicOperator.").equals(lm.formattedMessage()));
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && ("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
+                "This object has been replaced with EntityTopicOperatorSpec.").equals(lm.formattedMessage()));
+
+        assertThat(unknownFields, hasItem("Kafka resource testname in namespace testnamespace: " +
+                "Contains object at path spec.kafka with an unknown property: foo"));
+        assertThat(deprecatedFields, hasItem("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
+                "This feature should now be configured at path spec.entityOperator.topicOperator."));
+        assertThat(deprecatedFields, hasItem("Kafka resource testname in namespace testnamespace: " +
+                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
+                "This object has been replaced with EntityTopicOperatorSpec."));
     }
 
 

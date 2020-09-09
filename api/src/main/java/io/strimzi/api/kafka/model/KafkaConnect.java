@@ -13,7 +13,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.AbstractCustomResource;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
@@ -81,7 +81,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaConnect extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaConnectStatus> {
+public class KafkaConnect extends AbstractCustomResource<KafkaConnectSpec, KafkaConnectStatus> implements UnknownPropertyPreserving, HasStatus<KafkaConnectStatus> {
 
     private static final long serialVersionUID = 1L;
 
