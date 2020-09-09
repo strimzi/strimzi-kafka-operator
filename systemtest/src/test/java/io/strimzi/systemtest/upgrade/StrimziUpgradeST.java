@@ -105,10 +105,11 @@ public class StrimziUpgradeST extends AbstractST {
         LOGGER.debug("Running upgrade test from version {} to {}", from, to);
 
         try {
+//            throw new Exception();
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
 
             // Tidy up
-        } catch (KubeClusterException e) {
+        } catch (Exception e) {
             TestExecutionWatcher.collectLogs(testClass, testName);
             e.printStackTrace();
             try {
@@ -150,7 +151,7 @@ public class StrimziUpgradeST extends AbstractST {
                     LOGGER.info("Upgrade of Cluster Operator from version {} to version {} is not allowed on this K8S version!", testParameters.asJsonObject().getString("fromVersion"), testParameters.asJsonObject().getString("toVersion"));
                 }
             }
-        } catch (KubeClusterException e) {
+        } catch (Exception e) {
             TestExecutionWatcher.collectLogs(testClass, testName);
             e.printStackTrace();
             try {
