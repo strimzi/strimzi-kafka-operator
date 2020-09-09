@@ -124,7 +124,7 @@ public class Exec {
      * @return execution results
      */
     public static ExecResult exec(List<String> command) {
-        return exec(null, command, 0, false);
+        return exec(null, command, 0, true);
     }
 
     /**
