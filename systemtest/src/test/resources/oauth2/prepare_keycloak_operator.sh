@@ -7,8 +7,8 @@ KEYCLOAK_VERSION=11.0.0
 SCRIPT_PATH=$(dirname "${BASH_SOURCE[0]}")
 
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Generate keycloak secret"
-openssl req  -nodes -new -x509  -keyout keycloak.key -out keycloak.crt -subj '/CN=keycloak'
-kubectl create secret -n ${NAMESPACE} generic sso-x509-https-secret --from-file=tls.crt=keycloak.crt --from-file=tls.key=keycloak.key
+openssl req  -nodes -new -x509  -keyout /tmp/keycloak/keycloak.key -out /tmp/keycloak/keycloak.crt -subj '/CN=keycloak'
+kubectl create secret -n ${NAMESPACE} generic sso-x509-https-secret --from-file=tls.crt=/tmp/keycloak/keycloak.crt --from-file=tls.key=/tmp/keycloak/keycloak.key
 
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Deploy Keycloak Operator"
 kubectl apply -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/service_account.yaml
