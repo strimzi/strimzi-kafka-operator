@@ -234,6 +234,10 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>config-model</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

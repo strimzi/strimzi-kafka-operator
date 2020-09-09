@@ -242,6 +242,11 @@ public interface Constants {
     String CRUISE_CONTROL = "cruisecontrol";
 
     /**
+     * Tag for tests where mainly dynamic configuration is used
+     */
+    String DYNAMIC_CONFIGURATION = "dynamicconfiguration";
+
+    /**
      * Tag for tests which contains rolling update of resource
      */
     String ROLLING_UPDATE = "rollingupdate";
