@@ -99,7 +99,7 @@ If you want to map to a different local port use the LOCAL:REMOTE format, for ex
 
 All you now have to do is deploy the new Kafka cluster definition, configure remote debugging in your favourite IDE, telling it to connect to localhost:5005, and start your debug session.
 
-With `DEBUG_SUSPEND_FLAG` set to 'y', the Kafka Broker process will wait during startup for remote degugger (IDE) to connect before continuing with JVM start up.
+With `DEBUG_SUSPEND_FLAG` set to 'y', the Kafka Broker process will wait during startup for remote debugger (IDE) to connect before continuing with JVM start up.
 
 In Kafka CR we have adjusted the probes to prevent Kubernetes from killing the broker whose execution is suspended due to a breakpoint.
 
