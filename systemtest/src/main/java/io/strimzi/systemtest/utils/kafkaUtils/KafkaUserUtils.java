@@ -52,7 +52,7 @@ public class KafkaUserUtils {
         LOGGER.info("Waiting for KafkaUser deletion {}", userName);
         TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName) == null) {
+                if (KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null) {
                     return true;
                 } else {
                     LOGGER.warn("KafkaUser {} is not deleted yet! Triggering force delete by cmd client!", userName);
