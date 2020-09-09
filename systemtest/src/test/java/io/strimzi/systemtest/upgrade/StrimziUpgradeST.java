@@ -109,8 +109,8 @@ public class StrimziUpgradeST extends AbstractST {
 
             // Tidy up
         } catch (KubeClusterException e) {
-            e.printStackTrace();
             TestExecutionWatcher.collectLogs(testClass, testName);
+            e.printStackTrace();
             try {
                 if (kafkaYaml != null) {
                     cmdKubeClient().delete(kafkaYaml);
@@ -128,6 +128,7 @@ public class StrimziUpgradeST extends AbstractST {
 
             throw e;
         } finally {
+            LOGGER.info("deleting installed files");
             deleteInstalledYamls(coDir);
         }
     }
@@ -150,8 +151,8 @@ public class StrimziUpgradeST extends AbstractST {
                 }
             }
         } catch (KubeClusterException e) {
-            e.printStackTrace();
             TestExecutionWatcher.collectLogs(testClass, testName);
+            e.printStackTrace();
             try {
                 if (kafkaYaml != null) {
                     cmdKubeClient().delete(kafkaYaml);
@@ -169,6 +170,7 @@ public class StrimziUpgradeST extends AbstractST {
 
             throw e;
         } finally {
+            LOGGER.info("deleting installed files");
             deleteInstalledYamls(coDir);
         }
     }
@@ -415,6 +417,7 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void deleteInstalledYamls(File root) {
+        LOGGER.info("deleting files vol 2");
         if (kafkaUserYaml != null) {
             cmdKubeClient().delete(kafkaUserYaml);
         }
