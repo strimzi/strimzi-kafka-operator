@@ -16,7 +16,7 @@ This guide primarily explains how to perform remote debugging of code deployed t
 
 ## Activating remote debugging using the agent
 
-Java runtime (the JVM) comes with an agent that provides support for remote debugging. Using you Java IDE you can connect to a remote process over a TCP connection, and perform debugging actions like setting breakpoints, suspending threads, gathering stack and heap info, and evaluating arbitrary java code inside the running JVM.
+The Java runtime (the JVM) comes with an agent that provides support for remote debugging. Using your Java IDE you can connect to a remote process over a TCP connection, and perform debugging actions like setting breakpoints, suspending threads, gathering stack and heap info, and evaluating arbitrary Java code inside the running JVM.
 
 In order to activate remote debugging the java process needs to be run with an additional argument like the following:
 
@@ -29,7 +29,7 @@ All the popular Java IDEs support remote debugging.
 
 ## Remote debugging the Strimzi Cluster Operator
 
-Strimzi Cluster Operator is installed through Deployment definition in `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`.
+Strimzi Cluster Operator is installed through the Deployment definition in `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`.
 
 We can enable remote debugging by adding the `JAVA_OPTS` environment variable to `strimzi-cluster-operator` container in this file:
 
@@ -39,7 +39,7 @@ We can enable remote debugging by adding the `JAVA_OPTS` environment variable to
               value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 
 
-Let's also increase the livenessProbe timeout:
+Let's also increase the livenessProbe timeout (to avoid Kubernetes restarting the pod if we're slow in attaching the debugger):
 
           livenessProbe:
             initialDelaySeconds: 3600
@@ -62,7 +62,7 @@ You can now start the remote debug session from your IDE.
 
 ## Remote debugging the Kafka Broker
 
-Kafka Broker pods are defined through 'my-cluster-kafka' StatefulSet which is created by Strimzi Kafka Operator.
+Kafka Broker pods are defined through the 'my-cluster-kafka' StatefulSet which is created by Strimzi Kafka Operator.
 
 In order to activate the remote debugging we need to get the Kafka Broker to run with remote debugging agent activated.
 
@@ -103,7 +103,7 @@ With `DEBUG_SUSPEND_FLAG` set to 'y', the Kafka Broker process will wait during 
 
 In Kafka CR we have adjusted the probes to prevent Kubernetes from killing the broker whose execution is suspended due to a breakpoint.
 
-Before remotely connecting with IDE you'll want to start tailing the `my-cluster-kafka-0` broker pod:
+Before remotely connecting with your IDE you'll want to start tailing the `my-cluster-kafka-0` broker pod:
 
     kubectl logs my-cluster-kafka-0 -f
 
@@ -184,5 +184,4 @@ Sometimes you may have to first manually download the artifact and its sources, 
     mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:copy -DrepoUrl=https://repo.maven.apache.org -Dartifact=log4j:log4j:1.2.17:jar:sources
     
 You may sometimes need to remove the other versions of the same artifact, or change the ordering position of the artifact under its `Project Settings` / `Modules` `Dependencies` tab.
-
 
