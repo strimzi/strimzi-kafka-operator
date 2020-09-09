@@ -17,15 +17,40 @@ import java.util.Map;
 // HTTP Bridge clients
 public class KafkaBridgeClientsResource extends KafkaClientsResource {
 
-    private final int port;
-    private final int pollInterval;
+    private int port;
+    private int pollInterval;
 
-    public KafkaBridgeClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
-                                      int messageCount, String additionalConfig, String consumerGroup, int port, int sendInterval, int pollInterval) {
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, sendInterval);
-        this.port = port;
-        this.pollInterval = pollInterval;
+    public static class KafkaBridgeClientsBuilder extends KafkaClientsBuilder<KafkaBridgeClientsResource.KafkaBridgeClientsBuilder> {
+        private int port;
+        private int pollInterval;
+
+        public KafkaBridgeClientsBuilder withPort(int port) {
+            this.port = port;
+            return self();
+        }
+
+        public KafkaBridgeClientsBuilder withPollInterval(int pollInterval) {
+            this.pollInterval = pollInterval;
+            return self();
+        }
+
+        @Override
+        public KafkaBridgeClientsResource build() {
+            return new KafkaBridgeClientsResource(this);
+        }
+
+        @Override
+        protected KafkaBridgeClientsResource.KafkaBridgeClientsBuilder self() {
+            return this;
+        }
     }
+
+    private KafkaBridgeClientsResource(KafkaBridgeClientsResource.KafkaBridgeClientsBuilder builder) {
+        super(builder);
+        port = builder.port;
+        pollInterval = builder.pollInterval;
+    }
+
 
     public DoneableJob producerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();

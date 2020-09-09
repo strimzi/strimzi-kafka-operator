@@ -10,50 +10,66 @@ import io.strimzi.systemtest.keycloak.KeycloakInstance;
 
 public class KafkaOauthClientsResource extends KafkaBasicClientResource {
 
-    private final String oauthClientId;
-    private final String oauthClientSecret;
-    private final String oauthTokenEndpointUri;
-    private final String userName;
+    private String oauthClientId;
+    private String oauthClientSecret;
+    private String oauthTokenEndpointUri;
+    private String userName;
 
-    public KafkaOauthClientsResource(
-        String producerName, String consumerName, String bootstrapServer, String topicName, int messageCount,
-        String additionalConfig, String consumerGroup, String oauthClientId, String oauthClientSecret, String oauthTokenEndpointUri) {
+    public static class KafkaOauthClientsBuilder extends KafkaClientsBuilder<KafkaOauthClientsResource.KafkaOauthClientsBuilder> {
+        private String oauthClientId;
+        private String oauthClientSecret;
+        private String oauthTokenEndpointUri;
+        private String userName;
 
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, 0);
-        this.oauthClientId = oauthClientId;
-        this.oauthClientSecret = oauthClientSecret;
-        this.oauthTokenEndpointUri = oauthTokenEndpointUri;
-        this.userName = oauthClientId;
+        public KafkaOauthClientsBuilder withOAuthClientId(String oauthClientId) {
+            this.oauthClientId = oauthClientId;
+            return self();
+        }
+
+        public KafkaOauthClientsBuilder withOAuthClientSecret(String oauthClientSecret) {
+            this.oauthClientSecret = oauthClientSecret;
+            return self();
+        }
+
+        public KafkaOauthClientsBuilder withOAuthTokenEndpointUri(String oauthTokenEndpointUri) {
+            this.oauthTokenEndpointUri = oauthTokenEndpointUri;
+            return self();
+        }
+
+        public KafkaOauthClientsBuilder withUserName(String userName) {
+            this.userName = userName;
+            return self();
+        }
+
+        @Override
+        public KafkaOauthClientsResource build() {
+            return new KafkaOauthClientsResource(this);
+        }
+
+        @Override
+        protected KafkaOauthClientsResource.KafkaOauthClientsBuilder self() {
+            return this;
+        }
     }
 
-    // from existing client create new client with random consumer group (immutability)
-    public KafkaOauthClientsResource(KafkaOauthClientsResource kafkaOauthClientsResource) {
-        super(kafkaOauthClientsResource);
-        this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
-        this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
-        this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
-        this.userName = kafkaOauthClientsResource.userName;
-
+    private KafkaOauthClientsResource(KafkaOauthClientsResource.KafkaOauthClientsBuilder builder) {
+        super(builder);
+        oauthClientId = builder.oauthClientId;
+        oauthClientSecret = builder.oauthClientSecret;
+        oauthTokenEndpointUri = builder.oauthTokenEndpointUri;
+        userName = builder.userName;
     }
 
-    // from existing client create new client with new specific consumer group and topicName (immutability)
-    public KafkaOauthClientsResource(KafkaOauthClientsResource kafkaOauthClientsResource, String topicName, String consumerGroup) {
-        super(kafkaOauthClientsResource, topicName, consumerGroup);
-        this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
-        this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
-        this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
-        this.userName = kafkaOauthClientsResource.userName;
-
+    public void setTopicName(String topicName) {
+        this.topicName = topicName;
     }
 
-    // from existing client create new username (immutability)
-    public KafkaOauthClientsResource(KafkaOauthClientsResource kafkaOauthClientsResource, String userName) {
-        super(kafkaOauthClientsResource);
-        this.oauthClientId = kafkaOauthClientsResource.oauthClientId;
-        this.oauthClientSecret = kafkaOauthClientsResource.oauthClientSecret;
-        this.oauthTokenEndpointUri = kafkaOauthClientsResource.oauthTokenEndpointUri;
+    public void setConsumerGroup(String consumerGroup) {
+        this.consumerGroup = consumerGroup;
+    }
+
+    public void setUserName(String userName) {
         this.userName = userName;
-
     }
 
     public DoneableJob producerStrimziOauthPlain() {

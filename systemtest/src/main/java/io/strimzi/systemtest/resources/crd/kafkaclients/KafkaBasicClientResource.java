@@ -16,17 +16,20 @@ import java.util.Map;
 
 public class KafkaBasicClientResource extends KafkaClientsResource {
 
-    public KafkaBasicClientResource(String producerName, String consumerName, String bootstrapServer, String topicName,
-                                    int messageCount, String additionalConfig, String consumerGroup, long delayMs) {
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, delayMs);
+    public static class KafkaBasicClientBuilder extends KafkaClientsBuilder<KafkaBasicClientResource.KafkaBasicClientBuilder> {
+        @Override
+        public KafkaBasicClientResource build() {
+            return new KafkaBasicClientResource(this);
+        }
+
+        @Override
+        protected KafkaBasicClientResource.KafkaBasicClientBuilder self() {
+            return this;
+        }
     }
 
-    public KafkaBasicClientResource(KafkaClientsResource kafkaClientsResource) {
-        super(kafkaClientsResource);
-    }
-
-    public KafkaBasicClientResource(KafkaClientsResource kafkaClientsResource, String topicName, String consumerGroup) {
-        super(kafkaClientsResource, topicName, consumerGroup);
+    private KafkaBasicClientResource(KafkaBasicClientBuilder<?> builder) {
+        super(builder);
     }
 
     public DoneableJob producerStrimzi() {

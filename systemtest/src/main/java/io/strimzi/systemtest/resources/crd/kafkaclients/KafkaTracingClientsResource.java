@@ -19,40 +19,54 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
     private static final String JAEGER_SAMPLER_TYPE =  "const";
     private static final String JAEGER_SAMPLER_PARAM =  "1";
 
-    private final String jaegerServiceProducerName;
-    private final String jaegerServiceConsumerName;
-    private final String jaegerServiceStreamsName;
+    private String jaegerServiceProducerName;
+    private String jaegerServiceConsumerName;
+    private String jaegerServiceStreamsName;
 
-    public KafkaTracingClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
-                                       int messageCount, String additionalConfig, String consumerGroup, String jaegerServiceProducerName,
-                                       String jaegerServiceConsumerName, String jaegerServiceStreamsName) {
+    public static class KafkaTracingClientsBuilder extends KafkaClientsBuilder<KafkaTracingClientsResource.KafkaTracingClientsBuilder> {
+        private String jaegerServiceProducerName;
+        private String jaegerServiceConsumerName;
+        private String jaegerServiceStreamsName;
 
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, 0);
-        this.jaegerServiceProducerName =  jaegerServiceProducerName;
-        this.jaegerServiceConsumerName =  jaegerServiceConsumerName;
-        this.jaegerServiceStreamsName = jaegerServiceStreamsName;
+        public KafkaTracingClientsBuilder withJaegerServiceProducerName(String jaegerServiceProducerName) {
+            this.jaegerServiceProducerName = jaegerServiceProducerName;
+            return self();
+        }
+
+        public KafkaTracingClientsBuilder withJaegerServiceConsumerName(String jaegerServiceConsumerName) {
+            this.jaegerServiceConsumerName = jaegerServiceConsumerName;
+            return self();
+        }
+
+        public KafkaTracingClientsBuilder withJaegerServiceStreamsName(String jaegerServiceStreamsName) {
+            this.jaegerServiceStreamsName = jaegerServiceStreamsName;
+            return self();
+        }
+
+        @Override
+        public KafkaTracingClientsResource build() {
+            return new KafkaTracingClientsResource(this);
+        }
+
+        @Override
+        protected KafkaTracingClientsResource.KafkaTracingClientsBuilder self() {
+            return this;
+        }
     }
 
-    // from existing client create new client with different bootstrapServer + topicName (immutability)
-    public KafkaTracingClientsResource(KafkaTracingClientsResource kafkaTracingClientsResource, String bootstrapServer,
-                                       String topicName) {
-
-        super(kafkaTracingClientsResource.producerName, kafkaTracingClientsResource.consumerName, bootstrapServer, topicName,
-            kafkaTracingClientsResource.messageCount, kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup, 0);
-        this.jaegerServiceProducerName =  kafkaTracingClientsResource.jaegerServiceProducerName;
-        this.jaegerServiceConsumerName =  kafkaTracingClientsResource.jaegerServiceConsumerName;
-        this.jaegerServiceStreamsName = kafkaTracingClientsResource.jaegerServiceStreamsName;
+    private KafkaTracingClientsResource(KafkaTracingClientsResource.KafkaTracingClientsBuilder builder) {
+        super(builder);
+        jaegerServiceProducerName = builder.jaegerServiceProducerName;
+        jaegerServiceConsumerName = builder.jaegerServiceConsumerName;
+        jaegerServiceStreamsName = builder.jaegerServiceStreamsName;
     }
 
-    // from existing client create new client with different bootstrapServer (immutability)
-    public KafkaTracingClientsResource(KafkaTracingClientsResource kafkaTracingClientsResource, String bootstrapServer) {
+    public void setBootstrapServer(String bootstrapServer) {
+        this.bootstrapServer = bootstrapServer;
+    }
 
-        super(kafkaTracingClientsResource.producerName, kafkaTracingClientsResource.consumerName, bootstrapServer,
-            kafkaTracingClientsResource.topicName, kafkaTracingClientsResource.messageCount,
-            kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup, 0);
-        this.jaegerServiceProducerName =  kafkaTracingClientsResource.jaegerServiceProducerName;
-        this.jaegerServiceConsumerName =  kafkaTracingClientsResource.jaegerServiceConsumerName;
-        this.jaegerServiceStreamsName = kafkaTracingClientsResource.jaegerServiceStreamsName;
+    public void setTopicName(String topicName) {
+        this.topicName = topicName;
     }
 
     public DoneableDeployment consumerWithTracing() {
