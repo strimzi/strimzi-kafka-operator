@@ -51,9 +51,9 @@ Apply the modified file:
 
 We also need to open the port for localhost access:
 
-    kubectl port-forward $(oc get pod | grep strimzi-cluster-operator | awk '{printf $1}') 5006:5005
+    kubectl port-forward $(oc get pod | grep strimzi-cluster-operator | awk '{printf $1}') 5005
 
-Start tailing the operator pod:
+Start tailing the operator pod (to make sure it's waiting for the debugger to attach, and to see the logging output once you attach with the debugger):
 
     oc logs $(oc get pod | grep strimzi-cluster-operator | awk '{printf $1}') -f 
 
@@ -185,3 +185,4 @@ Sometimes you may have to first manually download the artifact and its sources, 
     
 You may sometimes need to remove the other versions of the same artifact, or change the ordering position of the artifact under its `Project Settings` / `Modules` `Dependencies` tab.
 
+If code lines keep being mismatched with the server versions it sometimes helps to clean the IDE's caches and restart it (`File` / `Invalidate Caches / Restart ...`).
