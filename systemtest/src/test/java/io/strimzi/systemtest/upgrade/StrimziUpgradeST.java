@@ -407,6 +407,7 @@ public class StrimziUpgradeST extends AbstractST {
                 cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
             } else if (f.getName().matches(".*Deployment.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
+                LOGGER.info(TestUtils.getFileAsString(f.getPath()));
             } else {
                 cmdKubeClient().apply(f);
             }
