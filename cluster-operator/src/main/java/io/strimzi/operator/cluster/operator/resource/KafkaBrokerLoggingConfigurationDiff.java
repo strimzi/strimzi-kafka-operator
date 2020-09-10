@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -76,7 +77,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
             if (!desiredLevel.name().equals(entry.value())) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(entry.name(), desiredLevel.name()), AlterConfigOp.OpType.SET));
-                log.trace("{} has a deprecated value. Setting to {}", entry.name(), desiredLevel.name());
+                log.trace("{} has an outdated value. Setting to {}", entry.name(), desiredLevel.name());
             }
         }
 
@@ -87,8 +88,9 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
             }
             ConfigEntry configEntry = brokerConfigs.get(name);
             if (configEntry == null) {
-                updatedCE.add(new AlterConfigOp(new ConfigEntry(name, ent.getValue()), AlterConfigOp.OpType.SET));
-                log.trace("{} not set. Setting to {}", name, ent.getValue());
+                String level = LoggingLevel.nameOrDefault(LoggingLevel.ofLog4jConfig(ent.getValue()), LoggingLevel.WARN);
+                updatedCE.add(new AlterConfigOp(new ConfigEntry(name, level), AlterConfigOp.OpType.SET));
+                log.trace("{} not set. Setting to {}", name, level);
             }
         }
 
@@ -134,13 +136,21 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
          *     <li>root</li>
          * </ul>
          *
+         * When the configured level is ALL, the actual level returned will be TRACE.
+         * Similarly when the configured level is OFF, the actual level returned will be FATAL.
+         *
+         * If logging level can't be parsed from the configuration (unsupported or badly formatted)
+         * the method returns WARN level. The rationale is that making a configuration mistake in logging level
+         * should not accidentally trigger a massive amount of logging.
+         *
          * @param name The logging category name
-         * @return The logging level
+         * @return The logging level compatible with dynamic logging update
          */
         LoggingLevel resolveLevel(String name) {
             String level = config.get(name);
             if (level != null) {
-                return LoggingLevel.valueOf(level.split(",")[0]);
+                LoggingLevel result = LoggingLevel.ofLog4jConfig(level);
+                return result != null ? result : LoggingLevel.WARN;
             }
 
             int e = name.length();
@@ -152,22 +162,46 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                     level = config.get(name.substring(0, e));
                 }
                 if (level != null) {
-                    return LoggingLevel.valueOf(level.split(",")[0]);
+                    LoggingLevel result = LoggingLevel.ofLog4jConfig(level);
+                    return result != null ? result : LoggingLevel.WARN;
                 }
                 e -= 1;
             }
             // still here? Not even root logger defined?
-            return LoggingLevel.INFO;
+            return LoggingLevel.WARN;
         }
     }
 
     enum LoggingLevel {
-        ALL,
+        OFF,
         FATAL,
         ERROR,
         WARN,
         INFO,
         DEBUG,
-        TRACE
+        TRACE,
+        ALL;
+
+        static LoggingLevel ofLog4jConfig(String value) {
+            if (value != null && !"".equals(value)) {
+                String v = value.split(",")[0].trim();
+                if ("ALL".equals(v)) {
+                    return TRACE;
+                } else if ("OFF".equals(v)) {
+                    return FATAL;
+                } else {
+                    try {
+                        return valueOf(v);
+                    } catch (RuntimeException e) {
+                        log.warn("Invalid logging level: {}. Using WARN as a failover.", v);
+                    }
+                }
+            }
+            return null;
+        }
+
+        static String nameOrDefault(LoggingLevel level, LoggingLevel failover) {
+            return level != null ? level.name() : failover.name();
+        }
     }
 }
