@@ -8,14 +8,16 @@ import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 
-public class KafkaOauthClientsResource extends KafkaBasicClientResource {
+import java.security.InvalidParameterException;
+
+public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
 
     private String oauthClientId;
     private String oauthClientSecret;
     private String oauthTokenEndpointUri;
     private String userName;
 
-    public static class KafkaOauthClientsBuilder extends KafkaClientsBuilder<KafkaOauthClientsResource.KafkaOauthClientsBuilder> {
+    public static class KafkaOauthClientsBuilder extends KafkaBasicExampleClients.KafkaBasicClientsBuilder<KafkaOauthClientsBuilder> {
         private String oauthClientId;
         private String oauthClientSecret;
         private String oauthTokenEndpointUri;
@@ -42,18 +44,22 @@ public class KafkaOauthClientsResource extends KafkaBasicClientResource {
         }
 
         @Override
-        public KafkaOauthClientsResource build() {
-            return new KafkaOauthClientsResource(this);
+        public KafkaOauthExampleClients build() {
+            return new KafkaOauthExampleClients(this);
         }
 
         @Override
-        protected KafkaOauthClientsResource.KafkaOauthClientsBuilder self() {
+        protected KafkaOauthExampleClients.KafkaOauthClientsBuilder self() {
             return this;
         }
     }
 
-    private KafkaOauthClientsResource(KafkaOauthClientsResource.KafkaOauthClientsBuilder builder) {
+    private KafkaOauthExampleClients(KafkaOauthExampleClients.KafkaOauthClientsBuilder builder) {
         super(builder);
+        if (builder.oauthClientId == null || builder.oauthClientId.isEmpty()) throw new InvalidParameterException("OAuth client id is not set.");
+        if (builder.oauthClientSecret == null || builder.oauthClientSecret.isEmpty()) throw new InvalidParameterException("OAuth client secret is not set.");
+        if (builder.oauthTokenEndpointUri == null || builder.oauthTokenEndpointUri.isEmpty()) throw new InvalidParameterException("OAuth token endpoint url is not set.");
+
         oauthClientId = builder.oauthClientId;
         oauthClientSecret = builder.oauthClientSecret;
         oauthTokenEndpointUri = builder.oauthTokenEndpointUri;

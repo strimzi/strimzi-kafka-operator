@@ -8,12 +8,11 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class KafkaTracingClientsResource extends KafkaClientsResource {
+public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
 
     private static final String JAEGER_AGENT_HOST =  "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE =  "const";
@@ -23,7 +22,7 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
     private String jaegerServiceConsumerName;
     private String jaegerServiceStreamsName;
 
-    public static class KafkaTracingClientsBuilder extends KafkaClientsBuilder<KafkaTracingClientsResource.KafkaTracingClientsBuilder> {
+    public static class KafkaTracingClientsBuilder extends KafkaBasicExampleClients.KafkaBasicClientsBuilder<KafkaTracingClientsBuilder> {
         private String jaegerServiceProducerName;
         private String jaegerServiceConsumerName;
         private String jaegerServiceStreamsName;
@@ -44,17 +43,17 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
         }
 
         @Override
-        public KafkaTracingClientsResource build() {
-            return new KafkaTracingClientsResource(this);
+        public KafkaTracingExampleClients build() {
+            return new KafkaTracingExampleClients(this);
         }
 
         @Override
-        protected KafkaTracingClientsResource.KafkaTracingClientsBuilder self() {
+        protected KafkaTracingExampleClients.KafkaTracingClientsBuilder self() {
             return this;
         }
     }
 
-    private KafkaTracingClientsResource(KafkaTracingClientsResource.KafkaTracingClientsBuilder builder) {
+    public KafkaTracingExampleClients(KafkaTracingExampleClients.KafkaTracingClientsBuilder builder) {
         super(builder);
         jaegerServiceProducerName = builder.jaegerServiceProducerName;
         jaegerServiceConsumerName = builder.jaegerServiceConsumerName;

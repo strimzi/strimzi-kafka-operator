@@ -9,33 +9,52 @@ import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class KafkaBasicClientResource extends KafkaClientsResource {
+// HTTP Bridge clients
+public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
-    public static class KafkaBasicClientBuilder extends KafkaClientsBuilder<KafkaBasicClientResource.KafkaBasicClientBuilder> {
-        @Override
-        public KafkaBasicClientResource build() {
-            return new KafkaBasicClientResource(this);
+    private int port;
+    private int pollInterval;
+
+    public static class KafkaBridgeClientsBuilder extends KafkaBasicExampleClients.KafkaBasicClientsBuilder<KafkaBridgeClientsBuilder> {
+        private int port;
+        private int pollInterval;
+
+        public KafkaBridgeClientsBuilder withPort(int port) {
+            this.port = port;
+            return self();
+        }
+
+        public KafkaBridgeClientsBuilder withPollInterval(int pollInterval) {
+            this.pollInterval = pollInterval;
+            return self();
         }
 
         @Override
-        protected KafkaBasicClientResource.KafkaBasicClientBuilder self() {
+        public KafkaBridgeExampleClients build() {
+            return new KafkaBridgeExampleClients(this);
+        }
+
+        @Override
+        protected KafkaBridgeExampleClients.KafkaBridgeClientsBuilder self() {
             return this;
         }
     }
 
-    private KafkaBasicClientResource(KafkaBasicClientBuilder<?> builder) {
+    private KafkaBridgeExampleClients(KafkaBridgeExampleClients.KafkaBridgeClientsBuilder builder) {
         super(builder);
+        port = builder.port;
+        pollInterval = builder.pollInterval;
     }
 
-    public DoneableJob producerStrimzi() {
+
+    public DoneableJob producerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
-        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
         return KubernetesResource.deployNewJob(new JobBuilder()
             .withNewMetadata()
@@ -49,59 +68,43 @@ public class KafkaBasicClientResource extends KafkaClientsResource {
                         .withLabels(producerLabels)
                     .endMetadata()
                     .withNewSpec()
-                        .withRestartPolicy("Never")
+                        .withRestartPolicy("OnFailure")
                         .withContainers()
                             .addNewContainer()
                                 .withName(producerName)
                                 .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                                .withImage("strimzi/hello-world-producer:latest")
+                                .withImage("strimzi/kafka-http-producer:latest")
                                 .addNewEnv()
-                                    .withName("BOOTSTRAP_SERVERS")
+                                    .withName("HOSTNAME")
                                     .withValue(bootstrapServer)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("PORT")
+                                    .withValue(Integer.toString(port))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TOPIC")
                                     .withValue(topicName)
                                 .endEnv()
                                 .addNewEnv()
-                                    .withName("DELAY_MS")
+                                    .withName("SEND_INTERVAL")
                                     .withValue(String.valueOf(delayMs))
                                 .endEnv()
                                 .addNewEnv()
-                                    .withName("LOG_LEVEL")
-                                    .withValue("DEBUG")
-                                .endEnv()
-                                .addNewEnv()
                                     .withName("MESSAGE_COUNT")
-                                    .withValue(String.valueOf(messageCount))
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("MESSAGE")
-                                    .withValue("Hello-world")
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("PRODUCER_ACKS")
-                                    .withValue("all")
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("ADDITIONAL_CONFIG")
-                                    .withValue(additionalConfig)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("BLOCKING_PRODUCER")
-                                    .withValue("true")
+                                    .withValue(Integer.toString(messageCount))
                                 .endEnv()
                             .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build());
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build());
     }
 
-    public DoneableJob consumerStrimzi() {
+    public DoneableJob consumerStrimziBridge() {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
-        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
         return KubernetesResource.deployNewJob(new JobBuilder()
             .withNewMetadata()
@@ -115,44 +118,40 @@ public class KafkaBasicClientResource extends KafkaClientsResource {
                         .withLabels(consumerLabels)
                     .endMetadata()
                     .withNewSpec()
-                        .withRestartPolicy("Never")
+                        .withRestartPolicy("OnFailure")
                         .withContainers()
                             .addNewContainer()
-                            .withName(consumerName)
+                                .withName(consumerName)
                                 .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                                .withImage("strimzi/hello-world-consumer:latest")
+                                .withImage("strimzi/kafka-http-consumer:latest")
                                 .addNewEnv()
-                                    .withName("BOOTSTRAP_SERVERS")
+                                    .withName("HOSTNAME")
                                     .withValue(bootstrapServer)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("PORT")
+                                    .withValue(Integer.toString(port))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TOPIC")
                                     .withValue(topicName)
                                 .endEnv()
                                 .addNewEnv()
-                                    .withName("DELAY_MS")
-                                    .withValue(String.valueOf(delayMs))
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("LOG_LEVEL")
-                                    .withValue("DEBUG")
+                                    .withName("POLL_INTERVAL")
+                                    .withValue(Integer.toString(pollInterval))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("MESSAGE_COUNT")
-                                    .withValue(String.valueOf(messageCount))
+                                    .withValue(Integer.toString(messageCount))
                                 .endEnv()
-                               .addNewEnv()
+                                .addNewEnv()
                                     .withName("GROUP_ID")
                                     .withValue(consumerGroup)
                                 .endEnv()
-                                .addNewEnv()
-                                    .withName("ADDITIONAL_CONFIG")
-                                    .withValue(additionalConfig)
-                                .endEnv()
                             .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build());
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build());
     }
 }

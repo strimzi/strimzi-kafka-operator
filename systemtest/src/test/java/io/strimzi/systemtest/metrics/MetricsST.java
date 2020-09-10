@@ -14,8 +14,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
-import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -314,11 +313,20 @@ public class MetricsST extends AbstractST {
         String consumerName = "bridge-consumer";
 
         // Attach consumer before producer
-        KafkaBridgeClientsResource kafkaBridgeClientsJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(BRIDGE_CLUSTER),
-            bridgeTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), Constants.HTTP_BRIDGE_DEFAULT_PORT, 200, 200);
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapServer(KafkaBridgeResources.serviceName(BRIDGE_CLUSTER))
+            .withTopicName(bridgeTopic)
+            .withMessageCount(MESSAGE_COUNT)
+            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withDelayMs(200)
+            .withPollInterval(200)
+            .build();
 
-        kafkaBridgeClientsJob.producerStrimziBridge().done();
-        kafkaBridgeClientsJob.consumerStrimziBridge().done();
+
+        kafkaBridgeClientJob.producerStrimziBridge().done();
+        kafkaBridgeClientJob.consumerStrimziBridge().done();
 
         TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");

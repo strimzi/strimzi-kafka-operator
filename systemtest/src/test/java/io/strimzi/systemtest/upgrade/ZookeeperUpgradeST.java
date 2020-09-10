@@ -8,9 +8,10 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -133,8 +134,15 @@ public class ZookeeperUpgradeST extends AbstractST {
             KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
-            KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
-                KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, ClientUtils.generateRandomConsumerGroup(), 1000);
+            KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+                .withProducerName(producerName)
+                .withConsumerGroup(consumerName)
+                .withBootstrapServer(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withTopicName(continuousTopicName)
+                .withMessageCount(continuousClientsMessageCount)
+                .withAdditionalConfig(producerAdditionConfiguration)
+                .withDelayMs(1000)
+                .build();
 
             kafkaBasicClientJob.producerStrimzi().done();
             kafkaBasicClientJob.consumerStrimzi().done();

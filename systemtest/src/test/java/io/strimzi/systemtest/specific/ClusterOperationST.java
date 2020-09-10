@@ -11,7 +11,8 @@ import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,12 +60,20 @@ public class ClusterOperationST extends AbstractST {
         topicNames.forEach(topicName -> KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, 3, 2).done());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
-        KafkaBasicClientResource kafkaBasicClientResource;
+        KafkaBasicExampleClients kafkaBasicClientResource;
 
         for (int i = 0; i < size; i++) {
-            kafkaBasicClientResource = new KafkaBasicClientResource(producerNames.get(i), consumerNames.get(i),
-                    KafkaResources.plainBootstrapAddress(CLUSTER_NAME), topicNames.get(producerNames.indexOf(i)),
-                    continuousClientsMessageCount, producerAdditionConfiguration, continuousConsumerGroups.get(i), 1000);
+            kafkaBasicClientResource = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+                .withProducerName(producerNames.get(i))
+                .withConsumerName(consumerNames.get(i))
+                .withBootstrapServer(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withTopicName(topicNames.get(producerNames.indexOf(i)))
+                .withMessageCount(continuousClientsMessageCount)
+                .withAdditionalConfig(producerAdditionConfiguration)
+                .withConsumerGroup(continuousConsumerGroups.get(i))
+                .withDelayMs(1000)
+                .build();
+
             kafkaBasicClientResource.producerStrimzi();
             kafkaBasicClientResource.consumerStrimzi();
         }

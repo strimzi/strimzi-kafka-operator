@@ -21,7 +21,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
@@ -29,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
-import java.security.InvalidParameterException;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
@@ -37,100 +35,8 @@ import java.util.Map;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 public abstract class KafkaClientsResource {
+
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientsResource.class);
-
-    protected String producerName;
-    protected String consumerName;
-    protected String bootstrapServer;
-    protected String topicName;
-    protected int messageCount;
-    protected String additionalConfig;
-    protected String consumerGroup;
-    protected long delayMs;
-
-    public abstract static class KafkaClientsBuilder<T extends KafkaClientsBuilder<T>> {
-        private String producerName;
-        private String consumerName;
-        private String bootstrapServer;
-        private String topicName;
-        private int messageCount;
-        private String additionalConfig;
-        private String consumerGroup;
-        private long delayMs;
-
-        public T withProducerName(String producerName) {
-            this.producerName = producerName;
-            return self();
-        }
-
-        public T withConsumerName(String consumerName) {
-            this.consumerName = consumerName;
-            return self();
-        }
-
-        public T withBootstrapServer(String bootstrapServer) {
-            this.bootstrapServer = bootstrapServer;
-            return self();
-        }
-
-        public T withTopicName(String topicName) {
-            this.topicName = topicName;
-            return self();
-        }
-
-        public T withMessageCount(int messageCount) {
-            this.messageCount = messageCount;
-            return self();
-        }
-
-        public T withAdditionalConfig(String additionalConfig) {
-            this.additionalConfig = additionalConfig;
-            return self();
-        }
-
-        public T withConsumerGroup(String consumerGroup) {
-            this.consumerGroup = consumerGroup;
-            return self();
-        }
-
-        public T withDelayMs(long delayMs) {
-            this.delayMs = delayMs;
-            return self();
-        }
-
-        protected abstract KafkaClientsResource build();
-
-        protected abstract T self();
-    }
-
-    protected KafkaClientsResource(KafkaClientsBuilder<?> builder) {
-        if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
-        if (builder.producerName == null || builder.producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
-        if (builder.consumerName == null || builder.consumerName.isEmpty()) throw new InvalidParameterException("Consumer name is not set.");
-        if (builder.bootstrapServer == null || builder.bootstrapServer.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
-        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
-        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
-            LOGGER.info("Consumer group were not specified going to create the random one.");
-            builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
-        }
-
-        producerName = builder.producerName;
-        consumerName = builder.consumerName;
-        bootstrapServer = builder.bootstrapServer;
-        topicName = builder.topicName;
-        messageCount = builder.messageCount;
-        additionalConfig = builder.additionalConfig;
-        consumerGroup = builder.consumerGroup;
-        delayMs = builder.delayMs;
-    }
-
-    public void setTopicName(String topicName) {
-        this.topicName = topicName;
-    }
-
-    public void setConsumerGroup(String consumerGroup) {
-        this.consumerGroup = consumerGroup;
-    }
 
     public static DoneableDeployment deployKafkaClients(String kafkaClusterName) {
         return deployKafkaClients(false, kafkaClusterName, null);

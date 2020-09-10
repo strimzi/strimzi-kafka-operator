@@ -7,8 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
-import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.vertx.ext.web.client.WebClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,7 +27,7 @@ public class HttpBridgeAbstractST extends AbstractST {
     public static String consumerName = "bridge-consumer";
 
     protected WebClient client;
-    protected static KafkaBridgeClientsResource kafkaBridgeClientJob;
+    protected static KafkaBridgeExampleClients kafkaBridgeClientJob;
 
     void deployClusterOperator(String namespace) throws Exception {
         ResourceManager.setClassResources();
@@ -37,7 +36,15 @@ public class HttpBridgeAbstractST extends AbstractST {
 
     @BeforeAll
     void createBridgeClient() {
-        kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, consumerName, KafkaBridgeResources.serviceName(CLUSTER_NAME),
-                TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), bridgePort, 1000, 1000);
+        kafkaBridgeClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapServer(KafkaBridgeResources.serviceName(CLUSTER_NAME))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withPort(bridgePort)
+            .withDelayMs(1000)
+            .withPollInterval(1000)
+            .build();
     }
 }

@@ -14,11 +14,12 @@ import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -278,8 +279,16 @@ public class StrimziUpgradeST extends AbstractST {
 
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
-            KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
-                KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, continuousConsumerGroup, 1000);
+            KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+                .withProducerName(producerName)
+                .withConsumerGroup(consumerName)
+                .withBootstrapServer(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withTopicName(continuousTopicName)
+                .withMessageCount(continuousClientsMessageCount)
+                .withAdditionalConfig(producerAdditionConfiguration)
+                .withConsumerGroup(continuousConsumerGroup)
+                .withDelayMs(1000)
+                .build();
 
             kafkaBasicClientJob.producerStrimzi().done();
             kafkaBasicClientJob.consumerStrimzi().done();
