@@ -14,10 +14,12 @@ import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 
@@ -57,7 +59,7 @@ public abstract class Status implements UnknownPropertyPreserving, Serializable 
         setConditions(Collections.unmodifiableList(newConditions));
     }
 
-    public void addConditions(List<Condition> conditions) {
+    public void addConditions(Collection<Condition> conditions) {
         List<Condition> newConditions = prepareConditionsUpdate();
         newConditions.addAll(conditions);
         setConditions(Collections.unmodifiableList(newConditions));

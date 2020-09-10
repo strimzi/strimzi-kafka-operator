@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.AnnotatedElement;
@@ -21,14 +23,13 @@ import java.util.Set;
 public class ValidationVisitor implements ResourceVisitor.Visitor {
     private final Logger logger;
     private final HasMetadata resource;
-    private final Set<String> unknownFields;
-    private final Set<String> deprecatedFields;
+    private final Set<Condition> warningConditions;
+    private final String transitionTime = StatusUtils.iso8601Now();
 
-    public ValidationVisitor(HasMetadata resource, Logger logger, Set<String> unknownFields, Set<String> deprecatedFields) {
+    public ValidationVisitor(HasMetadata resource, Logger logger, Set<Condition> warningConditions) {
         this.resource = resource;
         this.logger = logger;
-        this.unknownFields = unknownFields;
-        this.deprecatedFields = deprecatedFields;
+        this.warningConditions = warningConditions;
     }
 
     String context() {
@@ -91,7 +92,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                 msg += " This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
             }
 
-            deprecatedFields.add(msg);
+            warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg, transitionTime));
             logger.warn("{}: {}", context(), msg);
         }
 
@@ -109,7 +110,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                     msg += "This object has been replaced with " + deprecatedType.replacedWithType().getSimpleName() + ".";
                 }
 
-                deprecatedFields.add(msg);
+                warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedObjects", msg, transitionTime));
                 logger.warn("{}: {}", context(), msg);
             }
         }
@@ -135,7 +136,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
 
-                unknownFields.add(msg);
+                warningConditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg, transitionTime));
                 logger.warn("{}: {}", context(), msg);
             }
         }

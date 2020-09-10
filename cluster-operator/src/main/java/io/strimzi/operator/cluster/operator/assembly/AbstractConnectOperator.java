@@ -20,7 +20,6 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
-import io.strimzi.api.kafka.AbstractCustomResource;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
@@ -28,6 +27,7 @@ import io.strimzi.api.kafka.model.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
+import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -37,7 +37,6 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
@@ -89,7 +88,7 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyMap;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
-public abstract class AbstractConnectOperator<C extends KubernetesClient, T extends AbstractCustomResource<P, S>,
+public abstract class AbstractConnectOperator<C extends KubernetesClient, T extends CustomResource & HasSpecAndStatus<P, S>,
         L extends CustomResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
         extends AbstractOperator<T, P, S, CrdOperator<C, T, L, D>> {
 
@@ -174,7 +173,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Create a watch on {@code KafkaConnector} in the given {@code namespace}.
      * The watcher will:
      * <ul>
-     * <li>{@link #reconcileConnectors(Reconciliation, AbstractCustomResource, KafkaConnectStatus, boolean, String)} on the KafkaConnect or KafkaConnectS2I
+     * <li>{@linkplain #reconcileConnectors(Reconciliation, CustomResource, KafkaConnectStatus, boolean, String)} on the KafkaConnect or KafkaConnectS2I
      * identified by {@code KafkaConnector.metadata.labels[strimzi.io/cluster]}.</li>
      * <li>If there is a Connect and ConnectS2I cluster with the given name then the plain Connect one is used
      * (and an error is logged about the ambiguity).</li>

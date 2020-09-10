@@ -12,7 +12,17 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
-public abstract class AbstractWatchableResourceOperatorWithStatus<
+/**
+ * Class used for managing Kubernetes resources which can be watched and have Status. This is used by the assembly
+ * operator for access to Custom Resources which have all the status sections.
+ *
+ * @param <C>   Kubernetes client
+ * @param <T>   Kubernetes resource
+ * @param <L>   Kubernetes resource list
+ * @param <D>   Doneable Kubernetes resource
+ * @param <R>   Kubernetes Reasource
+ */
+public abstract class AbstractWatchableStatusedResourceOperator<
         C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/,
@@ -29,9 +39,15 @@ public abstract class AbstractWatchableResourceOperatorWithStatus<
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractWatchableResourceOperatorWithStatus(Vertx vertx, C client, String resourceKind) {
+    public AbstractWatchableStatusedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 
+    /**
+     * Updates status of the resource
+     *
+     * @param resource  Resource with the status which should be updated in the Kube API server
+     * @return          Future with the updated resource
+     */
     public abstract Future<T> updateStatusAsync(T resource);
 }

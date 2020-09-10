@@ -36,7 +36,7 @@ public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends CustomResourceList<T>,
             D extends Doneable<T>>
-        extends AbstractWatchableResourceOperatorWithStatus<C, T, L, D, Resource<T, D>> {
+        extends AbstractWatchableStatusedResourceOperator<C, T, L, D, Resource<T, D>> {
 
     private final Class<T> cls;
     private final Class<L> listCls;

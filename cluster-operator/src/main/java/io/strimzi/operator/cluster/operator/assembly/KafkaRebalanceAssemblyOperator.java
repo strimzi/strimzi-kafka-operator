@@ -37,8 +37,7 @@ import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperatorWithStatus;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
@@ -125,7 +124,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
  * </code></pre>
  */
 public class KafkaRebalanceAssemblyOperator
-        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableResourceOperatorWithStatus<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>>> {
+        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>>> {
 
     private static final Logger log = LogManager.getLogger(KafkaRebalanceAssemblyOperator.class.getName());
 

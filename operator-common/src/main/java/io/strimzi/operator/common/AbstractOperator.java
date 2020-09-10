@@ -5,6 +5,7 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.core.instrument.Counter;
@@ -12,8 +13,7 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Meter;
-import io.strimzi.api.kafka.AbstractCustomResource;
-import io.strimzi.api.kafka.model.Constants;
+import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -23,7 +23,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperatorWithStatus;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
@@ -35,10 +35,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -54,22 +52,22 @@ import static io.strimzi.operator.common.Util.async;
  *
  * <ul>
  * <li>uses the Fabric8 kubernetes API and implements
- * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, AbstractCustomResource)}
+ * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, CustomResource)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
  * 
- * <li>add support for operator-side {@linkplain #validate(AbstractCustomResource) validation}.
+ * <li>add support for operator-side {@linkplain #validate(CustomResource) validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
- *
+ *ą
  * </ul>
  * @param <T> The Java representation of the Kubernetes resource, e.g. {@code Kafka} or {@code KafkaConnect}
  * @param <O> The "Resource Operator" for the source resource type. Typically this will be some instantiation of
  *           {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
  */
 public abstract class AbstractOperator<
-        T extends AbstractCustomResource<P, S>,
+        T extends CustomResource & HasSpecAndStatus<P, S>,
         P extends Spec,
         S extends Status,
-        O extends AbstractWatchableResourceOperatorWithStatus<?, T, ?, ?, ?>>
+        O extends AbstractWatchableStatusedResourceOperator<?, T, ?, ?, ?>>
             implements Operator {
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
@@ -190,7 +188,6 @@ public abstract class AbstractOperator<
             T cr = resourceOperator.get(namespace, name);
 
             if (cr != null) {
-                List<Condition> unknownAndDeprecatedConditions = validate(cr);
                 Promise<Void> createOrUpdate = Promise.promise();
 
                 if (cr.getSpec() == null)   {
@@ -207,40 +204,47 @@ public abstract class AbstractOperator<
                     status.addCondition(errorCondition);
 
                     log.error("{}: {} spec cannot be null", reconciliation, cr.getMetadata().getName());
-                    updateStatus(reconciliation, status, unknownAndDeprecatedConditions).onComplete(statusResult -> {
+                    updateStatus(reconciliation, status).onComplete(notUsed -> {
                         createOrUpdate.fail(exception);
                     });
 
                     return createOrUpdate.future();
                 }
 
+                Set<Condition> unknownAndDeprecatedConditions = validate(cr);
+
                 log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
 
-                createOrUpdate(reconciliation, cr).onComplete(createOrUpdateResult -> {
-                    if (createOrUpdateResult.succeeded())    {
-                        updateStatus(reconciliation, createOrUpdateResult.result(), unknownAndDeprecatedConditions).onComplete(statusResult -> {
-                            if (statusResult.succeeded())   {
-                                createOrUpdate.complete();
+                createOrUpdate(reconciliation, cr)
+                        .onComplete(res -> {
+                            if (res.succeeded()) {
+                                S status = res.result();
+
+                                addWarningsToStatus(status, unknownAndDeprecatedConditions);
+                                updateStatus(reconciliation, status).onComplete(statusResult -> {
+                                    if (statusResult.succeeded()) {
+                                        createOrUpdate.complete();
+                                    } else {
+                                        createOrUpdate.fail(statusResult.cause());
+                                    }
+                                });
                             } else {
-                                createOrUpdate.fail(statusResult.cause());
+                                if (res.cause() instanceof ReconciliationException) {
+                                    ReconciliationException e = (ReconciliationException) res.cause();
+                                    Status status = e.getStatus();
+                                    addWarningsToStatus(status, unknownAndDeprecatedConditions);
+
+                                    log.error("{}: createOrUpdate failed", reconciliation, e.getCause());
+
+                                    updateStatus(reconciliation, (S) status).onComplete(statusResult -> {
+                                        createOrUpdate.fail(e.getCause());
+                                    });
+                                } else {
+                                    log.error("{}: createOrUpdate failed", reconciliation, res.cause());
+                                    createOrUpdate.fail(res.cause());
+                                }
                             }
                         });
-                    } else {
-                        if (createOrUpdateResult.cause() instanceof ReconciliationException) {
-                            ReconciliationException e = (ReconciliationException) createOrUpdateResult.cause();
-                            Status status = e.getStatus();
-
-                            log.error("{}: createOrUpdate failed", reconciliation, e.getCause());
-
-                            updateStatus(reconciliation, (S) status, unknownAndDeprecatedConditions).onComplete(statusResult -> {
-                                createOrUpdate.fail(e.getCause());
-                            });
-                        } else {
-                            log.error("{}: createOrUpdate failed", reconciliation, createOrUpdateResult.cause());
-                            createOrUpdate.fail(createOrUpdateResult.cause());
-                        }
-                    }
-                });
 
                 return createOrUpdate.future();
             } else {
@@ -268,17 +272,22 @@ public abstract class AbstractOperator<
         return result.future();
     }
 
-
+    private void addWarningsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
+        if (status != null)  {
+            status.addConditions(unknownAndDeprecatedConditions);
+        }
+    }
 
     /**
      * Updates the Status field of the Kafka CR. It diffs the desired status against the current status and calls
      * the update only when there is any difference in non-timestamp fields.
      *
+     * @param reconciliation the reconciliation identified
      * @param desiredStatus The KafkaStatus which should be set
      *
      * @return
      */
-    Future<Void> updateStatus(Reconciliation reconciliation, S desiredStatus, List<Condition> unknownAndDeprecatedConditions) {
+    Future<Void> updateStatus(Reconciliation reconciliation, S desiredStatus) {
         if (desiredStatus == null)  {
             log.debug("{}: Desired status is null - status will not be updated", reconciliation);
             return Future.succeededFuture();
@@ -286,52 +295,37 @@ public abstract class AbstractOperator<
 
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
-        desiredStatus.addConditions(unknownAndDeprecatedConditions);
 
-        Promise<Void> updateStatusPromise = Promise.promise();
-
-        resourceOperator.getAsync(namespace, name).onComplete(getRes -> {
-            if (getRes.succeeded())    {
-                T res = getRes.result();
-
-                if (res != null) {
-                    if ((Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1).equals(res.getApiVersion()))   {
-                        log.warn("{}: The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, res.getApiVersion());
-                        updateStatusPromise.complete();
-                    } else {
+        return resourceOperator.getAsync(namespace, name)
+                .compose(res -> {
+                    if (res != null) {
                         S currentStatus = res.getStatus();
-
                         StatusDiff sDiff = new StatusDiff(currentStatus, desiredStatus);
 
                         if (!sDiff.isEmpty()) {
-                            T copiedResource = copyResource(res);
-                            copiedResource.setStatus(desiredStatus);
+                            //T copiedResource = copyResource(res);
+                            res.setStatus(desiredStatus);
 
-                            resourceOperator.updateStatusAsync(copiedResource).onComplete(updateRes -> {
-                                if (updateRes.succeeded()) {
-                                    log.debug("{}: Completed status update", reconciliation);
-                                    updateStatusPromise.complete();
-                                } else {
-                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                    updateStatusPromise.fail(updateRes.cause());
-                                }
-                            });
+                            return resourceOperator.updateStatusAsync(res)
+                                    .compose(notUsed -> {
+                                        log.debug("{}: Completed status update", reconciliation);
+                                        return Future.succeededFuture();
+                                    }, error -> {
+                                        log.error("{}: Failed to update status", reconciliation, error);
+                                        return Future.failedFuture(error);
+                                    });
                         } else {
                             log.debug("{}: Status did not change", reconciliation);
-                            updateStatusPromise.complete();
+                            return Future.succeededFuture();
                         }
+                    } else {
+                        log.error("{}: Current {} resource not found", reconciliation, reconciliation.kind());
+                        return Future.failedFuture("Current " + reconciliation.kind() + " resource with name " + name + " not found");
                     }
-                } else {
-                    log.error("{}: Current {} resource not found", reconciliation, reconciliation.kind());
-                    updateStatusPromise.fail("Current " + reconciliation.kind() + " resource not found");
-                }
-            } else {
-                log.error("{}: Failed to get the current {} resource and its status", reconciliation, reconciliation.kind(), getRes.cause());
-                updateStatusPromise.fail(getRes.cause());
-            }
-        });
-
-        return updateStatusPromise.future();
+                }, error -> {
+                    log.error("{}: Failed to get the current {} resource and its status", reconciliation, reconciliation.kind(), error);
+                    return Future.failedFuture(error);
+                });
     }
 
     protected abstract T copyResource(T res);
@@ -395,31 +389,16 @@ public abstract class AbstractOperator<
      * @param resource The custom resource
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
      */
-    protected List<Condition> validate(T resource) {
+    private Set<Condition> validate(T resource) {
         if (resource != null) {
-            Set<String> unknownFields = new HashSet<>(0);
-            Set<String> deprecatedFields = new HashSet<>(0);
+            Set<Condition> warningConditions = new HashSet<>(0);
 
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, unknownFields, deprecatedFields));
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
 
-            return prepareUnknownAndDeprecatedFieldsConditions(unknownFields, deprecatedFields);
+            return warningConditions;
         }
 
-        return Collections.emptyList();
-    }
-
-    private static List<Condition> prepareUnknownAndDeprecatedFieldsConditions(Set<String> unknownFields, Set<String> deprecatedFields)  {
-        List<Condition> conditions = new ArrayList<>(unknownFields.size() + deprecatedFields.size());
-
-        for (String msg : unknownFields)    {
-            conditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg));
-        }
-
-        for (String msg : deprecatedFields)    {
-            conditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg));
-        }
-
-        return conditions;
+        return Collections.emptySet();
     }
 
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
