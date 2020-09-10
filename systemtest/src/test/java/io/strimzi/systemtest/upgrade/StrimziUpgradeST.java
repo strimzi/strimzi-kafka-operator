@@ -233,7 +233,6 @@ public class StrimziUpgradeST extends AbstractST {
         LOGGER.info("Waiting for CO deployment");
         DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
         LOGGER.info("CO ready");
-        LOGGER.info(kubeClient().getDeployment(ResourceManager.getCoDeploymentName()));
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
         if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(kafkaClusterName).get() == null) {

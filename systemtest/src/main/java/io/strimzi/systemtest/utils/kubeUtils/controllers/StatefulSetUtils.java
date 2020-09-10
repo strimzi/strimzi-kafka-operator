@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -139,11 +140,11 @@ public class StatefulSetUtils {
         LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
         TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
             () -> kubeClient().getStatefulSetStatus(statefulSetName),
-            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
+            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
 
         LOGGER.info("Waiting for {} Pod(s) of StatefulSet {} to be ready", expectPods, statefulSetName);
         PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(statefulSetName), expectPods, true,
-            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
+            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
         LOGGER.info("StatefulSet {} is ready", statefulSetName);
     }
 
