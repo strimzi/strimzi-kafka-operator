@@ -1826,24 +1826,6 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
-                        hostAliases:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              hostnames:
-                                type: array
-                                items:
-                                  type: string
-                              ip:
-                                type: string
-                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
-                        priorityClassName:
-                          type: string
-                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-                        schedulerName:
-                          type: string
-                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
                         tolerations:
                           type: array
                           items:
@@ -1860,6 +1842,24 @@ spec:
                               value:
                                 type: string
                           description: The pod's tolerations.
+                        priorityClassName:
+                          type: string
+                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+                        schedulerName:
+                          type: string
+                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
                       description: Template for Kafka `Pods`.
                     bootstrapService:
                       type: object
@@ -2918,24 +2918,6 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
-                        hostAliases:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              hostnames:
-                                type: array
-                                items:
-                                  type: string
-                              ip:
-                                type: string
-                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
-                        priorityClassName:
-                          type: string
-                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-                        schedulerName:
-                          type: string
-                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
                         tolerations:
                           type: array
                           items:
@@ -2952,6 +2934,24 @@ spec:
                               value:
                                 type: string
                           description: The pod's tolerations.
+                        priorityClassName:
+                          type: string
+                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+                        schedulerName:
+                          type: string
+                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
                       description: Template for ZooKeeper `Pods`.
                     clientService:
                       type: object
@@ -4446,24 +4446,6 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
-                        hostAliases:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              hostnames:
-                                type: array
-                                items:
-                                  type: string
-                              ip:
-                                type: string
-                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
-                        priorityClassName:
-                          type: string
-                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-                        schedulerName:
-                          type: string
-                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
                         tolerations:
                           type: array
                           items:
@@ -4480,6 +4462,24 @@ spec:
                               value:
                                 type: string
                           description: The pod's tolerations.
+                        priorityClassName:
+                          type: string
+                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+                        schedulerName:
+                          type: string
+                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
                       description: Template for Entity Operator `Pods`.
                     tlsSidecarContainer:
                       type: object
@@ -5191,24 +5191,6 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
-                        hostAliases:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              hostnames:
-                                type: array
-                                items:
-                                  type: string
-                              ip:
-                                type: string
-                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
-                        priorityClassName:
-                          type: string
-                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-                        schedulerName:
-                          type: string
-                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
                         tolerations:
                           type: array
                           items:
@@ -5225,6 +5207,24 @@ spec:
                               value:
                                 type: string
                           description: The pod's tolerations.
+                        priorityClassName:
+                          type: string
+                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+                        schedulerName:
+                          type: string
+                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
                       description: Template for Cruise Control `Pods`.
                     apiService:
                       type: object
@@ -5784,24 +5784,6 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
-                        hostAliases:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              hostnames:
-                                type: array
-                                items:
-                                  type: string
-                              ip:
-                                type: string
-                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
-                        priorityClassName:
-                          type: string
-                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-                        schedulerName:
-                          type: string
-                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
                         tolerations:
                           type: array
                           items:
@@ -5818,6 +5800,24 @@ spec:
                               value:
                                 type: string
                           description: The pod's tolerations.
+                        priorityClassName:
+                          type: string
+                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+                        schedulerName:
+                          type: string
+                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
                       description: Template for JmxTrans `Pods`.
                     container:
                       type: object
@@ -6213,24 +6213,6 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
-                        hostAliases:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              hostnames:
-                                type: array
-                                items:
-                                  type: string
-                              ip:
-                                type: string
-                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
-                        priorityClassName:
-                          type: string
-                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-                        schedulerName:
-                          type: string
-                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
                         tolerations:
                           type: array
                           items:
@@ -6247,6 +6229,24 @@ spec:
                               value:
                                 type: string
                           description: The pod's tolerations.
+                        priorityClassName:
+                          type: string
+                          description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+                        schedulerName:
+                          type: string
+                          description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
                       description: Template for Kafka Exporter `Pods`.
                     service:
                       type: object
