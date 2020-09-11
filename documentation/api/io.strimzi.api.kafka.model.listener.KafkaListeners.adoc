@@ -33,10 +33,3 @@ listeners:
   plain: {}
 # ...
 ----
-
-.Common listener configuration
-
-For all types of external listener, you can:
-
-* xref:con-common-configuration-listener-addresses-{context}[Override the advertised addresses]
-* xref:con-common-configuration-listener-network-policy-{context}[Restrict access to a listener at the network level]

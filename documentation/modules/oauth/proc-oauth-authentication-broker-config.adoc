@@ -50,8 +50,11 @@ The examples here show the configuration options as configured for external list
 .Example 1: Configuring fast local JWT token validation
 [source,yaml,subs="+quotes,attributes"]
 ----
-external:
+#...
+- name: external
+  port: 9094
   type: loadbalancer
+  tls: true
   authentication:
     type: oauth <1>
     validIssuerUri: <__https://<auth-server-address>/auth/realms/external__> <2>
@@ -83,8 +86,10 @@ external:
 .Example 2: Configuring token validation using an introspection endpoint
 [source,yaml,subs="+quotes,attributes"]
 ----
-external:
+- name: external
+  port: 9094
   type: loadbalancer
+  tls: true
   authentication:
     type: oauth
     validIssuerUri: <__https://<auth-server-address>/auth/realms/external__>

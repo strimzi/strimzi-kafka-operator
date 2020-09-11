@@ -89,6 +89,6 @@ NOTE: A rolling update is also started if you update a Kafka listener certificat
 
 .Additional resources
 
-* xref:ref-alternative-subjects-certs-for-listeners-{context}[]
-* xref:type-KafkaListeners-reference[]
-* xref:kafka-listener-certificates-{context}[]
+* xref:ref-alternative-subjects-certs-for-listeners-{context}[Alternative subjects in server certificates for Kafka listeners]
+* xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference]
+* xref:kafka-listener-certificates-{context}[Kafka listener certificates]

@@ -5,13 +5,11 @@
 [id='con-securing-kafka-authentication-{context}']
 = Listener authentication
 
-Listener configuration is specified as an array within a `Kafka` resource, which makes configuration very flexible,
-and allows you to configure multiple listeners.
-
 For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` _internal_ listeners.
 
-For clients outside the Kubernetes cluster, you create _external_ listeners,
-and specify a connection mechanism, which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+For clients outside the Kubernetes cluster, you create _external_ listeners and specify a connection mechanism,
+which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+
 For more information on the configuration options for connecting an external client, see xref:assembly-configuring-external-listeners-str[Configuring external listeners].
 
 Supported authentication options:
@@ -37,6 +35,10 @@ The following example shows:
 * A `plain` listener configured for SCRAM-SHA-512 authentication
 * A `tls` listener with mutual TLS authentication
 * An `external` listener with mutual TLS authentication
+
+Each listener is configured with a unique name and port within a Kafka cluster.
+
+NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9091) and metrics (9404).
 
 .An example showing listener authentication configuration
 [source,yaml,subs="attributes+"]
@@ -106,6 +108,20 @@ use the `networkPolicyPeers` property.
 Use network policies as part of the listener authentication configuration.
 Each listener can have a different `networkPolicyPeers` configuration.
 
-For more information, refer to the xref:con-common-configuration-listener-network-policy-reference[Listener network policies] section and the {K8sNetworkPolicyPeerAPI}.
+For more information, refer to the xref:configuration-listener-network-policy-reference[Listener network policies] section and the {K8sNetworkPolicyPeerAPI}.
 
 NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in order to use network policies in Strimzi.
+
+== Additional listener configuration options
+
+Add further listener configuration using `configuration` properties.
+You can use:
+
+* `bootstrap` and `brokers` properties to specify overrides for connecting to bootstrap and broker services
+* `brokerCertChainAndKey` to xref:proc-installing-certs-per-listener-str[configure a listener to use your own private key and server certificate]
+* `externalTrafficPolicy`, for `nodeport` and `loadbalancer` listeners, to specify whether a service routes external traffic to a local node or cluster-wide endpoints
+* `loadBalancerSourceRanges`, for `loadbalancer` listeners, to specify Classless Inter-Domain Routing (CIDR) ranges to connect to
+* `preferredNodePortAddressType`, for `nodeport` listeners, to specify the address type to use as the node address
+* `useServiceDnsDomain`, for `internal` listeners, to specify whether the Kubernetes service DNS domain is used
+
+For more information, see the xref:type-GenericKafkaListenerConfiguration-reference[GenericKafkaListenerConfiguration schema].

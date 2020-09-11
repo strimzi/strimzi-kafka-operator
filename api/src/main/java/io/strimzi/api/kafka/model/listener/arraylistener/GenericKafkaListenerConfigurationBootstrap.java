@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -20,6 +21,7 @@ import java.util.Map;
 /**
  * Configures listener bootstrap configuration
  */
+@DescriptionFile
 @JsonPropertyOrder({"alternativeNames", "host", "dnsAnnotations", "nodePort", "loadBalancerIP"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(

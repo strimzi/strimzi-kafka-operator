@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
@@ -25,6 +26,7 @@ import java.util.Map;
 /**
  * Configures the external listener which exposes Kafka outside of Kubernetes / OpenShift
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -74,7 +76,7 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("Type of the listener. " +
-            "Currently the supported types are `internal, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n" +
+            "Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n" +
             "* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n" +
             "* `route` type uses OpenShift Routes to expose Kafka.\n" +
             "* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n" +

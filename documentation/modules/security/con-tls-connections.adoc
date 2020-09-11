@@ -27,8 +27,4 @@ A TLS sidecar is used when communicating with ZooKeeper.
 
 == Kafka Client connections
 
-Encrypted communication between Kafka brokers and clients running within the same Kubernetes cluster can be provided by configuring the `spec.kafka.listeners.tls` listener, which listens on port 9093.
-
-Encrypted communication between Kafka brokers and clients running outside the same Kubernetes cluster can be provided by configuring the `spec.kafka.listeners.external` listener (the port of the `external` listener depends on its type).
-
-NOTE: Unencrypted client communication with brokers can be configured by `spec.kafka.listeners.plain`, which listens on port 9092.
+Encrypted or unencrypted communication between Kafka brokers and clients is configured using the `tls` property for `spec.kafka.listeners`.

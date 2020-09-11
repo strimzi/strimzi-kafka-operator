@@ -10,8 +10,6 @@ This procedure describes how to access a Strimzi Kafka cluster from an external 
 To connect to a broker, you need the address of the _bootstrap loadbalancer_,
 as well as the certificate used for TLS encryption.
 
-For access using loadbalancers, the port is always 9094.
-
 .Prerequisites
 
 * A Kubernetes cluster

@@ -186,6 +186,7 @@ It must have the value `jbod` for the type `JbodStorage`.
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -194,7 +195,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |string
 |port                1.2+<.<|Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Depending on the listener type, it might not be the port number where the Kafka clients connect.
 |integer
-|type                1.2+<.<|Type of the listener. Currently the supported types are `internal, `route`, `loadbalancer`, `nodeport` and `ingress`. 
+|type                1.2+<.<|Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. 
 
 * `internal` type exposes Kafka internally only within the Kubernetes cluster.
 * `route` type uses OpenShift Routes to expose Kafka.
@@ -335,6 +336,7 @@ Used in: xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycl
 
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -386,6 +388,7 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 
 Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
 
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrap.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -407,6 +410,7 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 
 Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
 
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker.adoc[leveloffset=+1]
 
 [options="header"]
 |====
