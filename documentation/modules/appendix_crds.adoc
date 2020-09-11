@@ -1185,6 +1185,10 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
+|hostAliases                    1.2+<.<|The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[core/v1 HostAlias].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[HostAlias] array
 |priorityClassName              1.2+<.<|The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
 |string
 |schedulerName                  1.2+<.<|The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.

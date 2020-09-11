@@ -2355,6 +2355,20 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional
+                            list of hosts and IPs that will be injected into the pod's
+                            hosts file if specified.
                         priorityClassName:
                           type: string
                           description: The name of the priority class used to assign
@@ -3580,6 +3594,20 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional
+                            list of hosts and IPs that will be injected into the pod's
+                            hosts file if specified.
                         priorityClassName:
                           type: string
                           description: The name of the priority class used to assign
@@ -5237,6 +5265,20 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional
+                            list of hosts and IPs that will be injected into the pod's
+                            hosts file if specified.
                         priorityClassName:
                           type: string
                           description: The name of the priority class used to assign
@@ -6053,6 +6095,20 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional
+                            list of hosts and IPs that will be injected into the pod's
+                            hosts file if specified.
                         priorityClassName:
                           type: string
                           description: The name of the priority class used to assign
@@ -6714,6 +6770,20 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional
+                            list of hosts and IPs that will be injected into the pod's
+                            hosts file if specified.
                         priorityClassName:
                           type: string
                           description: The name of the priority class used to assign
@@ -7168,6 +7238,20 @@ spec:
                                       topologyKey:
                                         type: string
                           description: The pod's affinity rules.
+                        hostAliases:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                              ip:
+                                type: string
+                          description: The pod's HostAliases. HostAliases is an optional
+                            list of hosts and IPs that will be injected into the pod's
+                            hosts file if specified.
                         priorityClassName:
                           type: string
                           description: The name of the priority class used to assign
