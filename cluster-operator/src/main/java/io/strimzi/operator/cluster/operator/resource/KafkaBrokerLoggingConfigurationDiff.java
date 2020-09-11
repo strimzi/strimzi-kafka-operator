@@ -5,7 +5,6 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
