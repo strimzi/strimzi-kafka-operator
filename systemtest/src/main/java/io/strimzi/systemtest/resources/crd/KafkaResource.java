@@ -22,7 +22,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 
@@ -142,9 +141,6 @@ public class KafkaResource {
     }
 
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
-        String tOImage = StUtils.changeOrgAndTag(ResourceManager.getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
-        String uOImage = StUtils.changeOrgAndTag(ResourceManager.getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
-
         return new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(name)
@@ -183,8 +179,6 @@ public class KafkaResource {
                     .endInlineLogging()
                 .endZookeeper()
                 .editEntityOperator()
-                    .editTopicOperator().withImage(tOImage).endTopicOperator()
-                    .editUserOperator().withImage(uOImage).endUserOperator()
                     .editUserOperator()
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")

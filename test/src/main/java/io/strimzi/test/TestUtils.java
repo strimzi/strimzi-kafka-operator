@@ -376,29 +376,6 @@ public final class TestUtils {
         }
     }
 
-    public static String changeDeploymentNamespaceUpgrade(File deploymentFile, String namespace) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(deploymentFile);
-            // Change the docker org of the images in the 060-deployment.yaml
-            ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
-            for (JsonNode envVar : containerNode.get("env")) {
-                String varName = envVar.get("name").textValue();
-                if (varName.matches("STRIMZI_NAMESPACE")) {
-                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
-                    ((ObjectNode) envVar).remove("valueFrom");
-                    ((ObjectNode) envVar).put("value", namespace);
-                }
-                if (varName.matches("STRIMZI_LOG_LEVEL")) {
-                    ((ObjectNode) envVar).put("value", "DEBUG");
-                }
-            }
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static String getContent(File file, Function<JsonNode, String> edit) {
         YAMLMapper mapper = new YAMLMapper();
         try {

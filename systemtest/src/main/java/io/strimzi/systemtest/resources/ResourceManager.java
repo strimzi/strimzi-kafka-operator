@@ -6,7 +6,6 @@ package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Doneable;
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
@@ -54,7 +53,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -360,16 +358,6 @@ public class ResourceManager {
         LOGGER.info("-----METHOD RESOURCES CLEARED-----");
     }
 
-    public static String getImageValueFromCO(String name) {
-        Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
-
-        List<EnvVar> listEnvVar = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        Optional<EnvVar> envVar = listEnvVar.stream().filter(e -> e.getName().equals(name)).findFirst();
-        if (envVar.isPresent()) {
-            return envVar.get().getValue();
-        }
-        return "";
-    }
     /**
      * Log actual status of custom resource with pods.
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)

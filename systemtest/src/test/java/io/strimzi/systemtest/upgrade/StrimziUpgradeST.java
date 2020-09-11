@@ -27,7 +27,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,9 +105,8 @@ public class StrimziUpgradeST extends AbstractST {
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
-
             // Tidy up
-        } catch (KubeClusterException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             TestExecutionWatcher.collectLogs(testClass, testName);
             try {
@@ -149,7 +147,7 @@ public class StrimziUpgradeST extends AbstractST {
                     LOGGER.info("Upgrade of Cluster Operator from version {} to version {} is not allowed on this K8S version!", testParameters.asJsonObject().getString("fromVersion"), testParameters.asJsonObject().getString("toVersion"));
                 }
             }
-        } catch (KubeClusterException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             TestExecutionWatcher.collectLogs(testClass, testName);
             try {
@@ -405,7 +403,7 @@ public class StrimziUpgradeST extends AbstractST {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
             } else if (f.getName().matches(".*Deployment.*")) {
-                cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
+                cmdKubeClient().applyContent(StUtils.changeDeploymentNamespace(f, NAMESPACE));
             } else {
                 cmdKubeClient().apply(f);
             }
@@ -414,12 +412,15 @@ public class StrimziUpgradeST extends AbstractST {
 
     private void deleteInstalledYamls(File root) {
         if (kafkaUserYaml != null) {
+            LOGGER.info("Deleting KafkaUser configuration files");
             cmdKubeClient().delete(kafkaUserYaml);
         }
         if (kafkaTopicYaml != null) {
+            LOGGER.info("Deleting KafkaTopic configuration files");
             cmdKubeClient().delete(kafkaTopicYaml);
         }
         if (kafkaYaml != null) {
+            LOGGER.info("Deleting Kafka configuration files");
             cmdKubeClient().delete(kafkaYaml);
         }
         if (root != null) {
