@@ -39,12 +39,12 @@ public class MapOrList {
         listValue = list;
     }
 
-    @Alternative
+    @Alternative(apiVersion = "v1alpha1-v1beta1")
     public Map<String, String> getMapValue()    {
         return mapValue;
     }
 
-    @Alternative
+    @Alternative(apiVersion = "v1beta2+")
     public List<String> getListValue()    {
         return listValue;
     }
