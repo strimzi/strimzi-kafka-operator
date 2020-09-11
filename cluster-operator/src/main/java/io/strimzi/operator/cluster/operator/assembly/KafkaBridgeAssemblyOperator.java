@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -119,10 +118,10 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return createOrUpdatePromise.future();
     }
 
-    @Override
+    /*@Override
     protected KafkaBridge copyResource(KafkaBridge res) {
         return new KafkaBridgeBuilder(res).build();
-    }
+    }*/
 
     @Override
     protected KafkaBridgeStatus createStatus() {

@@ -201,6 +201,7 @@ public abstract class AbstractOperator<
                             .withReason(exception.getClass().getSimpleName())
                             .withMessage(exception.getMessage())
                             .build();
+                    status.setObservedGeneration(cr.getMetadata().getGeneration());
                     status.addCondition(errorCondition);
 
                     log.error("{}: {} spec cannot be null", reconciliation, cr.getMetadata().getName());
@@ -311,9 +312,9 @@ public abstract class AbstractOperator<
                                         log.debug("{}: Completed status update", reconciliation);
                                         return Future.succeededFuture();
                                     }, error -> {
-                                        log.error("{}: Failed to update status", reconciliation, error);
-                                        return Future.failedFuture(error);
-                                    });
+                                            log.error("{}: Failed to update status", reconciliation, error);
+                                            return Future.failedFuture(error);
+                                        });
                         } else {
                             log.debug("{}: Status did not change", reconciliation);
                             return Future.succeededFuture();
@@ -323,12 +324,12 @@ public abstract class AbstractOperator<
                         return Future.failedFuture("Current " + reconciliation.kind() + " resource with name " + name + " not found");
                     }
                 }, error -> {
-                    log.error("{}: Failed to get the current {} resource and its status", reconciliation, reconciliation.kind(), error);
-                    return Future.failedFuture(error);
-                });
+                        log.error("{}: Failed to get the current {} resource and its status", reconciliation, reconciliation.kind(), error);
+                        return Future.failedFuture(error);
+                    });
     }
 
-    protected abstract T copyResource(T res);
+    //protected abstract T copyResource(T res);
     protected abstract S createStatus();
 
     /**
@@ -389,7 +390,7 @@ public abstract class AbstractOperator<
      * @param resource The custom resource
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
      */
-    private Set<Condition> validate(T resource) {
+    /*test*/ Set<Condition> validate(T resource) {
         if (resource != null) {
             Set<Condition> warningConditions = new HashSet<>(0);
 

@@ -176,10 +176,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return createOrUpdatePromise.future();
     }
 
-    @Override
+    /*@Override
     protected KafkaMirrorMaker2 copyResource(KafkaMirrorMaker2 res) {
         return new KafkaMirrorMaker2Builder(res).build();
-    }
+    }*/
 
     @Override
     protected KafkaMirrorMaker2Status createStatus() {

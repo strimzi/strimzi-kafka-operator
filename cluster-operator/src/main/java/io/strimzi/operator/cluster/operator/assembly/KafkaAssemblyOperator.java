@@ -3526,10 +3526,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new Date();
     }
 
-    @Override
+    /*@Override
     protected Kafka copyResource(Kafka res) {
         return new KafkaBuilder(res).build();
-    }
+    }*/
 
     @Override
     protected KafkaStatus createStatus() {

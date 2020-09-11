@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
@@ -24,7 +23,6 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -169,10 +167,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return createOrUpdatePromise.future();
     }
 
-    @Override
+    /*@Override
     protected KafkaConnect copyResource(KafkaConnect res) {
         return new KafkaConnectBuilder(res).build();
-    }
+    }*/
 
     @Override
     protected KafkaConnectStatus createStatus() {

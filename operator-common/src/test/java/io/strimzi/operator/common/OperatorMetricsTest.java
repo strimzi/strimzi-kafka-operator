@@ -6,11 +6,16 @@ package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
+import io.strimzi.api.kafka.model.HasSpecAndStatus;
+import io.strimzi.api.kafka.model.Spec;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -29,6 +34,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Collections.emptySet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -56,21 +62,26 @@ public class OperatorMetricsTest {
     public void testSuccessfulReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            public Set<Condition> validate(CustomResource resource) {
+                return emptySet();
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
+            }
+
+            @Override
+            protected Status createStatus() {
+                return new Status() { };
             }
         };
 
@@ -101,11 +112,11 @@ public class OperatorMetricsTest {
     public void testFailingReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new RuntimeException("Test error"));
             }
 
@@ -116,6 +127,11 @@ public class OperatorMetricsTest {
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
+            }
+
+            @Override
+            protected Status createStatus() {
+                return new Status() { };
             }
         };
 
@@ -146,21 +162,26 @@ public class OperatorMetricsTest {
     public void testFailingWithLockReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new UnableToAcquireLockException());
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            public Set<Condition> validate(CustomResource resource) {
+                return emptySet();
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
+            }
+
+            @Override
+            protected Status createStatus() {
+                return new Status() { };
             }
         };
 
@@ -185,7 +206,7 @@ public class OperatorMetricsTest {
     public void testDeleteCountsReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableResourceOperator resourceOperator = new AbstractWatchableResourceOperator(vertx, null, "TestResource") {
+        AbstractWatchableStatusedResourceOperator resourceOperator = new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
             protected MixedOperation operation() {
                 return null;
@@ -195,21 +216,31 @@ public class OperatorMetricsTest {
             public HasMetadata get(String namespace, String name) {
                 return null;
             }
+
+            @Override
+            public Future updateStatusAsync(HasMetadata resource) {
+                return null;
+            }
         };
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return null;
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            public Set<Condition> validate(CustomResource resource) {
+                return emptySet();
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return Future.succeededFuture(Boolean.TRUE);
+            }
+
+            @Override
+            protected Status createStatus() {
+                return new Status() { };
             }
         };
 
@@ -247,11 +278,11 @@ public class OperatorMetricsTest {
         resources.add(new NamespaceAndName("my-namespace", "vtid"));
         resources.add(new NamespaceAndName("my-namespace", "utv"));
 
-        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
             }
 
@@ -259,13 +290,18 @@ public class OperatorMetricsTest {
                 return Future.succeededFuture(resources);
             }
 
-            protected void validate(HasMetadata resource) {
-                // Do nothing
+            public Set<Condition> validate(CustomResource resource) {
+                return emptySet();
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
+            }
+
+            @Override
+            protected Status createStatus() {
+                return new Status() { };
             }
         };
 
@@ -313,16 +349,24 @@ public class OperatorMetricsTest {
         return metrics;
     }
 
-    private AbstractWatchableResourceOperator resourceOperatorWithExistingResource()    {
-        return new AbstractWatchableResourceOperator(vertx, null, "TestResource") {
+    private abstract class MyResource extends CustomResource implements HasSpecAndStatus {
+    }
+
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
+        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+            @Override
+            public Future updateStatusAsync(HasMetadata resource) {
+                return null;
+            }
+
             @Override
             protected MixedOperation operation() {
                 return null;
             }
 
             @Override
-            public HasMetadata get(String namespace, String name) {
-                return new HasMetadata() {
+            public CustomResource get(String namespace, String name) {
+                return new MyResource() {
                     @Override
                     public ObjectMeta getMetadata() {
                         return null;
@@ -345,6 +389,26 @@ public class OperatorMetricsTest {
 
                     @Override
                     public void setApiVersion(String s) {
+
+                    }
+
+                    @Override
+                    public Spec getSpec() {
+                        return new Spec() { };
+                    }
+
+                    @Override
+                    public void setSpec(Spec spec) {
+
+                    }
+
+                    @Override
+                    public Status getStatus() {
+                        return null;
+                    }
+
+                    @Override
+                    public void setStatus(Status status) {
 
                     }
                 };

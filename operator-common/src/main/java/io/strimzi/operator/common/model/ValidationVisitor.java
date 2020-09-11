@@ -128,6 +128,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
 
     @Override
     public void visitObject(List<String> path, Object object) {
+        //System.out.println("Haaa");
         if (object instanceof UnknownPropertyPreserving) {
             Map<String, Object> properties = ((UnknownPropertyPreserving) object).getAdditionalProperties();
             if (properties != null && !properties.isEmpty()) {
@@ -136,8 +137,8 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
 
-                warningConditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg, transitionTime));
                 logger.warn("{}: {}", context(), msg);
+                warningConditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg, transitionTime));
             }
         }
     }

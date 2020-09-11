@@ -44,6 +44,16 @@ public class ValidationVisitorTest {
 
         ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
 
+        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
+
+        assertThat(warningMessages, hasItem("Contains object at path spec.kafka with an unknown property: foo"));
+        assertThat(warningMessages, hasItem("In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
+                "This feature should now be configured at path spec.entityOperator.topicOperator."));
+        assertThat(warningMessages, hasItem("In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
+                "This object has been replaced with GenericKafkaListener."));
+        assertThat(warningMessages, hasItem("In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
+                "This object has been replaced with EntityTopicOperatorSpec."));
+
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
             && ("Kafka resource testname in namespace testnamespace: " +
                 "Contains object at path spec.kafka with an unknown property: foo").equals(lm.formattedMessage()));
@@ -63,20 +73,6 @@ public class ValidationVisitorTest {
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
                 "This object has been replaced with EntityTopicOperatorSpec.").equals(lm.formattedMessage()));
-
-        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
-
-        assertThat(warningMessages, hasItem("Kafka resource testname in namespace testnamespace: " +
-                "Contains object at path spec.kafka with an unknown property: foo"));
-        assertThat(warningMessages, hasItem("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOperator.topicOperator."));
-        assertThat(warningMessages, hasItem("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
-                "This object has been replaced with GenericKafkaListener."));
-        assertThat(warningMessages, hasItem("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec."));
     }
 
     @Test
@@ -96,9 +92,13 @@ public class ValidationVisitorTest {
 
         ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
 
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
-                "Contains object at path spec.kafka with an unknown property: foo").equals(lm.formattedMessage()));
+        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
+
+        assertThat(warningMessages, hasItem("In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
+                "This feature should now be configured at path spec.entityOperator.topicOperator."));
+        assertThat(warningMessages, hasItem("In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
+                "This object has been replaced with EntityTopicOperatorSpec."));
+
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the property affinity at path spec.zookeeper.affinity has been deprecated. " +
@@ -123,17 +123,6 @@ public class ValidationVisitorTest {
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
                 "This object has been replaced with EntityTopicOperatorSpec.").equals(lm.formattedMessage()));
-
-        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
-
-        assertThat(warningMessages, hasItem("Kafka resource testname in namespace testnamespace: " +
-                "Contains object at path spec.kafka with an unknown property: foo"));
-        assertThat(warningMessages, hasItem("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOperator.topicOperator."));
-        assertThat(warningMessages, hasItem("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec."));
     }
 
 

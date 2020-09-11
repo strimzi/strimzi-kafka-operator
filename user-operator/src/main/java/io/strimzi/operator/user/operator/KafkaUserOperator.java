@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
@@ -238,10 +237,10 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
             .map(Boolean.TRUE);
     }
 
-    @Override
+    /*@Override
     protected KafkaUser copyResource(KafkaUser res) {
         return new KafkaUserBuilder(res).build();
-    }
+    }*/
 
     @Override
     protected KafkaUserStatus createStatus() {

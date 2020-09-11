@@ -387,7 +387,7 @@ public class ConnectorMockTest {
                     .withName(connectName)
                 .endMetadata()
                 .done();
-        waitForConnectNotReady(connectName, "InvalidResourceException", "spec property is required");
+        waitForConnectNotReady(connectName, "InvalidResourceException", "Spec cannot be null");
     }
 
     @Test

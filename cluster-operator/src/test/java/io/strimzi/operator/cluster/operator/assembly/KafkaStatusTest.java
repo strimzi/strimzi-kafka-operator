@@ -134,6 +134,7 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -145,7 +146,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -242,6 +243,7 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -255,7 +257,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(false));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -312,6 +314,7 @@ public class KafkaStatusTest {
                 .build();
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(readyKafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(readyKafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -325,7 +328,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(false));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -431,6 +434,7 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -491,7 +495,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -549,6 +553,7 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -609,7 +614,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -657,6 +662,7 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -717,7 +723,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -762,6 +768,7 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -822,7 +829,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -866,6 +873,7 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -906,7 +914,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -934,6 +942,7 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -944,7 +953,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getAllValues().size(), is(2));
@@ -971,6 +980,7 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -981,7 +991,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getAllValues().size(), is(1));
@@ -1007,6 +1017,7 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -1027,7 +1038,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(kafkaCaptor.getValue(), is(notNullValue()));
                     assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
