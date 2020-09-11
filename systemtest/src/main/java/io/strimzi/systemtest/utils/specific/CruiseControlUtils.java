@@ -50,7 +50,7 @@ public class CruiseControlUtils {
     public static String callApi(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
 
-        return cmdKubeClient().execInPodContainer(ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+        return cmdKubeClient().execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
     }
 
@@ -59,7 +59,7 @@ public class CruiseControlUtils {
     public static String callApi(SupportedHttpMethods method, String endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
 
-        return cmdKubeClient().execInPodContainer(ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+        return cmdKubeClient().execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_METRICS_PORT + endpoint).out();
     }
 

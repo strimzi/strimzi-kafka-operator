@@ -14,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -37,10 +36,11 @@ public class CruiseControlApiST extends AbstractST {
 
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
 
-    @Order(1)
     @Tag(ACCEPTANCE)
     @Test
-    void testCruiseControlDeploymentStateEndpoint()  {
+    void testCruiseControlBasicAPIRequests()  {
+        LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
+
         String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE);
 
         assertThat(response, is("Unrecognized endpoint in request '/state'\n" +
@@ -55,12 +55,10 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString("NO_TASK_IN_PROGRESS"));
 
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
-    }
 
-    @Order(2)
-    @Test
-    void testRebalance() {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE);
+        LOGGER.info("----> KAFKA REBALANCE <----");
+
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE);
 
         assertThat(response, is("Unrecognized endpoint in request '/rebalance'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
@@ -88,12 +86,10 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString("PreferredLeaderElectionGoal"));
 
         assertThat(response, containsString("Cluster load after rebalance"));
-    }
 
-    @Order(3)
-    @Test
-    void testStopProposalExecution() {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STOP);
+        LOGGER.info("----> EXECUTION OF STOP PROPOSAL <----");
+
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STOP);
 
         assertThat(response, is("Unrecognized endpoint in request '/stop_proposal_execution'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
@@ -101,12 +97,10 @@ public class CruiseControlApiST extends AbstractST {
         response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STOP);
 
         assertThat(response, containsString("Proposal execution stopped."));
-    }
 
-    @Order(4)
-    @Test
-    void testUserTasks() {
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS);
+        LOGGER.info("----> USER TASKS <----");
+
+        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, is("Unrecognized endpoint in request '/user_tasks'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));

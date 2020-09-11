@@ -34,6 +34,8 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -180,6 +182,28 @@ public class ResourceManager {
                             .withPropagationPolicy(DeletionPropagation.FOREGROUND)
                             .delete();
                     waitForDeletion((KafkaBridge) resource);
+                });
+                break;
+            case KafkaTopic.RESOURCE_KIND:
+                pointerResources.add(() -> {
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                        resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    operation.inNamespace(resource.getMetadata().getNamespace())
+                        .withName(resource.getMetadata().getName())
+                        .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                        .delete();
+                    KafkaTopicUtils.waitForKafkaTopicDeletion(resource.getMetadata().getName());
+                });
+                break;
+            case KafkaUser.RESOURCE_KIND:
+                pointerResources.add(() -> {
+                    LOGGER.info("Deleting {} {} in namespace {}",
+                        resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                    operation.inNamespace(resource.getMetadata().getNamespace())
+                        .withName(resource.getMetadata().getName())
+                        .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                        .delete();
+                    KafkaUserUtils.waitForKafkaUserDeletion(resource.getMetadata().getName());
                 });
                 break;
             case DEPLOYMENT:

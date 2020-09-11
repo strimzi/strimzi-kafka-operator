@@ -152,6 +152,7 @@ class MirrorMaker2ST extends AbstractST {
                     .endMirror()
                 .endSpec()
                 .done();
+
         LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
 
         String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));

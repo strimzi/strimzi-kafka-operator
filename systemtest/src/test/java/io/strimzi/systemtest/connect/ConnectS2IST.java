@@ -201,6 +201,7 @@ class ConnectS2IST extends AbstractST {
         final String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS, user).done();
@@ -227,8 +228,6 @@ class ConnectS2IST extends AbstractST {
                     .endKafkaClientAuthenticationScramSha512()
                 .endSpec()
                 .done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
 
         final String tlsKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
