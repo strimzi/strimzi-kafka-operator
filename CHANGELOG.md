@@ -16,9 +16,10 @@
 * Add support for `client.rack` property for Kafka Connect to use `fetch from closest replica` feature. 
 * Refactored operators Grafana dashboard
   * Fixed bug on maximum reconcile time graph
-  * Removed the avarage reconsile time graph
+  * Removed the avarage reconcile time graph
   * Rearranged graphs
-* Make `listeners` configurable as an array and add support for more different listeners in single cluster 
+* Make `listeners` configurable as an array and add support for more different listeners in single cluster
+* Add support for configuring `hostAliases` in Pod templates 
 
 ### Deprecations and removals
 
