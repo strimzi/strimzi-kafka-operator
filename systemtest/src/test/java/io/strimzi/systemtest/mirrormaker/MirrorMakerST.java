@@ -342,6 +342,9 @@ public class MirrorMakerST extends AbstractST {
                 .endKafka()
             .endSpec().done();
 
+        // Deploy topic
+        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME).done();
+
         // Create Kafka user for source cluster
         KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
 
@@ -420,9 +423,6 @@ public class MirrorMakerST extends AbstractST {
                     .endTls()
                 .endProducer()
             .endSpec().done();
-
-        // Deploy topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME).done();
 
         internalKafkaClient.setTopicName(TOPIC_NAME);
         internalKafkaClient.setClusterName(kafkaClusterSourceName);

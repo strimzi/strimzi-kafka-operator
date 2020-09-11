@@ -773,6 +773,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, weirdUserName).done();
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
@@ -835,6 +836,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .done();
 
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUserResource.scramShaUser(CLUSTER_NAME, weirdUserName).done();
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
@@ -867,7 +869,6 @@ class ConnectST extends AbstractST {
     }
 
     void testConnectAuthorizationWithWeirdUserName(String userName, SecurityProtocol securityProtocol) {
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         String connectorPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-connect").get(0).getMetadata().getName();
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
