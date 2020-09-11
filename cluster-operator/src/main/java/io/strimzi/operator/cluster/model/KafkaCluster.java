@@ -483,9 +483,9 @@ public class KafkaCluster extends AbstractModel {
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
                         "changing overrides to nodes which do not exist yet" +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("Your desired Kafka storage configuration contains changes which are not allowed. As a " +
+                log.warn("The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
-                        "about the detected changes.");
+                        "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
                 Condition warning = StatusUtils.buildWarningCondition("KafkaStorage",
                         "The desired Kafka storage configuration contains changes which are not allowed. As a " +
