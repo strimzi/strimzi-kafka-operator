@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -14,6 +19,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -262,5 +268,41 @@ public class StUtils {
      */
     public static String getLogFromPodByTime(String podName, String containerName, String timeSince) {
         return cmdKubeClient().execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
+    }
+
+    /**
+     * Change Deployment configuration before applying it. We set different namespace, log level and image pull policy.
+     * It's mostly used for use cases where we use direct kubectl command instead of fabric8 calls to api.
+     * @param deploymentFile loaded Strimzi deployment file
+     * @param namespace namespace where Strimzi should be installed
+     * @return deployment file content as String
+     */
+    public static String changeDeploymentNamespace(File deploymentFile, String namespace) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(deploymentFile);
+            // Change the docker org of the images in the 060-deployment.yaml
+            ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
+            for (JsonNode envVar : containerNode.get("env")) {
+                String varName = envVar.get("name").textValue();
+                if (varName.matches("STRIMZI_NAMESPACE")) {
+                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
+                    ((ObjectNode) envVar).remove("valueFrom");
+                    ((ObjectNode) envVar).put("value", namespace);
+                }
+                if (varName.matches("STRIMZI_LOG_LEVEL")) {
+                    ((ObjectNode) envVar).put("value", Environment.STRIMZI_LOG_LEVEL);
+                }
+            }
+            // Change image pull policy
+            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectNode imagePulPolicyEnvVar = objectMapper.createObjectNode();
+            imagePulPolicyEnvVar.put("name", "STRIMZI_IMAGE_PULL_POLICY");
+            imagePulPolicyEnvVar.put("value", Environment.COMPONENTS_IMAGE_PULL_POLICY);
+            ((ArrayNode) containerNode.get("env")).add(imagePulPolicyEnvVar);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
