@@ -1,9 +1,9 @@
 Configures external node port listeners.
 
-[id='property-nodeport-listener-preferredAddressType-{context}']
-.`preferredAddressType`
+[id='property-nodeport-listener-preferredNodePortAddressType-{context}']
+.`preferredNodePortAddressType`
 
-Use the `preferredAddressType` property in your listener configuration to specify the first address type checked as the node address.
+Use the `preferredNodePortAddressType` property in your listener configuration to specify the first address type checked as the node address.
 This property is useful, for example, if your deployment does not have DNS support, or you only want to expose a broker internally through an internal DNS or IP address.
 If an address of this type is found, it is used.
 If the preferred address type is not found, Strimzi proceeds through the types in the xref:nodeport-listener-{context}[standard order of priority].
@@ -17,13 +17,14 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: nodeport
         tls: true
         authentication:
           type: tls
         configuration:
-          preferredAddressType: InternalDNS
+          preferredNodePortAddressType: InternalDNS
     # ...
   zookeeper:
     # ...

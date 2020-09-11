@@ -36,7 +36,9 @@ The following types of listener are supported:
 * *External listeners* for access outside of Kubernetes
 --
 +
-You can enable TLS encryption for listeners, as well as xref:security-configuration-authentication_{context}[authentication]. 
+You can enable TLS encryption for listeners, and configure xref:security-configuration-authentication_{context}[authentication].
++
+Internal listeners are specified using an `internal` type.
 +
 External listeners expose Kafka by specifying an external `type`:
 +

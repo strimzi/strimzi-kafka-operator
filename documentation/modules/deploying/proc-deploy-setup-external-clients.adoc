@@ -77,13 +77,13 @@ spec:
     listeners: <1>
     - name: external <2>
       port: 9094 <3>
-      type: ingress <4>
+      type: _LISTENER-TYPE_ <4>
       tls: true <5>
       authentication:
         type: tls <6>
       configuration:
         preferredNodePortAddressType: InternalDNS <7>
-        _advertized address overrides_ <8>
+        _bootstrap and broker service overrides_ <8>
         #...
       authorization: <9>
         type: simple
@@ -97,11 +97,10 @@ spec:
 <4> External listener type specified as `route`, `loadbalancer`, `nodeport` or `ingress`. An internal listener is specified as `internal`.
 <5> Enables TLS encryption on the listener. Default is `false`. TLS encryption is not required for `route` listeners.
 <6> Authentication specified as `tls`.
-<7> (Optional, for `nodeport` listeners only) Configuration to link:{BookURLUsing}#type-NodePortListenerConfiguration-reference[specify a preference for the first address type used by Strimzi as the node address^].
-<8> (Optional, but not applicable to `ingress` listeners) You can override the bootstrap and broker addresses advertised to clients.
-Strimzi automatically determines the addresses to advertise to clients.
+<7> (Optional, for `nodeport` listeners only) Configuration to link:{BookURLUsing}#type-GenericKafkaListenerConfiguration-reference[specify a preference for the first address type used by Strimzi as the node address^].
+<8> (Optional) Strimzi automatically determines the addresses to advertise to clients.
 The addresses are automatically assigned by Kubernetes.
-You can override link:{BookURLUsing}#con-common-configuration-listener-addresses-reference[listener advertised addresses^] if the infrastructure on which you are running Strimzi does not provide the right address.
+You can override link:{BookURLUsing}#type-GenericKafkaListenerConfiguration-reference[bootstrap and broker service addresses] if the infrastructure on which you are running Strimzi does not provide the right address.
 Validation is not performed on the overrides.
 The override configuration differs according to the listener type.
 For example, you can override hosts for `route`, DNS names or IP addresses for `loadbalancer`, and node ports for `nodeport`.
