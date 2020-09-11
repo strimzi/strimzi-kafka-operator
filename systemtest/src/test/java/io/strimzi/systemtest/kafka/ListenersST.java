@@ -484,7 +484,7 @@ public class ListenersST extends AbstractST {
                         .addNewGenericKafkaListener()
                             .withName("external")
                             .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
+                            .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(false)
                         .endGenericKafkaListener()
                     .endListeners()
