@@ -22,6 +22,7 @@ import io.strimzi.crdgenerator.annotations.Alternative;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.strimzi.crdgenerator.annotations.KubeVersion;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
@@ -34,10 +35,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -149,6 +153,7 @@ import static java.util.Collections.emptyMap;
  * >Additional restriction for CRDs</a>
  */
 public class CrdGenerator {
+    private final KubeVersion targetKubeVersion;
 
 
     // TODO CrdValidator
@@ -174,10 +179,19 @@ public class CrdGenerator {
     private int numErrors;
 
     CrdGenerator(ObjectMapper mapper) {
-        this(mapper, emptyMap());
+        this(KubeVersion.v1_11, mapper, emptyMap());
     }
 
     CrdGenerator(ObjectMapper mapper, Map<String, String> labels) {
+        this(KubeVersion.v1_11, mapper, emptyMap());
+    }
+
+    CrdGenerator(KubeVersion targetKubeVersion, ObjectMapper mapper) {
+        this(targetKubeVersion, mapper, emptyMap());
+    }
+
+    CrdGenerator(KubeVersion targetKubeVersion, ObjectMapper mapper, Map<String, String> labels) {
+        this.targetKubeVersion = targetKubeVersion;
         this.mapper = mapper;
         this.nf = mapper.getNodeFactory();
         this.labels = labels;
@@ -195,6 +209,7 @@ public class CrdGenerator {
                         "not the version of instances of the custom resource. " +
                         "It should almost certainly be apiextensions.k8s.io/${some-version}.");
             }
+            ApiVersion crdApiVersion = ApiVersion.parse(apiVersion.substring(apiVersion.indexOf("/") + 1));
             node.put("apiVersion", apiVersion)
                     .put("kind", "CustomResourceDefinition")
                     .putObject("metadata")
@@ -215,33 +230,129 @@ public class CrdGenerator {
                             LinkedHashMap::new)));
             }
 
-            node.set("spec", buildSpec(crd.spec(), crdClass));
+            node.set("spec", buildSpec(crdApiVersion, crd.spec(), crdClass));
         }
         mapper.writeValue(out, node);
     }
 
-    private ObjectNode buildSpec(Crd.Spec crd, Class<? extends CustomResource> crdClass) {
+    private ObjectNode buildSpec(ApiVersion crdApiVersion,
+                                 Crd.Spec crd, Class<? extends CustomResource> crdClass) {
+        if (!targetKubeVersion.supportsCrdApiVersion(crdApiVersion)) {
+            throw new RuntimeException("Kubernetes version " + targetKubeVersion + " doesn't support CustomResourceDefinition API at " + crdApiVersion);
+        }
         ObjectNode result = nf.objectNode();
         result.put("group", crd.group());
+
+        if (crdApiVersion.compareTo(ApiVersion.V1) < 0
+                && !crd.version().isEmpty()) {
+            result.put("version", crd.version());
+        }
+
         if (crd.versions().length != 0) {
             ArrayNode versions = nf.arrayNode();
             for (Crd.Spec.Version version : crd.versions()) {
                 ObjectNode versionNode = versions.addObject();
-                versionNode.put("name", version.name());
+                ApiVersion crApiVersion = ApiVersion.parse(version.name());
+                versionNode.put("name", crApiVersion.toString());
                 versionNode.put("served", version.served());
                 versionNode.put("storage", version.storage());
+                if (targetKubeVersion.supportsSchemaPerVersion()) {
+                    ObjectNode subresources = buildSubresources(crd, crApiVersion);
+                    if (subresources != null) {
+                        versionNode.set("subresources", subresources);
+                    }
+                    ArrayNode cols = buildAdditionalPrinterColumns(crd, crApiVersion);
+                    if (!cols.isEmpty()) {
+                        versionNode.set("additionalPrinterColumns", cols);
+                    }
+                    versionNode.set("schema", buildValidation(crdClass, crApiVersion));
+                }
+                // addn printer columns
             }
             result.set("versions", versions);
         }
 
-        if (!crd.version().isEmpty()) {
-            result.put("version", crd.version());
-        }
         result.put("scope", crd.scope());
         result.set("names", buildNames(crd.names()));
+
+        if (!targetKubeVersion.supportsSchemaPerVersion()) {
+            ArrayNode cols = buildAdditionalPrinterColumns(crd, null);
+            if (!cols.isEmpty()) {
+                result.set("additionalPrinterColumns", cols);
+            }
+
+            ObjectNode subresources = buildSubresources(crd, null);
+            if (subresources != null) {
+                result.set("subresources", subresources);
+            }
+            result.set("validation", buildValidation(crdClass, null));
+        }
+        return result;
+    }
+
+    private ObjectNode buildSubresources(Crd.Spec crd, ApiVersion crApiVersion) {
+        ObjectNode subresources;
+        if (crd.subresources().status().length != 0) {
+            subresources = nf.objectNode();
+            ObjectNode status = buildStatus(crd, crApiVersion);
+            if (status != null) {
+                subresources.set("status", status);
+            }
+
+            ObjectNode scaleNode = buildScale(crd, crApiVersion);
+            if (scaleNode != null) {
+                subresources.set("scale", scaleNode);
+            }
+        } else {
+            subresources = null;
+        }
+        return subresources;
+    }
+
+    private ObjectNode buildStatus(Crd.Spec crd, ApiVersion crApiVersion) {
+        ObjectNode status;
+        int length = Arrays.stream(crd.subresources().status())
+                .filter(st -> ApiVersionRange.parse(st.apiVersion()).contains(crApiVersion))
+                .collect(Collectors.toList()).size();
+        if (length == 1) {
+            status = nf.objectNode();
+        } else if (length > 1)  {
+            throw new RuntimeException("Each custom resource definition can have only one status sub-resource.");
+        } else {
+            status = null;
+        }
+        return status;
+    }
+
+    private ObjectNode buildScale(Crd.Spec crd, ApiVersion crApiVersion) {
+        ObjectNode scaleNode;
+        List<Crd.Spec.Subresources.Scale> scale1 = Arrays.stream(crd.subresources().scale())
+                .filter(sc -> ApiVersionRange.parse(sc.apiVersion()).contains(crApiVersion))
+                .collect(Collectors.toList());
+        if (scale1.size() == 1) {
+            scaleNode = nf.objectNode();
+            Crd.Spec.Subresources.Scale scale = scale1.get(0);
+
+            scaleNode.put("specReplicasPath", scale.specReplicasPath());
+            scaleNode.put("statusReplicasPath", scale.statusReplicasPath());
+
+            if (!scale.labelSelectorPath().isEmpty()) {
+                scaleNode.put("labelSelectorPath", scale.labelSelectorPath());
+            }
+        } else if (scale1.size() > 1)  {
+            throw new RuntimeException("Each custom resource definition can have only one scale sub-resource.");
+        } else {
+            scaleNode = null;
+        }
+        return scaleNode;
+    }
+
+    private ArrayNode buildAdditionalPrinterColumns(Crd.Spec crd, ApiVersion crdApiVersion) {
+        ArrayNode cols = nf.arrayNode();
         if (crd.additionalPrinterColumns().length != 0) {
-            ArrayNode cols = nf.arrayNode();
-            for (Crd.Spec.AdditionalPrinterColumn col : crd.additionalPrinterColumns()) {
+            for (Crd.Spec.AdditionalPrinterColumn col : Arrays.stream(crd.additionalPrinterColumns())
+                    .filter(col -> ApiVersionRange.parse(col.apiVersion()).contains(crdApiVersion))
+                    .collect(Collectors.toList())) {
                 ObjectNode colNode = cols.addObject();
                 colNode.put("name", col.name());
                 colNode.put("description", col.description());
@@ -254,37 +365,8 @@ public class CrdGenerator {
                     colNode.put("format", col.format());
                 }
             }
-            result.set("additionalPrinterColumns", cols);
         }
-        if (crd.subresources().status().length != 0) {
-            ObjectNode subresources = nf.objectNode();
-
-            if (crd.subresources().status().length == 1) {
-                subresources.set("status", nf.objectNode());
-            } else if (crd.subresources().status().length > 1)  {
-                throw new RuntimeException("Each custom resource definition can have only one status sub-resource.");
-            }
-
-            if (crd.subresources().scale().length == 1) {
-                Crd.Spec.Subresources.Scale scale = crd.subresources().scale()[0];
-
-                ObjectNode scaleNode = nf.objectNode();
-                scaleNode.put("specReplicasPath", scale.specReplicasPath());
-                scaleNode.put("statusReplicasPath", scale.statusReplicasPath());
-
-                if (!scale.labelSelectorPath().isEmpty()) {
-                    scaleNode.put("labelSelectorPath", scale.labelSelectorPath());
-                }
-
-                subresources.set("scale", scaleNode);
-            } else if (crd.subresources().scale().length > 1)  {
-                throw new RuntimeException("Each custom resource definition can have only one scale sub-resource.");
-            }
-
-            result.set("subresources", subresources);
-        }
-        result.set("validation", buildValidation(crdClass));
-        return result;
+        return cols;
     }
 
     private JsonNode buildNames(Crd.Spec.Names names) {
@@ -313,37 +395,37 @@ public class CrdGenerator {
         return result;
     }
 
-    private ObjectNode buildValidation(Class<? extends CustomResource> crdClass) {
+    private ObjectNode buildValidation(Class<? extends CustomResource> crdClass, ApiVersion crdApiVersion) {
         ObjectNode result = nf.objectNode();
         // OpenShift Origin 3.10-rc0 doesn't like the `type: object` in schema root
-        result.set("openAPIV3Schema", buildObjectSchema(crdClass, crdClass, false));
+        result.set("openAPIV3Schema", buildObjectSchema(crdApiVersion, crdClass, crdClass, false));
         return result;
     }
 
-    private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass) {
-        return buildObjectSchema(annotatedElement, crdClass, true);
+    private ObjectNode buildObjectSchema(ApiVersion crdApiVersion, AnnotatedElement annotatedElement, Class<?> crdClass) {
+        return buildObjectSchema(crdApiVersion, annotatedElement, crdClass, true);
     }
 
-    private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
+    private ObjectNode buildObjectSchema(ApiVersion crdApiVersion, AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
 
         ObjectNode result = nf.objectNode();
 
-        buildObjectSchema(result, crdClass, printType);
+        buildObjectSchema(crdApiVersion, result, crdClass, printType);
         return result;
     }
 
-    private void buildObjectSchema(ObjectNode result, Class<?> crdClass, boolean printType) {
+    private void buildObjectSchema(ApiVersion crdApiVersion, ObjectNode result, Class<?> crdClass, boolean printType) {
         checkClass(crdClass);
         if (printType) {
             result.put("type", "object");
         }
 
-        result.set("properties", buildSchemaProperties(crdClass));
+        result.set("properties", buildSchemaProperties(crdApiVersion, crdClass));
         ArrayNode oneOf = buildSchemaOneOf(crdClass);
         if (oneOf != null) {
             result.set("oneOf", oneOf);
         }
-        ArrayNode required = buildSchemaRequired(crdClass);
+        ArrayNode required = buildSchemaRequired(crdApiVersion, crdClass);
         if (required.size() > 0) {
             result.set("required", required);
         }
@@ -443,20 +525,20 @@ public class CrdGenerator {
         }
     }
 
-    private Collection<Property> unionOfSubclassProperties(Class<?> crdClass) {
+    private Collection<Property> unionOfSubclassProperties(ApiVersion crApiVersion, Class<?> crdClass) {
         TreeMap<String, Property> result = new TreeMap<>();
         for (Class subtype : Property.subtypes(crdClass)) {
-            result.putAll(properties(subtype));
+            result.putAll(properties(crApiVersion, subtype));
         }
-        result.putAll(properties(crdClass));
+        result.putAll(properties(crApiVersion, crdClass));
         JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
         return sortedProperties(order != null ? order.value() : null, result).values();
     }
 
-    private ArrayNode buildSchemaRequired(Class<?> crdClass) {
+    private ArrayNode buildSchemaRequired(ApiVersion crApiVersion, Class<?> crdClass) {
         ArrayNode result = nf.arrayNode();
 
-        for (Property property : unionOfSubclassProperties(crdClass)) {
+        for (Property property : unionOfSubclassProperties(crApiVersion, crdClass)) {
             if (property.isAnnotationPresent(JsonProperty.class)
                     && property.getAnnotation(JsonProperty.class).required()
                 || property.isDiscriminator()) {
@@ -466,19 +548,22 @@ public class CrdGenerator {
         return result;
     }
 
-    private ObjectNode buildSchemaProperties(Class<?> crdClass) {
+    private ObjectNode buildSchemaProperties(ApiVersion crdApiVersion, Class<?> crdClass) {
         ObjectNode properties = nf.objectNode();
-        for (Property property : unionOfSubclassProperties(crdClass)) {
+        for (Property property : unionOfSubclassProperties(crdApiVersion, crdClass)) {
             if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
-                List<Property> alternatives = property.getAlternatives();
-                if (alternatives.size() < 2) {
+                List<Property> alternatives = property.getAlternatives(crdApiVersion);
+                if (alternatives.size() == 1) {
+                    properties.set(property.getName(), buildSchema(crdApiVersion, alternatives.get(0)));
+                } else if (alternatives.size() == 0) {
                     err("Class " + property.getType().getType().getName() + " is annotated with " +
                             "@" + Alternation.class.getSimpleName() + " but has less than two " +
                             "@" + Alternative.class.getSimpleName() + "-annotated properties");
+                } else {
+                    buildMultiTypeProperty(crdApiVersion, properties, property, alternatives);
                 }
-                buildMultiTypeProperty(properties, property, alternatives);
             } else {
-                buildProperty(properties, property);
+                buildProperty(crdApiVersion, properties, property);
             }
         }
         return properties;
@@ -486,11 +571,11 @@ public class CrdGenerator {
 
 
 
-    private void buildMultiTypeProperty(ObjectNode properties, Property property, List<Property> alternatives) {
+    private void buildMultiTypeProperty(ApiVersion crdApiVersion, ObjectNode properties, Property property, List<Property> alternatives) {
         ArrayNode oneOfAlternatives = nf.arrayNode(alternatives.size());
 
         for (Property alternative : alternatives)   {
-            oneOfAlternatives.add(buildSchema(alternative));
+            oneOfAlternatives.add(buildSchema(crdApiVersion, alternative));
         }
 
         ObjectNode oneOf = nf.objectNode();
@@ -498,11 +583,11 @@ public class CrdGenerator {
         properties.set(property.getName(), oneOf);
     }
 
-    private void buildProperty(ObjectNode properties, Property property) {
-        properties.set(property.getName(), buildSchema(property));
+    private void buildProperty(ApiVersion crdApiVersion, ObjectNode properties, Property property) {
+        properties.set(property.getName(), buildSchema(crdApiVersion, property));
     }
 
-    private ObjectNode buildSchema(Property property) {
+    private ObjectNode buildSchema(ApiVersion crdApiVersion, Property property) {
         PropertyType propertyType = property.getType();
         Class<?> returnType = propertyType.getType();
         final ObjectNode schema;
@@ -512,28 +597,28 @@ public class CrdGenerator {
             System.err.println("It's OK");
             schema = nf.objectNode();
             schema.put("type", "object");
-            schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(property, new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1])));
+            schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(crdApiVersion, property, new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1])));
         } else if (Schema.isJsonScalarType(returnType)
                 || Map.class.equals(returnType)) {            
-            schema = addSimpleTypeConstraints(buildBasicTypeSchema(property, returnType), property);
+            schema = addSimpleTypeConstraints(crdApiVersion, buildBasicTypeSchema(property, returnType), property);
         } else if (returnType.isArray() || List.class.equals(returnType)) {
-            schema = buildArraySchema(property, property.getType());
+            schema = buildArraySchema(crdApiVersion, property, property.getType());
         } else {
-            schema = buildObjectSchema(property, returnType);
+            schema = buildObjectSchema(crdApiVersion, property, returnType);
         }
-        addDescription(schema, property);
+        addDescription(crdApiVersion, schema, property);
         return schema;
     }
 
-    private ObjectNode buildArraySchema(Property property, PropertyType propertyType) {
+    private ObjectNode buildArraySchema(ApiVersion crdApiVersion, Property property, PropertyType propertyType) {
         int arrayDimension = propertyType.arrayDimension();
         ObjectNode result = nf.objectNode();
         ObjectNode itemResult = result;
         for (int i = 0; i < arrayDimension; i++) {
             itemResult.put("type", "array");
-            MinimumItems minimumItems = property.getAnnotation(MinimumItems.class);
+            MinimumItems minimumItems = selectVersion(crdApiVersion, property, MinimumItems.class);
             if (minimumItems != null) {
-                itemResult.put("minItems", minimumItems.value());
+                result.put("minimum", minimumItems.value());
             }
             itemResult = itemResult.putObject("items");
         }
@@ -548,7 +633,7 @@ public class CrdGenerator {
         } else if (Map.class.equals(elementType)) {
             itemResult.put("type", "object");
         } else  {
-            buildObjectSchema(itemResult, elementType, true);
+            buildObjectSchema(crdApiVersion, itemResult, elementType, true);
         }
         return result;
     }
@@ -569,32 +654,34 @@ public class CrdGenerator {
         return result;
     }
 
-    private void addDescription(ObjectNode result, AnnotatedElement element) {
-        if (element.isAnnotationPresent(Description.class)) {
-            Description description = element.getAnnotation(Description.class);
+    private void addDescription(ApiVersion crApiVersion, ObjectNode result, AnnotatedElement element) {
+        Description description = selectVersion(crApiVersion, element, Description.class);
+        if (description != null) {
             result.put("description", DocGenerator.getDescription(description));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private ObjectNode addSimpleTypeConstraints(ObjectNode result, Property property) {
+    private ObjectNode addSimpleTypeConstraints(ApiVersion crApiVersion, ObjectNode result, Property property) {
 
         Example example = property.getAnnotation(Example.class);
+        // TODO make support verions
         if (example != null) {
             result.put("example", example.value());
         }
 
-        Minimum minimum = property.getAnnotation(Minimum.class);
+        Minimum minimum = selectVersion(crApiVersion, property, Minimum.class);
         if (minimum != null) {
             result.put("minimum", minimum.value());
         }
-        Maximum maximum = property.getAnnotation(Maximum.class);
+        Maximum maximum = selectVersion(crApiVersion, property, Maximum.class);
         if (maximum != null) {
             result.put("maximum", maximum.value());
         }
-        Pattern pattern = property.getAnnotation(Pattern.class);
-        if (pattern != null) {
-            result.put("pattern", pattern.value());
+
+        Pattern first = selectVersion(crApiVersion, property, Pattern.class);
+        if (first != null) {
+            result.put("pattern", first.value());
         }
 
         if (property.getType().isEnum()) {
@@ -616,6 +703,52 @@ public class CrdGenerator {
         }*/
 
         return result;
+    }
+
+    private <T extends Annotation> T selectVersion(ApiVersion crApiVersion, AnnotatedElement element, Class<T> cls) {
+        T[] wrapperAnnotation = element.getAnnotationsByType(cls);
+        if (wrapperAnnotation == null) {
+            return null;
+        }
+        checkDisjointVersions(wrapperAnnotation, cls);
+        return Arrays.stream(wrapperAnnotation)
+                .filter(element1 -> apiVersion(element1, cls).contains(crApiVersion))
+                .findFirst().orElse(null);
+    }
+
+    private static <T> void checkDisjointVersions(T[] wrapperAnnotation, Class<T> annotationClass) {
+        long count = Arrays.stream(wrapperAnnotation)
+                .map(element -> apiVersion(element, annotationClass)).count();
+        long distinctCount = Arrays.stream(wrapperAnnotation)
+                .map(element -> apiVersion(element, annotationClass)).distinct().count();
+        if (count != distinctCount) {
+            throw new RuntimeException("Duplicate version ranges");
+        }
+        Arrays.stream(wrapperAnnotation)
+                .map(element -> apiVersion(element, annotationClass))
+                .flatMap(x -> Arrays.stream(wrapperAnnotation)
+                        .map(y -> apiVersion(y, annotationClass))
+                        .filter(y -> !y.equals(x))
+                        .map(y -> new ApiVersionRange[]{x, y}))
+                .forEach(pair -> {
+                    if (pair[0].intersects(pair[1])) {
+                        throw new RuntimeException(pair[0] + " and " + pair[1] + " are not disjoint");
+                    }
+                });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> ApiVersionRange apiVersion(T element, Class<T> annotationClass) {
+        try {
+            Class<? extends Annotation> elementClass = (Class) element.getClass();
+            Method apiVersionsMethod = annotationClass.getDeclaredMethod("apiVersions");
+            String apiVersions = (String) apiVersionsMethod.invoke(element);
+            return ApiVersionRange.parse(apiVersions);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        } catch (ClassCastException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private <E extends Enum<E>> ArrayNode enumCaseArray(E[] values) {
@@ -662,6 +795,7 @@ public class CrdGenerator {
         boolean yaml = false;
         Map<String, String> labels = new LinkedHashMap<>();
         Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
+        KubeVersion targetKubeVersion = null;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("--")) {
@@ -674,7 +808,13 @@ public class CrdGenerator {
                         argParseErr("Invalid --label " + args[i]);
                     }
                     labels.put(args[i].substring(0, index), args[i].substring(index + 1));
-
+                } else if (arg.equals("--target-kube")) {
+                    if (targetKubeVersion != null) {
+                        argParseErr("--target-kube can only be specified once");
+                    } else if (i >= arg.length() - 1) {
+                        argParseErr("--target-kube needs an argument");
+                    }
+                    targetKubeVersion = KubeVersion.parse(args[++i]);
                 } else {
                     throw new RuntimeException("Unsupported command line option " + arg);
                 }
@@ -690,8 +830,11 @@ public class CrdGenerator {
                 }
             }
         }
+        if (targetKubeVersion == null) {
+            targetKubeVersion = KubeVersion.v1_11;
+        }
 
-        CrdGenerator generator = new CrdGenerator(yaml ?
+        CrdGenerator generator = new CrdGenerator(targetKubeVersion, yaml ?
                 new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true).configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false) :
                 new ObjectMapper(), labels);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {

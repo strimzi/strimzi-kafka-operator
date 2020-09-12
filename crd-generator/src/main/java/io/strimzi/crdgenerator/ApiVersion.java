@@ -13,6 +13,12 @@ import static java.lang.Short.parseShort;
 
 public class ApiVersion implements Comparable<ApiVersion> {
 
+    public static final Pattern PATTERN = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
+    public static final ApiVersion V1Alpha1 = parse("v1alpha1");
+    public static final ApiVersion V1Beta1 = parse("v1beta1");
+    public static final ApiVersion V1 = parse("v1");
+
+
     private final short major;
     private final short ab;
     private final short minor;
@@ -27,8 +33,7 @@ public class ApiVersion implements Comparable<ApiVersion> {
     }
 
     private static Matcher matcher(String apiVersion) {
-        Pattern p = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
-        return p.matcher(apiVersion);
+        return PATTERN.matcher(apiVersion);
     }
 
     public static boolean isVersion(String apiVersion) {

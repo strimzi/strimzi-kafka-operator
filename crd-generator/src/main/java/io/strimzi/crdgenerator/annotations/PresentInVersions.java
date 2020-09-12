@@ -9,8 +9,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+//@Repeatable(PresentInVersions.VersionedMaximum.class)
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
-public @interface VersionedDescription {
-    Description[] value();
+@Target({ElementType.METHOD, ElementType.FIELD})
+public @interface PresentInVersions {
+    String value();
+
+//    @Retention(RetentionPolicy.RUNTIME)
+//    @Target({ElementType.METHOD, ElementType.FIELD})
+//    public @interface VersionedMaximum {
+//        PresentInVersions[] value();
+//    }
 }

@@ -5,6 +5,7 @@
 package io.strimzi.crdgenerator.annotations;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -86,6 +87,7 @@ public @interface Crd {
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          * @see #versions()
          */
+        @Deprecated
         String version() default "";
 
         /**
@@ -122,6 +124,7 @@ public @interface Crd {
             Scale[] scale() default {};
 
             @interface Status {
+                String apiVersion() default "all";
             }
 
             /**
@@ -129,6 +132,7 @@ public @interface Crd {
              * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#customresourcesubresourcescale-v1beta1-apiextensions-k8s-io">Kubernetes 1.18 API documtation</a>
              */
             @interface Scale {
+                String apiVersion() default "all";
                 String specReplicasPath();
                 String statusReplicasPath();
                 String labelSelectorPath() default "";
@@ -146,6 +150,8 @@ public @interface Crd {
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcecolumndefinition-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         @interface AdditionalPrinterColumn {
+            /** The api version range in which this appears */
+            String apiVersion() default "all";
             /** @return JSON path into the CR for the value to show */
             String jsonPath();
             /** @return The description of the column */

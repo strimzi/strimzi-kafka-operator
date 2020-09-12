@@ -4,7 +4,10 @@
  */
 package io.strimzi.crdgenerator;
 
+import java.util.Objects;
+
 public class ApiVersionRange {
+    public static final ApiVersionRange EMPTY = new ApiVersionRange(null, null);
     private final ApiVersion from;
     private final ApiVersion to;
 
@@ -21,7 +24,9 @@ public class ApiVersionRange {
     }
 
     public static ApiVersionRange parse(String s) {
-        if ("all".equals(s)) {
+        if ("empty".equals(s)) {
+            return EMPTY;
+        } else if ("all".equals(s)) {
             // all
             return new ApiVersionRange(null, null);
         } else if (ApiVersion.isVersion(s)) {
@@ -54,17 +59,48 @@ public class ApiVersionRange {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ApiVersionRange that = (ApiVersionRange) o;
+        return Objects.equals(from, that.from) &&
+                Objects.equals(to, that.to);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(from, to);
+    }
+
     public boolean contains(ApiVersion apiVersion) {
-        return from == null || from.compareTo(apiVersion) <= 0 && (to == null || to.compareTo(apiVersion) >= 0);
+        return this == EMPTY || apiVersion == null ? false : from == null || from.compareTo(apiVersion) <= 0 && (to == null || to.compareTo(apiVersion) >= 0);
     }
 
     public boolean intersects(ApiVersionRange other) {
-        if (from == null) {
+        if (this == EMPTY) {
+            return false;
+        } else if (from == null) {
             return true;
         } else if (to == null) {
             return from.compareTo(other.from) <= 0;
         } else {
             return !(to.compareTo(other.from) < 0 || (other.to != null && from.compareTo(other.to) > 0));
+        }
+    }
+
+    @Override
+    public String toString() {
+        if (this == EMPTY) {
+            return "empty";
+        } else if (from == null) {
+            return "all";
+        } else if (to == null) {
+            return from + "+";
+        } else if (from.equals(to)) {
+            return from.toString();
+        } else {
+            return from + "-" + to;
         }
     }
 }

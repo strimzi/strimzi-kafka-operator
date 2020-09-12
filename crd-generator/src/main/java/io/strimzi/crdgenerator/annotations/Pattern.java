@@ -10,10 +10,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Repeatable(VersionedPattern.class)
+@Repeatable(Pattern.VersionedPattern.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Pattern {
     String value();
     String apiVersions() default "all";
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.METHOD, ElementType.FIELD})
+    public @interface VersionedPattern {
+        Pattern[] value();
+    }
+
 }

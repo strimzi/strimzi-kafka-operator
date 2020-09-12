@@ -6,6 +6,7 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.strimzi.crdgenerator.annotations.KubeVersion;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -48,5 +49,14 @@ public class CrdGeneratorTest {
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
         assertEquals(CrdTestUtils.readResource("simpleTestHelmMetadata.yaml"), s);
+    }
+
+    @Test
+    public void versionedTest() throws IOException {
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.v1_16, new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
+        StringWriter w = new StringWriter();
+        crdGenerator.generate(VersionedExampleCrd.class, w);
+        String s = w.toString();
+        assertEquals(CrdTestUtils.readResource("versionedTest.yaml"), s);
     }
 }

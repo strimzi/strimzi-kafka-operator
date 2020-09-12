@@ -85,13 +85,13 @@ public class DocGenerator {
     private void usedIn(Class<?> cls, Map<Class<?>, Set<Class<?>>> usedIn) {
         Set<Property> memorableProperties = new HashSet<>();
 
-        for (Property property : properties(cls).values()) {
+        for (Property property : properties(null, cls).values()) {
             if (property.isAnnotationPresent(KubeLink.class)) {
                 continue;
             }
 
             if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
-                memorableProperties.addAll(property.getAlternatives());
+                memorableProperties.addAll(property.getAlternatives(null));
             } else {
                 memorableProperties.add(property);
             }
@@ -145,7 +145,7 @@ public class DocGenerator {
         out.append("|====").append(NL);
         out.append("|Property");
         String gunk = "1.2+<.<";
-        final Map<String, Property> properties = properties(cls);
+        final Map<String, Property> properties = properties(null, cls);
         int maxLen = computePadding(gunk, properties);
         appendRepeated(' ', maxLen - "Property".length() + 1);
         out.append("|Description");
@@ -175,7 +175,7 @@ public class DocGenerator {
             addExternalUrl(property, kubeLink, externalUrl);
 
             // Get the OneOfType alternatives
-            List<Property> alternatives = property.getAlternatives();
+            List<Property> alternatives = property.getAlternatives(null);
 
             // Add the types to the `types` array to also generate the docs for the type itself
             if (alternatives.size() > 0) {

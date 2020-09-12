@@ -242,8 +242,8 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     }
 
     @Deprecated
-    @Description(value = "An example int property", apiVerions = "v1alpha1")
-    @Description(value = "An example int property", apiVerions = "v1alpha1")
+    @Description(value = "An example int property", apiVersions = "v1alpha1")
+    @Description(value = "An example int property", apiVersions = "v1alpha1")
     @Example("42")
     @Minimum(42)
     public int getVersionedIntProperty() {

@@ -10,10 +10,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Repeatable(VersionedDescription.class)
+@Repeatable(Description.VersionedDescription.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 public @interface Description {
     String value();
-    String apiVerions() default "all";
+    String apiVersions() default "all";
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+    public @interface VersionedDescription {
+        Description[] value();
+    }
+
 }
