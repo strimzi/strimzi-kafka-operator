@@ -6,7 +6,6 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.strimzi.crdgenerator.annotations.KubeVersion;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

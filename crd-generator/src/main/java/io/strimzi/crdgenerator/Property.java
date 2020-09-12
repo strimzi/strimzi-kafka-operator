@@ -141,7 +141,7 @@ class Property implements AnnotatedElement {
         if (annotation == null) {
             return true;
         } else {
-            return ApiVersionRange.parse(annotation.value()).contains(crApiVersion);
+            return ApiVersion.parseRange(annotation.value()).contains(crApiVersion);
         }
     }
 
@@ -318,7 +318,7 @@ class Property implements AnnotatedElement {
                 Property.properties(crApiVersion, getType().getType()).values().stream()
                         .filter(p -> {
                             Alternative annotation = p.getAnnotation(Alternative.class);
-                            return annotation != null && ApiVersionRange.parse(annotation.apiVersion()).contains(crApiVersion);
+                            return annotation != null && ApiVersion.parseRange(annotation.apiVersion()).contains(crApiVersion);
                         })
                         .collect(Collectors.toList());
         return alternatives;

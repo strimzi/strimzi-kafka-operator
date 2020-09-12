@@ -22,7 +22,6 @@ import io.strimzi.crdgenerator.annotations.Alternative;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
-import io.strimzi.crdgenerator.annotations.KubeVersion;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
@@ -312,7 +311,7 @@ public class CrdGenerator {
     private ObjectNode buildStatus(Crd.Spec crd, ApiVersion crApiVersion) {
         ObjectNode status;
         int length = Arrays.stream(crd.subresources().status())
-                .filter(st -> ApiVersionRange.parse(st.apiVersion()).contains(crApiVersion))
+                .filter(st -> ApiVersion.parseRange(st.apiVersion()).contains(crApiVersion))
                 .collect(Collectors.toList()).size();
         if (length == 1) {
             status = nf.objectNode();
@@ -327,7 +326,7 @@ public class CrdGenerator {
     private ObjectNode buildScale(Crd.Spec crd, ApiVersion crApiVersion) {
         ObjectNode scaleNode;
         List<Crd.Spec.Subresources.Scale> scale1 = Arrays.stream(crd.subresources().scale())
-                .filter(sc -> ApiVersionRange.parse(sc.apiVersion()).contains(crApiVersion))
+                .filter(sc -> ApiVersion.parseRange(sc.apiVersion()).contains(crApiVersion))
                 .collect(Collectors.toList());
         if (scale1.size() == 1) {
             scaleNode = nf.objectNode();
@@ -351,7 +350,7 @@ public class CrdGenerator {
         ArrayNode cols = nf.arrayNode();
         if (crd.additionalPrinterColumns().length != 0) {
             for (Crd.Spec.AdditionalPrinterColumn col : Arrays.stream(crd.additionalPrinterColumns())
-                    .filter(col -> ApiVersionRange.parse(col.apiVersion()).contains(crdApiVersion))
+                    .filter(col -> ApiVersion.parseRange(col.apiVersion()).contains(crdApiVersion))
                     .collect(Collectors.toList())) {
                 ObjectNode colNode = cols.addObject();
                 colNode.put("name", col.name());
@@ -729,7 +728,7 @@ public class CrdGenerator {
                 .flatMap(x -> Arrays.stream(wrapperAnnotation)
                         .map(y -> apiVersion(y, annotationClass))
                         .filter(y -> !y.equals(x))
-                        .map(y -> new ApiVersionRange[]{x, y}))
+                        .map(y -> new VersionRange[]{x, y}))
                 .forEach(pair -> {
                     if (pair[0].intersects(pair[1])) {
                         throw new RuntimeException(pair[0] + " and " + pair[1] + " are not disjoint");
@@ -738,12 +737,12 @@ public class CrdGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> ApiVersionRange apiVersion(T element, Class<T> annotationClass) {
+    private static <T> VersionRange apiVersion(T element, Class<T> annotationClass) {
         try {
             Class<? extends Annotation> elementClass = (Class) element.getClass();
             Method apiVersionsMethod = annotationClass.getDeclaredMethod("apiVersions");
             String apiVersions = (String) apiVersionsMethod.invoke(element);
-            return ApiVersionRange.parse(apiVersions);
+            return ApiVersion.parseRange(apiVersions);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         } catch (ClassCastException e) {

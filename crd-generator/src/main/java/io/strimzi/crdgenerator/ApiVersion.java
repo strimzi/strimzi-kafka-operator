@@ -11,13 +11,16 @@ import java.util.regex.Pattern;
 
 import static java.lang.Short.parseShort;
 
+/**
+ * Represents the version of a Kubernetes API, for example {@code v1alpha1} or {@code v2}.
+ * These version numbers are comparable, so {@code v1alpha1 < v1beta1 < v1 < v2alpha1} etc.
+ */
 public class ApiVersion implements Comparable<ApiVersion> {
 
     public static final Pattern PATTERN = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
     public static final ApiVersion V1Alpha1 = parse("v1alpha1");
     public static final ApiVersion V1Beta1 = parse("v1beta1");
     public static final ApiVersion V1 = parse("v1");
-
 
     private final short major;
     private final short ab;
@@ -63,6 +66,20 @@ public class ApiVersion implements Comparable<ApiVersion> {
             minor = 0;
         }
         return new ApiVersion(major, ab, minor);
+    }
+
+    public static VersionRange<ApiVersion> parseRange(String s) {
+        return VersionRange.parse(s, new VersionRange.VersionParser<ApiVersion>() {
+            @Override
+            public ApiVersion parse(String version) throws IllegalArgumentException {
+                return ApiVersion.parse(version);
+            }
+
+            @Override
+            public boolean isValid(String version) {
+                return ApiVersion.isVersion(version);
+            }
+        });
     }
 
     @Override

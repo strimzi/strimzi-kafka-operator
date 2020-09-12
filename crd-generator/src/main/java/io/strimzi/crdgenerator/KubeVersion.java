@@ -2,15 +2,17 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.crdgenerator.annotations;
+package io.strimzi.crdgenerator;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.strimzi.crdgenerator.ApiVersion;
-
 import static java.lang.Short.parseShort;
 
+/**
+ * Represents a Kubernetes version number and embeds some knowledge of the features available in
+ * different Kubernetes versions.
+ */
 public class KubeVersion implements Comparable<KubeVersion> {
 
     public static final KubeVersion v1_11 = new KubeVersion((short) 1, (short) 11);
@@ -31,6 +33,10 @@ public class KubeVersion implements Comparable<KubeVersion> {
             throw new IllegalArgumentException("Invalid kube version");
         }
         return new KubeVersion(parseShort(matcher.group(1)), parseShort(matcher.group(2)));
+    }
+
+    public static VersionRange<KubeVersion> parseRange(String range) {
+        return VersionRange.parse(range, KubeVersion::parse);
     }
 
     @Override
