@@ -255,6 +255,7 @@ public class ModelUtils {
             model.templateSecurityContext = pod.getSecurityContext();
             model.templatePodPriorityClassName = pod.getPriorityClassName();
             model.templatePodSchedulerName = pod.getSchedulerName();
+            model.templatePodHostAliases = pod.getHostAliases();
         }
     }
 

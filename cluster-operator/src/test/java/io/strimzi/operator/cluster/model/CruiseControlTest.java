@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
@@ -73,6 +75,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -457,6 +460,15 @@ public class CruiseControlTest {
                 .withValue("value1")
                 .build());
 
+        HostAlias hostAlias1 = new HostAliasBuilder()
+                .withHostnames("my-host-1", "my-host-2")
+                .withIp("192.168.1.86")
+                .build();
+        HostAlias hostAlias2 = new HostAliasBuilder()
+                .withHostnames("my-host-3")
+                .withIp("192.168.1.87")
+                .build();
+
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewCruiseControl()
@@ -475,6 +487,7 @@ public class CruiseControlTest {
                                 .endMetadata()
                                 .withNewPriorityClassName("top-priority")
                                 .withNewSchedulerName("my-scheduler")
+                                .withHostAliases(hostAlias1, hostAlias2)
                                 .withAffinity(affinity)
                                 .withTolerations(tolerations)
                             .endPod()
@@ -505,6 +518,7 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
 
         // Check Service
         svcLabels.putAll(expectedLabels());

@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -249,6 +250,7 @@ public abstract class AbstractModel {
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
+    protected List<HostAlias> templatePodHostAliases;
     protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
@@ -907,6 +909,7 @@ public abstract class AbstractModel {
                             .withSecurityContext(securityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
+                            .withHostAliases(templatePodHostAliases)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -955,6 +958,7 @@ public abstract class AbstractModel {
                             .withSecurityContext(templateSecurityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName)
+                            .withHostAliases(templatePodHostAliases)
                         .endSpec()
                     .endTemplate()
                 .endSpec()

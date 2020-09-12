@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -94,6 +96,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -1575,6 +1578,15 @@ public class KafkaClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l17", "v17", "l18", "v18");
         Map<String, String> pdbAnots = TestUtils.map("a17", "v17", "a18", "v18");
 
+        HostAlias hostAlias1 = new HostAliasBuilder()
+                        .withHostnames("my-host-1", "my-host-2")
+                        .withIp("192.168.1.86")
+                        .build();
+        HostAlias hostAlias2 = new HostAliasBuilder()
+                        .withHostnames("my-host-3")
+                        .withIp("192.168.1.87")
+                        .build();
+
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
@@ -1601,6 +1613,7 @@ public class KafkaClusterTest {
                                 .endMetadata()
                                 .withNewPriorityClassName("top-priority")
                                 .withNewSchedulerName("my-scheduler")
+                                .withHostAliases(hostAlias1, hostAlias2)
                             .endPod()
                             .withNewBootstrapService()
                                 .withNewMetadata()
@@ -1660,6 +1673,7 @@ public class KafkaClusterTest {
         assertThat(sts.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
 
         // Check Service
         Service svc = kc.generateService();

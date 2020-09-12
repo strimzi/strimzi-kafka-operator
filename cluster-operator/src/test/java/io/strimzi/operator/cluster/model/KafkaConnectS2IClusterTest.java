@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -69,9 +71,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectS2IClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
@@ -501,6 +504,15 @@ public class KafkaConnectS2IClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
+        HostAlias hostAlias1 = new HostAliasBuilder()
+                .withHostnames("my-host-1", "my-host-2")
+                .withIp("192.168.1.86")
+                .build();
+        HostAlias hostAlias2 = new HostAliasBuilder()
+                .withHostnames("my-host-3")
+                .withIp("192.168.1.87")
+                .build();
+
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -517,6 +529,7 @@ public class KafkaConnectS2IClusterTest {
                             .endMetadata()
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
+                            .withHostAliases(hostAlias1, hostAlias2)
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -545,6 +558,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
 
         // Check Service
         Service svc = kc.generateService();

@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -52,6 +54,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaMirrorMakerClusterTest {
@@ -463,6 +466,15 @@ public class KafkaMirrorMakerClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> pdbAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
+        HostAlias hostAlias1 = new HostAliasBuilder()
+                .withHostnames("my-host-1", "my-host-2")
+                .withIp("192.168.1.86")
+                .build();
+        HostAlias hostAlias2 = new HostAliasBuilder()
+                .withHostnames("my-host-3")
+                .withIp("192.168.1.87")
+                .build();
+
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -479,6 +491,7 @@ public class KafkaMirrorMakerClusterTest {
                             .endMetadata()
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
+                            .withHostAliases(hostAlias1, hostAlias2)
                         .endPod()
                         .withNewPodDisruptionBudget()
                             .withNewMetadata()
@@ -501,6 +514,7 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
