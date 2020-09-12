@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.junit.jupiter.api.Test;
@@ -52,5 +53,90 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
     public void testReplaceRootLogger() {
         KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), brokerId);
         assertThat(klcd.getDiffSize(), is(0));
+    }
+
+    @Test
+    public void testDiffUsingLoggerInheritance() {
+        // Prepare desiredConfig
+        String desiredConfig = getRealisticDesiredConfig();
+
+        // Prepare currentConfig
+        Config currentConfig = getRealisticConfig();
+
+        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(currentConfig, desiredConfig, brokerId);
+        assertThat(diff.getLoggingDiff(), is(getRealisticConfigDiff()));
+    }
+
+    Config getRealisticConfig() {
+        return new Config(Arrays.asList(
+            new ConfigEntry("org.apache.zookeeper.CreateMode", "INFO"),
+            new ConfigEntry("io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", "INFO"),
+            new ConfigEntry("io.netty.util.concurrent.PromiseNotifier", "INFO"),
+            new ConfigEntry("kafka.server.DynamicConfigManager", "INFO"),
+            new ConfigEntry("org.apache.kafka.common.utils.AppInfoParser", "INFO"),
+            new ConfigEntry("kafka.utils.KafkaScheduler", "INFO"),
+            new ConfigEntry("io.netty.util.internal.PlatformDependent0", "INFO"),
+            new ConfigEntry("org.apache.kafka.clients.ClientUtils", "INFO"),
+            new ConfigEntry("org.apache.kafka", "DEBUG"),
+            new ConfigEntry("state.change.logger", "TRACE"),
+            new ConfigEntry("org.apache.kafka.common.security.authenticator.LoginManager", "INFO"),
+            new ConfigEntry("io.strimzi.kafka.oauth.common.HttpUtil", "INFO"),
+            new ConfigEntry("org.apache.zookeeper.ZooKeeper", "INFO"),
+            new ConfigEntry("io.netty.util.internal.CleanerJava9", "INFO"),
+            new ConfigEntry("org.apache.zookeeper.ClientCnxnSocket", "INFO"),
+            new ConfigEntry("io.strimzi", "TRACE"),
+            new ConfigEntry("kafka", "DEBUG"),
+            new ConfigEntry("org.apache.zookeeper", "INFO"),
+            new ConfigEntry("root", "INFO")));
+    }
+
+    String getRealisticDesiredConfig() {
+        return "# Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.\n" +
+                "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                "log4j.rootLogger=INFO, CONSOLE\n" +
+                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                "log4j.logger.org.apache.zookeeper=INFO\n" +
+                "log4j.logger.kafka=DEBUG\n" +
+                "log4j.logger.org.apache.kafka=DEBUG\n" +
+                "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
+                "log4j.logger.kafka.network.Processor=OFF\n" +
+                "log4j.logger.kafka.server.KafkaApis=OFF\n" +
+                "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                "log4j.logger.kafka.controller=TRACE\n" +
+                "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                "log4j.logger.state.change.logger=TRACE\n" +
+                "log4j.logger.kafka.authorizer.logger=INFO\n" +
+                "log4j.logger.io.strimzi=TRACE\n" +
+                "log4j.logger.some.category=ALL\n" +
+                "log4j.logger.another.category=FINE\n" +
+                "log4j.logger.another.category.sub=TRACE";
+    }
+
+    List<AlterConfigOp> getRealisticConfigDiff() {
+        return Arrays.asList(
+            newAlterConfigOp("io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", "TRACE"),
+            newAlterConfigOp("kafka.server.DynamicConfigManager", "DEBUG"),
+            newAlterConfigOp("org.apache.kafka.common.utils.AppInfoParser", "DEBUG"),
+            newAlterConfigOp("kafka.utils.KafkaScheduler", "DEBUG"),
+            newAlterConfigOp("org.apache.kafka.clients.ClientUtils", "DEBUG"),
+            newAlterConfigOp("org.apache.kafka.common.security.authenticator.LoginManager", "DEBUG"),
+            newAlterConfigOp("io.strimzi.kafka.oauth.common.HttpUtil", "TRACE"),
+            newAlterConfigOp("org.I0Itec.zkclient.ZkClient", "INFO"),
+            newAlterConfigOp("kafka.request.logger", "WARN"),
+            newAlterConfigOp("kafka.network.Processor", "FATAL"),
+            newAlterConfigOp("kafka.server.KafkaApis", "FATAL"),
+            newAlterConfigOp("kafka.network.RequestChannel$", "WARN"),
+            newAlterConfigOp("kafka.controller", "TRACE"),
+            newAlterConfigOp("kafka.log.LogCleaner", "INFO"),
+            newAlterConfigOp("kafka.authorizer.logger", "INFO"),
+            newAlterConfigOp("some.category", "TRACE"),
+            newAlterConfigOp("another.category", "WARN"),
+            newAlterConfigOp("another.category.sub", "TRACE"));
+    }
+
+    AlterConfigOp newAlterConfigOp(String category, String level) {
+        return new AlterConfigOp(new ConfigEntry(category, level), AlterConfigOp.OpType.SET);
     }
 }

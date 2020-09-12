@@ -106,6 +106,10 @@
             <artifactId>vertx-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>certificate-manager</artifactId>
         </dependency>
@@ -139,6 +143,10 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-oauth-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-oauth-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

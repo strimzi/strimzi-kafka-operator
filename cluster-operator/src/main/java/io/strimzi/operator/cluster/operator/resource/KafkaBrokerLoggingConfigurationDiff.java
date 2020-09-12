@@ -5,10 +5,6 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -18,26 +14,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
     private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
-    private int brokerId;
-
-    private static final HashSet VALID_LOGGER_LEVELS = new HashSet<>(Arrays.asList("INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF"));
 
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
-        this.brokerId = brokerId;
         this.diff = diff(brokerId, desired, brokerConfigs);
     }
 
@@ -68,12 +54,8 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         if (brokerConfigs == null || desired == null) {
             return Collections.emptyList();
         }
-        Map<String, String> currentMap;
+
         Collection<AlterConfigOp> updatedCE = new ArrayList<>();
-        currentMap = brokerConfigs.entries().stream().collect(
-            Collectors.toMap(
-                ConfigEntry::name,
-                configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
 
         OrderedProperties orderedProperties = new OrderedProperties();
         desired = desired.replaceAll("log4j\\.logger\\.", "");
@@ -81,90 +63,37 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
 
-        ObjectMapper orderedMapper = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+        LoggingLevelResolver levelResolver = new LoggingLevelResolver(desiredMap);
 
-        JsonNode source = orderedMapper.valueToTree(currentMap);
-        JsonNode target = orderedMapper.valueToTree(desiredMap);
-        JsonNode jsonDiff = JsonDiff.asJson(source, target);
-
-        for (JsonNode d : jsonDiff) {
-            String pathValue = d.get("path").asText();
-            String pathValueWithoutSlash = pathValue.substring(1);
-
-            Optional<ConfigEntry> optEntry = brokerConfigs.entries().stream()
-                    .filter(configEntry -> configEntry.name().equals(pathValueWithoutSlash))
-                    .findFirst();
-
-            if (pathValueWithoutSlash.equals("log4j.rootLogger")) {
-                if (!desiredMap.get(pathValueWithoutSlash).matches(".+,.+")) {
-                    log.warn("Broker {} logging: Logger log4j.rootLogger should contain level and appender, e.g. \'log4j.rootLogger = INFO, CONSOLE\'", brokerId);
-                }
+        for (ConfigEntry entry: brokerConfigs.entries()) {
+            LoggingLevel desiredLevel;
+            try {
+                desiredLevel = levelResolver.resolveLevel(entry.name());
+            } catch (IllegalArgumentException e) {
+                log.warn("Skipping {} - it is configured with an unsupported value (\"{}\")", entry.name(), e.getMessage());
+                continue;
             }
-            String op = d.get("op").asText();
-            if (optEntry.isPresent()) {
-                ConfigEntry entry = optEntry.get();
-                if ("remove".equals(op)) {
-                    removeProperty(updatedCE, pathValueWithoutSlash, entry);
-                } else if ("replace".equals(op)) {
-                    // entry is in the current, desired is updated value
-                    if (!entry.value().equals(parseLogLevelFromAppenderCouple(desiredMap.get(entry.name())))) {
-                        updateOrAdd(entry.name(), desiredMap, updatedCE);
-                    }
-                }
-            } else {
-                if ("add".equals(op)) {
-                    // entry is not in the current, it is added
-                    updateOrAdd(pathValueWithoutSlash, desiredMap, updatedCE);
-                }
-            }
-            if ("remove".equals(op)) {
-                // there is a lot of properties set by default - not having them in desired causes very noisy log output
-                log.trace("Kafka Broker {} Logging Config Differs : {}", brokerId, d);
-                log.trace("Current Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
-                log.trace("Desired Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
-            } else {
-                log.debug("Kafka Broker {} Logging Config Differs : {}", brokerId, d);
-                log.debug("Current Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
-                log.debug("Desired Kafka Broker Logging Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+
+            if (!desiredLevel.name().equals(entry.value())) {
+                updatedCE.add(new AlterConfigOp(new ConfigEntry(entry.name(), desiredLevel.name()), AlterConfigOp.OpType.SET));
+                log.trace("{} has an outdated value. Setting to {}", entry.name(), desiredLevel.name());
             }
         }
+
+        for (Map.Entry<String, String> ent: desiredMap.entrySet()) {
+            String name = ent.getKey();
+            if (name.startsWith("log4j.appender")) {
+                continue;
+            }
+            ConfigEntry configEntry = brokerConfigs.get(name);
+            if (configEntry == null) {
+                String level = LoggingLevel.nameOrDefault(LoggingLevel.ofLog4jConfig(ent.getValue()), LoggingLevel.WARN);
+                updatedCE.add(new AlterConfigOp(new ConfigEntry(name, level), AlterConfigOp.OpType.SET));
+                log.trace("{} not set. Setting to {}", name, level);
+            }
+        }
+
         return updatedCE;
-    }
-
-    private static String parseLogLevelFromAppenderCouple(String level) {
-        int index = level.indexOf(",");
-        if (index > 0) {
-            return level.substring(0, index).trim();
-        } else {
-            return level.trim();
-        }
-    }
-
-    private static void updateOrAdd(String propertyName, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
-        if (!propertyName.contains("log4j.appender") && !propertyName.equals("monitorInterval")) {
-            String level = parseLogLevelFromAppenderCouple(desiredMap.get(propertyName));
-            if (isValidLoggerLevel(level)) {
-                updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, level), AlterConfigOp.OpType.SET));
-                log.trace("{} not set in current or has deprecated value. Setting to {}", propertyName, level);
-            } else {
-                log.warn("Level {} is not valid logging level", level);
-            }
-        }
-    }
-
-    /**
-     * All loggers can be set dynamically. If the logger is not set in desire, set it to ERROR. Loggers with already set to ERROR should be skipped.
-     * ERROR is set as inactive because log4j does not support OFF logger value.
-     * We want to skip "root" logger as well to avoid duplicated key in alterConfigOps collection.
-     * @param alterConfigOps collection of AlterConfigOp
-     * @param pathValueWithoutSlash name of "removed" logger
-     * @param entry entry to be removed (set to ERROR)
-     */
-    private static void removeProperty(Collection<AlterConfigOp> alterConfigOps, String pathValueWithoutSlash, ConfigEntry entry) {
-        if (!pathValueWithoutSlash.contains("log4j.appender") && !pathValueWithoutSlash.equals("root") && !"ERROR".equals(entry.value())) {
-            alterConfigOps.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, "ERROR"), AlterConfigOp.OpType.SET));
-            log.trace("{} not set in desired, setting to ERROR", entry.name());
-        }
     }
 
     /**
@@ -172,11 +101,106 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
      */
     @Override
     public boolean isEmpty() {
-        return  diff.size() == 0;
+        return diff.size() == 0;
     }
 
-    private static boolean isValidLoggerLevel(String level) {
-        return VALID_LOGGER_LEVELS.contains(level);
+    /**
+     * This internal class calculates the logging level of an arbitrary category based on the logging configuration.
+     *
+     * It takes Log4j properties configuration in the form of a map of key:value pairs,
+     * where key is the category name, and the value is whatever comes to the right of '=' sign in log4j.properties,
+     * which is either a logging level, or a logging level followed by a comma, and followed by the appender name.
+     */
+    static class LoggingLevelResolver {
+
+        private final Map<String, String> config;
+
+        LoggingLevelResolver(Map<String, String> loggingConfig) {
+            this.config = loggingConfig;
+        }
+
+        /**
+         * The method that returns the logging level of the category
+         * based on logging configuration, taking inheritance into account.
+         *
+         * For example, if looking for a logging level for 'io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder',
+         * the following configuration lookups are performed until one is found:
+         * <ul>
+         *     <li>io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder</li>
+         *     <li>io.strimzi.kafka.oauth.server</li>
+         *     <li>io.strimzi.kafka.oauth</li>
+         *     <li>io.strimzi.kafka</li>
+         *     <li>io.strimzi</li>
+         *     <li>io</li>
+         *     <li>root</li>
+         * </ul>
+         *
+         * When the configured level is ALL, the actual level returned will be TRACE.
+         * Similarly when the configured level is OFF, the actual level returned will be FATAL.
+         *
+         * If logging level can't be parsed from the configuration (unsupported or badly formatted)
+         * the method returns WARN level. The rationale is that making a configuration mistake in logging level
+         * should not accidentally trigger a massive amount of logging.
+         *
+         * @param name The logging category name
+         * @return The logging level compatible with dynamic logging update
+         */
+        LoggingLevel resolveLevel(String name) {
+            String level = config.get(name);
+            if (level != null) {
+                LoggingLevel result = LoggingLevel.ofLog4jConfig(level);
+                return result != null ? result : LoggingLevel.WARN;
+            }
+
+            int e = name.length();
+            while (e > -1) {
+                e = name.lastIndexOf('.', e);
+                if (e == -1) {
+                    level = config.get("root");
+                } else {
+                    level = config.get(name.substring(0, e));
+                }
+                if (level != null) {
+                    LoggingLevel result = LoggingLevel.ofLog4jConfig(level);
+                    return result != null ? result : LoggingLevel.WARN;
+                }
+                e -= 1;
+            }
+            // still here? Not even root logger defined?
+            return LoggingLevel.WARN;
+        }
     }
 
+    enum LoggingLevel {
+        OFF,
+        FATAL,
+        ERROR,
+        WARN,
+        INFO,
+        DEBUG,
+        TRACE,
+        ALL;
+
+        static LoggingLevel ofLog4jConfig(String value) {
+            if (value != null && !"".equals(value)) {
+                String v = value.split(",")[0].trim();
+                if ("ALL".equals(v)) {
+                    return TRACE;
+                } else if ("OFF".equals(v)) {
+                    return FATAL;
+                } else {
+                    try {
+                        return valueOf(v);
+                    } catch (RuntimeException e) {
+                        log.warn("Invalid logging level: {}. Using WARN as a failover.", v);
+                    }
+                }
+            }
+            return null;
+        }
+
+        static String nameOrDefault(LoggingLevel level, LoggingLevel failover) {
+            return level != null ? level.name() : failover.name();
+        }
+    }
 }
