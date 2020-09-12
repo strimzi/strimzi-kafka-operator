@@ -431,14 +431,14 @@ public abstract class AbstractST implements TestSeparator {
         String kafkaServiceName = clusterName + "-kafka";
         String zookeeperServiceName = clusterName + "-zookeeper";
 
-        Map<String, String> servicesList = new HashMap<>();
-        servicesList.put(kafkaServiceName + "-bootstrap", kafkaServiceName);
-        servicesList.put(kafkaServiceName + "-brokers", kafkaServiceName);
+        Map<String, String> servicesMap = new HashMap<>();
+        servicesMap.put(kafkaServiceName + "-bootstrap", kafkaServiceName);
+        servicesMap.put(kafkaServiceName + "-brokers", kafkaServiceName);
 
-        servicesList.put(zookeeperServiceName + "-nodes", zookeeperServiceName);
-        servicesList.put(zookeeperServiceName + "-client", zookeeperServiceName + "-client");
+        servicesMap.put(zookeeperServiceName + "-nodes", zookeeperServiceName);
+        servicesMap.put(zookeeperServiceName + "-client", zookeeperServiceName + "-client");
 
-        for (String serviceName : servicesList.keySet()) {
+        for (String serviceName : servicesMap.keySet()) {
             kubeClient().listServices().stream()
                 .filter(service -> service.getMetadata().getName().equals(serviceName))
                 .forEach(service -> {
@@ -446,7 +446,7 @@ public abstract class AbstractST implements TestSeparator {
                     assertThat(service.getMetadata().getLabels().get("app"), is(appName));
                     assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
                     assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
-                    assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(servicesList.get(serviceName)));
+                    assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(servicesMap.get(serviceName)));
                 });
         }
     }
