@@ -570,6 +570,12 @@ public class KafkaUpdateTest {
     }
 
     @Test
+    public void downgradeLatestToPrevWithEarlierThenPrevMessageFormatConfig(VertxTestContext context) throws IOException {
+        testDowngradeLatestToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
+                "2.0"), true);
+    }
+
+    @Test
     public void downgradeLatestToPrevWithLatestProtocolVersion(VertxTestContext context) throws IOException {
         testDowngradeLatestToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
