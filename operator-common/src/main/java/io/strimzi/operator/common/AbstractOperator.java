@@ -329,7 +329,6 @@ public abstract class AbstractOperator<
                     });
     }
 
-    //protected abstract T copyResource(T res);
     protected abstract S createStatus();
 
     /**

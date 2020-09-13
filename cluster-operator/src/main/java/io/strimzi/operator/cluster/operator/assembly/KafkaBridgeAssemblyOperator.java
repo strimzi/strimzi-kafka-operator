@@ -118,11 +118,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return createOrUpdatePromise.future();
     }
 
-    /*@Override
-    protected KafkaBridge copyResource(KafkaBridge res) {
-        return new KafkaBridgeBuilder(res).build();
-    }*/
-
     @Override
     protected KafkaBridgeStatus createStatus() {
         return new KafkaBridgeStatus();

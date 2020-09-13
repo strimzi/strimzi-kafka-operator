@@ -237,11 +237,6 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
             .map(Boolean.TRUE);
     }
 
-    /*@Override
-    protected KafkaUser copyResource(KafkaUser res) {
-        return new KafkaUserBuilder(res).build();
-    }*/
-
     @Override
     protected KafkaUserStatus createStatus() {
         return new KafkaUserStatus();

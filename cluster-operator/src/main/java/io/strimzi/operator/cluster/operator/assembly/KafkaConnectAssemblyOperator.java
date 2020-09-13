@@ -167,11 +167,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return createOrUpdatePromise.future();
     }
 
-    /*@Override
-    protected KafkaConnect copyResource(KafkaConnect res) {
-        return new KafkaConnectBuilder(res).build();
-    }*/
-
     @Override
     protected KafkaConnectStatus createStatus() {
         return new KafkaConnectStatus();

@@ -178,11 +178,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         return createOrUpdatePromise.future();
     }
 
-    /*@Override
-    protected KafkaConnectS2I copyResource(KafkaConnectS2I res) {
-        return new KafkaConnectS2IBuilder(res).build();
-    }*/
-
     @Override
     protected KafkaConnectS2IStatus createStatus() {
         return new KafkaConnectS2IStatus();

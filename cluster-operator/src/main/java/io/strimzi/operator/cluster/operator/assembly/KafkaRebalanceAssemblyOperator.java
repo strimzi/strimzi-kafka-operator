@@ -916,11 +916,6 @@ public class KafkaRebalanceAssemblyOperator
         return reconcileRebalance(reconciliation, null).map(v -> Boolean.TRUE);
     }
 
-    /*@Override
-    protected KafkaRebalance copyResource(KafkaRebalance res) {
-        return new KafkaRebalanceBuilder(res).build();
-    }*/
-
     @Override
     protected KafkaRebalanceStatus createStatus() {
         return new KafkaRebalanceStatus();

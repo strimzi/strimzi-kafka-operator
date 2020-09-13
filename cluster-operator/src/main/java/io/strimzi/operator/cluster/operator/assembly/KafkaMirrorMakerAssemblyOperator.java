@@ -117,11 +117,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return createOrUpdatePromise.future();
     }
 
-    /*@Override
-    protected KafkaMirrorMaker copyResource(KafkaMirrorMaker res) {
-        return new KafkaMirrorMakerBuilder(res).build();
-    }*/
-
     @Override
     protected KafkaMirrorMakerStatus createStatus() {
         return new KafkaMirrorMakerStatus();

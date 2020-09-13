@@ -238,25 +238,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 status.addCondition(readyCondition);
                 createOrUpdatePromise.fail(new ReconciliationException(status, reconcileResult.cause()));
             }
-
-            /*status.addCondition(readyCondition);
-            reconcileState.updateStatus(status).onComplete(statusResult -> {
-                if (statusResult.succeeded())    {
-                    log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());
-                } else {
-                    log.error("Failed to set status for {}", kafkaAssembly.getMetadata().getName());
-                }
-
-                // If both features succeeded, createOrUpdate succeeded as well
-                // If one or both of them failed, we prefer the reconciliation failure as the main error
-                if (reconcileResult.succeeded() && statusResult.succeeded())    {
-                    createOrUpdatePromise.complete();
-                } else if (reconcileResult.failed())    {
-                    createOrUpdatePromise.fail(reconcileResult.cause());
-                } else {
-                    createOrUpdatePromise.fail(statusResult.cause());
-                }
-            });*/
         });
 
         return createOrUpdatePromise.future();
@@ -3525,11 +3506,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     /* test */ Date dateSupplier() {
         return new Date();
     }
-
-    /*@Override
-    protected Kafka copyResource(Kafka res) {
-        return new KafkaBuilder(res).build();
-    }*/
 
     @Override
     protected KafkaStatus createStatus() {
