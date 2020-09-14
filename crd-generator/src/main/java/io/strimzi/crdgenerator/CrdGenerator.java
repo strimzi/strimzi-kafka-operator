@@ -310,7 +310,7 @@ public class CrdGenerator {
     private ObjectNode buildStatus(Crd.Spec crd, ApiVersion crApiVersion) {
         ObjectNode status;
         int length = Arrays.stream(crd.subresources().status())
-                .filter(st -> ApiVersion.parseRange(st.apiVersion()).contains(crApiVersion))
+                .filter(st -> crApiVersion == null || ApiVersion.parseRange(st.apiVersion()).contains(crApiVersion))
                 .collect(Collectors.toList()).size();
         if (length == 1) {
             status = nf.objectNode();
@@ -325,7 +325,7 @@ public class CrdGenerator {
     private ObjectNode buildScale(Crd.Spec crd, ApiVersion crApiVersion) {
         ObjectNode scaleNode;
         List<Crd.Spec.Subresources.Scale> scale1 = Arrays.stream(crd.subresources().scale())
-                .filter(sc -> ApiVersion.parseRange(sc.apiVersion()).contains(crApiVersion))
+                .filter(sc -> crApiVersion == null || ApiVersion.parseRange(sc.apiVersion()).contains(crApiVersion))
                 .collect(Collectors.toList());
         if (scale1.size() == 1) {
             scaleNode = nf.objectNode();
@@ -349,7 +349,7 @@ public class CrdGenerator {
         ArrayNode cols = nf.arrayNode();
         if (crd.additionalPrinterColumns().length != 0) {
             for (Crd.Spec.AdditionalPrinterColumn col : Arrays.stream(crd.additionalPrinterColumns())
-                    .filter(col -> ApiVersion.parseRange(col.apiVersion()).contains(crdApiVersion))
+                    .filter(col -> crdApiVersion == null || ApiVersion.parseRange(col.apiVersion()).contains(crdApiVersion))
                     .collect(Collectors.toList())) {
                 ObjectNode colNode = cols.addObject();
                 colNode.put("name", col.name());
@@ -710,7 +710,8 @@ public class CrdGenerator {
         }
         checkDisjointVersions(wrapperAnnotation, cls);
         return Arrays.stream(wrapperAnnotation)
-                .filter(element1 -> apiVersion(element1, cls).contains(crApiVersion))
+                // TODO crApiVersion == null does not really imply we should return the first description.
+                .filter(element1 -> crApiVersion == null || apiVersion(element1, cls).contains(crApiVersion))
                 .findFirst().orElse(null);
     }
 
