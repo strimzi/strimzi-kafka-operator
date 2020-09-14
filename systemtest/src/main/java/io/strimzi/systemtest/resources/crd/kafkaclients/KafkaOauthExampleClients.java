@@ -59,6 +59,7 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         if (builder.oauthClientId == null || builder.oauthClientId.isEmpty()) throw new InvalidParameterException("OAuth client id is not set.");
         if (builder.oauthClientSecret == null || builder.oauthClientSecret.isEmpty()) throw new InvalidParameterException("OAuth client secret is not set.");
         if (builder.oauthTokenEndpointUri == null || builder.oauthTokenEndpointUri.isEmpty()) throw new InvalidParameterException("OAuth token endpoint url is not set.");
+        if (builder.userName == null || builder.userName.isEmpty()) builder.userName = builder.oauthClientId;
 
         oauthClientId = builder.oauthClientId;
         oauthClientSecret = builder.oauthClientSecret;

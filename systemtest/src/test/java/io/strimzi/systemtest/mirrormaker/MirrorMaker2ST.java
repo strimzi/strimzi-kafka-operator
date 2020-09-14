@@ -33,7 +33,6 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -652,7 +651,7 @@ class MirrorMaker2ST extends AbstractST {
 
         //deploying example clients for checking if mm2 will mirror messages with headers
 
-        KafkaBasicExampleClients targetKafkaClientsJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+        KafkaBridgeExampleClients targetKafkaClientsJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
             .withConsumerName(targetConsumerName)
             .withBootstrapServer(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .withTopicName(targetExampleTopic)
@@ -662,7 +661,7 @@ class MirrorMaker2ST extends AbstractST {
 
         targetKafkaClientsJob.consumerStrimzi().done();
 
-        KafkaBasicExampleClients sourceKafkaClientsJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+        KafkaBridgeExampleClients sourceKafkaClientsJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
             .withProducerName(sourceProducerName)
             .withBootstrapServer(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .withTopicName(sourceExampleTopic)

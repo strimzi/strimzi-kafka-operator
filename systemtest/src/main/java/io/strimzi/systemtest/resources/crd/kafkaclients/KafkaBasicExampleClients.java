@@ -87,8 +87,6 @@ public abstract class KafkaBasicExampleClients {
 
     protected KafkaBasicExampleClients(KafkaBasicClientsBuilder<?> builder) {
         if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
-        if (builder.producerName == null || builder.producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
-        if (builder.consumerName == null || builder.consumerName.isEmpty()) throw new InvalidParameterException("Consumer name is not set.");
         if (builder.bootstrapServer == null || builder.bootstrapServer.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
@@ -116,6 +114,8 @@ public abstract class KafkaBasicExampleClients {
 
 
     public DoneableJob producerStrimzi() {
+        if (producerName == null || producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
+
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
         producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
@@ -182,6 +182,8 @@ public abstract class KafkaBasicExampleClients {
     }
 
     public DoneableJob consumerStrimzi() {
+        if (consumerName == null || consumerName.isEmpty()) throw new InvalidParameterException("Consumer name is not set.");
+
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
         consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
