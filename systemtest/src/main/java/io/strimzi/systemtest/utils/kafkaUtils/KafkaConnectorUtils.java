@@ -80,6 +80,18 @@ public class KafkaConnectorUtils {
         }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
     }
 
+    public static void waitForConnectorDeletion(String connectorName) {
+        TestUtils.waitFor(connectorName + " connector deletion", Constants.GLOBAL_POLL_INTERVAL, READINESS_TIMEOUT, () -> {
+            if (KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get() == null) {
+                return true;
+            } else {
+                LOGGER.info("KafkaConnector: {} is not deleted yet, triggering force delete", connectorName);
+                cmdKubeClient().deleteByName(KafkaConnector.RESOURCE_KIND, connectorName);
+                return false;
+            }
+        }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
+    }
+
     public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
         cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +

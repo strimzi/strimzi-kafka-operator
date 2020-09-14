@@ -126,7 +126,7 @@ class KafkaST extends AbstractST {
         cmdKubeClient().deleteByName("Kafka", OPENSHIFT_CLUSTER_NAME);
 
         //Wait for kafka deletion
-        cmdKubeClient().waitForResourceDeletion("Kafka", OPENSHIFT_CLUSTER_NAME);
+        cmdKubeClient().waitForResourceDeletion(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
         kubeClient().listPods().stream()
             .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
             .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
@@ -992,7 +992,7 @@ class KafkaST extends AbstractST {
                     new GenericKafkaListenerBuilder()
                             .withName("external")
                             .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
+                            .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .build()
             ), null);
@@ -1663,6 +1663,10 @@ class KafkaST extends AbstractST {
         super.tearDownEnvironmentAfterEach();
         if (cluster.getListOfDeployedResources().contains(TEMPLATE_PATH)) {
             cluster.deleteCustomResources(TEMPLATE_PATH);
+        }
+
+        if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
+            cmdKubeClient().deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
         }
 
         kubeClient().listPods().stream()
