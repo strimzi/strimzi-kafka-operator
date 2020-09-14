@@ -1625,7 +1625,7 @@ public class KafkaCluster extends AbstractModel {
                     .endPodSelector()
                     .build();
 
-            List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
+            List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(5);
             clientsPortPeers.add(clusterOperatorPeer);
             clientsPortPeers.add(kafkaClusterPeer);
             clientsPortPeers.add(entityOperatorPeer);
