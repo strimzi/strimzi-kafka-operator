@@ -16,8 +16,8 @@ import static java.lang.Short.parseShort;
  */
 public class KubeVersion implements Comparable<KubeVersion> {
 
-    public static final KubeVersion v1_11 = new KubeVersion((short) 1, (short) 11);
-    public static final KubeVersion v1_16 = new KubeVersion((short) 1, (short) 16);
+    public static final KubeVersion V1_11 = new KubeVersion((short) 1, (short) 11);
+    public static final KubeVersion V1_16 = new KubeVersion((short) 1, (short) 16);
 
     private final short major;
     private final short minor;
@@ -69,7 +69,7 @@ public class KubeVersion implements Comparable<KubeVersion> {
     }
 
     public boolean supportsSchemaPerVersion() {
-        return this.compareTo(v1_16) >= 0;
+        return this.compareTo(V1_16) >= 0;
     }
 
     /**
@@ -78,6 +78,6 @@ public class KubeVersion implements Comparable<KubeVersion> {
      * @return Whether this version of Kube has support
      */
     public boolean supportsCrdApiVersion(ApiVersion crdApiVersion) {
-        return crdApiVersion.equals(ApiVersion.V1) ? this.compareTo(v1_16) >= 0 : this.compareTo(v1_11) >= 0;
+        return crdApiVersion.equals(ApiVersion.V1) ? this.compareTo(V1_16) >= 0 : this.compareTo(V1_11) >= 0;
     }
 }

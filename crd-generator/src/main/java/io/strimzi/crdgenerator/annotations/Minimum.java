@@ -10,16 +10,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Repeatable(Minimum.VersionedMinimum.class)
+@Repeatable(Minimum.List.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Minimum {
-    String apiVersions() default "all";
+    /** @return The inclusive minimum */
     int value();
 
+    /** @return The api versions that this description applies to. */
+    String apiVersions() default "all";
+
+    /**
+     * Defines several {@link Minimum} annotations on the same element.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.FIELD})
-    public @interface VersionedMinimum {
+    @interface List {
         Minimum[] value();
     }
 }

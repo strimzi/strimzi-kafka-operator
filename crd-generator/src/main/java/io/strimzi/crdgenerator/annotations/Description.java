@@ -10,16 +10,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Repeatable(Description.VersionedDescription.class)
+@Repeatable(Description.List.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 public @interface Description {
+    /** @return The description, in Asciidoc format. */
     String value();
+
+    /** @return The api versions that this description applies to. */
     String apiVersions() default "all";
 
+    /**
+     * Defines several {@link Description} annotations on the same element.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
-    public @interface VersionedDescription {
+    @interface List {
         Description[] value();
     }
 

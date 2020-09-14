@@ -5,7 +5,6 @@
 package io.strimzi.crdgenerator.annotations;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -150,7 +149,7 @@ public @interface Crd {
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcecolumndefinition-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         @interface AdditionalPrinterColumn {
-            /** The api version range in which this appears */
+            /** @return The api version range in which this appears */
             String apiVersion() default "all";
             /** @return JSON path into the CR for the value to show */
             String jsonPath();

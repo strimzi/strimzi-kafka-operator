@@ -52,7 +52,7 @@ public class CrdGeneratorTest {
 
     @Test
     public void versionedTest() throws IOException {
-        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.v1_16, new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_16, new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
         StringWriter w = new StringWriter();
         crdGenerator.generate(VersionedExampleCrd.class, w);
         String s = w.toString();

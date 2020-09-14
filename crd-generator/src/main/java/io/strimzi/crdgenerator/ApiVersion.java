@@ -18,8 +18,8 @@ import static java.lang.Short.parseShort;
 public class ApiVersion implements Comparable<ApiVersion> {
 
     public static final Pattern PATTERN = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
-    public static final ApiVersion V1Alpha1 = parse("v1alpha1");
-    public static final ApiVersion V1Beta1 = parse("v1beta1");
+    public static final ApiVersion V1ALPHA1 = parse("v1alpha1");
+    public static final ApiVersion V1BETA1 = parse("v1beta1");
     public static final ApiVersion V1 = parse("v1");
 
     private final short major;

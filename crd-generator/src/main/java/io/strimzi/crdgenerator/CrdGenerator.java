@@ -177,12 +177,14 @@ public class CrdGenerator {
     private final Map<String, String> labels;
     private int numErrors;
 
+    @Deprecated
     CrdGenerator(ObjectMapper mapper) {
-        this(KubeVersion.v1_11, mapper, emptyMap());
+        this(KubeVersion.V1_11, mapper, emptyMap());
     }
 
+    @Deprecated
     CrdGenerator(ObjectMapper mapper, Map<String, String> labels) {
-        this(KubeVersion.v1_11, mapper, labels);
+        this(KubeVersion.V1_11, mapper, labels);
     }
 
     CrdGenerator(KubeVersion targetKubeVersion, ObjectMapper mapper) {
@@ -234,6 +236,7 @@ public class CrdGenerator {
         mapper.writeValue(out, node);
     }
 
+    @SuppressWarnings("deprecation")
     private ObjectNode buildSpec(ApiVersion crdApiVersion,
                                  Crd.Spec crd, Class<? extends CustomResource> crdClass) {
         if (!targetKubeVersion.supportsCrdApiVersion(crdApiVersion)) {
@@ -715,6 +718,7 @@ public class CrdGenerator {
                 .findFirst().orElse(null);
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> void checkDisjointVersions(T[] wrapperAnnotation, Class<T> annotationClass) {
         long count = Arrays.stream(wrapperAnnotation)
                 .map(element -> apiVersion(element, annotationClass)).count();
@@ -737,9 +741,8 @@ public class CrdGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> VersionRange apiVersion(T element, Class<T> annotationClass) {
+    private static <T> VersionRange<ApiVersion> apiVersion(T element, Class<T> annotationClass) {
         try {
-            Class<? extends Annotation> elementClass = (Class) element.getClass();
             Method apiVersionsMethod = annotationClass.getDeclaredMethod("apiVersions");
             String apiVersions = (String) apiVersionsMethod.invoke(element);
             return ApiVersion.parseRange(apiVersions);
@@ -830,7 +833,7 @@ public class CrdGenerator {
             }
         }
         if (targetKubeVersion == null) {
-            targetKubeVersion = KubeVersion.v1_11;
+            targetKubeVersion = KubeVersion.V1_11;
         }
 
         CrdGenerator generator = new CrdGenerator(targetKubeVersion, yaml ?

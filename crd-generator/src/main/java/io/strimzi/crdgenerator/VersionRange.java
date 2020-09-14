@@ -27,7 +27,8 @@ public class VersionRange<Version extends Comparable<Version>> {
     private final Version to;
 
     /**
-     * The empty version range.
+     * @return The empty version range.
+     * @param <Version> The type of version range.
      */
     @SuppressWarnings("unchecked")
     public static <Version extends Comparable<Version>> VersionRange<Version> empty() {
@@ -79,7 +80,7 @@ public class VersionRange<Version extends Comparable<Version>> {
      */
     static <Version extends Comparable<Version>> VersionRange<Version> parse(String versionRange, VersionParser<Version> parser) {
         if ("empty".equals(versionRange)) {
-            return EMPTY;
+            return empty();
         } else if ("all".equals(versionRange)) {
             // all
             return new VersionRange<>(null, null);
