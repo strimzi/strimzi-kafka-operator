@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,6 +47,25 @@ public class KubeVersion implements Comparable<KubeVersion> {
             cmp = Short.compare(minor, o.minor);
         }
         return cmp;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KubeVersion that = (KubeVersion) o;
+        return major == that.major &&
+                minor == that.minor;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(major, minor);
+    }
+
+    @Override
+    public String toString() {
+        return major + "." + minor;
     }
 
     public boolean supportsSchemaPerVersion() {

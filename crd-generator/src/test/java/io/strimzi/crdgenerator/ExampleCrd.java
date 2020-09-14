@@ -218,17 +218,6 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         this.string = string;
     }
 
-    @JsonProperty(value = "stringProperty", required = true)
-    @Pattern(value = ".*", apiVersions = "v1alpha1")
-    @Pattern(value = "foo|bar", apiVersions = "v1beta1+")
-    public String getVersionedString() {
-        return string;
-    }
-
-    public void setVersionedString(String string) {
-        this.string = string;
-    }
-
     @Deprecated
     @Description("An example int property")
     @Example("42")
@@ -241,18 +230,9 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         this.intProperty = intProperty;
     }
 
-    @Deprecated
-    @Description(value = "An example int property", apiVersions = "v1alpha1")
-    @Description(value = "An example int property", apiVersions = "v1alpha1")
-    @Example("42")
-    @Minimum(42)
-    public int getVersionedIntProperty() {
-        return intProperty;
-    }
-
     @Description("An example long property")
     @Example("42")
-    @Minimum(42) // TODO
+    @Minimum(42)
     public long getLongProperty() {
         return longProperty;
     }

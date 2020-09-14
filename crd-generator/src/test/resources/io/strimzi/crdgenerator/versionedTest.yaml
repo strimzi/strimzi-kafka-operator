@@ -35,6 +35,12 @@ spec:
           someOtherInt:
             type: "integer"
             maximum: 10
+          typeChange:
+            oneOf:
+            - type: "array"
+              items:
+                type: "string"
+            - type: "object"
   - name: "v2"
     served: true
     storage: false
@@ -66,6 +72,10 @@ spec:
             type: "integer"
             minimum: 4
             maximum: 10
+          typeChange:
+            type: "array"
+            items:
+              type: "string"
   scope: "Namespaced"
   names:
     kind: "Example"

@@ -182,7 +182,7 @@ public class CrdGenerator {
     }
 
     CrdGenerator(ObjectMapper mapper, Map<String, String> labels) {
-        this(KubeVersion.v1_11, mapper, emptyMap());
+        this(KubeVersion.v1_11, mapper, labels);
     }
 
     CrdGenerator(KubeVersion targetKubeVersion, ObjectMapper mapper) {
@@ -242,11 +242,6 @@ public class CrdGenerator {
         ObjectNode result = nf.objectNode();
         result.put("group", crd.group());
 
-        if (crdApiVersion.compareTo(ApiVersion.V1) < 0
-                && !crd.version().isEmpty()) {
-            result.put("version", crd.version());
-        }
-
         if (crd.versions().length != 0) {
             ArrayNode versions = nf.arrayNode();
             for (Crd.Spec.Version version : crd.versions()) {
@@ -271,6 +266,10 @@ public class CrdGenerator {
             result.set("versions", versions);
         }
 
+        if (crdApiVersion.compareTo(ApiVersion.V1) < 0
+                && !crd.version().isEmpty()) {
+            result.put("version", crd.version());
+        }
         result.put("scope", crd.scope());
         result.set("names", buildNames(crd.names()));
 
