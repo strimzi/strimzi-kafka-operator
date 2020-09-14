@@ -439,7 +439,7 @@ Please use xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] inst
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
-include::../api/io.strimzi.api.kafka.model.listener.KafkaListeners.adoc[leveloffset=+1]
+Refer to link:{BookURLUsingPrevious}[previous documentation] for example configuration.
 
 [options="header"]
 |====
@@ -506,7 +506,6 @@ Used in: xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
-include::../api/io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalRoute` from xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `route` for the type `KafkaListenerExternalRoute`.
@@ -532,7 +531,6 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 
 Used in: xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
 
-include::../api/io.strimzi.api.kafka.model.listener.RouteListenerOverride.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -595,7 +593,6 @@ Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExt
 
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
-include::../api/io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalLoadBalancer` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBalancer`.
@@ -623,7 +620,6 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 
 Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`]
 
-include::../api/io.strimzi.api.kafka.model.listener.LoadBalancerListenerOverride.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -677,7 +673,6 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
-include::../api/io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalNodePort` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
@@ -705,7 +700,6 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 
 Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
 
-include::../api/io.strimzi.api.kafka.model.listener.NodePortListenerOverride.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -759,7 +753,6 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 
 Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
 
-include::../api/io.strimzi.api.kafka.model.listener.NodePortListenerConfiguration.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -782,7 +775,6 @@ This field can be used to select the address type which will be used as the pref
 
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
-include::../api/io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalIngress` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
 It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
@@ -808,7 +800,6 @@ It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
 
 Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
 
-include::../api/io.strimzi.api.kafka.model.listener.IngressListenerConfiguration.adoc[leveloffset=+1]
 
 [options="header"]
 |====

@@ -1,7 +1,7 @@
 Configures a Kafka Connect cluster.
 
 [id='property-kafka-connect-logging-{context}']
-.`logging`
+=== `logging`
 Kafka Connect has its own configurable loggers:
 
 * `log4j.rootLogger`

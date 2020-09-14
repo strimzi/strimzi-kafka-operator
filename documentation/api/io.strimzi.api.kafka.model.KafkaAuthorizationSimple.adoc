@@ -8,7 +8,7 @@ and configure a list of super users.
 Access rules are configured for the `KafkaUser`, as described in the xref:type-AclRule-reference[ACLRule schema reference].
 
 [id='property-simple-authorization-superusers-{context}']
-.`superUsers`
+=== `superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying ACL rules.
 For more information see xref:con-securing-kafka-authorization-str[Kafka authorization].
 

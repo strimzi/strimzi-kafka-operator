@@ -1,30 +1,30 @@
 To use link:https://www.openpolicyagent.org/[Open Policy Agent^] authorization, set the `type` property in the `authorization` section to the value `opa`,
 and configure OPA properties as required.
 
-.`url`
+=== `url`
 The URL used to connect to the Open Policy Agent server.
 The URL has to include the policy which will be queried by the authorizer.
 **Required.**
 
-.`allowOnError`
+=== `allowOnError`
 Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable.
 Defaults to `false` - all actions will be denied.
 
-.`initialCacheCapacity`
+=== `initialCacheCapacity`
 Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request.
 Defaults to `5000`.
 
-.`maximumCacheSize`
+=== `maximumCacheSize`
 Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request.
 Defaults to `50000`.
 
-.`expireAfterMs`
+=== `expireAfterMs`
 The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request.
 Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server.
 In milliseconds.
 Defaults to `3600000` milliseconds (1 hour).
 
-.`superUsers`
+=== `superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying the open Policy Agent policy.
 For more information see xref:con-securing-kafka-authorization-str[Kafka authorization].
 

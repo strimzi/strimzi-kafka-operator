@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -20,7 +19,6 @@ import java.util.List;
 /**
  * Configures the external listener which exposes Kafka outside of Kubernetes using LoadBalancers
  */
-@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

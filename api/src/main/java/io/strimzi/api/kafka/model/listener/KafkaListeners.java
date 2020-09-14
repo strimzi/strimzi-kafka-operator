@@ -10,7 +10,6 @@ import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -23,7 +22,6 @@ import static java.util.Collections.emptyMap;
 /**
  * Configures the broker authorization
  */
-@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -33,6 +31,7 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @Deprecated
 @DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener.class)
+@Description("Refer to link:{BookURLUsingPrevious}[previous documentation] for example configuration.")
 public class KafkaListeners implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 

@@ -162,3 +162,4 @@
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
 :BookURLUsing: ./using.html
+:BookURLUsingPrevious: https://strimzi.io/docs/operators/0.19.0/using.html

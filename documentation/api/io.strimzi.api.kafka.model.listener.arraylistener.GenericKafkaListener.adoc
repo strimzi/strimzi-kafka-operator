@@ -47,7 +47,7 @@ spec:
 ----
 
 [id='property-generic-listeners-{context}']
-.`listeners`
+=== `listeners`
 You configure Kafka broker listeners using the `listeners` property in the `Kafka` resource.
 Each listener is defined as an array.
 
@@ -67,17 +67,55 @@ The name can be up to 25 characters long, comprising lower-case letters and numb
 By specifying a unique name and port for each listener,
 you can configure multiple listeners.
 
-.`type`
+=== `type`
 
 The type is set as `internal`,
 or for external listeners, as `route`, `loadbalancer`, `nodeport` or `ingress`.
 
 internal:: You can configure internal listeners with or without encryption using the `tls` property.
++
+.Example `internal` listener configuration
+[source,yaml,subs="+attributes"]
+----
+#...
+spec:
+  kafka:
+    #...
+    listeners:
+      #...
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+    #...
+----
 route:: Configures an external listener to expose Kafka using OpenShift `Routes` and the HAProxy router.
 +
 A dedicated `Route` is created for every Kafka broker pod.
 An additional `Route` is created to serve as a Kafka bootstrap address.
 Kafka clients can use these `Routes` to connect to Kafka on port 443.
++
+.Example `route` listener configuration
+[source,yaml,subs="+attributes"]
+----
+#...
+spec:
+  kafka:
+    #...
+    listeners:
+      #...
+      - name: external1
+        port: 9094
+        type: route
+        tls: true
+    #...
+----
 ingress:: Configures an external listener to expose Kafka using Kubernetes `Ingress` and the {NginxIngressController}.
 +
 A dedicated `Ingress` resource is created for every Kafka broker pod.
@@ -88,13 +126,63 @@ You must specify the hostnames used by the bootstrap and per-broker services
 using xref:type-GenericKafkaListenerConfigurationBootstrap-reference[`GenericKafkaListenerConfigurationBootstrap`]
 and xref:type-GenericKafkaListenerConfigurationBroker-reference[`GenericKafkaListenerConfigurationBroker`] properties.
 +
+.Example `ingress` listener configuration
+[source,yaml,subs="+attributes"]
+----
+#...
+spec:
+  kafka:
+    #...
+    listeners:
+      #...
+      - name: external2
+        port: 9095
+        type: ingress
+        tls: false
+        authentication:
+          type: tls
+        configuration:
+          bootstrap:
+            host: bootstrap.myingress.com
+          brokers:
+          - broker: 0
+            host: broker-0.myingress.com
+          - broker: 1
+            host: broker-1.myingress.com
+          - broker: 2
+            host: broker-2.myingress.com
+  #...
+----
++
 NOTE: External listeners using `Ingress` are currently only tested with the {NginxIngressController}.
+
 
 loadbalancer:: Configures an external listener to expose Kafka `Loadbalancer` type `Services`.
 +
 A new loadbalancer service is created for every Kafka broker pod.
 An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
 Loadbalancers listen to connections on port 9094.
++
+You can use the `loadBalancerSourceRanges` property to configure xref:property-listener-config-source-ranges-reference[source ranges] to restrict access to the specified IP addresses.
++
+.Example `loadbalancer` listener configuration
+[source,yaml,subs="+attributes"]
+----
+#...
+spec:
+  kafka:
+    #...
+    listeners:
+      - name: external3
+        port: 9094
+        type: loadbalancer
+        tls: true
+        configuration:
+          loadBalancerSourceRanges:
+            - 10.0.0.0/8
+            - 88.208.76.87/32
+    #...
+----
 nodeport:: Configures an external listener to expose Kafka using `NodePort` type `Services`.
 +
 Kafka clients connect directly to the nodes of Kubernetes.
@@ -103,10 +191,28 @@ An additional `NodePort` type of service is created to serve as a Kafka bootstra
 When configuring the advertised addresses for the Kafka broker pods, Strimzi uses the address of the node on which the given pod is running.
 You can use `preferredNodePortAddressType` property to configure the xref:property-listener-config-preferredNodePortAddressType-{context}[first address type checked as the node address].
 +
+.Example `nodeport` listener configuration
+[source,yaml,subs="+attributes"]
+----
+#...
+spec:
+  kafka:
+    #...
+    listeners:
+      #...
+      - name: external4
+        port: 9095
+        type: nodeport
+        tls: false
+        configuration:
+          preferredNodePortAddressType: InternalDNS
+    #...
+----
++
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
 [id='property-listener-port-{context}']
-.`port`
+=== `port`
 
 The port number is the port used in the Kafka cluster, which might not be the same port used for access by a client.
 
@@ -124,7 +230,7 @@ kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=
 NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9091) and metrics (9404).
 
 [id='property-listener-tls-{context}']
-.`tls`
+=== `tls`
 
 The TLS property is required.
 
@@ -133,7 +239,7 @@ To enable it, set the `tls` property to `true`.
 
 TLS encryption is always used with `route` listeners.
 
-.`authentication`
+=== `authentication`
 
 Authentication for the listener can be specified as:
 
@@ -142,7 +248,7 @@ Authentication for the listener can be specified as:
 * Token-based OAuth 2.0 (`oauth`).
 
 [id='configuration-listener-network-policy-{context}']
-.`networkPolicyPeers`
+=== `networkPolicyPeers`
 
 Use `networkPolicyPeers` to configure network policies that restrict access to a listener at the network level.
 The following example shows a `networkPolicyPeers` configuration for a `plain` and a `tls` listener.

@@ -114,14 +114,4 @@ NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in
 
 == Additional listener configuration options
 
-Add further listener configuration using `configuration` properties.
-You can use:
-
-* `bootstrap` and `brokers` properties to specify overrides for connecting to bootstrap and broker services
-* `brokerCertChainAndKey` to xref:proc-installing-certs-per-listener-str[configure a listener to use your own private key and server certificate]
-* `externalTrafficPolicy`, for `nodeport` and `loadbalancer` listeners, to specify whether a service routes external traffic to a local node or cluster-wide endpoints
-* `loadBalancerSourceRanges`, for `loadbalancer` listeners, to specify Classless Inter-Domain Routing (CIDR) ranges to connect to
-* `preferredNodePortAddressType`, for `nodeport` listeners, to specify the address type to use as the node address
-* `useServiceDnsDomain`, for `internal` listeners, to specify whether the Kubernetes service DNS domain is used
-
-For more information, see the xref:type-GenericKafkaListenerConfiguration-reference[GenericKafkaListenerConfiguration schema].
+You can use the properties of the xref:type-GenericKafkaListenerConfiguration-reference[GenericKafkaListenerConfiguration schema] to add further configuration to listeners.

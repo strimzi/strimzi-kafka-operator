@@ -1,7 +1,7 @@
 Configures a MirrorMaker producer.
 
 [id='property-producer-abort-on-send-{context}']
-.`abortOnSendFailure`
+=== `abortOnSendFailure`
 
 Use the `producer.abortOnSendFailure` property to configure how to handle message send failure from the producer.
 
@@ -13,7 +13,7 @@ By default, if an error occurs when sending a message from Kafka MirrorMaker to 
 If the `abortOnSendFailure` option is set to `false`, message sending errors are ignored.
 
 [id='property-producer-config-{context}']
-.`config`
+=== `config`
 
 Use the `producer.config` properties to configure Kafka options for the producer.
 

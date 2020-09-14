@@ -1,7 +1,7 @@
 Configuration for Kafka listeners.
 
 [id='property-listener-config-brokerCertChainAndKey-{context}']
-.`brokerCertChainAndKey`
+=== `brokerCertChainAndKey`
 
 The `brokerCertChainAndKey` property is only used with listeners that have TLS encryption enabled.
 You can use the property to providing your own Kafka listener certificates.
@@ -26,7 +26,7 @@ listeners:
 ----
 
 [id='property-listener-config-traffic-policy-{context}']
-.`externalTrafficPolicy`
+=== `externalTrafficPolicy`
 
 The `externalTrafficPolicy` property is used with `loadbalancer` and `nodeport` listeners.
 When exposing Kafka outside of Kubernetes you can choose `Local` or `Cluster`.
@@ -34,7 +34,7 @@ When exposing Kafka outside of Kubernetes you can choose `Local` or `Cluster`.
 The default is `Cluster`.
 
 [id='property-listener-config-source-ranges-{context}']
-.`loadBalancerSourceRanges`
+=== `loadBalancerSourceRanges`
 
 The `loadBalancerSourceRanges` property is only used with `loadbalancer` listeners.
 When exposing Kafka outside of Kubernetes use source ranges, in addition to labels and annotations, to customize how a service is created.
@@ -58,7 +58,7 @@ listeners:
 ----
 
 [id='property-listener-config-class-{context}']
-.`class`
+=== `class`
 
 The `class` property is only used with `ingress` listeners.
 
@@ -81,7 +81,7 @@ listeners:
 ----
 
 [id='property-listener-config-preferredNodePortAddressType-{context}']
-.`preferredNodePortAddressType`
+=== `preferredNodePortAddressType`
 
 The `preferredNodePortAddressType` property is only used with `nodeport` listeners.
 
@@ -112,7 +112,7 @@ listeners:
 ----
 
 [id='property-listener-config-dns-{context}']
-.`useServiceDnsDomain`
+=== `useServiceDnsDomain`
 
 The `useServiceDnsDomain` property is only used with `internal` listeners,
 and defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.

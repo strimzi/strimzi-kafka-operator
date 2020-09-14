@@ -3,7 +3,7 @@ Configures bootstrap service overrides for external listeners.
 Broker service equivalents of `nodePort`, `host`, `loadBalancerIP` and `annotations` properties are configured in the xref:type-GenericKafkaListenerConfigurationBroker-reference[`GenericKafkaListenerConfigurationBroker` schema].
 
 [id='property-listener-config-altnames-{context}']
-.`alternativeNames`
+=== `alternativeNames`
 
 You can specify alternative names for the bootstrap service.
 The names are added to the broker certificates and can be used for TLS hostname verification.
@@ -27,7 +27,7 @@ listeners:
 ----
 
 [id='property-listener-config-host-{context}']
-.`host`
+=== `host`
 
 The `host` property is used with `route` and `ingress` listeners to specify the hostnames used by the bootstrap and per-broker services.
 
@@ -91,7 +91,7 @@ listeners:
 ----
 
 [id='property-listener-config-nodeport-{context}']
-.`nodePort`
+=== `nodePort`
 
 By default, the port numbers used for the bootstrap and broker services are automatically assigned by Kubernetes.
 You can override the assigned node ports for `nodeport` listeners by specifying the requested port numbers.
@@ -125,7 +125,7 @@ listeners:
 ----
 
 [id='property-listener-config-lb-ip-{context}']
-.`loadBalancerIP`
+=== `loadBalancerIP`
 
 Use the `loadBalancerIP` property to request a specific IP address when creating a loadbalancer.
 Use this property when you need to use a loadbalancer with a specific IP address.
@@ -157,7 +157,7 @@ listeners:
 ----
 
 [id='property-listener-config-annotations-{context}']
-.`annotations`
+=== `annotations`
 
 Use the `annotations` property to add annotations to `loadbalancer`, `nodeport` or `ingress` listeners.
 You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
