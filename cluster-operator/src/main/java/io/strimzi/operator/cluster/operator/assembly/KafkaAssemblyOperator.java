@@ -211,23 +211,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         reconcile(reconcileState).onComplete(reconcileResult -> {
             KafkaStatus status = reconcileState.kafkaStatus;
-            Condition readyCondition;
+            Condition condition;
 
             if (kafkaAssembly.getMetadata().getGeneration() != null)    {
                 status.setObservedGeneration(kafkaAssembly.getMetadata().getGeneration());
             }
 
             if (reconcileResult.succeeded())    {
-                readyCondition = new ConditionBuilder()
+                condition = new ConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
 
-                status.addCondition(readyCondition);
+                status.addCondition(condition);
                 createOrUpdatePromise.complete(status);
             } else {
-                readyCondition = new ConditionBuilder()
+                condition = new ConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("NotReady")
                         .withStatus("True")
@@ -235,7 +235,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .withMessage(reconcileResult.cause().getMessage())
                         .build();
 
-                status.addCondition(readyCondition);
+                status.addCondition(condition);
                 createOrUpdatePromise.fail(new ReconciliationException(status, reconcileResult.cause()));
             }
         });

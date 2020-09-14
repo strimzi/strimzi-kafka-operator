@@ -128,7 +128,6 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
 
     @Override
     public void visitObject(List<String> path, Object object) {
-        //System.out.println("Haaa");
         if (object instanceof UnknownPropertyPreserving) {
             Map<String, Object> properties = ((UnknownPropertyPreserving) object).getAdditionalProperties();
             if (properties != null && !properties.isEmpty()) {

@@ -16,7 +16,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Represents a generic status which can be used across different resources
+ * Represents a generic spec which can be used across different resources
  */
 @Buildable(
         editableEnabled = false,

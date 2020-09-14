@@ -304,7 +304,6 @@ public abstract class AbstractOperator<
                         StatusDiff sDiff = new StatusDiff(currentStatus, desiredStatus);
 
                         if (!sDiff.isEmpty()) {
-                            //T copiedResource = copyResource(res);
                             res.setStatus(desiredStatus);
 
                             return resourceOperator.updateStatusAsync(res)
