@@ -203,9 +203,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
         LOGGER.info("Verifying that team A is not able read to topic starting with 'x-' because in kafka cluster" +
                 "does not have super-users to break authorization rules");
 
-        teamBOauthClientJob.setConsumerGroup("x-consumer_group_b1");
-        teamBOauthClientJob.setTopicName(TOPIC_X);
-        teamBOauthClientJob.setUserName(USER_NAME);
+        teamAOauthClientJob.setConsumerGroup("x-consumer_group_b1");
+        teamAOauthClientJob.setTopicName(TOPIC_X);
+        teamAOauthClientJob.setUserName(USER_NAME);
 
         teamAOauthClientJob.consumerStrimziOauthTls(CLUSTER_NAME).done();
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(TEAM_A_CONSUMER_NAME, NAMESPACE, 30_000));
@@ -231,8 +231,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         LOGGER.info("Verifying that team A is able to write to topic starting with 'x-' and break authorization rule");
 
-        teamBOauthClientJob.setConsumerGroup("x-consumer_group_b2");
-        teamBOauthClientJob.setTopicName(TOPIC_X);
+        teamAOauthClientJob.setConsumerGroup("x-consumer_group_b2");
+        teamAOauthClientJob.setTopicName(TOPIC_X);
 
         teamAOauthClientJob.consumerStrimziOauthTls(CLUSTER_NAME).done();
         ClientUtils.waitForClientSuccess(TEAM_A_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
