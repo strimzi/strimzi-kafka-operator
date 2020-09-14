@@ -13,7 +13,7 @@ function check_command_present() {
 check_command_present yq
 check_command_present mvn
 check_command_present git
-check_command_present docker
+check_command_present "${DOCKER_CMD:docker}"
 
 # After version 3.3.1, yq --version sends the string to STDERR instead of STDOUT
 YQ_VERSION="$(yq --version 2>&1 | ${SED} 's/^.* //g')"
