@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -80,6 +81,7 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -166,6 +168,7 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
 
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(userName);
     }
 
     @Test
@@ -319,6 +322,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorNotReady(CLUSTER_NAME);
 
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaConnectorUtils.waitForConnectorDeletion(CLUSTER_NAME);
     }
 
     @Test
@@ -333,6 +337,9 @@ class CustomResourceStatusST extends AbstractST {
         KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName, 1, 10, 10).build());
         KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
         assertKafkaTopicStatus(1, topicName);
+
+        cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
     }
 
     @Test
