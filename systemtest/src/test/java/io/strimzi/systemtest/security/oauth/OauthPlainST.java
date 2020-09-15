@@ -34,7 +34,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +51,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
-@Disabled
 public class OauthPlainST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthPlainST.class);
 
