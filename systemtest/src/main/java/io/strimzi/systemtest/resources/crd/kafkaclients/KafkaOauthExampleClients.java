@@ -17,28 +17,28 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
     private String oauthTokenEndpointUri;
     private String userName;
 
-    public static class KafkaOauthClientsBuilder extends KafkaBasicExampleClients.KafkaBasicClientsBuilder<KafkaOauthClientsBuilder> {
+    public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
         private String oauthClientId;
         private String oauthClientSecret;
         private String oauthTokenEndpointUri;
         private String userName;
 
-        public KafkaOauthClientsBuilder withOAuthClientId(String oauthClientId) {
+        public Builder withOAuthClientId(String oauthClientId) {
             this.oauthClientId = oauthClientId;
             return self();
         }
 
-        public KafkaOauthClientsBuilder withOAuthClientSecret(String oauthClientSecret) {
+        public Builder withOAuthClientSecret(String oauthClientSecret) {
             this.oauthClientSecret = oauthClientSecret;
             return self();
         }
 
-        public KafkaOauthClientsBuilder withOAuthTokenEndpointUri(String oauthTokenEndpointUri) {
+        public Builder withOAuthTokenEndpointUri(String oauthTokenEndpointUri) {
             this.oauthTokenEndpointUri = oauthTokenEndpointUri;
             return self();
         }
 
-        public KafkaOauthClientsBuilder withUserName(String userName) {
+        public Builder withUserName(String userName) {
             this.userName = userName;
             return self();
         }
@@ -49,12 +49,12 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         }
 
         @Override
-        protected KafkaOauthExampleClients.KafkaOauthClientsBuilder self() {
+        protected KafkaOauthExampleClients.Builder self() {
             return this;
         }
     }
 
-    private KafkaOauthExampleClients(KafkaOauthExampleClients.KafkaOauthClientsBuilder builder) {
+    private KafkaOauthExampleClients(KafkaOauthExampleClients.Builder builder) {
         super(builder);
         if (builder.oauthClientId == null || builder.oauthClientId.isEmpty()) throw new InvalidParameterException("OAuth client id is not set.");
         if (builder.oauthClientSecret == null || builder.oauthClientSecret.isEmpty()) throw new InvalidParameterException("OAuth client secret is not set.");

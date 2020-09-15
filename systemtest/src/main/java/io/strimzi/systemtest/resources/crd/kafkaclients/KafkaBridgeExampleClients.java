@@ -19,16 +19,16 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
     private int port;
     private int pollInterval;
 
-    public static class KafkaBridgeClientsBuilder extends KafkaBasicExampleClients.KafkaBasicClientsBuilder<KafkaBridgeClientsBuilder> {
+    public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
         private int port;
         private int pollInterval;
 
-        public KafkaBridgeClientsBuilder withPort(int port) {
+        public Builder withPort(int port) {
             this.port = port;
             return self();
         }
 
-        public KafkaBridgeClientsBuilder withPollInterval(int pollInterval) {
+        public Builder withPollInterval(int pollInterval) {
             this.pollInterval = pollInterval;
             return self();
         }
@@ -39,12 +39,12 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
         }
 
         @Override
-        protected KafkaBridgeExampleClients.KafkaBridgeClientsBuilder self() {
+        protected KafkaBridgeExampleClients.Builder self() {
             return this;
         }
     }
 
-    private KafkaBridgeExampleClients(KafkaBridgeExampleClients.KafkaBridgeClientsBuilder builder) {
+    private KafkaBridgeExampleClients(KafkaBridgeExampleClients.Builder builder) {
         super(builder);
         port = builder.port;
         pollInterval = builder.pollInterval;

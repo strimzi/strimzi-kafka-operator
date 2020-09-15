@@ -313,7 +313,7 @@ public class MetricsST extends AbstractST {
         String consumerName = "bridge-consumer";
 
         // Attach consumer before producer
-        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapServer(KafkaBridgeResources.serviceName(BRIDGE_CLUSTER))

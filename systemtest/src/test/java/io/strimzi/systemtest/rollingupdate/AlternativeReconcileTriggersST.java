@@ -76,7 +76,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerGroup(consumerName)
             .withBootstrapServer(KafkaResources.plainBootstrapAddress(clusterName))

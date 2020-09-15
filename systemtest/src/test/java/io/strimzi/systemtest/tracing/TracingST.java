@@ -887,7 +887,7 @@ public class TracingST extends AbstractST {
         String bridgeProducer = "bridge-producer";
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(bridgeProducer)
             .withBootstrapServer(bridgeServiceName)
             .withTopicName(TOPIC_NAME)
@@ -993,7 +993,7 @@ public class TracingST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        kafkaTracingClient = new KafkaTracingExampleClients.KafkaTracingClientsBuilder()
+        kafkaTracingClient = new KafkaTracingExampleClients.Builder()
             .withProducerName(PRODUCER_JOB_NAME)
             .withConsumerName(CONSUMER_JOB_NAME)
             .withBootstrapServer(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))

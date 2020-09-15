@@ -22,22 +22,22 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
     private String jaegerServiceConsumerName;
     private String jaegerServiceStreamsName;
 
-    public static class KafkaTracingClientsBuilder extends KafkaBasicExampleClients.KafkaBasicClientsBuilder<KafkaTracingClientsBuilder> {
+    public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
         private String jaegerServiceProducerName;
         private String jaegerServiceConsumerName;
         private String jaegerServiceStreamsName;
 
-        public KafkaTracingClientsBuilder withJaegerServiceProducerName(String jaegerServiceProducerName) {
+        public Builder withJaegerServiceProducerName(String jaegerServiceProducerName) {
             this.jaegerServiceProducerName = jaegerServiceProducerName;
             return self();
         }
 
-        public KafkaTracingClientsBuilder withJaegerServiceConsumerName(String jaegerServiceConsumerName) {
+        public Builder withJaegerServiceConsumerName(String jaegerServiceConsumerName) {
             this.jaegerServiceConsumerName = jaegerServiceConsumerName;
             return self();
         }
 
-        public KafkaTracingClientsBuilder withJaegerServiceStreamsName(String jaegerServiceStreamsName) {
+        public Builder withJaegerServiceStreamsName(String jaegerServiceStreamsName) {
             this.jaegerServiceStreamsName = jaegerServiceStreamsName;
             return self();
         }
@@ -48,12 +48,12 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
         }
 
         @Override
-        protected KafkaTracingExampleClients.KafkaTracingClientsBuilder self() {
+        protected KafkaTracingExampleClients.Builder self() {
             return this;
         }
     }
 
-    public KafkaTracingExampleClients(KafkaTracingExampleClients.KafkaTracingClientsBuilder builder) {
+    public KafkaTracingExampleClients(KafkaTracingExampleClients.Builder builder) {
         super(builder);
         jaegerServiceProducerName = builder.jaegerServiceProducerName;
         jaegerServiceConsumerName = builder.jaegerServiceConsumerName;

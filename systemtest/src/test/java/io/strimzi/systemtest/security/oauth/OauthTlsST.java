@@ -164,7 +164,7 @@ public class OauthTlsST extends OauthAbstractST {
 
         String producerName = "bridge-producer";
 
-        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withBootstrapServer(KafkaBridgeResources.serviceName(CLUSTER_NAME))
             .withTopicName(TOPIC_NAME)
@@ -307,7 +307,7 @@ public class OauthTlsST extends OauthAbstractST {
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
 
-        KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.KafkaOauthClientsBuilder()
+        KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
             .withProducerName(OAUTH_PRODUCER_NAME)
             .withConsumerName(OAUTH_CONSUMER_NAME)
             .withBootstrapServer(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
@@ -329,7 +329,7 @@ public class OauthTlsST extends OauthAbstractST {
 
         LOGGER.info("Keycloak settings {}", keycloakInstance.toString());
 
-        oauthInternalClientJob = new KafkaOauthExampleClients.KafkaOauthClientsBuilder()
+        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
             .withProducerName(OAUTH_PRODUCER_NAME)
             .withConsumerName(OAUTH_CONSUMER_NAME)
             .withBootstrapServer(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))

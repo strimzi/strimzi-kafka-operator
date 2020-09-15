@@ -196,7 +196,7 @@ public class OauthPlainST extends OauthAbstractST {
                 JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
-                KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.KafkaOauthClientsBuilder()
+                KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
                     .withProducerName(OAUTH_PRODUCER_NAME)
                     .withConsumerName(OAUTH_CONSUMER_NAME)
                     .withBootstrapServer(KafkaResources.plainBootstrapAddress(targetKafkaCluster))
@@ -313,7 +313,7 @@ public class OauthPlainST extends OauthAbstractST {
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
 
-                KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.KafkaOauthClientsBuilder()
+                KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
                     .withProducerName(OAUTH_PRODUCER_NAME)
                     .withConsumerName(OAUTH_CONSUMER_NAME)
                     .withBootstrapServer(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
@@ -363,7 +363,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         String producerName = "bridge-producer";
 
-        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.KafkaBridgeClientsBuilder()
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withBootstrapServer(KafkaBridgeResources.serviceName(CLUSTER_NAME))
             .withTopicName(TOPIC_NAME)
@@ -438,7 +438,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         LOGGER.info("Setting producer and consumer properties");
 
-        oauthInternalClientJob = new KafkaOauthExampleClients.KafkaOauthClientsBuilder()
+        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
             .withProducerName(OAUTH_PRODUCER_NAME)
             .withConsumerName(OAUTH_CONSUMER_NAME)
             .withBootstrapServer(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))

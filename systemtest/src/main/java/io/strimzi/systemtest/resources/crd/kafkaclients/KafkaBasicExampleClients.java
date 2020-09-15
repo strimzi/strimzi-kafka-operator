@@ -30,7 +30,7 @@ public abstract class KafkaBasicExampleClients {
     protected String consumerGroup;
     protected long delayMs;
 
-    public abstract static class KafkaBasicClientsBuilder<T extends KafkaBasicClientsBuilder<T>> {
+    public abstract static class Builder<T extends Builder<T>> {
         private String producerName;
         private String consumerName;
         private String bootstrapServer;
@@ -85,7 +85,7 @@ public abstract class KafkaBasicExampleClients {
         protected abstract T self();
     }
 
-    protected KafkaBasicExampleClients(KafkaBasicClientsBuilder<?> builder) {
+    protected KafkaBasicExampleClients(Builder<?> builder) {
         if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
         if (builder.bootstrapServer == null || builder.bootstrapServer.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");

@@ -302,7 +302,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_A_CLIENT).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, TEAM_B_CLIENT).done();
 
-        teamAOauthClientJob = new KafkaOauthExampleClients.KafkaOauthClientsBuilder()
+        teamAOauthClientJob = new KafkaOauthExampleClients.Builder()
             .withProducerName(TEAM_A_PRODUCER_NAME)
             .withConsumerName(TEAM_A_CONSUMER_NAME)
             .withBootstrapServer(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
@@ -314,7 +314,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        teamBOauthClientJob = new KafkaOauthExampleClients.KafkaOauthClientsBuilder()
+        teamBOauthClientJob = new KafkaOauthExampleClients.Builder()
             .withProducerName(TEAM_B_PRODUCER_NAME)
             .withConsumerName(TEAM_B_CONSUMER_NAME)
             .withBootstrapServer(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
