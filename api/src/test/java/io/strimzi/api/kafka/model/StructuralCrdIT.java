@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -47,13 +48,15 @@ public class StructuralCrdIT extends AbstractCrdIT {
                             && "True".equals(cond.getStatus()))
                 .findFirst();
         if (first.isPresent()) {
-            pattern.matcher(first.get().getMessage()).results().forEach(match -> {
-                Integer index = Integer.valueOf(match.group(1));
+
+            Matcher matcher = pattern.matcher(first.get().getMessage());
+            while (matcher.find()) {
+                Integer index = Integer.valueOf(matcher.group(1));
                 ApiVersion nonStructuralVersion = indexedVersions.get(index);
                 if (shouldBeStructural.contains(nonStructuralVersion)) {
-                    Assertions.fail(api + "/ " + nonStructuralVersion + " should be structural but there's a complaint about " + match.group());
+                    Assertions.fail(api + "/ " + nonStructuralVersion + " should be structural but there's a complaint about " + matcher.group());
                 }
-            });
+            }
         }
     }
 
