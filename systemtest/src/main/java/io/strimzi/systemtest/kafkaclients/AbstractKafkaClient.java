@@ -164,10 +164,13 @@ public abstract class AbstractKafkaClient {
         String extBootstrapServiceType = extBootstrapService.getSpec().getType();
 
         if (extBootstrapServiceType.equals("NodePort")) {
+            // TODO: here specify which nodeports...
+
             int port = extBootstrapService.getSpec().getPorts().get(0).getNodePort();
             String externalAddress = kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
             return externalAddress + ":" + port;
         } else if (extBootstrapServiceType.equals("LoadBalancer")) {
+            // TODO: here change the way of specifying load-balancers...
             LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
             String result = loadBalancerIngress.getHostname();
 
