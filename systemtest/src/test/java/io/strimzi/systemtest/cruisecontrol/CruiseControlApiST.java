@@ -28,7 +28,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
