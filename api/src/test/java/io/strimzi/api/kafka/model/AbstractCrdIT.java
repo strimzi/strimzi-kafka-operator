@@ -33,6 +33,12 @@ public abstract class AbstractCrdIT {
                 && Integer.parseInt(version.getMinor().split("\\D")[0]) >= 11);
     }
 
+    protected void assumeKube1_16Plus() {
+        VersionInfo version = new DefaultKubernetesClient().getVersion();
+        assumeTrue("1".equals(version.getMajor())
+                && Integer.parseInt(version.getMinor().split("\\D")[0]) >= 16);
+    }
+
     private <T extends CustomResource> T loadResource(Class<T> resourceClass, String resource) {
         String ssStr = TestUtils.readResource(resourceClass, resource);
         assertThat("Class path resource " + resource + " was missing", ssStr, is(notNullValue()));

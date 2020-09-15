@@ -80,15 +80,15 @@ public class Crds {
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls) {
         String version = null;
         if (cls.equals(Kafka.class)) {
-            version = Kafka.VERSIONS.get(0);
+            version = Kafka.CONSUMED_VERSION;
         } else if (cls.equals(KafkaConnect.class)) {
             version = KafkaConnect.VERSIONS.get(0);
         } else if (cls.equals(KafkaConnectS2I.class)) {
             version = KafkaConnectS2I.VERSIONS.get(0);
         } else if (cls.equals(KafkaTopic.class)) {
-            version = Kafka.VERSIONS.get(0);
+            version = KafkaTopic.VERSIONS.get(0);
         } else if (cls.equals(KafkaUser.class)) {
-            version = Kafka.VERSIONS.get(0);
+            version = KafkaUser.VERSIONS.get(0);
         } else if (cls.equals(KafkaMirrorMaker.class)) {
             version = KafkaMirrorMaker.VERSIONS.get(0);
         } else if (cls.equals(KafkaBridge.class)) {
@@ -267,6 +267,14 @@ public class Crds {
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaV1Alpha1Operation(KubernetesClient client) {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1ALPHA1)), Kafka.class, KafkaList.class, DoneableKafka.class);
+    }
+
+    public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaV1Beta1Operation(KubernetesClient client) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1BETA1)), Kafka.class, KafkaList.class, DoneableKafka.class);
+    }
+
+    public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaV1Beta2Operation(KubernetesClient client) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1BETA2)), Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
     public static CustomResourceDefinition kafkaConnect() {

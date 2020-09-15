@@ -31,7 +31,6 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        apiVersion = KafkaMirrorMaker.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = KafkaMirrorMaker.RESOURCE_KIND,
@@ -41,7 +40,6 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker.SCOPE,
-                version = KafkaMirrorMaker.V1BETA1,
                 versions = {
                         @Crd.Spec.Version(
                                 name = KafkaMirrorMaker.V1BETA1,

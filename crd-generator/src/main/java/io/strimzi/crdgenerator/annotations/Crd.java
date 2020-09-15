@@ -18,13 +18,6 @@ import java.lang.annotation.Target;
 public @interface Crd {
 
     /**
-     * The {@code apiVersion} of the generated {@code CustomResourceDefinition}.
-     * (Not the {@code apiVersion} of your custom resource instances, which is {@link Spec#version()}).
-     * @return The {@code apiVersion} of the generated {@code CustomResourceDefinition}
-     */
-    String apiVersion();
-
-    /**
      * Info for the {@code spec} of the generated {@code CustomResourceDefinition}.
      * @return The spec.
      */
@@ -80,14 +73,6 @@ public @interface Crd {
          * @return The scope of the resources. E.g. "Namespaced".
          */
         String scope();
-
-        /**
-         * @return The version of custom resources that this is the definition for.
-         * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
-         * @see #versions()
-         */
-        @Deprecated
-        String version() default "";
 
         /**
          * @return The version of custom resources that this is the definition for.

@@ -10,6 +10,7 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -180,6 +181,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
         this.kafkaContainer = kafkaContainer;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @DeprecatedProperty
     @Deprecated
     @Description("Template for the Kafka broker TLS sidecar container")

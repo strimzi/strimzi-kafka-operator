@@ -9,15 +9,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-//@Repeatable(PresentInVersions.VersionedMaximum.class)
+/**
+ * Used when a property is present from or until a particular CR API version
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface PresentInVersions {
+    /**
+     * @return The versions in which the annotated property is present
+     */
     String value();
-
-//    @Retention(RetentionPolicy.RUNTIME)
-//    @Target({ElementType.METHOD, ElementType.FIELD})
-//    public @interface VersionedMaximum {
-//        PresentInVersions[] value();
-//    }
 }

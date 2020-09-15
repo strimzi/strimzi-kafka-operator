@@ -93,7 +93,7 @@ public class DocGenerator {
             }
 
             if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
-                memorableProperties.addAll(property.getAlternatives(crApiVersion));
+                memorableProperties.addAll(property.getAlternatives(crApiVersion, VersionRange.all()));
             } else {
                 memorableProperties.add(property);
             }
@@ -177,7 +177,7 @@ public class DocGenerator {
             addExternalUrl(property, kubeLink, externalUrl);
 
             // Get the OneOfType alternatives
-            List<Property> alternatives = property.getAlternatives(crApiVersion);
+            List<Property> alternatives = property.getAlternatives(crApiVersion, VersionRange.all());
 
             // Add the types to the `types` array to also generate the docs for the type itself
             if (alternatives.size() > 0) {

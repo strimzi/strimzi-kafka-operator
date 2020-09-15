@@ -74,6 +74,10 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
         <dependency>
@@ -150,6 +154,7 @@
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--label</argument><argument>app:strimzi</argument>
                                 <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--api-versions</argument><argument>v1alpha1,v1beta1</argument>
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.Kafka=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnect=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
@@ -161,6 +166,76 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaRebalance=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-crd-evolution-1</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1beta1</argument>
+                                <argument>--api-versions</argument><argument>v1alpha1,v1beta1</argument>
+                                <argument>--storage-version</argument><argument>v1beta1</argument>
+                                <argument>--yaml</argument>
+
+                                <argument>io.strimzi.api.kafka.model.Kafka=src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1alpha1-v1beta1-store-v1beta1.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-crd-evolution-2</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1beta1</argument>
+                                <argument>--api-versions</argument><argument>v1beta1,v1beta2</argument>
+                                <argument>--storage-version</argument><argument>v1beta1</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.Kafka=src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1beta1-v1beta2-store-v1beta1.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-crd-evolution-3</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1beta1</argument>
+                                <argument>--api-versions</argument><argument>v1beta1,v1beta2</argument>
+                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.Kafka=src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1beta1-v1beta2-store-v1beta2.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>

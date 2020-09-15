@@ -15,8 +15,10 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
-@Crd(apiVersion = "v1beta1", spec = @Crd.Spec(group = "strimzi.io", names = @Crd.Spec.Names(kind = "Topic", plural = "topics", categories = "strimzi"), scope = "Namespaced", version = "v1alpha1"))
+@Crd(spec = @Crd.Spec(group = "strimzi.io", names = @Crd.Spec.Names(kind = "Topic", plural = "topics", categories = "strimzi"), scope = "Namespaced"))
 public class TopicCrd extends CustomResource {
 
     public String name;
@@ -36,6 +38,6 @@ public class TopicCrd extends CustomResource {
         }
         System.out.println(m.writeValueAsString(x));
 
-        new CrdGenerator(m).generate(TopicCrd.class, new OutputStreamWriter(System.out));
+        new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1, new CrdGenerator.DefaultReporter(), m, emptyMap(), emptyList(), null).generate(TopicCrd.class, new OutputStreamWriter(System.out));
     }
 }

@@ -313,11 +313,20 @@ class Property implements AnnotatedElement {
         return getName().equals(discriminator(m.getDeclaringClass()));
     }
 
-    List<Property> getAlternatives(ApiVersion crApiVersion) {
+    /**
+     * @param crApiVersion The API version of the CR being generated, or null if we're generating
+     *                     a schema for a kube version which doesn't support multiple versions.
+     * @param kubeVersions
+     * @return
+     */
+    List<Property> getAlternatives(ApiVersion crApiVersion, VersionRange<KubeVersion> kubeVersions) {
         List<Property> alternatives =
                 Property.properties(crApiVersion, getType().getType()).values().stream()
                         .filter(p -> {
                             Alternative annotation = p.getAnnotation(Alternative.class);
+                            if (!KubeVersion.supportsSchemaPerVersion(kubeVersions) && annotation != null && !ApiVersion.parseRange(annotation.apiVersion()).isAll()) {
+                                //throw new RuntimeException(this + " supports multiple CR apiVersions " + annotation.apiVersion() + " but we're generating a schema kubernetes " + kubeVersions + " at least one of which doesn't support multiple versions");
+                            }
                             return crApiVersion == null || (annotation != null && ApiVersion.parseRange(annotation.apiVersion()).contains(crApiVersion));
                         })
                         .collect(Collectors.toList());

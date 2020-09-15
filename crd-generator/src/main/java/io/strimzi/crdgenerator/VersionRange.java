@@ -35,6 +35,18 @@ public class VersionRange<Version extends Comparable<Version>> {
         return EMPTY;
     }
 
+    public static <Version extends Comparable<Version>> VersionRange<Version> all() {
+        return new VersionRange<>(null, null);
+    }
+
+    public boolean isEmpty() {
+        return this == EMPTY;
+    }
+
+    public boolean isAll() {
+        return this.equals(all());
+    }
+
     private VersionRange(Version from, Version to) {
         // invariant from == null => "all" => null must be null too
         if (from == null && to != null) {
@@ -83,7 +95,7 @@ public class VersionRange<Version extends Comparable<Version>> {
             return empty();
         } else if ("all".equals(versionRange)) {
             // all
-            return new VersionRange<>(null, null);
+            return all();
         } else if (parser.isValid(versionRange)) {
             // version
             Version v = parser.parse(versionRange);
@@ -116,6 +128,14 @@ public class VersionRange<Version extends Comparable<Version>> {
                 throw new IllegalArgumentException("Invalid version range: None of the expected patterns applied");
             }
         }
+    }
+
+    Version lower() {
+        return from;
+    }
+
+    Version upper() {
+        return to;
     }
 
     @Override

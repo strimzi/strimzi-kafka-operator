@@ -40,13 +40,12 @@ public class Type1OrType2 {
         type2Value = type2Value;
     }
 
-    @Alternative(apiVersion = "v1"
-    )
+    @Alternative
     public Type1 getMapValue()    {
         return type1Value;
     }
 
-    @Alternative(apiVersion = "v1+")
+    @Alternative
     public Type2 getListValue()    {
         return type2Value;
     }

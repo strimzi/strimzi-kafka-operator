@@ -4,6 +4,10 @@
  */
 package io.strimzi.crdgenerator;
 
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -13,7 +17,6 @@ import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 
 @Crd(
-        apiVersion = "apiextensions.k8s.io/v1beta1",
         spec = @Crd.Spec(
                 group = "crdgenerator.strimzi.io",
                 names = @Crd.Spec.Names(
@@ -57,6 +60,8 @@ import io.strimzi.crdgenerator.annotations.PresentInVersions;
                         )
                 }
         ))
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 public class VersionedExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
     @Description(apiVersions = "v1", value = "V1 description")
@@ -81,5 +86,23 @@ public class VersionedExampleCrd<T, U extends Number, V extends U> extends Custo
     @PresentInVersions("v2+")
     public String added;
 
-    public MapOrList typeChange;
+    public VersionedMapOrList typeChange;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VersionedExampleCrd<?, ?, ?> that = (VersionedExampleCrd<?, ?, ?>) o;
+        return someInt == that.someInt &&
+                someOtherInt == that.someOtherInt &&
+                Objects.equals(ignored, that.ignored) &&
+                Objects.equals(removed, that.removed) &&
+                Objects.equals(added, that.added) &&
+                Objects.equals(typeChange, that.typeChange);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ignored, someInt, someOtherInt, removed, added, typeChange);
+    }
 }

@@ -17,7 +17,17 @@ import static java.lang.Short.parseShort;
 public class KubeVersion implements Comparable<KubeVersion> {
 
     public static final KubeVersion V1_11 = new KubeVersion((short) 1, (short) 11);
+    public static final KubeVersion V1_12 = new KubeVersion((short) 1, (short) 12);
+    public static final KubeVersion V1_13 = new KubeVersion((short) 1, (short) 13);
+    public static final KubeVersion V1_14 = new KubeVersion((short) 1, (short) 14);
+    public static final KubeVersion V1_15 = new KubeVersion((short) 1, (short) 15);
     public static final KubeVersion V1_16 = new KubeVersion((short) 1, (short) 16);
+    public static final KubeVersion V1_17 = new KubeVersion((short) 1, (short) 17);
+    public static final KubeVersion V1_18 = new KubeVersion((short) 1, (short) 18);
+    public static final KubeVersion V1_19 = new KubeVersion((short) 1, (short) 19);
+
+    public static final VersionRange<KubeVersion> V1_11_PLUS = KubeVersion.parseRange("1.11+");
+    public static final VersionRange<KubeVersion> V1_16_PLUS = KubeVersion.parseRange("1.16+");
 
     private final short major;
     private final short minor;
@@ -70,6 +80,16 @@ public class KubeVersion implements Comparable<KubeVersion> {
 
     public boolean supportsSchemaPerVersion() {
         return this.compareTo(V1_16) >= 0;
+    }
+
+    public static boolean supportsSchemaPerVersion(VersionRange<KubeVersion> versionRange) {
+        if (versionRange.isEmpty() || versionRange.isAll()) {
+            return false;
+        } else {
+            return versionRange.lower().supportsSchemaPerVersion()
+                    && (versionRange.upper() == null
+                    || versionRange.upper().supportsSchemaPerVersion());
+        }
     }
 
     /**

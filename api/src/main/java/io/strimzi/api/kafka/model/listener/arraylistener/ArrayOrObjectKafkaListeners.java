@@ -45,13 +45,14 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
         this.kafkaListeners = kafkaListeners;
     }
 
-    @Alternative()
+
+    @Alternative(apiVersion = "v1alpha1+")
     @MinimumItems(1)
     public List<GenericKafkaListener> getGenericKafkaListeners() {
         return genericKafkaListeners;
     }
 
-    @Alternative()
+    @Alternative(apiVersion = "v1alpha1-v1beta1")
     public KafkaListeners getKafkaListeners() {
         return kafkaListeners;
     }
