@@ -73,6 +73,7 @@ public abstract class AbstractOperator<
     private final Counter lockedReconciliationsCounter;
     private final AtomicInteger resourceCounter;
     private final Timer reconciliationsTimer;
+    private final Map<Tags, AtomicInteger> resourcesStateCounter;
 
     public AbstractOperator(Vertx vertx, String kind, S resourceOperator, MetricsProvider metrics) {
         this.vertx = vertx;
@@ -110,6 +111,8 @@ public abstract class AbstractOperator<
         reconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
                 "The time the reconciliation takes to complete",
                 metricTags);
+
+        resourcesStateCounter = new HashMap<>();
     }
 
     @Override
@@ -313,18 +316,21 @@ public abstract class AbstractOperator<
      */
     private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
         if (result.succeeded()) {
+            updateResourceState(reconciliation, 1);
             successfulReconciliationsCounter.increment();
             reconciliationTimerSample.stop(reconciliationsTimer);
             log.info("{}: reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
             if (cause instanceof InvalidConfigParameterException) {
+                updateResourceState(reconciliation, 0);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
             } else if (cause instanceof UnableToAcquireLockException) {
                 lockedReconciliationsCounter.increment();
             } else  {
+                updateResourceState(reconciliation, 0);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile", reconciliation, cause);
@@ -338,5 +344,40 @@ public abstract class AbstractOperator<
 
     public AtomicInteger getResourceCounter() {
         return resourceCounter;
+    }
+
+    /**
+     * Updates the resource state metric for the provided reconciliation which brings kind, name and namespace
+     * of the custom resource.
+     *
+     * @param reconciliation reconciliation to use to update the resource state metric
+     * @param state metric value
+     */
+    private void updateResourceState(Reconciliation reconciliation, int state) {
+        Tags metricTags = Tags.of(
+                Tag.of("kind", reconciliation.kind()),
+                Tag.of("name", reconciliation.name()),
+                Tag.of("resource-namespace", reconciliation.namespace()));
+
+        T cr = resourceOperator.get(reconciliation.namespace(), reconciliation.name());
+        if (cr != null) {
+            resourcesStateCounter.computeIfAbsent(metricTags, tags ->
+                    metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", tags)
+            );
+            resourcesStateCounter.get(metricTags).set(state);
+            log.debug("{}: Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTags, state);
+        } else {
+            Optional<Meter> gauge = metrics.meterRegistry().getMeters()
+                    .stream()
+                    .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
+                            meter.getId().getTags().equals(metricTags.stream().collect(Collectors.toList()))
+                    ).findFirst();
+
+            if (gauge.isPresent()) {
+                metrics.meterRegistry().remove(gauge.get().getId());
+                resourcesStateCounter.remove(metricTags);
+                log.debug("{}: Removed metric " + METRICS_PREFIX + "resource.state{}", reconciliation, metricTags);
+            }
+        }
     }
 }
