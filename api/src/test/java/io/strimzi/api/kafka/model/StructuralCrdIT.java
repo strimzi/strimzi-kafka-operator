@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionCon
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionVersion;
 import io.strimzi.crdgenerator.ApiVersion;
 import io.strimzi.crdgenerator.VersionRange;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
