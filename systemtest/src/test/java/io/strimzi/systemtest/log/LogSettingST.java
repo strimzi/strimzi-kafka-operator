@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -58,13 +59,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
-@Tag(CONNECT)
-@Tag(MIRROR_MAKER)
-@Tag(MIRROR_MAKER2)
-@Tag(BRIDGE)
-@Tag(CONNECT_S2I)
-@Tag(CONNECT_COMPONENTS)
+@Tags(value = {@Tag(REGRESSION), @Tag(CONNECT), @Tag(MIRROR_MAKER), @Tag(MIRROR_MAKER2), @Tag(BRIDGE), @Tag(CONNECT_S2I),
+    @Tag(CONNECT_COMPONENTS)})
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends AbstractST {
     static final String NAMESPACE = "log-setting-cluster-test";

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -37,9 +38,7 @@ import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Tag(OAUTH)
-@Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
+@Tags(value = {@Tag(OAUTH), @Tag(REGRESSION), @Tag(INTERNAL_CLIENTS_USED)})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);

@@ -36,6 +36,7 @@ import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -45,8 +46,10 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -57,9 +60,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
-@Tag(MIRROR_MAKER)
-@Tag(INTERNAL_CLIENTS_USED)
+@Tags(value = {@Tag(REGRESSION), @Tag(MIRROR_MAKER), @Tag(INTERNAL_CLIENTS_USED)})
 public class MirrorMakerST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMakerST.class);

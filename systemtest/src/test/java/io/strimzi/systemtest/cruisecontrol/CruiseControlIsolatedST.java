@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -41,8 +42,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-@Tag(REGRESSION)
-@Tag(CRUISE_CONTROL)
+@Tags(value = {@Tag(REGRESSION), @Tag(CRUISE_CONTROL)})
 public class CruiseControlIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlIsolatedST.class);

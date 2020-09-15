@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import org.junit.jupiter.api.Tags;
 
 import java.util.Base64;
 
@@ -26,8 +27,7 @@ import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-@Tag(OAUTH)
-@Tag(REGRESSION)
+@Tags(value = {@Tag(OAUTH), @Tag(REGRESSION)})
 public class OauthAbstractST extends AbstractST {
 
     public static final String NAMESPACE = "oauth2-cluster-test";

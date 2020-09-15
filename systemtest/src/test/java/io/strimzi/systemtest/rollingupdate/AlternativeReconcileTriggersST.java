@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -39,9 +40,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
-@Tag(ROLLING_UPDATE)
+@Tags(value = {@Tag(REGRESSION), @Tag(INTERNAL_CLIENTS_USED), @Tag(ROLLING_UPDATE)})
 class AlternativeReconcileTriggersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
 

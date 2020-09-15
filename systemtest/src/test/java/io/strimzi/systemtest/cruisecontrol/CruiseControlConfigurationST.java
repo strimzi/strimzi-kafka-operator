@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -56,8 +57,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Tag(REGRESSION)
-@Tag(CRUISE_CONTROL)
+@Tags(value = {@Tag(REGRESSION), @Tag(CRUISE_CONTROL)})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CruiseControlConfigurationST extends AbstractST {
 

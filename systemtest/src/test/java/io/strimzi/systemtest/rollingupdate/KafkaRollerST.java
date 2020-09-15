@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -40,9 +41,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
-@Tag(ROLLING_UPDATE)
+@Tags(value = {@Tag(REGRESSION), @Tag(INTERNAL_CLIENTS_USED), @Tag(ROLLING_UPDATE)})
 class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
     static final String NAMESPACE = "kafka-roller-cluster-test";

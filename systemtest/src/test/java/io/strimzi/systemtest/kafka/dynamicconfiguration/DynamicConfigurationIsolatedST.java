@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -52,8 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * trigger rolling update.
  * Isolated -> for each test case we have different configuration of Kafka resource
  */
-@Tag(REGRESSION)
-@Tag(DYNAMIC_CONFIGURATION)
+@Tags(value = {@Tag(REGRESSION), @Tag(DYNAMIC_CONFIGURATION)})
 public class DynamicConfigurationIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfigurationIsolatedST.class);

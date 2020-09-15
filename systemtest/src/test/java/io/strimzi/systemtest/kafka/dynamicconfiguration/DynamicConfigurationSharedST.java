@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.TestFactory;
 
 import java.util.ArrayList;
@@ -38,8 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
  * trigger rolling update
  * Shared -> for each test case we same configuration of Kafka resource
  */
-@Tag(REGRESSION)
-@Tag(DYNAMIC_CONFIGURATION)
+@Tags(value = {@Tag(REGRESSION), @Tag(DYNAMIC_CONFIGURATION)})
 public class DynamicConfigurationSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfigurationSharedST.class);

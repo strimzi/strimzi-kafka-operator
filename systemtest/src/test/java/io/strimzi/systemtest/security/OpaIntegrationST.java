@@ -24,19 +24,21 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
-@Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
+@Tags(value = {@Tag(REGRESSION), @Tag(INTERNAL_CLIENTS_USED)})
 public class OpaIntegrationST extends AbstractST {
     public static final String NAMESPACE = "opa-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);

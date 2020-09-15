@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -72,9 +73,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
-@Tag(TRACING)
-@Tag(INTERNAL_CLIENTS_USED)
+@Tags(value = {@Tag(REGRESSION), @Tag(TRACING), @Tag(INTERNAL_CLIENTS_USED)})
 @ExtendWith(VertxExtension.class)
 public class TracingST extends AbstractST {
 
