@@ -667,12 +667,8 @@ public class CrdGenerator {
                             "@" + Alternation.class.getSimpleName() + " but has no " +
                             "@" + Alternative.class.getSimpleName() + "-annotated properties");
                 } else {
-                    if (KubeVersion.supportsSchemaPerVersion(targetKubeVersions)) {
-                        buildMultiTypeProperty(crApiVersion, properties, property, alternatives);
-                    } else {
-                        // TODO strictly speaking this is completely wrong.
-                        buildMultiTypeProperty(crApiVersion, properties, property, alternatives);
-                    }
+                    // TODO strictly speaking this is completely wrong if multiple versions aren't supported
+                    buildMultiTypeProperty(crApiVersion, properties, property, alternatives);
                 }
             } else {
                 buildProperty(crApiVersion, properties, property);

@@ -324,9 +324,6 @@ class Property implements AnnotatedElement {
                 Property.properties(crApiVersion, getType().getType()).values().stream()
                         .filter(p -> {
                             Alternative annotation = p.getAnnotation(Alternative.class);
-                            if (!KubeVersion.supportsSchemaPerVersion(kubeVersions) && annotation != null && !ApiVersion.parseRange(annotation.apiVersion()).isAll()) {
-                                //throw new RuntimeException(this + " supports multiple CR apiVersions " + annotation.apiVersion() + " but we're generating a schema kubernetes " + kubeVersions + " at least one of which doesn't support multiple versions");
-                            }
                             return crApiVersion == null || (annotation != null && ApiVersion.parseRange(annotation.apiVersion()).contains(crApiVersion));
                         })
                         .collect(Collectors.toList());
