@@ -27,11 +27,11 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -115,7 +115,7 @@ public abstract class AbstractOperator<
                 "The time the reconciliation takes to complete",
                 metricTags);
 
-        resourcesStateCounter = new HashMap<>();
+        resourcesStateCounter = new ConcurrentHashMap<>();
     }
 
     @Override
