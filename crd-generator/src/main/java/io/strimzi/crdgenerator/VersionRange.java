@@ -130,11 +130,11 @@ public class VersionRange<Version extends Comparable<Version>> {
         }
     }
 
-    Version lower() {
+    public Version lower() {
         return from;
     }
 
-    Version upper() {
+    public Version upper() {
         return to;
     }
 

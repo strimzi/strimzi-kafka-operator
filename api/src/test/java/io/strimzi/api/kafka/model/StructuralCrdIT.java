@@ -7,7 +7,9 @@ package io.strimzi.api.kafka.model;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionCondition;
@@ -32,6 +34,9 @@ public class StructuralCrdIT extends AbstractCrdIT {
     private void assertApiVersionsAreStructural(String api, VersionRange<ApiVersion> shouldBeStructural) {
         Pattern pattern = Pattern.compile("[^.]spec\\.versions\\[([0-9]+)\\]\\.[^,]*?");
         CustomResourceDefinition crd = cluster.client().getClient().customResourceDefinitions().withName(api).get();
+        Set<ApiVersion> presentCrdApiVersions = crd.getSpec().getVersions().stream().map(v -> ApiVersion.parse(v.getName())).collect(Collectors.toSet());
+        Assertions.assertTrue(presentCrdApiVersions.contains(shouldBeStructural.lower()),
+                "CRD has versions " + presentCrdApiVersions + " which doesn't include " + shouldBeStructural.lower() + " which should be structural");
         Map<Integer, ApiVersion> indexedVersions = new HashMap<>();
         int i = 0;
         for (CustomResourceDefinitionVersion version : crd.getSpec().getVersions()) {
@@ -56,13 +61,13 @@ public class StructuralCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA);
+        cluster.createCustomResources("src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1beta1-v1beta2-store-v1beta1.yaml");
         waitForCrd("crd", "kafkas.kafka.strimzi.io");
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA);
+        cluster.deleteCustomResources("src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1beta1-v1beta2-store-v1beta1.yaml");
         cluster.deleteNamespaces();
     }
 }
