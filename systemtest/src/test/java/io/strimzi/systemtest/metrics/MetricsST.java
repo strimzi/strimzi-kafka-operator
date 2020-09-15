@@ -63,7 +63,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-@Tags(value = {@Tag(REGRESSION), @Tag(ACCEPTANCE),@Tag(METRICS)})
+@Tags(value = {@Tag(REGRESSION), @Tag(ACCEPTANCE), @Tag(METRICS)})
 public class MetricsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);

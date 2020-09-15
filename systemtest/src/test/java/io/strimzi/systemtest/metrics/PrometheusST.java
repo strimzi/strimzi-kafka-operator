@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.PROMETHEUS;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -27,7 +26,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tags(value = {@Tag(REGRESSION), @Tag(PROMETHEUS),  @Tag(METRICS)})
+@Tags(value = {@Tag(REGRESSION), @Tag(PROMETHEUS), @Tag(METRICS)})
 public class PrometheusST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PrometheusST.class);

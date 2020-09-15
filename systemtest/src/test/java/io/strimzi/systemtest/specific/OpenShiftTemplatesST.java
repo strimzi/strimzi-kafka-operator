@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
