@@ -1157,7 +1157,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // Force the user to explicitly set log.message.format.version
             // (Controller shouldn't break clients)
-            if (oldMessageFormat == null || !oldMessageFormat.equals(versionChange.to().messageVersion())) {
+            if (oldMessageFormat == null || compareDottedVersions(oldMessageFormat, versionChange.to().messageVersion()) > 0) {
                 return Future.failedFuture(new KafkaUpgradeException(
                         String.format("Cannot downgrade Kafka cluster %s in namespace %s to version %s " +
                                         "because the current cluster is configured with %s=%s. " +
