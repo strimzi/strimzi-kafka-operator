@@ -36,6 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +56,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
+@Disabled
 public class OauthTlsST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsST.class);
 

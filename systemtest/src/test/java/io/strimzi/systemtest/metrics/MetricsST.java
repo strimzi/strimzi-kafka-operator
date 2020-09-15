@@ -25,6 +25,7 @@ import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -161,6 +162,7 @@ public class MetricsST extends AbstractST {
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
+    @Disabled
     void testKafkaExporterDataAfterExchange() {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
 
@@ -192,6 +194,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Disabled
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
         LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(CLUSTER_NAME));
         String runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
