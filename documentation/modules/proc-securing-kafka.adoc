@@ -9,7 +9,7 @@ This procedure shows the steps involved in securing Kafka brokers when running S
 
 The security implemented for Kafka brokers must be compatible with the security implemented for the clients requiring access.
 
-* `Kafka.spec.kafka.listeners.authentication` matches `KafkaUser.spec.authentication`
+* `Kafka.spec.kafka.listeners[*].authentication` matches `KafkaUser.spec.authentication`
 * `Kafka.spec.kafka.authorization` matches `KafkaUser.spec.authorization`
 
 The steps show the configuration for simple authorization and a listener using TLS authentication.

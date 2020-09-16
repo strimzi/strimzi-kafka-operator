@@ -34,7 +34,7 @@ Open Policy Agent (OPA) authorization is also supported as a link:{BookURLUsing}
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent Kafka configuration:
 
-* `KafkaUser.spec.authentication` matches `Kafka.spec.kafka.listeners.authentication`
+* `KafkaUser.spec.authentication` matches `Kafka.spec.kafka.listeners[*].authentication`
 * `KafkaUser.spec.authorization` matches `Kafka.spec.kafka.authorization`
 
 You should have at least one listener supporting the authentication you want to use for the `KafkaUser`.

@@ -108,7 +108,7 @@ listeners:
   - name: external
     port: 9094
     type: nodeport
-    tls: false
+    tls: true
     authentication:
       type: tls
     configuration:
