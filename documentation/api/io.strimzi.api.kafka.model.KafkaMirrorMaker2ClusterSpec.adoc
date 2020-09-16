@@ -1,7 +1,7 @@
 Configures Kafka clusters for mirroring.
 
 [id='property-mirrormaker2-config-{context}']
-.`config`
+=== `config`
 Use the `config` properties to configure Kafka options.
 
 Standard Apache Kafka configuration may be provided, xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[restricted to those properties not managed directly by Strimzi].

@@ -112,6 +112,7 @@ Transactions, when used with idempotence, allow exactly once writes across multi
 Transactions guarantee that messages using the same transactional ID are produced once,
 and either _all_ are successfully written to the respective logs or _none_ of them are.
 
+[source,shell,subs="+quotes"]
 ----
 # ...
 enable.idempotence=true

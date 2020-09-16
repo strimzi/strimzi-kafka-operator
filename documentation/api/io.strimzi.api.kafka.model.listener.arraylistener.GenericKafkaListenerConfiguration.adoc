@@ -1,0 +1,121 @@
+Configuration for Kafka listeners.
+
+[id='property-listener-config-brokerCertChainAndKey-{context}']
+=== `brokerCertChainAndKey`
+
+The `brokerCertChainAndKey` property is only used with listeners that have TLS encryption enabled.
+You can use the property to providing your own Kafka listener certificates.
+
+.Example configuration for a `loadbalancer` external listener with TLS encryption enabled
+[source,yaml,subs="attributes+"]
+----
+listeners:
+  #...
+  - name: external
+    port: 9094
+    type: loadbalancer
+    tls: true
+    authentication:
+      type: tls
+    configuration:
+      brokerCertChainAndKey:
+        secretName: my-secret
+        certificate: my-listener-certificate.crt
+        key: my-listener-key.key
+# ...
+----
+
+[id='property-listener-config-traffic-policy-{context}']
+=== `externalTrafficPolicy`
+
+The `externalTrafficPolicy` property is used with `loadbalancer` and `nodeport` listeners.
+When exposing Kafka outside of Kubernetes you can choose `Local` or `Cluster`.
+`Local` avoids hops to other nodes and preserves the client IP, whereas `Cluster` does neither.
+The default is `Cluster`.
+
+[id='property-listener-config-source-ranges-{context}']
+=== `loadBalancerSourceRanges`
+
+The `loadBalancerSourceRanges` property is only used with `loadbalancer` listeners.
+When exposing Kafka outside of Kubernetes use source ranges, in addition to labels and annotations, to customize how a service is created.
+
+.Example source ranges configured for a loadbalancer listener
+[source,yaml,subs=attributes+]
+----
+listeners:
+  #...
+  - name: external
+    port: 9094
+    type: loadbalancer
+    tls: false
+    configuration:
+      externalTrafficPolicy: Local
+      loadBalancerSourceRanges:
+        - 10.0.0.0/8
+        - 88.208.76.87/32
+      # ...
+# ...
+----
+
+[id='property-listener-config-class-{context}']
+=== `class`
+
+The `class` property is only used with `ingress` listeners.
+
+By default, the `Ingress` class is set to `nginx`.
+You can change the `Ingress` class using the `class` property.
+
+.Example of an external listener of type `ingress` using `Ingress` class `nginx-internal`
+[source,yaml,subs="attributes+"]
+----
+listeners:
+  #...
+  - name: external
+    port: 9094
+    type: ingress
+    tls: false
+    configuration:
+      class: nginx-internal
+    # ...
+# ...
+----
+
+[id='property-listener-config-preferredNodePortAddressType-{context}']
+=== `preferredNodePortAddressType`
+
+The `preferredNodePortAddressType` property is only used with `nodeport` listeners.
+
+Use the `preferredNodePortAddressType` property in your listener configuration to specify the first address type checked as the node address.
+This property is useful, for example, if your deployment does not have DNS support, or you only want to expose a broker internally through an internal DNS or IP address.
+If an address of this type is found, it is used.
+If the preferred address type is not found, Strimzi proceeds through the types in the standard order of priority:
+
+. ExternalDNS
+. ExternalIP
+. Hostname
+. InternalDNS
+. InternalIP
+
+.Example of an external listener configured with a preferred node port address type
+[source,yaml,subs=attributes+]
+----
+listeners:
+  #...
+  - name: external
+    port: 9094
+    type: nodeport
+    tls: false
+    configuration:
+      preferredNodePortAddressType: InternalDNS
+      # ...
+# ...
+----
+
+[id='property-listener-config-dns-{context}']
+=== `useServiceDnsDomain`
+
+The `useServiceDnsDomain` property is only used with `internal` listeners,
+and defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
+Default is `false`.
+
+With `useServiceDnsDomain` set as `false` and advertised addresses defined, the Kubernetes network can join an outside network.

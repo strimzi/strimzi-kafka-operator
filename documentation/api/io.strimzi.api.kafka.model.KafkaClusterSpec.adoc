@@ -1,7 +1,7 @@
 Configures a Kafka cluster.
 
 [id='property-kafka-listeners-{context}']
-.`listeners`
+=== `listeners`
 
 Use the `listeners` property to configure listeners to provide access to Kafka brokers.
 
@@ -15,14 +15,17 @@ spec:
   kafka:
     # ...
     listeners:
-      plain: {}
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
     # ...
   zookeeper:
     # ...
 ----
 
 [id='property-kafka-config-{context}']
-.`config`
+=== `config`
 
 Use the `config` properties to configure Kafka brokers as keys with values in one of the following JSON types:
 

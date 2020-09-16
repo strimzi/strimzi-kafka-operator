@@ -1,7 +1,7 @@
 Configures a MirrorMaker consumer.
 
 [id='property-consumer-streams-{context}']
-.`numStreams`
+=== `numStreams`
 
 Use the `consumer.numStreams` property to configure the number of streams for the consumer.
 
@@ -10,7 +10,7 @@ Consumer threads belong to the consumer group specified for Kafka MirrorMaker.
 Topic partitions are assigned across the consumer threads, which consume messages in parallel.
 
 [id='property-consumer-offset-autocommit-{context}']
-.`offsetCommitInterval`
+=== `offsetCommitInterval`
 
 Use the `consumer.offsetCommitInterval` property to configure an offset auto-commit interval for the consumer.
 
@@ -18,7 +18,7 @@ You can specify the regular time interval at which an offset is committed after 
 The time interval is set in milliseconds, with a default value of 60,000.
 
 [id='property-consumer-config-{context}']
-.`config`
+=== `config`
 
 Use the `consumer.config` properties to configure Kafka options for the consumer.
 
@@ -59,7 +59,7 @@ When an invalid configuration is provided, the Kafka MirrorMaker might not start
 In such cases, the configuration in the `KafkaMirrorMaker.spec.consumer.config` object should be fixed and the Cluster Operator will roll out the new configuration for Kafka MirrorMaker.
 
 [id='property-consumer-group-{context}']
-.`groupId`
+=== `groupId`
 
 Use the `consumer.groupId` property to configure a consumer group identifier for the consumer.
 

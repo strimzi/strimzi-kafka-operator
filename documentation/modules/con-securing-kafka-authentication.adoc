@@ -5,9 +5,11 @@
 [id='con-securing-kafka-authentication-{context}']
 = Listener authentication
 
-For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` listener types.
+For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` _internal_ listeners.
 
-For clients outside the Kubernetes cluster, you create `external` listeners and specify a connection mechanism, which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+For clients outside the Kubernetes cluster, you create _external_ listeners and specify a connection mechanism,
+which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+
 For more information on the configuration options for connecting an external client, see xref:assembly-configuring-external-listeners-str[Configuring external listeners].
 
 Supported authentication options:
@@ -23,7 +25,6 @@ image::listener-config-options.png[options for listener authentication configura
 
 The listener `authentication` property is used to specify an authentication mechanism specific to that listener.
 
-The listener authentication mechanism is defined by the `type` field.
 If no `authentication` property is specified then the listener does not authenticate clients which connect through that listener.
 The listener will accept all connections without authentication.
 
@@ -35,18 +36,29 @@ The following example shows:
 * A `tls` listener with mutual TLS authentication
 * An `external` listener with mutual TLS authentication
 
+Each listener is configured with a unique name and port within a Kafka cluster.
+
+NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9091) and metrics (9404).
+
 .An example showing listener authentication configuration
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
-  plain:
+  - name: plain
+    port: 9092
+    type: internal
+    tls: true
     authentication:
       type: scram-sha-512
-  tls:
+  - name: tls
+    port: 9093
+    type: internal
+    tls: true
     authentication:
       type: tls
-  external:
+  - name: external
+    port: 9094
     type: loadbalancer
     tls: true
     authentication:
@@ -96,6 +108,10 @@ use the `networkPolicyPeers` property.
 Use network policies as part of the listener authentication configuration.
 Each listener can have a different `networkPolicyPeers` configuration.
 
-For more information, refer to the xref:con-common-configuration-listener-network-policy-reference[Listener network policies] section and the {K8sNetworkPolicyPeerAPI}.
+For more information, refer to the xref:configuration-listener-network-policy-reference[Listener network policies] section and the {K8sNetworkPolicyPeerAPI}.
 
 NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in order to use network policies in Strimzi.
+
+== Additional listener configuration options
+
+You can use the properties of the xref:type-GenericKafkaListenerConfiguration-reference[GenericKafkaListenerConfiguration schema] to add further configuration to listeners.

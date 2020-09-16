@@ -200,7 +200,7 @@ spec:
                           - nodeport
                           - ingress
                           description: "Type of the listener. Currently the supported\
-                            \ types are `internal, `route`, `loadbalancer`, `nodeport`\
+                            \ types are `internal`, `route`, `loadbalancer`, `nodeport`\
                             \ and `ingress`. \n\n* `internal` type exposes Kafka internally\
                             \ only within the Kubernetes cluster.\n* `route` type\
                             \ uses OpenShift Routes to expose Kafka.\n* `loadbalancer`\

@@ -5,7 +5,7 @@
 [id='proc-restricting-access-to-listeners-using-network-policies-{context}']
 = Restricting access to Kafka listeners using network policies
 
-You can restrict access to a listener to only selected applications by using the `networkPolicyPeers` field.
+You can restrict access to a listener to only selected applications by using the `networkPolicyPeers` property.
 
 .Prerequisites
 
@@ -16,7 +16,7 @@ You can restrict access to a listener to only selected applications by using the
 
 . Open the `Kafka` resource.
 
-. In the `networkPolicyPeers` field, define the application pods or namespaces that will be allowed to access the Kafka cluster.
+. In the `networkPolicyPeers` property, define the application pods or namespaces that will be allowed to access the Kafka cluster.
 +
 For example, to configure a `tls` listener to allow connections only from application pods with the label `app` set to `kafka-client`:
 +
@@ -28,7 +28,12 @@ spec:
   kafka:
     # ...
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
         networkPolicyPeers:
           - podSelector:
               matchLabels:
@@ -45,4 +50,4 @@ Use `kubectl apply`:
 kubectl apply -f _your-file_
 
 .Additional resources
-* For more information about the schema, see the {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+* For more information about the schema, see the {K8sNetworkPolicyPeerAPI} and the xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].

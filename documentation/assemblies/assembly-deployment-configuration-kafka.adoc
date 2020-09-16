@@ -29,7 +29,7 @@ include::assembly-kafka-broker-replicas.adoc[leveloffset=+1]
 
 include::assembly-kafka-broker-configuration.adoc[leveloffset=+1]
 
-include::assembly-configuring-kafka-listeners.adoc[leveloffset=+1]
+include::../modules/overview/con-configuration-points-listeners.adoc[leveloffset=+1]
 
 include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
 

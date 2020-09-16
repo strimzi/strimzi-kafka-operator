@@ -31,8 +31,10 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: route
+        tls: true
         # ...
     # ...
   zookeeper:

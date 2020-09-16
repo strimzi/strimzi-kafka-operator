@@ -14,7 +14,7 @@ Specify the connection `type` to expose Kafka in the external listener configura
 * `ingress` uses Kubernetes `Ingress` and the {NginxIngressController}
 * `route` uses OpenShift `Routes` and the HAProxy router
 
-For more information about listener configuration, see the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+For more information on listener configuration, see xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
 
 NOTE: `route` is only supported on OpenShift
 

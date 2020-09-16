@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -27,6 +28,7 @@ import static java.util.Collections.emptyMap;
 /**
  * Configures Kafka listeners
  */
+@DescriptionFile
 @JsonPropertyOrder({"brokerCertChainAndKey", "ingressClass", "preferredAddressType", "externalTrafficPolicy", "loadBalancerSourceRanges", "bootstrap", "brokers"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
