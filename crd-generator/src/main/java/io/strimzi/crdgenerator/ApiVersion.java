@@ -17,24 +17,27 @@ import static java.lang.Short.parseShort;
  */
 public class ApiVersion implements Comparable<ApiVersion> {
 
+    enum Stability {
+        ALPHA,
+        BETA,
+        STABLE
+    }
+
     public static final Pattern PATTERN = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
     public static final ApiVersion V1ALPHA1 = parse("v1alpha1");
     public static final ApiVersion V1BETA1 = parse("v1beta1");
     public static final ApiVersion V1 = parse("v1");
-    public static final int ALPHA = 0;
-    public static final int BETA = 1;
-    public static final int STABLE = 2;
 
     private final short major;
-    private final short ab;
+    private final Stability stability;
     private final short minor;
 
-    public ApiVersion(short major, short ab, short minor) {
-        if (major < 0 || ab < ALPHA || ab > STABLE || minor < 0) {
+    public ApiVersion(short major, Stability stability, short minor) {
+        if (major < 0 || minor < 0) {
             throw new RuntimeException();
         }
         this.major = major;
-        this.ab = ab;
+        this.stability = stability;
         this.minor = minor;
     }
 
@@ -52,23 +55,23 @@ public class ApiVersion implements Comparable<ApiVersion> {
             throw new IllegalArgumentException("Invalid version " + apiVersion);
         }
         short major = parseShort(matcher.group(1));
-        short ab;
+        Stability stability;
         short minor;
         String alphaBeta = matcher.group(3);
         if (matcher.groupCount() > 1 && alphaBeta != null) {
             if ("alpha".equals(alphaBeta)) {
-                ab = ALPHA;
+                stability = Stability.ALPHA;
             } else if ("beta".equals(alphaBeta)) {
-                ab = BETA;
+                stability = Stability.BETA;
             } else {
                 throw new IllegalStateException(alphaBeta);
             }
             minor = parseShort(matcher.group(4));
         } else {
-            ab = STABLE;
+            stability = Stability.STABLE;
             minor = 0;
         }
-        return new ApiVersion(major, ab, minor);
+        return new ApiVersion(major, stability, minor);
     }
 
     public static VersionRange<ApiVersion> parseRange(String s) {
@@ -89,7 +92,7 @@ public class ApiVersion implements Comparable<ApiVersion> {
     public int compareTo(ApiVersion o) {
         int cmp = Integer.compare(major, o.major);
         if (cmp == 0) {
-            cmp = Integer.compare(ab, o.ab);
+            cmp = stability.compareTo(o.stability);
         }
         if (cmp == 0) {
             cmp = Integer.compare(minor, o.minor);
@@ -103,18 +106,19 @@ public class ApiVersion implements Comparable<ApiVersion> {
         if (o == null || getClass() != o.getClass()) return false;
         ApiVersion that = (ApiVersion) o;
         return major == that.major &&
-                ab == that.ab &&
+                stability == that.stability &&
                 minor == that.minor;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(major, ab, minor);
+        return Objects.hash(major, stability, minor);
     }
 
     @Override
     public String toString() {
-        return "v" + major + (ab == ALPHA ? "alpha" : ab == BETA ? "beta" : "") + (ab  == STABLE ? "" : Integer.toString(minor));
+        return "v" + major + (stability == Stability.ALPHA ? "alpha" : stability == Stability.BETA ? "beta" : "")
+                + (stability == Stability.STABLE ? "" : Integer.toString(minor));
     }
 
 }

@@ -240,6 +240,29 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>generate-crd-evolution-4</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1</argument>
+                                <argument>--api-versions</argument><argument>v1beta2</argument>
+                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.Kafka=src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1beta2-store-v1beta2.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>generate-doc</id>
                         <phase>process-classes</phase>
                         <goals>

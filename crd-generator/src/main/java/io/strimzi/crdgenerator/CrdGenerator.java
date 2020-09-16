@@ -268,9 +268,10 @@ public class CrdGenerator {
 
         ArrayNode versions = nf.arrayNode();
 
-        // Kube apiserver is picky about only using per-version subresources, schemas and printercolumns
+        // Kube apiserver with CRD v1beta1 is picky about only using per-version subresources, schemas and printercolumns
         // if they actually differ across the versions. If they're the same, it insists these things are
         // declared top level
+        // With CRD v1 they have to be per-version :face-with-rolling-eyes:
         Map<ApiVersion, ObjectNode> subresources = buildSubresources(crd);
         boolean perVersionSubResources = needsPerVersion("subresources", subresources);
         Map<ApiVersion, ObjectNode> schemas = buildSchemas(crd, crdClass);
@@ -365,6 +366,9 @@ public class CrdGenerator {
     }
 
     private boolean needsPerVersion(String property, Map<ApiVersion, ? extends ContainerNode<?>> subresources) {
+        if (crdApiVersion.compareTo(ApiVersion.V1) >= 0) {
+            return true;
+        }
         HashSet<? extends ContainerNode<?>> set = new HashSet<>(subresources.values());
         int distinct = set.size();
         boolean perVersionSubResources;
@@ -464,7 +468,7 @@ public class CrdGenerator {
                 ObjectNode colNode = cols.addObject();
                 colNode.put("name", col.name());
                 colNode.put("description", col.description());
-                colNode.put("JSONPath", col.jsonPath());
+                colNode.put(crdApiVersion.compareTo(ApiVersion.V1) >= 0 ? "jsonPath" : "JSONPath", col.jsonPath());
                 colNode.put("type", col.type());
                 if (col.priority() != 0) {
                     colNode.put("priority", col.priority());

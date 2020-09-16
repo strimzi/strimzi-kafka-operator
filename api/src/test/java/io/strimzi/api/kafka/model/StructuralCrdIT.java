@@ -17,25 +17,50 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionCon
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionVersion;
 import io.strimzi.crdgenerator.ApiVersion;
 import io.strimzi.crdgenerator.VersionRange;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class StructuralCrdIT extends AbstractCrdIT {
-    public static final String NAMESPACE = "structuralcrd-it";
 
     @Test
-    public void kafkaV1Beta2IsStructural() {
+    public void kafkaV1Beta2IsStructuralWithCrdV1Beta1() {
         assumeKube1_16Plus();
-        assertApiVersionsAreStructural("kafkas.kafka.strimzi.io", ApiVersion.parseRange("v1beta2+"));
+        assertApiVersionsAreStructural("kafkas.kafka.strimzi.io",
+                ApiVersion.V1BETA1,
+                "040-Crd-kafka-v1beta1-v1beta2-store-v1beta1.yaml",
+                ApiVersion.parseRange("v1beta2+"));
     }
 
-    private void assertApiVersionsAreStructural(String api, VersionRange<ApiVersion> shouldBeStructural) {
+    @Test
+    public void kafkaV1Beta2IsStructuralWithCrdV1() {
+        assumeKube1_16Plus();
+        assertApiVersionsAreStructural("kafkas.kafka.strimzi.io",
+                ApiVersion.V1,
+                "040-Crd-kafka-v1beta2-store-v1beta2.yaml",
+                ApiVersion.parseRange("v1beta2+"));
+    }
+
+    private void assertApiVersionsAreStructural(String api, ApiVersion crdApiVersion, String crdYaml, VersionRange<ApiVersion> shouldBeStructural) {
+        cluster.createCustomResources("src/test/resources/io/strimzi/api/kafka/model/" + crdYaml);
+        try {
+            waitForCrd("crd", "kafkas.kafka.strimzi.io");
+            assertApiVersionsAreStructural(api, crdApiVersion, shouldBeStructural);
+        } finally {
+            cluster.deleteCustomResources("src/test/resources/io/strimzi/api/kafka/model/" + crdYaml);
+        }
+    }
+
+    private void assertApiVersionsAreStructural(String api, ApiVersion crdApiVersion, VersionRange<ApiVersion> shouldBeStructural) {
         Pattern pattern = Pattern.compile("[^.]spec\\.versions\\[([0-9]+)\\]\\.[^,]*?");
         CustomResourceDefinition crd = cluster.client().getClient().customResourceDefinitions().withName(api).get();
+        // We can't make the following assertion because the current version of fabric8 always requests
+        // the CRD using v1beta1 api version, so the apiserver just replaces it and serves it.
+        //assertEquals(crdApiVersion, ApiVersion.parse(crd.getApiVersion().replace("apiextensions.k8s.io/", "")));
         Set<ApiVersion> presentCrdApiVersions = crd.getSpec().getVersions().stream().map(v -> ApiVersion.parse(v.getName())).collect(Collectors.toSet());
-        Assertions.assertTrue(presentCrdApiVersions.contains(shouldBeStructural.lower()),
+        assertTrue(presentCrdApiVersions.contains(shouldBeStructural.lower()),
                 "CRD has versions " + presentCrdApiVersions + " which doesn't include " + shouldBeStructural.lower() + " which should be structural");
         Map<Integer, ApiVersion> indexedVersions = new HashMap<>();
         int i = 0;
@@ -45,7 +70,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         Optional<CustomResourceDefinitionCondition> first = crd.getStatus().getConditions().stream()
                 .filter(cond ->
                         "NonStructuralSchema".equals(cond.getType())
-                            && "True".equals(cond.getStatus()))
+                                && "True".equals(cond.getStatus()))
                 .findFirst();
         if (first.isPresent()) {
 
@@ -54,22 +79,9 @@ public class StructuralCrdIT extends AbstractCrdIT {
                 Integer index = Integer.valueOf(matcher.group(1));
                 ApiVersion nonStructuralVersion = indexedVersions.get(index);
                 if (shouldBeStructural.contains(nonStructuralVersion)) {
-                    Assertions.fail(api + "/ " + nonStructuralVersion + " should be structural but there's a complaint about " + matcher.group());
+                    fail(api + "/ " + nonStructuralVersion + " should be structural but there's a complaint about " + matcher.group());
                 }
             }
         }
-    }
-
-    @BeforeAll
-    void setupEnvironment() {
-        cluster.createNamespace(NAMESPACE);
-        cluster.createCustomResources("src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1beta1-v1beta2-store-v1beta1.yaml");
-        waitForCrd("crd", "kafkas.kafka.strimzi.io");
-    }
-
-    @AfterAll
-    void teardownEnvironment() {
-        cluster.deleteCustomResources("src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka-v1beta1-v1beta2-store-v1beta1.yaml");
-        cluster.deleteNamespaces();
     }
 }
