@@ -21,13 +21,16 @@ public class ApiVersion implements Comparable<ApiVersion> {
     public static final ApiVersion V1ALPHA1 = parse("v1alpha1");
     public static final ApiVersion V1BETA1 = parse("v1beta1");
     public static final ApiVersion V1 = parse("v1");
+    public static final int ALPHA = 0;
+    public static final int BETA = 1;
+    public static final int STABLE = 2;
 
     private final short major;
     private final short ab;
     private final short minor;
 
     public ApiVersion(short major, short ab, short minor) {
-        if (major < 0 || ab < 0 || ab > 2 || minor < 0) {
+        if (major < 0 || ab < ALPHA || ab > STABLE || minor < 0) {
             throw new RuntimeException();
         }
         this.major = major;
@@ -54,15 +57,15 @@ public class ApiVersion implements Comparable<ApiVersion> {
         String alphaBeta = matcher.group(3);
         if (matcher.groupCount() > 1 && alphaBeta != null) {
             if ("alpha".equals(alphaBeta)) {
-                ab = 0;
+                ab = ALPHA;
             } else if ("beta".equals(alphaBeta)) {
-                ab = 1;
+                ab = BETA;
             } else {
                 throw new IllegalStateException(alphaBeta);
             }
             minor = parseShort(matcher.group(4));
         } else {
-            ab = 2;
+            ab = STABLE;
             minor = 0;
         }
         return new ApiVersion(major, ab, minor);
@@ -111,7 +114,7 @@ public class ApiVersion implements Comparable<ApiVersion> {
 
     @Override
     public String toString() {
-        return "v" + major + (ab == 0 ? "alpha" : ab == 1 ? "beta" : "") + (ab  == 2 ? "" : Integer.toString(minor));
+        return "v" + major + (ab == ALPHA ? "alpha" : ab == BETA ? "beta" : "") + (ab  == STABLE ? "" : Integer.toString(minor));
     }
 
 }

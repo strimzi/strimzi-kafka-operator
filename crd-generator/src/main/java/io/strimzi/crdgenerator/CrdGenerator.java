@@ -917,45 +917,52 @@ public class CrdGenerator {
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
                 if (arg.startsWith("--")) {
-                    if (arg.equals("--yaml")) {
-                        yaml = true;
-                    } else if (arg.equals("--label")) {
-                        i++;
-                        int index = args[i].indexOf(":");
-                        if (index == -1) {
-                            argParseErr("Invalid --label " + args[i]);
-                        }
-                        labels.put(args[i].substring(0, index), args[i].substring(index + 1));
-                    } else if (arg.equals("--target-kube")) {
-                        if (targetKubeVersions != null) {
-                            argParseErr("--target-kube can only be specified once");
-                        } else if (i >= arg.length() - 1) {
-                            argParseErr("--target-kube needs an argument");
-                        }
-                        targetKubeVersions = KubeVersion.parseRange(args[++i]);
-                    } else if (arg.equals("--crd-api-version")) {
-                        if (crdApiVersion != null) {
-                            argParseErr("--crd-api-version can only be specified once");
-                        } else if (i >= arg.length() - 1) {
-                            argParseErr("--crd-api-version needs an argument");
-                        }
-                        crdApiVersion = ApiVersion.parse(args[++i]);
-                    } else if (arg.equals("--api-versions")) {
-                        if (apiVersions != null) {
-                            argParseErr("--api-versions can only be specified once");
-                        } else if (i >= arg.length() - 1) {
-                            argParseErr("--api-versions needs an argument");
-                        }
-                        apiVersions = Arrays.stream(args[++i].split(",")).map(v -> ApiVersion.parse(v)).collect(Collectors.toList());
-                    } else if (arg.equals("--storage-version")) {
-                        if (storageVersion != null) {
-                            argParseErr("--storage-version can only be specified once");
-                        } else if (i >= arg.length() - 1) {
-                            argParseErr("--storage-version needs an argument");
-                        }
-                        storageVersion = ApiVersion.parse(args[++i]);
-                    } else {
-                        throw new RuntimeException("Unsupported command line option " + arg);
+                    switch (arg) {
+                        case "--yaml":
+                            yaml = true;
+                            break;
+                        case "--label":
+                            i++;
+                            int index = args[i].indexOf(":");
+                            if (index == -1) {
+                                argParseErr("Invalid --label " + args[i]);
+                            }
+                            labels.put(args[i].substring(0, index), args[i].substring(index + 1));
+                            break;
+                        case "--target-kube":
+                            if (targetKubeVersions != null) {
+                                argParseErr("--target-kube can only be specified once");
+                            } else if (i >= arg.length() - 1) {
+                                argParseErr("--target-kube needs an argument");
+                            }
+                            targetKubeVersions = KubeVersion.parseRange(args[++i]);
+                            break;
+                        case "--crd-api-version":
+                            if (crdApiVersion != null) {
+                                argParseErr("--crd-api-version can only be specified once");
+                            } else if (i >= arg.length() - 1) {
+                                argParseErr("--crd-api-version needs an argument");
+                            }
+                            crdApiVersion = ApiVersion.parse(args[++i]);
+                            break;
+                        case "--api-versions":
+                            if (apiVersions != null) {
+                                argParseErr("--api-versions can only be specified once");
+                            } else if (i >= arg.length() - 1) {
+                                argParseErr("--api-versions needs an argument");
+                            }
+                            apiVersions = Arrays.stream(args[++i].split(",")).map(v -> ApiVersion.parse(v)).collect(Collectors.toList());
+                            break;
+                        case "--storage-version":
+                            if (storageVersion != null) {
+                                argParseErr("--storage-version can only be specified once");
+                            } else if (i >= arg.length() - 1) {
+                                argParseErr("--storage-version needs an argument");
+                            }
+                            storageVersion = ApiVersion.parse(args[++i]);
+                            break;
+                        default:
+                            throw new RuntimeException("Unsupported command line option " + arg);
                     }
                 } else {
                     String className = arg.substring(0, arg.indexOf('='));

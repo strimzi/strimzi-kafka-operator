@@ -98,17 +98,13 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
     }
 
     private void assertV1beta2CreateFailure(String name) {
-        try {
-            LOGGER.info("Check can't create map-listener via v1beta2");
-            v1beta2Create(name, mapListener(), null);
-            Assertions.fail();
-        } catch (RuntimeException e) {
-            LOGGER.info("Exception, good", e);
-            Assertions.assertTrue(e.getMessage().contains(
-                    "Kafka.kafka.strimzi.io \"" + name + "\" is invalid: " +
-                    "spec.kafka.listeners: Invalid value: \"object\": " +
-                    "spec.kafka.listeners in body must be of type array:"));
-        }
+        LOGGER.info("Check can't create map-listener via v1beta2");
+        RuntimeException e = Assertions.assertThrows(RuntimeException.class, () -> v1beta2Create(name, mapListener(), null));
+        LOGGER.info("Exception, good", e);
+        Assertions.assertTrue(e.getMessage().contains(
+                "Kafka.kafka.strimzi.io \"" + name + "\" is invalid: " +
+                "spec.kafka.listeners: Invalid value: \"object\": " +
+                "spec.kafka.listeners in body must be of type array:"));
     }
 
     private void v1beta1Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
