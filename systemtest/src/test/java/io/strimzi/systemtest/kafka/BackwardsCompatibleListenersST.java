@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -23,6 +25,8 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +35,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -38,6 +44,9 @@ import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 public class BackwardsCompatibleListenersST extends AbstractST {
@@ -261,6 +270,102 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 basicExternalKafkaClient.sendMessagesTls(),
                 basicExternalKafkaClient.receiveMessagesTls()
         );
+    }
+
+    /**
+     * When the listeners are converted from the old format to the new format, nothing should change. So no rolling
+     * update should happen.
+     */
+    @Test
+    @Tag(ACCEPTANCE)
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testCustomResourceConversion() {
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        KafkaListeners listeners = new KafkaListenersBuilder()
+                .withNewPlain()
+                    .withAuth(new KafkaListenerAuthenticationScramSha512())
+                .endPlain()
+                .withNewTls()
+                    .withAuth(new KafkaListenerAuthenticationTls())
+                .endTls()
+                .withNewKafkaListenerExternalNodePort()
+                    .withAuth(new KafkaListenerAuthenticationTls())
+                .endKafkaListenerExternalNodePort()
+                .build();
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editSpec()
+                .editKafka()
+                    .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                .endKafka()
+            .endSpec()
+            .done();
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 1, 3, 2).done();
+        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
+
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        final String kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+                .withUsingPodName(kafkaClientsPodName)
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withKafkaUsername(kafkaUsername)
+                .withMessageCount(MESSAGE_COUNT)
+                .build();
+
+        LOGGER.info("Checking produced and consumed messages to pod: {}", kafkaClientsPodName);
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(),
+                internalKafkaClient.receiveMessagesTls()
+        );
+
+        LOGGER.info("Collect the pod information before update");
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Update the custom resource to new format");
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka()
+                    .setListeners(new ArrayOrObjectKafkaListeners(asList(
+                            new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .withAuth(new KafkaListenerAuthenticationScramSha512())
+                                    .build(),
+                            new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .withAuth(new KafkaListenerAuthenticationTls())
+                                    .build(),
+                            new GenericKafkaListenerBuilder()
+                                    .withName("external")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.NODEPORT)
+                                    .withTls(true)
+                                    .withAuth(new KafkaListenerAuthenticationTls())
+                                    .build()
+                    ), null));
+        });
+
+        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
+
+        LOGGER.info("Checking produced and consumed messages to pod: {}", kafkaClientsPodName);
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(),
+                internalKafkaClient.receiveMessagesTls()
+        );
+
+        LOGGER.info("Check if Kafka pods didn't roll");
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
     }
 
     @BeforeAll
