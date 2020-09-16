@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.vertx.core.Future;
@@ -31,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
 public class OperatorMetricsTest {
@@ -85,6 +87,12 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                            .tag("kind", "TestResource")
+                            .tag("name", "my-resource")
+                            .tag("resource-namespace", "my-namespace")
+                            .gauge().value(), is(1.0));
+
                     async.flag();
                 })));
     }
@@ -123,6 +131,12 @@ public class OperatorMetricsTest {
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                            .tag("kind", "TestResource")
+                            .tag("name", "my-resource")
+                            .tag("resource-namespace", "my-namespace")
+                            .gauge().value(), is(0.0));
 
                     async.flag();
                 })));
@@ -212,6 +226,14 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
+                    assertThrows(MeterNotFoundException.class, () -> {
+                        registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                                .tag("kind", "TestResource")
+                                .tag("name", "my-resource")
+                                .tag("resource-namespace", "my-namespace")
+                                .gauge();
+                    });
+
                     async.flag();
                 })));
     }
@@ -219,6 +241,11 @@ public class OperatorMetricsTest {
     @Test
     public void testReconcileAll(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
+
+        Set<NamespaceAndName> resources = new HashSet<>(3);
+        resources.add(new NamespaceAndName("my-namespace", "avfc"));
+        resources.add(new NamespaceAndName("my-namespace", "vtid"));
+        resources.add(new NamespaceAndName("my-namespace", "utv"));
 
         AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
@@ -229,11 +256,6 @@ public class OperatorMetricsTest {
             }
 
             public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-                Set<NamespaceAndName> resources = new HashSet<>(3);
-                resources.add(new NamespaceAndName("my-namespace", "avfc"));
-                resources.add(new NamespaceAndName("my-namespace", "vtid"));
-                resources.add(new NamespaceAndName("my-namespace", "utv"));
-
                 return Future.succeededFuture(resources);
             }
 
@@ -262,6 +284,14 @@ public class OperatorMetricsTest {
 
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(3L));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            for (NamespaceAndName resource : resources) {
+                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                        .tag("kind", "TestResource")
+                        .tag("name", resource.getName())
+                        .tag("resource-namespace", resource.getNamespace())
+                        .gauge().value(), is(1.0));
+            }
 
             async.flag();
         })));

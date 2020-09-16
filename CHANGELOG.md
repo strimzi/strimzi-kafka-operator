@@ -19,7 +19,8 @@
   * Removed the avarage reconcile time graph
   * Rearranged graphs
 * Make `listeners` configurable as an array and add support for more different listeners in single cluster
-* Add support for configuring `hostAliases` in Pod templates 
+* Add support for configuring `hostAliases` in Pod templates
+* Add new resource state metric in the operators for reflecting the reconcile result on a specific resource 
 
 ### Deprecations and removals
 
