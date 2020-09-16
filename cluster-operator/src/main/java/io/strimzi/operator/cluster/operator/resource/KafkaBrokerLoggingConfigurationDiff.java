@@ -5,7 +5,6 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
@@ -13,9 +12,13 @@ import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
@@ -57,11 +60,10 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
         Collection<AlterConfigOp> updatedCE = new ArrayList<>();
 
-        OrderedProperties orderedProperties = new OrderedProperties();
-        desired = desired.replaceAll("log4j\\.logger\\.", "");
-        desired = desired.replaceAll("log4j\\.rootLogger", "root");
-        orderedProperties.addStringPairs(desired);
-        Map<String, String> desiredMap = orderedProperties.asMap();
+        Map<String, String> desiredMap = readLog4jConfig(desired);
+        if (desiredMap.get("root") == null) {
+            desiredMap.put("root", LoggingLevel.WARN.name());
+        }
 
         LoggingLevelResolver levelResolver = new LoggingLevelResolver(desiredMap);
 
@@ -82,9 +84,6 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
         for (Map.Entry<String, String> ent: desiredMap.entrySet()) {
             String name = ent.getKey();
-            if (name.startsWith("log4j.appender")) {
-                continue;
-            }
             ConfigEntry configEntry = brokerConfigs.get(name);
             if (configEntry == null) {
                 String level = LoggingLevel.nameOrDefault(LoggingLevel.ofLog4jConfig(ent.getValue()), LoggingLevel.WARN);
@@ -94,6 +93,79 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         }
 
         return updatedCE;
+    }
+
+    private static Map<String, String> readLog4jConfig(String config) {
+
+        Map<String, String> parsed = new LinkedHashMap<>();
+        Map<String, String> env = new HashMap<>();
+        BufferedReader reader = new BufferedReader(new StringReader(config));
+        String line;
+        try {
+            while ((line = reader.readLine()) != null) {
+                // skip comments
+                if (line.startsWith("#")) continue;
+
+                // ignore empty lines
+                line = line.trim();
+                if (line.length() == 0) continue;
+
+                // everything that does not start with 'log4j.' is a variable definition
+                if (!line.startsWith("log4j.")) {
+                    int p = line.indexOf("=");
+                    if (p >= 0) {
+                        env.put(line.substring(0, p).trim(), line.substring(p + 1).trim());
+                    } else {
+                        env.put(line.trim(), "");
+                    }
+                    log.debug("Treating the line as ENV var declaration: {}", line);
+                }
+
+                // we ignore appenders (log4j.appender.*)
+                // and only handle loggers (log4j.logger.*)
+                if (line.startsWith("log4j.logger.")) {
+                    int p = line.indexOf("=", 13);
+                    if (p == -1) {
+                        log.debug("Skipping log4j.logger.* declaration without level: {}", line);
+                        continue;
+                    }
+                    String name = line.substring(13, p).trim();
+                    String value = line.substring(p + 1).trim();
+
+                    value = expandVars(value, env);
+                    parsed.put(name, value);
+
+                } else if (line.startsWith("log4j.rootLogger=")) {
+                    parsed.put("root", expandVars(line.substring(17).trim(), env));
+
+                } else {
+                    log.debug("Skipping log4j.* declaration: {}", line);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse logging configuration: " + config, e);
+            return Collections.emptyMap();
+        }
+        return parsed;
+    }
+
+    private static String expandVars(String value, Map<String, String> env) {
+        StringBuilder sb = new StringBuilder();
+        int e = -1;
+        int b;
+        while ((b = value.indexOf("${", e + 1)) != -1) {
+            sb.append(value.substring(e + 1, b));
+            e = value.indexOf("}", b + 2);
+            if (e != -1) {
+                String key = value.substring(b + 2, e);
+                String r = env.get(key);
+                sb.append(r != null ? r : "");
+            } else {
+                break;
+            }
+        }
+        sb.append(value.substring(e + 1));
+        return sb.toString();
     }
 
     /**
