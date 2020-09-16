@@ -650,11 +650,11 @@ class MirrorMaker2ST extends AbstractST {
         //deploying example clients for checking if mm2 will mirror messages with headers
 
         KafkaBasicClientResource targetKafkaClientsJob = new KafkaBasicClientResource("", targetConsumerName,
-            KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 0);
+            KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 1000);
         targetKafkaClientsJob.consumerStrimzi().done();
 
         KafkaBasicClientResource sourceKafkaClientsJob = new KafkaBasicClientResource(sourceProducerName, "",
-            KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 0);
+            KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 1000);
 
         sourceKafkaClientsJob.producerStrimzi()
             .editSpec()
