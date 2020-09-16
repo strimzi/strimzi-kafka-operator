@@ -52,15 +52,8 @@ public class ZookeeperUpgradeST extends AbstractST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            String logMsgFormat;
-            if (initialVersion.compareTo(newVersion) < 0) {
-                // If it is an upgrade test we keep the message format as the lower version number
-                logMsgFormat = initialVersion.messageVersion();
-            } else {
-                // If it is a downgrade then we make sure to use the lower version number for the message format
-                logMsgFormat = newVersion.messageVersion();
-            }
-
+            // If it is an upgrade test we keep the message format as the lower version number
+            String logMsgFormat = initialVersion.messageVersion();
             runVersionChange(initialVersion, newVersion, logMsgFormat, 3, 3, testContext);
         }
 
@@ -79,15 +72,8 @@ public class ZookeeperUpgradeST extends AbstractST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            String logMsgFormat;
-            if (initialVersion.compareTo(newVersion) < 0) {
-                // If it is an upgrade test we keep the message format as the lower version number
-                logMsgFormat = initialVersion.messageVersion();
-            } else {
-                // If it is a downgrade then we make sure to use the lower version number for the message format
-                logMsgFormat = newVersion.messageVersion();
-            }
-
+            // If it is a downgrade then we make sure to use the lower version number for the message format
+            String logMsgFormat = newVersion.messageVersion();
             runVersionChange(initialVersion, newVersion, logMsgFormat, 3, 3, testContext);
         }
 
