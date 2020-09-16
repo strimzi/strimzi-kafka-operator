@@ -319,21 +319,21 @@ public abstract class AbstractOperator<
      */
     private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
         if (result.succeeded()) {
-            updateResourceState(reconciliation, 1);
+            updateResourceState(reconciliation, true);
             successfulReconciliationsCounter.increment();
             reconciliationTimerSample.stop(reconciliationsTimer);
             log.info("{}: reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
             if (cause instanceof InvalidConfigParameterException) {
-                updateResourceState(reconciliation, 0);
+                updateResourceState(reconciliation, false);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
             } else if (cause instanceof UnableToAcquireLockException) {
                 lockedReconciliationsCounter.increment();
             } else  {
-                updateResourceState(reconciliation, 0);
+                updateResourceState(reconciliation, false);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile", reconciliation, cause);
@@ -354,9 +354,9 @@ public abstract class AbstractOperator<
      * of the custom resource.
      *
      * @param reconciliation reconciliation to use to update the resource state metric
-     * @param state metric value
+     * @param ready if reconcile was successful and the resource is ready
      */
-    private void updateResourceState(Reconciliation reconciliation, int state) {
+    private void updateResourceState(Reconciliation reconciliation, boolean ready) {
         Tags metricTags = Tags.of(
                 Tag.of("kind", reconciliation.kind()),
                 Tag.of("name", reconciliation.name()),
@@ -367,8 +367,8 @@ public abstract class AbstractOperator<
             resourcesStateCounter.computeIfAbsent(metricTags, tags ->
                     metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", tags)
             );
-            resourcesStateCounter.get(metricTags).set(state);
-            log.debug("{}: Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTags, state);
+            resourcesStateCounter.get(metricTags).set(ready ? 1 : 0);
+            log.debug("{}: Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTags, ready ? 1 : 0);
         } else {
             Optional<Meter> gauge = metrics.meterRegistry().getMeters()
                     .stream()
