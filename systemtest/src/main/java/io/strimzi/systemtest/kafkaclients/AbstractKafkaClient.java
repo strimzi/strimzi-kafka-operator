@@ -168,9 +168,12 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
     @SuppressWarnings("Regexp") // because of extBootstrapService.getSpec().getType().toLowerCase()
     @SuppressFBWarnings("DM_CONVERT_CASE")
     public static String getExternalBootstrapConnect(String namespace, String clusterName, String listenerName) {
-        // TODO: routes (see how with the naming...)
         if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
-            Route route = kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
+
+            Route route = listenerName != null ?
+                kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-" + listenerName + "bootstrap").get() :
+                kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
+
             if (route != null && !route.getStatus().getIngress().isEmpty()) {
                 return route.getStatus().getIngress().get(0).getHost() + ":443";
             }
