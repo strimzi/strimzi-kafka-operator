@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
         "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
-        "podDisruptionBudget", "kafkaContainer", "tlsSidecarContainer", "initContainer"})
+        "podDisruptionBudget", "kafkaContainer", "tlsSidecarContainer", "initContainer","clusterCa"})
 @EqualsAndHashCode
 public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -47,6 +47,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ContainerTemplate kafkaContainer;
     private ContainerTemplate tlsSidecarContainer;
     private ContainerTemplate initContainer;
+    private ResourceTemplate clusterCaCert;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")
@@ -197,6 +198,16 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setInitContainer(ContainerTemplate initContainer) {
         this.initContainer = initContainer;
+    }
+
+    @Description("Template for Kafka Cluster certificate")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getClusterCaCert() {
+        return clusterCaCert;
+    }
+
+    public void setClusterCaCert(ResourceTemplate clusterCaCert) {
+        this.clusterCaCert = clusterCaCert;
     }
 
     @Override

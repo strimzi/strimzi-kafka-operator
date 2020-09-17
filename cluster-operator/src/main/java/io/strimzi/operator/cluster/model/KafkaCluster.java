@@ -225,6 +225,8 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templateExternalBootstrapIngressAnnotations;
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
+    protected Map<String, String> templateClusterCALabels;
+    protected Map<String, String> templateClusterCAAnnotations;
     protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
     protected List<ContainerEnvVar> templateInitContainerEnvVars;
@@ -667,6 +669,11 @@ public class KafkaCluster extends AbstractModel {
 
             if (template.getInitContainer() != null && template.getInitContainer().getEnv() != null) {
                 result.templateInitContainerEnvVars = template.getInitContainer().getEnv();
+            }
+
+            if (template.getClusterCaCert() != null && template.getClusterCaCert().getMetadata() != null) {
+                result.templateClusterCALabels = template.getClusterCaCert().getMetadata().getLabels();
+                result.templateClusterCAAnnotations = template.getClusterCaCert().getMetadata().getAnnotations();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
