@@ -603,7 +603,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(),
                                 AbstractModel.mergeLabelsOrAnnotations(caLabels.toMap()
-                                ,kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert() != null ? kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata().getLabels() : null),
+                                ,kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata().getLabels()),
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
