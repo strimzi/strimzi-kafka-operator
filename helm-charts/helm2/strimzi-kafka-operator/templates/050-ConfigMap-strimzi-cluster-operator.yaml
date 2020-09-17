@@ -28,4 +28,6 @@ data:
     logger.zookeepertrustmanager.additivity = false
 
     # Keeps separate level for Netty logging -> to not be changed by the root logger
-    io.netty = INFO
+    logger.netty.name = io.netty
+    logger.netty.level = INFO
+    logger.netty.additivity = false
