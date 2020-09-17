@@ -295,7 +295,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
                 basicExternalKafkaClientTls.sendMessagesTls(),
-                basicExternalKafkaClientTls.sendMessagesTls()
+                basicExternalKafkaClientTls.receiveMessagesTls()
         );
 
         assertThrows(Exception.class, () -> {
