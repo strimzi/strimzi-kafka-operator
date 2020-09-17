@@ -52,7 +52,9 @@ public class ZookeeperUpgradeST extends AbstractST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, 3, 3, testContext);
+            // If it is an upgrade test we keep the message format as the lower version number
+            String logMsgFormat = initialVersion.messageVersion();
+            runVersionChange(initialVersion, newVersion, logMsgFormat, 3, 3, testContext);
         }
 
         // ##############################
@@ -70,7 +72,9 @@ public class ZookeeperUpgradeST extends AbstractST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            runVersionChange(initialVersion, newVersion, 3, 3, testContext);
+            // If it is a downgrade then we make sure to use the lower version number for the message format
+            String logMsgFormat = newVersion.messageVersion();
+            runVersionChange(initialVersion, newVersion, logMsgFormat, 3, 3, testContext);
         }
 
         // ##############################
@@ -80,16 +84,34 @@ public class ZookeeperUpgradeST extends AbstractST {
         // ##############################
     }
 
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
-        Map<String, String> kafkaPods;
-        String logMsgFormat;
-        if (initialVersion.compareTo(newVersion) < 0) {
-            // If it is an upgrade test we keep the message format as the lower version number
-            logMsgFormat = initialVersion.messageVersion();
-        } else {
-            // If it is a downgrade then we make sure to use the lower version number for the message format
-            logMsgFormat = newVersion.messageVersion();
+    @Test
+    void testKafkaClusterDowngradeToOlderMessageFormat(ExtensionContext testContext) {
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+
+        String initLogMsgFormat = sortedVersions.get(0).messageVersion();
+
+        if (initLogMsgFormat.charAt(2) + 1 >= sortedVersions.get(sortedVersions.size() - 1).messageVersion().charAt(2)) {
+            StringBuilder tmp = new StringBuilder(initLogMsgFormat);
+            tmp.setCharAt(2, (char) (initLogMsgFormat.charAt(2) - 1));
+            initLogMsgFormat = tmp.toString();
         }
+
+        for (int x = sortedVersions.size() - 1; x > 0; x--) {
+            TestKafkaVersion initialVersion = sortedVersions.get(x);
+            TestKafkaVersion newVersion = sortedVersions.get(x - 1);
+
+            runVersionChange(initialVersion, newVersion, initLogMsgFormat, 3, 3, testContext);
+        }
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        // ##############################
+    }
+
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
+        Map<String, String> kafkaPods;
 
         boolean sameMinorVersion = initialVersion.protocolVersion().equals(newVersion.protocolVersion());
 
@@ -99,7 +121,7 @@ public class ZookeeperUpgradeST extends AbstractST {
                 .editSpec()
                     .editKafka()
                         .withVersion(initialVersion.version())
-                        .addToConfig("log.message.format.version", logMsgFormat)
+                        .addToConfig("log.message.format.version", initLogMsgFormat)
                     .endKafka()
                 .endSpec()
                 .done();
@@ -167,17 +189,7 @@ public class ZookeeperUpgradeST extends AbstractST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         LOGGER.info("1st Kafka roll (image change) is complete");
 
-        if (initialVersion.zookeeperVersion().contains("3.4")) {
-            // Wait for another Kafka rolling cause dynamic configuration (?)
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
-            LOGGER.info("2nd Kafka roll (update) is complete");
-        }
-
-        if (testContext.getDisplayName().contains("Upgrade") && initialVersion.zookeeperVersion().contains("3.4")) {
-            // Two rolling updates are need if we upgrade from 3.4.x to 3.5.x, because of dynamic configuration and snapshots checks
-            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zkReplicas, zkPods);
-            LOGGER.info("2nd Zookeeper roll (update) is complete");
-        } else if (testContext.getDisplayName().contains("Downgrade")) {
+        if (testContext.getDisplayName().contains("Downgrade")) {
             kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
             LOGGER.info("3rd Kafka roll (update) is complete");
         }
@@ -220,9 +232,15 @@ public class ZookeeperUpgradeST extends AbstractST {
             LOGGER.info("Kafka roll (log.message.format.version change) is complete");
         }
 
-        LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
-        assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
-                .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
+        if (testContext.getDisplayName().contains("Downgrade")) {
+            LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", initLogMsgFormat);
+            assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
+                    .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(initLogMsgFormat));
+        } else {
+            LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
+            assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
+                    .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
+        }
     }
 
     @BeforeAll
