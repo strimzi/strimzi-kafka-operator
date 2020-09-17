@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
@@ -19,14 +19,14 @@ import java.util.function.IntPredicate;
 
 public class Producer extends ClientHandlerBase<Integer> implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
-    private KafkaClientProperties properties;
+    private ProducerProperties properties;
     private final AtomicInteger numSent = new AtomicInteger(0);
     private final String topic;
     private String clientName;
     private final Integer partition;
     private KafkaProducer<String, String> producer;
 
-    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
+    Producer(ProducerProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
              String topic, String clientName, Integer partition) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;
@@ -37,7 +37,7 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
         this.producer = KafkaProducer.create(vertx, properties.getProperties());
     }
 
-    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
+    Producer(ProducerProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
              String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;

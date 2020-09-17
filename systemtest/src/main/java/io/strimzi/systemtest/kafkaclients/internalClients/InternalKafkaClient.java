@@ -23,7 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * The InternalKafkaClient for sending and receiving messages using basic properties.
  * The client is using an internal listeners and communicate from the pod.
  */
-public class InternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
@@ -54,6 +54,25 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
         podName = builder.podName;
     }
 
+    @Override
+    protected AbstractKafkaClient.Builder<InternalKafkaClient.Builder> toBuilder(InternalKafkaClient internalKafkaClient) {
+        InternalKafkaClient.Builder builder = new InternalKafkaClient.Builder();
+
+        builder.withTopicName(internalKafkaClient.getTopicName());
+        builder.withPartition(internalKafkaClient.getPartition());
+        builder.withMessageCount(internalKafkaClient.getMessageCount());
+        builder.withNamespaceName(internalKafkaClient.getNamespaceName());
+        builder.withClusterName(internalKafkaClient.getClusterName());
+        builder.withConsumerGroupName(internalKafkaClient.getConsumerGroup());
+        builder.withKafkaUsername(internalKafkaClient.getKafkaUsername());
+        builder.withSecurityProtocol(internalKafkaClient.getSecurityProtocol());
+        builder.withCertificateAuthorityCertificateName(internalKafkaClient.getCaCertName());
+        builder.withProducerProperties(internalKafkaClient.getProducerProperties());
+        builder.withConsumerProperties(internalKafkaClient.getConsumerProperties());
+        builder.withUsingPodName(internalKafkaClient.getPodName());
+
+        return builder;
+    }
     public int sendMessagesPlain() {
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }

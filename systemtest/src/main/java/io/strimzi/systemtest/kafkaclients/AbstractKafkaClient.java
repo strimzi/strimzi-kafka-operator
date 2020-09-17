@@ -4,10 +4,20 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceList;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +28,7 @@ import java.security.InvalidParameterException;
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public abstract class AbstractKafkaClient {
+public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 
@@ -31,9 +41,10 @@ public abstract class AbstractKafkaClient {
     protected String kafkaUsername;
     protected SecurityProtocol securityProtocol;
     protected String caCertName;
-    protected KafkaClientProperties clientProperties;
+    protected ProducerProperties producerProperties;
+    protected ConsumerProperties consumerProperties;
 
-    public abstract static class Builder<T extends Builder<T>> {
+    public static abstract class Builder<T extends Builder<T>> {
 
         private String topicName;
         protected Integer partition;
@@ -44,7 +55,8 @@ public abstract class AbstractKafkaClient {
         private String kafkaUsername;
         private SecurityProtocol securityProtocol;
         private String caCertName;
-        private KafkaClientProperties clientProperties;
+        private ProducerProperties producerProperties;
+        private ConsumerProperties consumerProperties;
 
         public T withTopicName(String topicName) {
             this.topicName = topicName;
@@ -91,8 +103,13 @@ public abstract class AbstractKafkaClient {
             return self();
         }
 
-        public T withKafkaClientProperties(KafkaClientProperties clientProperties) {
-            this.clientProperties = clientProperties;
+        public T withProducerProperties(ProducerProperties producerProperties) {
+            this.producerProperties = producerProperties;
+            return self();
+        }
+
+        public T withConsumerProperties(ConsumerProperties consumerProperties) {
+            this.consumerProperties =  consumerProperties;
             return self();
         }
 
@@ -102,6 +119,8 @@ public abstract class AbstractKafkaClient {
         // for not explicit casting..
         protected abstract T self();
     }
+
+    protected abstract Builder<?> toBuilder(C client);
 
     protected AbstractKafkaClient(Builder<?> builder) {
 
@@ -123,7 +142,8 @@ public abstract class AbstractKafkaClient {
         kafkaUsername = builder.kafkaUsername;
         securityProtocol = builder.securityProtocol;
         caCertName = builder.caCertName;
-        clientProperties = builder.clientProperties;
+        producerProperties = builder.producerProperties;
+        consumerProperties = builder.consumerProperties;
     }
 
     public void setMessageCount(int messageCount) {
@@ -142,9 +162,13 @@ public abstract class AbstractKafkaClient {
      * Get external bootstrap connection
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
+     * @param listenerName name of the listener
      * @return bootstrap url as string
      */
-    public static String getExternalBootstrapConnect(String namespace, String clusterName) {
+    @SuppressWarnings("Regexp") // because of extBootstrapService.getSpec().getType().toLowerCase()
+    @SuppressFBWarnings("DM_CONVERT_CASE")
+    public static String getExternalBootstrapConnect(String namespace, String clusterName, String listenerName) {
+        // TODO: routes (see how with the naming...)
         if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
             Route route = kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
             if (route != null && !route.getStatus().getIngress().isEmpty()) {
@@ -152,41 +176,51 @@ public abstract class AbstractKafkaClient {
             }
         }
 
-        Service extBootstrapService = kubeClient(namespace).getClient().services()
-                .inNamespace(namespace)
-                .withName(externalBootstrapServiceName(clusterName))
-                .get();
+        NonNamespaceOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> services = kubeClient(namespace).getClient().services().inNamespace(namespace);
+
+        Service extBootstrapService = listenerName != null ?
+            services.withName(KafkaResources.kafkaStatefulSetName(clusterName) + "-" + listenerName + "-bootstrap").get() :
+            services.withName(externalBootstrapServiceName(clusterName)).get();
 
         if (extBootstrapService == null) {
             throw new RuntimeException("Kafka cluster " + clusterName + " doesn't have an external bootstrap service");
         }
 
-        String extBootstrapServiceType = extBootstrapService.getSpec().getType();
+        LOGGER.info("Using {}, is equal to {}", extBootstrapService.getSpec().getType(),  KafkaListenerExternalNodePort.TYPE_NODEPORT);
 
-        if (extBootstrapServiceType.equals("NodePort")) {
-            // TODO: here specify which nodeports...
+        switch (extBootstrapService.getSpec().getType().toLowerCase()) {
+            case KafkaListenerExternalNodePort.TYPE_NODEPORT:
+                return kubeClient().getNodeAddress() + ":" + extBootstrapService.getSpec().getPorts().get(0).getNodePort();
+            case KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER:
+                // TODO: here change the way of specifying load-balancers...
+                LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
+                String result = loadBalancerIngress.getHostname();
 
-            int port = extBootstrapService.getSpec().getPorts().get(0).getNodePort();
-            String externalAddress = kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
-            return externalAddress + ":" + port;
-        } else if (extBootstrapServiceType.equals("LoadBalancer")) {
-            // TODO: here change the way of specifying load-balancers...
-            LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
-            String result = loadBalancerIngress.getHostname();
-
-            if (result == null) {
-                result = loadBalancerIngress.getIp();
-            }
-            return result + ":9094";
-        } else {
-            throw new RuntimeException("Unexpected external bootstrap service" + extBootstrapServiceType + " for Kafka cluster " + clusterName);
+                if (result == null) {
+                    result = loadBalancerIngress.getIp();
+                }
+                return result + ":" + extBootstrapService.getSpec().getPorts().get(0).getPort();
+            default:
+                throw new RuntimeException("Unexpected external bootstrap service" + extBootstrapService.getSpec().getType() + " for Kafka cluster " + clusterName);
         }
     }
 
-    public KafkaClientProperties getClientProperties() {
-        return clientProperties;
+    /**
+     * Get external bootstrap connection
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @return bootstrap url as string
+     */
+    public static String getExternalBootstrapConnect(String namespace, String clusterName) {
+        return getExternalBootstrapConnect(namespace, clusterName, null);
     }
 
+    public ProducerProperties getProducerProperties() {
+        return producerProperties;
+    }
+    public ConsumerProperties getConsumerProperties() {
+        return consumerProperties;
+    }
     public void setConsumerGroup(String consumerGroup) {
         this.consumerGroup = consumerGroup;
     }
@@ -206,18 +240,49 @@ public abstract class AbstractKafkaClient {
     public void setCaCertName(String caCertName) {
         this.caCertName = caCertName;
     }
+
+    public String getTopicName() {
+        return topicName;
+    }
+    public Integer getPartition() {
+        return partition;
+    }
+    public String getNamespaceName() {
+        return namespaceName;
+    }
+    public String getClusterName() {
+        return clusterName;
+    }
+    public int getMessageCount() {
+        return messageCount;
+    }
+    public String getConsumerGroup() {
+        return consumerGroup;
+    }
+    public String getKafkaUsername() {
+        return kafkaUsername;
+    }
+    public SecurityProtocol getSecurityProtocol() {
+        return securityProtocol;
+    }
+    public String getCaCertName() {
+        return caCertName;
+    }
+
     @Override
     public String toString() {
         return "AbstractKafkaClient{" +
             "topicName='" + topicName + '\'' +
+            ", partition=" + partition +
             ", namespaceName='" + namespaceName + '\'' +
             ", clusterName='" + clusterName + '\'' +
             ", messageCount=" + messageCount +
             ", consumerGroup='" + consumerGroup + '\'' +
             ", kafkaUsername='" + kafkaUsername + '\'' +
-            ", securityProtocol='" + securityProtocol + '\'' +
+            ", securityProtocol=" + securityProtocol +
             ", caCertName='" + caCertName + '\'' +
-            ", clientProperties=" + clientProperties +
+            ", producerProperties=" + producerProperties +
+            ", consumerProperties=" + consumerProperties +
             '}';
     }
 }

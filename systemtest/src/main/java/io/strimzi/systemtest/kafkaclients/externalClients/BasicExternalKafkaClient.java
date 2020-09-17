@@ -7,7 +7,8 @@ package io.strimzi.systemtest.kafkaclients.externalClients;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -27,7 +28,7 @@ import java.util.function.IntPredicate;
 /**
  * The BasicExternalKafkaClient for sending and receiving messages with basic properties. The client is using an external listeners.
  */
-public class BasicExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalKafkaClient> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
 
@@ -48,6 +49,25 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         super(builder);
     }
 
+    @Override
+    public AbstractKafkaClient.Builder<BasicExternalKafkaClient.Builder> toBuilder(BasicExternalKafkaClient basicExternalKafkaClient) {
+        BasicExternalKafkaClient.Builder builder = new BasicExternalKafkaClient.Builder();
+
+        builder.withTopicName(basicExternalKafkaClient.getTopicName());
+        builder.withPartition(basicExternalKafkaClient.getPartition());
+        builder.withMessageCount(basicExternalKafkaClient.getMessageCount());
+        builder.withNamespaceName(basicExternalKafkaClient.getNamespaceName());
+        builder.withClusterName(basicExternalKafkaClient.getClusterName());
+        builder.withConsumerGroupName(basicExternalKafkaClient.getConsumerGroup());
+        builder.withKafkaUsername(basicExternalKafkaClient.getKafkaUsername());
+        builder.withSecurityProtocol(basicExternalKafkaClient.getSecurityProtocol());
+        builder.withCertificateAuthorityCertificateName(basicExternalKafkaClient.getCaCertName());
+        builder.withProducerProperties(basicExternalKafkaClient.getProducerProperties());
+        builder.withConsumerProperties(basicExternalKafkaClient.getConsumerProperties());
+
+        return builder;
+    }
+
     public int sendMessagesPlain() {
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
@@ -66,10 +86,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties properties = this.clientProperties;
+        ProducerProperties properties = this.producerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
@@ -110,10 +130,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        KafkaClientProperties properties = this.clientProperties;
+        ProducerProperties properties = this.producerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
@@ -153,10 +173,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties properties = this.clientProperties;
+        ConsumerProperties properties = this.consumerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
@@ -199,10 +219,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, this.clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        KafkaClientProperties properties = this.clientProperties;
+        ConsumerProperties properties = this.consumerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))

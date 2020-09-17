@@ -686,7 +686,8 @@ public class ListenersST extends AbstractST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
-        LOGGER.info("This is client configuration {}", basicExternalKafkaClient.getClientProperties());
+        LOGGER.info("This is the producer configuration {}", basicExternalKafkaClient.getProducerProperties().toString());
+        LOGGER.info("This is the consumer configuration {}", basicExternalKafkaClient.getConsumerProperties().toString());
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),

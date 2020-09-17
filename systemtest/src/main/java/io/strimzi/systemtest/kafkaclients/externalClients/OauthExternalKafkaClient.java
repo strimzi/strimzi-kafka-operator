@@ -7,7 +7,8 @@ package io.strimzi.systemtest.kafkaclients.externalClients;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -28,7 +29,7 @@ import java.util.function.IntPredicate;
  * The OauthExternalKafkaClient for sending and receiving messages using access token provided by authorization server.
  * The client is using an external listeners.
  */
-public class OauthExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalKafkaClient> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(OauthExternalKafkaClient.class);
 
@@ -81,6 +82,29 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         }
     }
 
+    @Override
+    public AbstractKafkaClient.Builder<OauthExternalKafkaClient.Builder> toBuilder(OauthExternalKafkaClient oauthExternalKafkaClient) {
+        OauthExternalKafkaClient.Builder builder = new OauthExternalKafkaClient.Builder();
+
+        builder.withTopicName(oauthExternalKafkaClient.getTopicName());
+        builder.withPartition(oauthExternalKafkaClient.getPartition());
+        builder.withMessageCount(oauthExternalKafkaClient.getMessageCount());
+        builder.withNamespaceName(oauthExternalKafkaClient.getNamespaceName());
+        builder.withClusterName(oauthExternalKafkaClient.getClusterName());
+        builder.withConsumerGroupName(oauthExternalKafkaClient.getConsumerGroup());
+        builder.withKafkaUsername(oauthExternalKafkaClient.getKafkaUsername());
+        builder.withSecurityProtocol(oauthExternalKafkaClient.getSecurityProtocol());
+        builder.withCertificateAuthorityCertificateName(oauthExternalKafkaClient.getCaCertName());
+        builder.withProducerProperties(oauthExternalKafkaClient.getProducerProperties());
+        builder.withConsumerProperties(oauthExternalKafkaClient.getConsumerProperties());
+        builder.withOauthClientId(oauthExternalKafkaClient.getClientId());
+        builder.withClientSecretName(oauthExternalKafkaClient.getClientSecretName());
+        builder.withOauthTokenEndpointUri(oauthExternalKafkaClient.getOauthTokenEndpointUri());
+        builder.withIntrospectionEndpointUri(oauthExternalKafkaClient.getIntrospectionEndpointUri());
+
+        return builder;
+    }
+
     private OauthExternalKafkaClient(Builder builder) {
 
         super(builder);
@@ -100,10 +124,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties properties = this.clientProperties;
+        ProducerProperties properties = this.producerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
@@ -143,12 +167,12 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        KafkaClientProperties properties = this.clientProperties;
+        ProducerProperties properties = this.producerProperties;
 
         LOGGER.info("This is client.id={}, client.secret.name={}, oauthTokenEndpointUri={}", clientId, clientSecretName, oauthTokenEndpointUri);
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
@@ -186,10 +210,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties properties = this.clientProperties;
+        ConsumerProperties properties = this.consumerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withGroupIdConfig(consumerGroup)
@@ -232,10 +256,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
                 KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        KafkaClientProperties properties = this.clientProperties;
+        ConsumerProperties properties = this.consumerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withCaSecretName(caCertName)
@@ -265,6 +289,18 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         }
     }
 
+    public String getClientId() {
+        return clientId;
+    }
+    public String getClientSecretName() {
+        return clientSecretName;
+    }
+    public String getOauthTokenEndpointUri() {
+        return oauthTokenEndpointUri;
+    }
+    public String getIntrospectionEndpointUri() {
+        return introspectionEndpointUri;
+    }
     @Override
     public String toString() {
 
