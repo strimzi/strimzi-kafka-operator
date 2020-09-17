@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
@@ -87,6 +88,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
@@ -153,7 +155,7 @@ import static java.util.Collections.singletonMap;
  * </ul>
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
-public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>, KafkaSpec, KafkaStatus> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
@@ -203,57 +205,39 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
-        Promise<Void> createOrUpdatePromise = Promise.promise();
-
-        if (kafkaAssembly.getSpec() == null) {
-            log.error("{} spec cannot be null", kafkaAssembly.getMetadata().getName());
-            return Future.failedFuture("Spec cannot be null");
-        }
-
+    public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+        Promise<KafkaStatus> createOrUpdatePromise = Promise.promise();
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
+
         reconcile(reconcileState).onComplete(reconcileResult -> {
             KafkaStatus status = reconcileState.kafkaStatus;
-            Condition readyCondition;
+            Condition condition;
 
             if (kafkaAssembly.getMetadata().getGeneration() != null)    {
                 status.setObservedGeneration(kafkaAssembly.getMetadata().getGeneration());
             }
 
             if (reconcileResult.succeeded())    {
-                readyCondition = new ConditionBuilder()
+                condition = new ConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
+
+                status.addCondition(condition);
+                createOrUpdatePromise.complete(status);
             } else {
-                readyCondition = new ConditionBuilder()
+                condition = new ConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("NotReady")
                         .withStatus("True")
                         .withReason(reconcileResult.cause().getClass().getSimpleName())
                         .withMessage(reconcileResult.cause().getMessage())
                         .build();
+
+                status.addCondition(condition);
+                createOrUpdatePromise.fail(new ReconciliationException(status, reconcileResult.cause()));
             }
-
-            status.addCondition(readyCondition);
-            reconcileState.updateStatus(status).onComplete(statusResult -> {
-                if (statusResult.succeeded())    {
-                    log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());
-                } else {
-                    log.error("Failed to set status for {}", kafkaAssembly.getMetadata().getName());
-                }
-
-                // If both features succeeded, createOrUpdate succeeded as well
-                // If one or both of them failed, we prefer the reconciliation failure as the main error
-                if (reconcileResult.succeeded() && statusResult.succeeded())    {
-                    createOrUpdatePromise.complete();
-                } else if (reconcileResult.failed())    {
-                    createOrUpdatePromise.fail(reconcileResult.cause());
-                } else {
-                    createOrUpdatePromise.fail(statusResult.cause());
-                }
-            });
         });
 
         return createOrUpdatePromise.future();
@@ -3523,4 +3507,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new Date();
     }
 
+    @Override
+    protected KafkaStatus createStatus() {
+        return new KafkaStatus();
+    }
 }

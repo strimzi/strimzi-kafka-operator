@@ -11,10 +11,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Buildable(
         editableEnabled = false,
@@ -25,8 +22,7 @@ import java.util.Map;
 @JsonPropertyOrder({ "goals", "skipHardGoalCheck", "excludedTopics", "concurrentPartitionMovementsPerBroker",
                      "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
-public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializable {
-
+public class KafkaRebalanceSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
     // Optimization goal configurations
@@ -42,8 +38,6 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
     private int concurrentLeaderMovements;
     private long replicationThrottle;
     private List<String> replicaMovementStrategies;
-
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. " +
             "The supported goals are available at https://github.com/linkedin/cruise-control#goals. " +
@@ -127,15 +121,5 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
 
     public void setReplicaMovementStrategies(List<String> replicaMovementStrategies) {
         this.replicaMovementStrategies = replicaMovementStrategies;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
     }
 }

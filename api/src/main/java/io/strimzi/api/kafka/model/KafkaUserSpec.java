@@ -11,12 +11,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
-import static java.util.Collections.emptyMap;
-
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -24,15 +18,13 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "authentication", "authorization", "quotas" })
 @EqualsAndHashCode
-public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
-
+public class KafkaUserSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
     private KafkaUserAuthentication authentication;
     private KafkaUserAuthorization authorization;
     private KafkaUserQuotas quotas;
     private KafkaUserTemplate template;
-    private Map<String, Object> additionalProperties;
 
     @Description("Authentication mechanism enabled for this Kafka user.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -74,18 +66,5 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
 
     public void setTemplate(KafkaUserTemplate template) {
         this.template = template;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
-        }
-        this.additionalProperties.put(name, value);
     }
 }

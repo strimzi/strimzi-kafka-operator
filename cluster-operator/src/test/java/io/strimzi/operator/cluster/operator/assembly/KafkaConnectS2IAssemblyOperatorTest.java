@@ -171,7 +171,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(kcs2i, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2i.getMetadata().getNamespace(), kcs2i.getMetadata().getName()), kcs2i)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2i.getMetadata().getNamespace(), kcs2i.getMetadata().getName()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 // Verify service
@@ -808,7 +808,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2IAssembly) {
+            public Future<KafkaConnectS2IStatus> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2IAssembly) {
                 createdOrUpdated.add(kafkaConnectS2IAssembly.getMetadata().getName());
                 createOrUpdateAsync.flag();
                 return Future.succeededFuture();
@@ -867,7 +867,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2iNamespace, kcs2iName), kcs2i)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2iNamespace, kcs2iName))
             .onComplete(context.failing(e -> context.verify(() -> {
                 // Verify status
                 List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();
@@ -950,7 +950,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(kcs2i, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2i.getMetadata().getNamespace(), kcs2i.getMetadata().getName()), kcs2i)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2i.getMetadata().getNamespace(), kcs2i.getMetadata().getName()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -1048,6 +1048,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         conflictingConnect.getMetadata().setCreationTimestamp("2020-01-27T19:31:10Z");
 
         when(mockConnectS2IOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kcs2i));
+        when(mockConnectS2IOps.get(anyString(), anyString())).thenReturn(kcs2i);
         when(mockConnectOps.getAsync(kcs2iNamespace, kcs2iName)).thenReturn(Future.succeededFuture(conflictingConnect));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1059,7 +1060,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2iNamespace, kcs2iName), kcs2i)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2iNamespace, kcs2iName))
             .onComplete(context.failing(v -> context.verify(() -> {
                 // Verify status
                 List<KafkaConnectS2I> capturedConnects = connectCaptor.getAllValues();

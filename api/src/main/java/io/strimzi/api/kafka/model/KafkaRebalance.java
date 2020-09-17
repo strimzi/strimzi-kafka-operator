@@ -13,7 +13,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -71,7 +70,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaRebalance extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaRebalanceStatus> {
+public class KafkaRebalance extends CustomResource implements HasSpecAndStatus<KafkaRebalanceSpec, KafkaRebalanceStatus>, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 

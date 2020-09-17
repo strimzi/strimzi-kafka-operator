@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.common;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.core.instrument.Counter;
@@ -13,11 +13,18 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Meter;
+import io.strimzi.api.kafka.model.HasSpecAndStatus;
+import io.strimzi.api.kafka.model.Spec;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -28,6 +35,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -43,20 +52,22 @@ import static io.strimzi.operator.common.Util.async;
  *
  * <ul>
  * <li>uses the Fabric8 kubernetes API and implements
- * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, HasMetadata)}
+ * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, CustomResource)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
  * 
- * <li>add support for operator-side {@linkplain #validate(HasMetadata) validation}.
+ * <li>add support for operator-side {@linkplain #validate(CustomResource) validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
- *
+ *ą
  * </ul>
  * @param <T> The Java representation of the Kubernetes resource, e.g. {@code Kafka} or {@code KafkaConnect}
- * @param <S> The "Resource Operator" for the source resource type. Typically this will be some instantiation of
+ * @param <O> The "Resource Operator" for the source resource type. Typically this will be some instantiation of
  *           {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
  */
 public abstract class AbstractOperator<
-        T extends HasMetadata,
-        S extends AbstractWatchableResourceOperator<?, T, ?, ?, ?>>
+        T extends CustomResource & HasSpecAndStatus<P, S>,
+        P extends Spec,
+        S extends Status,
+        O extends AbstractWatchableStatusedResourceOperator<?, T, ?, ?, ?>>
             implements Operator {
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
@@ -65,7 +76,7 @@ public abstract class AbstractOperator<
     public static final String METRICS_PREFIX = "strimzi.";
 
     protected final Vertx vertx;
-    protected final S resourceOperator;
+    protected final O resourceOperator;
     private final String kind;
 
     protected final MetricsProvider metrics;
@@ -78,7 +89,7 @@ public abstract class AbstractOperator<
     private final Timer reconciliationsTimer;
     private final Map<Tags, AtomicInteger> resourcesStateCounter;
 
-    public AbstractOperator(Vertx vertx, String kind, S resourceOperator, MetricsProvider metrics) {
+    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics) {
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
@@ -143,7 +154,7 @@ public abstract class AbstractOperator<
      * @param resource The resource to be created, or updated.
      * @return A Future which is completed once the reconciliation of the given resource instance is complete.
      */
-    protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T resource);
+    protected abstract Future<S> createOrUpdate(Reconciliation reconciliation, T resource);
 
     /**
      * Asynchronously deletes the resource identified by {@code reconciliation}.
@@ -165,6 +176,7 @@ public abstract class AbstractOperator<
      * @return A Future which is completed with the result of the reconciliation.
      */
     @Override
+    @SuppressWarnings("unchecked")
     public final Future<Void> reconcile(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
@@ -174,13 +186,68 @@ public abstract class AbstractOperator<
 
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () -> {
             T cr = resourceOperator.get(namespace, name);
+
             if (cr != null) {
-                validate(cr);
+                Promise<Void> createOrUpdate = Promise.promise();
+
+                if (cr.getSpec() == null)   {
+                    InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
+
+                    S status = createStatus();
+                    Condition errorCondition = new ConditionBuilder()
+                            .withLastTransitionTime(StatusUtils.iso8601Now())
+                            .withType("NotReady")
+                            .withStatus("True")
+                            .withReason(exception.getClass().getSimpleName())
+                            .withMessage(exception.getMessage())
+                            .build();
+                    status.setObservedGeneration(cr.getMetadata().getGeneration());
+                    status.addCondition(errorCondition);
+
+                    log.error("{}: {} spec cannot be null", reconciliation, cr.getMetadata().getName());
+                    updateStatus(reconciliation, status).onComplete(notUsed -> {
+                        createOrUpdate.fail(exception);
+                    });
+
+                    return createOrUpdate.future();
+                }
+
+                Set<Condition> unknownAndDeprecatedConditions = validate(cr);
+
                 log.info("{}: {} {} should be created or updated", reconciliation, kind, name);
-                return createOrUpdate(reconciliation, cr).recover(createResult -> {
-                    log.error("{}: createOrUpdate failed", reconciliation, createResult);
-                    return Future.failedFuture(createResult);
-                });
+
+                createOrUpdate(reconciliation, cr)
+                        .onComplete(res -> {
+                            if (res.succeeded()) {
+                                S status = res.result();
+
+                                addWarningsToStatus(status, unknownAndDeprecatedConditions);
+                                updateStatus(reconciliation, status).onComplete(statusResult -> {
+                                    if (statusResult.succeeded()) {
+                                        createOrUpdate.complete();
+                                    } else {
+                                        createOrUpdate.fail(statusResult.cause());
+                                    }
+                                });
+                            } else {
+                                if (res.cause() instanceof ReconciliationException) {
+                                    ReconciliationException e = (ReconciliationException) res.cause();
+                                    Status status = e.getStatus();
+                                    addWarningsToStatus(status, unknownAndDeprecatedConditions);
+
+                                    log.error("{}: createOrUpdate failed", reconciliation, e.getCause());
+
+                                    updateStatus(reconciliation, (S) status).onComplete(statusResult -> {
+                                        createOrUpdate.fail(e.getCause());
+                                    });
+                                } else {
+                                    log.error("{}: createOrUpdate failed", reconciliation, res.cause());
+                                    createOrUpdate.fail(res.cause());
+                                }
+                            }
+                        });
+
+                return createOrUpdate.future();
             } else {
                 log.info("{}: {} {} should be deleted", reconciliation, kind, name);
                 return delete(reconciliation).map(deleteResult -> {
@@ -205,6 +272,63 @@ public abstract class AbstractOperator<
 
         return result.future();
     }
+
+    private void addWarningsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
+        if (status != null)  {
+            status.addConditions(unknownAndDeprecatedConditions);
+        }
+    }
+
+    /**
+     * Updates the Status field of the Kafka CR. It diffs the desired status against the current status and calls
+     * the update only when there is any difference in non-timestamp fields.
+     *
+     * @param reconciliation the reconciliation identified
+     * @param desiredStatus The KafkaStatus which should be set
+     *
+     * @return
+     */
+    Future<Void> updateStatus(Reconciliation reconciliation, S desiredStatus) {
+        if (desiredStatus == null)  {
+            log.debug("{}: Desired status is null - status will not be updated", reconciliation);
+            return Future.succeededFuture();
+        }
+
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.name();
+
+        return resourceOperator.getAsync(namespace, name)
+                .compose(res -> {
+                    if (res != null) {
+                        S currentStatus = res.getStatus();
+                        StatusDiff sDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                        if (!sDiff.isEmpty()) {
+                            res.setStatus(desiredStatus);
+
+                            return resourceOperator.updateStatusAsync(res)
+                                    .compose(notUsed -> {
+                                        log.debug("{}: Completed status update", reconciliation);
+                                        return Future.succeededFuture();
+                                    }, error -> {
+                                            log.error("{}: Failed to update status", reconciliation, error);
+                                            return Future.failedFuture(error);
+                                        });
+                        } else {
+                            log.debug("{}: Status did not change", reconciliation);
+                            return Future.succeededFuture();
+                        }
+                    } else {
+                        log.error("{}: Current {} resource not found", reconciliation, reconciliation.kind());
+                        return Future.failedFuture("Current " + reconciliation.kind() + " resource with name " + name + " not found");
+                    }
+                }, error -> {
+                        log.error("{}: Failed to get the current {} resource and its status", reconciliation, reconciliation.kind(), error);
+                        return Future.failedFuture(error);
+                    });
+    }
+
+    protected abstract S createStatus();
 
     /**
      * The exception by which Futures returned by {@link #withLock(Reconciliation, long, Callable)} are failed when
@@ -264,10 +388,16 @@ public abstract class AbstractOperator<
      * @param resource The custom resource
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
      */
-    protected void validate(T resource) {
+    /*test*/ Set<Condition> validate(T resource) {
         if (resource != null) {
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log));
+            Set<Condition> warningConditions = new HashSet<>(0);
+
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
+
+            return warningConditions;
         }
+
+        return Collections.emptySet();
     }
 
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
@@ -325,6 +455,7 @@ public abstract class AbstractOperator<
             log.info("{}: reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
+
             if (cause instanceof InvalidConfigParameterException) {
                 updateResourceState(reconciliation, false);
                 failedReconciliationsCounter.increment();

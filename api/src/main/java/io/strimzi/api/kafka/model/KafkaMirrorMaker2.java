@@ -13,7 +13,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -76,8 +75,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "apiVersion", "kind", "metadata", "spec", "status" })
 @EqualsAndHashCode
-public class KafkaMirrorMaker2 extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaMirrorMaker2Status> {
-
+public class KafkaMirrorMaker2 extends CustomResource implements HasSpecAndStatus<KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status>, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";

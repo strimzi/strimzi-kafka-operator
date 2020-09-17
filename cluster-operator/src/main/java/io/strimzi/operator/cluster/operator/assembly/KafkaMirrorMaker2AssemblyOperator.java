@@ -13,8 +13,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 
@@ -69,7 +71,7 @@ import io.vertx.core.Vertx;
  *     <li>A set of MirrorMaker 2.0 connectors</li>
  * </ul>
  */
-public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>, KafkaMirrorMaker2Status> {
+public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
     private static final Logger log = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
@@ -118,25 +120,18 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        Promise<Void> createOrUpdatePromise = Promise.promise();
-        String namespace = reconciliation.namespace();
+    protected Future<KafkaMirrorMaker2Status> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
         KafkaMirrorMaker2Cluster mirrorMaker2Cluster;
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = new KafkaMirrorMaker2Status();
         try {
-            if (kafkaMirrorMaker2.getSpec() == null) {
-                log.error("{}: Resource lacks spec property", reconciliation);
-                throw new InvalidResourceException("spec property is required");
-            }
             mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(kafkaMirrorMaker2, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, Future.failedFuture(e));
-            this.maybeUpdateStatusCommon(resourceOperator, kafkaMirrorMaker2, reconciliation, kafkaMirrorMaker2Status,
-                (mirrormaker2, status) -> {
-                    return new KafkaMirrorMaker2Builder(mirrormaker2).withStatus(status).build();
-                });
-            return Future.failedFuture(e);
+            return Future.failedFuture(new ReconciliationException(kafkaMirrorMaker2Status, e));
         }
+
+        Promise<KafkaMirrorMaker2Status> createOrUpdatePromise = Promise.promise();
+        String namespace = reconciliation.namespace();
 
         ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(mirrorMaker2Cluster.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) mirrorMaker2Cluster.getLogging()).getName()) :
@@ -172,20 +167,18 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     kafkaMirrorMaker2Status.setReplicas(mirrorMaker2Cluster.getReplicas());
                     kafkaMirrorMaker2Status.setLabelSelector(mirrorMaker2Cluster.getSelectorLabels().toSelectorString());
 
-                    this.maybeUpdateStatusCommon(resourceOperator, kafkaMirrorMaker2, reconciliation, kafkaMirrorMaker2Status,
-                        (mirrormaker2, status) -> new KafkaMirrorMaker2Builder(mirrormaker2).withStatus(status).build()).onComplete(statusResult -> {
-                            // If both features succeeded, createOrUpdate succeeded as well
-                            // If one or both of them failed, we prefer the reconciliation failure as the main error
-                            if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                                createOrUpdatePromise.complete();
-                            } else if (reconciliationResult.failed()) {
-                                createOrUpdatePromise.fail(reconciliationResult.cause());
-                            } else {
-                                createOrUpdatePromise.fail(statusResult.cause());
-                            }
-                        });
+                    if (reconciliationResult.succeeded())   {
+                        createOrUpdatePromise.complete(kafkaMirrorMaker2Status);
+                    } else {
+                        createOrUpdatePromise.fail(new ReconciliationException(kafkaMirrorMaker2Status, reconciliationResult.cause()));
+                    }
                 });
         return createOrUpdatePromise.future();
+    }
+
+    @Override
+    protected KafkaMirrorMaker2Status createStatus() {
+        return new KafkaMirrorMaker2Status();
     }
 
     private Future<ReconcileResult<ServiceAccount>> mirrorMaker2ServiceAccount(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {

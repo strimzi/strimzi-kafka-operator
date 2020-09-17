@@ -18,10 +18,6 @@ import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -32,8 +28,7 @@ import java.util.Map;
         "producer", "resources", "jvmOptions", "logging",
         "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
-public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
-
+public class KafkaBridgeSpec extends Spec {
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_REPLICAS = 1;
 
@@ -52,7 +47,6 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     private boolean enableMetrics;
     private Probe livenessProbe;
     private Probe readinessProbe;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaBridgeTemplate template;
     private Tracing tracing;
 
@@ -218,15 +212,5 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     public void setTracing(Tracing tracing) {
         this.tracing = tracing;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
     }
 }

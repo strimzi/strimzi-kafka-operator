@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
+import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -145,7 +146,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // No metrics config  => no CMs created
                 Set<String> metricsNames = new HashSet<>();
@@ -615,7 +616,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMakerAssembly) {
+            public Future<KafkaMirrorMakerStatus> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMakerAssembly) {
                 createdOrUpdated.add(kafkaMirrorMakerAssembly.getMetadata().getName());
                 createdOrUpdateAsync.flag();
                 return Future.succeededFuture();
@@ -675,7 +676,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName))
             .onComplete(context.failing(e -> context.verify(() -> {
                 // Verify status
                 List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
@@ -731,7 +732,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // 0 Replicas - readiness should never get called.
                     verify(mockDcOps, never()).readiness(anyString(), anyString(), anyLong(), anyLong());

@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
-import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.certs.CertManager;
@@ -20,11 +20,10 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -42,7 +41,7 @@ import java.util.Collections;
  *     <li>A Kafka Bridge Deployment and related Services</li>
  * </ul>
  */
-public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> {
+public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>, KafkaBridgeSpec, KafkaBridgeStatus> {
     private static final Logger log = LogManager.getLogger(KafkaBridgeAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
@@ -66,25 +65,24 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     }
 
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaBridge assemblyResource) {
-        Promise<Void> createOrUpdatePromise = Promise.promise();
+    protected Future<KafkaBridgeStatus> createOrUpdate(Reconciliation reconciliation, KafkaBridge assemblyResource) {
+        KafkaBridgeStatus kafkaBridgeStatus = new KafkaBridgeStatus();
+
         String namespace = reconciliation.namespace();
         KafkaBridgeCluster bridge;
-        KafkaBridgeStatus kafkaBridgeStatus = new KafkaBridgeStatus();
-        if (assemblyResource.getSpec() == null) {
-            log.error("{} spec cannot be null", assemblyResource.getMetadata().getName());
-            return Future.failedFuture("Spec cannot be null");
-        }
+
         try {
             bridge = KafkaBridgeCluster.fromCrd(assemblyResource, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, Future.failedFuture(e));
-            return updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus);
+            return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
 
         ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(bridge.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
                 null);
+
+        Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
         boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
         log.debug("{}: Updating Kafka Bridge cluster", reconciliation);
@@ -110,70 +108,19 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 kafkaBridgeStatus.setReplicas(bridge.getReplicas());
                 kafkaBridgeStatus.setLabelSelector(bridge.getSelectorLabels().toSelectorString());
 
-                updateStatus(assemblyResource, reconciliation, kafkaBridgeStatus).onComplete(statusResult -> {
-                    // If both features succeeded, createOrUpdate succeeded as well
-                    // If one or both of them failed, we prefer the reconciliation failure as the main error
-                    if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                        createOrUpdatePromise.complete();
-                    } else if (reconciliationResult.failed()) {
-                        createOrUpdatePromise.fail(reconciliationResult.cause());
-                    } else {
-                        createOrUpdatePromise.fail(statusResult.cause());
-                    }
-                });
+                if (reconciliationResult.succeeded())   {
+                    createOrUpdatePromise.complete(kafkaBridgeStatus);
+                } else {
+                    createOrUpdatePromise.fail(new ReconciliationException(kafkaBridgeStatus, reconciliationResult.cause()));
+                }
             });
 
         return createOrUpdatePromise.future();
     }
 
-    /**
-     * Updates the Status field of the Kafka Bridge CR. It diffs the desired status against the current status and calls
-     * the update only when there is any difference in non-timestamp fields.
-     *
-     * @param kafkaBridgeAssembly The CR of Kafka Bridge
-     * @param reconciliation Reconciliation information
-     * @param desiredStatus The KafkaBridgeStatus which should be set
-     *
-     * @return
-     */
-    Future<Void> updateStatus(KafkaBridge kafkaBridgeAssembly, Reconciliation reconciliation, KafkaBridgeStatus desiredStatus) {
-        Promise<Void> updateStatusPromise = Promise.promise();
-
-        resourceOperator.getAsync(kafkaBridgeAssembly.getMetadata().getNamespace(), kafkaBridgeAssembly.getMetadata().getName()).onComplete(getRes -> {
-            if (getRes.succeeded()) {
-                KafkaBridge kafkaBridge = getRes.result();
-
-                if (kafkaBridge != null) {
-                    KafkaBridgeStatus currentStatus = kafkaBridge.getStatus();
-
-                    StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                    if (!ksDiff.isEmpty()) {
-                        KafkaBridge resourceWithNewStatus = new KafkaBridgeBuilder(kafkaBridge).withStatus(desiredStatus).build();
-                        ((CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
-                            if (updateRes.succeeded()) {
-                                log.debug("{}: Completed status update", reconciliation);
-                                updateStatusPromise.complete();
-                            } else {
-                                log.error("{}: Failed to update status", reconciliation, updateRes.cause());
-                                updateStatusPromise.fail(updateRes.cause());
-                            }
-                        });
-                    } else {
-                        log.debug("{}: Status did not change", reconciliation);
-                        updateStatusPromise.complete();
-                    }
-                } else {
-                    log.error("{}: Current Kafka Bridge resource not found", reconciliation);
-                    updateStatusPromise.fail("Current Kafka Bridge resource not found");
-                }
-            } else {
-                log.error("{}: Failed to get the current Kafka Bridge resource and its status", reconciliation, getRes.cause());
-                updateStatusPromise.fail(getRes.cause());
-            }
-        });
-
-        return updateStatusPromise.future();
+    @Override
+    protected KafkaBridgeStatus createStatus() {
+        return new KafkaBridgeStatus();
     }
 
     Future<ReconcileResult<ServiceAccount>> kafkaBridgeServiceAccount(String namespace, KafkaBridgeCluster bridge) {
