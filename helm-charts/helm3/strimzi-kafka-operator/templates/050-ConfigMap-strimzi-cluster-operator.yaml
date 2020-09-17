@@ -29,5 +29,5 @@ data:
     logger.zookeepertrustmanager.level = WARN
     logger.zookeepertrustmanager.additivity = false
 
-    # Netty is by default on DEBUG level, which returns not related exceptions and errors -> we set it to INFO
+    # Keeps separate level for Netty logging -> to not be changed by the root logger
     io.netty = INFO
