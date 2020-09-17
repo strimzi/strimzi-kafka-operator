@@ -66,7 +66,7 @@ pipeline {
                     env.OC_VERSION = NODE_LABEL == 'strimzi-crc' ? "4" : "3"
                     env.EXCLUDE_GROUPS = DEFAULT_EXCLUDED_GROUPS
                     if (env.ghprbCommentBody.contains('testcase=')) {
-                        env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
+                        env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0] + "!MirrorMaker2ST#testMirrorMaker2CorrectlyMirrorsHeaders,!LoggingChangeST#testJSONFormatLogging"
                     }
                     echo "TEST_CASE: ${env.TEST_CASE}"
                     if (env.ghprbCommentBody.contains('profile=')) {

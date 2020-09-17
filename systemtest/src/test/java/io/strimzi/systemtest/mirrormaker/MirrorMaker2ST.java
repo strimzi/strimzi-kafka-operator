@@ -637,7 +637,7 @@ class MirrorMaker2ST extends AbstractST {
         String targetConsumerName = "target-consumer";
         String sourceExampleTopic = "source-example-topic";
         String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
-        int messageCount = 10;
+        int messageCount = 30;
 
         // Deploy source kafka
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
