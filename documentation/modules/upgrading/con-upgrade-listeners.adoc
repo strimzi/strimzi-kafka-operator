@@ -98,6 +98,8 @@ listeners:
     port: 9094
     type:loadbalancer
     tls: true
+    authentication:
+      type: tls
     configuration:
       bootstrap:
         annotations:
@@ -105,7 +107,7 @@ listeners:
 ----
 
 IMPORTANT: The name and port numbers shown in the new listener configuration *must* be used for backwards compatibility.
-Using any other values will cause problems with the naming of Kafka listeners and Kubernetes services.
+Using any other values will cause renaming of the Kafka listeners and Kubernetes services.
 
 For more information on the configuration options available for each type of listener,
 see the link:{BookURLUsing}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
