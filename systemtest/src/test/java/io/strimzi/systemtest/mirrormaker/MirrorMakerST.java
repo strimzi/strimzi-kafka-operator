@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -34,6 +36,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -708,6 +711,42 @@ public class MirrorMakerST extends AbstractST {
         assertThat(mmPods.size(), is(0));
         assertThat(mmStatus.getConditions().get(0).getType(), is(Ready.toString()));
         assertThat(actualObsGen, is(not(oldObsGen)));
+    }
+
+    @Test
+    void testHostAliases() {
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp("34.89.152.196")
+            .withHostnames("strimzi")
+            .build();
+
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, ClientUtils.generateRandomConsumerGroup(), 3, false)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewPod()
+                        .withHostAliases(hostAlias)
+                    .endPod()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String mmPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
+        String output = cmdKubeClient().execInPod(mmPodName, "ping", "-c", "5", "strimzi").out();
+
+        LOGGER.info("Checking output of ping");
+        assertThat(output, Matchers.containsString("PING strimzi (34.89.152.196)"));
+        assertThat(output, Matchers.containsString("5 packets transmitted, 5 received"));
+
+        LOGGER.info("Checking the /etc/hosts file");
+        output = cmdKubeClient().execInPod(mmPodName, "cat", "/etc/hosts").out();
+        assertThat(output, Matchers.containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
     }
     
     @BeforeAll

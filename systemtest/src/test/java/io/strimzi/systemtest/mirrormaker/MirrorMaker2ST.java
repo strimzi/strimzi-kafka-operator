@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -763,6 +765,42 @@ class MirrorMaker2ST extends AbstractST {
         List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(kafkaClusterTargetName, 0, originalTopicName);
         assertThat(kafkaTopicSpec.get(0), equalTo("Topic:" + originalTopicName));
         assertThat(kafkaTopicSpec.get(1), equalTo("PartitionCount:3"));
+    }
+
+    @Test
+    void testHostAliases() {
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp("34.89.152.196")
+            .withHostnames("strimzi")
+            .build();
+
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewPod()
+                        .withHostAliases(hostAlias)
+                    .endPod()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String mm2PodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
+        String output = cmdKubeClient().execInPod(mm2PodName, "ping", "-c", "5", "strimzi").out();
+
+        LOGGER.info("Checking output of ping");
+        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
+        assertThat(output, containsString("5 packets transmitted, 5 received"));
+
+        LOGGER.info("Checking the /etc/hosts file");
+        output = cmdKubeClient().execInPod(mm2PodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
     }
 
     @BeforeAll

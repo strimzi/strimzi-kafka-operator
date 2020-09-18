@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.connect;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -707,6 +709,39 @@ class ConnectS2IST extends AbstractST {
         for (String pod : connectS2IPods) {
             assertThat(pod.contains(connectS2IGenName), is(true));
         }
+    }
+
+    @Test
+    void testHostAliases() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp("34.89.152.196")
+            .withHostnames("strimzi")
+            .build();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewPod()
+                        .withHostAliases(hostAlias)
+                    .endPod()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String connectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
+        String output = cmdKubeClient().execInPod(connectS2IPodName, "ping", "-c", "5", "strimzi").out();
+
+        LOGGER.info("Checking output of ping");
+        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
+        assertThat(output, containsString("5 packets transmitted, 5 received"));
+
+        LOGGER.info("Checking the /etc/hosts file");
+        output = cmdKubeClient().execInPod(connectS2IPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
