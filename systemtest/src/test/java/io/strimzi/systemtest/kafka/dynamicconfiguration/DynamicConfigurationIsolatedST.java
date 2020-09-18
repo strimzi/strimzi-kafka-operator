@@ -219,7 +219,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
+                    .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName("external")
                             .withPort(9094)
@@ -295,7 +295,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
                 basicExternalKafkaClientTls.sendMessagesTls(),
-                basicExternalKafkaClientTls.sendMessagesTls()
+                basicExternalKafkaClientTls.receiveMessagesTls()
         );
 
         assertThrows(Exception.class, () -> {

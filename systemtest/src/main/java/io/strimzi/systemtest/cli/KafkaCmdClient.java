@@ -5,11 +5,16 @@
 package io.strimzi.systemtest.cli;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaCmdClient {
 
@@ -25,9 +30,16 @@ public class KafkaCmdClient {
 
     public static String createTopicUsingPodCli(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
         String podName = KafkaResources.zookeeperPodName(clusterName, zkPodId);
-        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+        String response = cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --zookeeper localhost:" + PORT + " --create " + " --topic " + topic +
                 " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
+
+        KafkaTopicUtils.waitForKafkaTopicCreation(topic);
+
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topic).get();
+        ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
+
+        return response;
     }
 
     public static String deleteTopicUsingPodCli(String clusterName, int zkPodId, String topic) {
