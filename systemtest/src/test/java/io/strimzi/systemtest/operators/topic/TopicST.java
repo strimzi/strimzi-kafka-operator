@@ -125,12 +125,6 @@ public class TopicST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
                             .withName("external")
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
@@ -156,13 +150,17 @@ public class TopicST extends AbstractST {
             assertThat(topics.size(), is(1));
             assertThat(topics.contains(TOPIC_NAME), is(true));
 
-            KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
-            ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
+            KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);
+            KafkaTopicUtils.waitForKafkaTopicReady(TOPIC_NAME);
         }
 
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
+
         LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created and topic is in Ready state", 1);
-        KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicReady(TOPIC_NAME);
+        assertThat(kafkaTopic.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
+        assertThat(kafkaTopic.getSpec().getPartitions(), is(1));
+        assertThat(kafkaTopic.getSpec().getReplicas(), is(1));
     }
 
     @Test
