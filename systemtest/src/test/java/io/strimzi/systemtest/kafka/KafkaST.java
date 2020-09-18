@@ -6,6 +6,8 @@ package io.strimzi.systemtest.kafka;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -1517,6 +1519,53 @@ class KafkaST extends AbstractST {
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE,
             "Kafka configuration option .* should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas);
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).delete(kafka);
+    }
+
+    @Test
+    void testHostAliases() {
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp("34.89.152.196")
+            .withHostnames("strimzi")
+            .build();
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withHostAliases(hostAlias)
+                        .endPod()
+                    .endTemplate()
+                .endKafka()
+                .editZookeeper()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withHostAliases(hostAlias)
+                        .endPod()
+                    .endTemplate()
+                .endZookeeper()
+            .endSpec()
+            .done();
+
+        List<String> pods = kubeClient().listPodNames(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME);
+
+        for (String podName : pods) {
+            if (!podName.contains("entity-operator")) {
+                String containerName = podName.contains("kafka") ? "kafka" : "zookeeper";
+                LOGGER.info("Checking host alias settings in {}, {} container", podName, containerName);
+
+                LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
+                String output = cmdKubeClient().execInPodContainer(false, podName, containerName, "ping", "-c", "5", "strimzi").out();
+
+                LOGGER.info("Checking output of ping");
+                assertThat(output, containsString("PING strimzi (34.89.152.196)"));
+                assertThat(output, containsString("5 packets transmitted, 5 received"));
+
+                LOGGER.info("Checking the /etc/hosts file");
+                output = cmdKubeClient().execInPodContainer(false, podName, containerName, "cat", "/etc/hosts").out();
+                assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+            }
+        }
     }
 
     protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {

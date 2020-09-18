@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -1110,6 +1112,39 @@ class ConnectST extends AbstractST {
             cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + secretVolumeName + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
         );
+    }
+
+    @Test
+    void testHostAliases() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp("34.89.152.196")
+            .withHostnames("strimzi")
+            .build();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewPod()
+                        .withHostAliases(hostAlias)
+                    .endPod()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String connectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
+        String output = cmdKubeClient().execInPod(connectPodName, "ping", "-c", "5", "strimzi").out();
+
+        LOGGER.info("Checking output of ping");
+        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
+        assertThat(output, containsString("5 packets transmitted, 5 received"));
+
+        LOGGER.info("Checking the /etc/hosts file");
+        output = cmdKubeClient().execInPod(connectPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
     }
 
     @BeforeAll
