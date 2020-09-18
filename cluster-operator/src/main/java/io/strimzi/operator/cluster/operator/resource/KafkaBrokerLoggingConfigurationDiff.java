@@ -119,6 +119,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                         env.put(line.trim(), "");
                     }
                     log.debug("Treating the line as ENV var declaration: {}", line);
+                    continue;
                 }
 
                 // we ignore appenders (log4j.appender.*)
@@ -139,7 +140,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                     parsed.put("root", expandVars(line.substring(17).trim(), env));
 
                 } else {
-                    log.debug("Skipping log4j.* declaration: {}", line);
+                    log.debug("Skipping log4j line: {}", line);
                 }
             }
         } catch (Exception e) {

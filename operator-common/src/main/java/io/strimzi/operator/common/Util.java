@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -402,8 +403,8 @@ public class Util {
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(loggingConfiguration);
         StringBuilder result = new StringBuilder();
-        for (Map.Entry<String, String> entry: ops.asMap().entrySet()) {
-            if (!entry.getKey().startsWith("log4j.logger.") && !entry.getKey().equals("log4j.rootLogger") && !entry.getKey().equals("monitorInterval")) {
+        for (Map.Entry<String, String> entry: new TreeMap<>(ops.asMap()).entrySet()) {
+            if (entry.getKey().startsWith("log4j.appender.") && !entry.getKey().equals("monitorInterval")) {
                 result.append(entry.getKey()).append("=").append(entry.getValue());
             }
         }
