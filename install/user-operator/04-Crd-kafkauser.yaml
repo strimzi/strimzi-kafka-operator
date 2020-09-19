@@ -26,6 +26,10 @@ spec:
     categories:
     - strimzi
   additionalPrinterColumns:
+  - name: Cluster
+    description: The name of the Kafka cluster this user belongs to
+    JSONPath: .metadata.labels.strimzi\.io/cluster
+    type: string
   - name: Authentication
     description: How the user is authenticated
     JSONPath: .spec.authentication.type
@@ -134,7 +138,7 @@ spec:
                   enum:
                   - simple
                   description: Authorization type. Currently the only supported type
-                    is `simple`. `simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer`
+                    is `simple`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
                     class for authorization.
               required:
               - acls
@@ -163,6 +167,30 @@ spec:
               description: Quotas on requests to control the broker resources used
                 by clients. Network bandwidth and request rate quotas can be enforced.Kafka
                 documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
+            template:
+              type: object
+              properties:
+                secret:
+                  type: object
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
+                        annotations:
+                          type: object
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
+                      description: Metadata applied to the resource.
+                  description: Template for KafkaUser resources. The template allows
+                    users to specify how the `Secret` with password or TLS certificates
+                    is generated.
+              description: Template to specify how Kafka User `Secrets` are generated.
           description: The specification of the user.
         status:
           type: object

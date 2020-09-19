@@ -12,7 +12,7 @@ You can configure a Kafka cluster to run with multiple broker nodes across _rack
 Storage::
 Kafka and ZooKeeper store data on disks.
 +
-{ProductName} requires block storage provisioned through `StorageClass`.
+Strimzi requires block storage provisioned through `StorageClass`.
 The file system format for storage must be _XFS_ or _EXT4_.
 Three types of data storage are supported:
 +
@@ -26,24 +26,30 @@ The disk capacity used by an existing Kafka cluster can be increased if supporte
 
 Listeners:: Listeners configure how clients connect to a Kafka cluster.
 +
+By specifying a unique name and port for each listener within a Kafka cluster,
+you can configure multiple listeners.
++
 The following types of listener are supported:
 +
 --
-* *Plain listener* that does not use encryption
-* *TLS listener* that uses encryption
-* *External listener* for access outside of Kubernetes
+* *Internal listeners* for access within Kubernetes
+* *External listeners* for access outside of Kubernetes
 --
 +
-External listeners expose Kafka by specifying a `type`:
+You can enable TLS encryption for listeners, and configure xref:security-configuration-authentication_{context}[authentication].
++
+Internal listeners are specified using an `internal` type.
++
+External listeners expose Kafka by specifying an external `type`:
 +
 --
-* `route` to use OpenShift Routes and HAProxy router
+* `route` to use OpenShift routes and the default HAProxy router
 * `loadbalancer` to use loadbalancer services
-* `nodeport` to use ports on the Kubernetes nodes
-* `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}.
+* `nodeport` to use ports on Kubernetes nodes
+* `ingress` to use Kubernetes _Ingress_ and the {NginxIngressController}
 --
 
-If you are using xref:security-configuration-authentication_{context}[{oauth} for token-based authentication], you can configure listeners to use the authorization server.  
+If you are using xref:security-configuration-authentication_{context}[OAuth 2.0 for token-based authentication], you can configure listeners to use the authorization server.
 
 Rack awareness:: Rack awareness is a configuration feature that distributes Kafka broker pods and topic replicas across _racks_, which represent data centers or racks in data centers, or availability zones.
 
@@ -72,6 +78,6 @@ spec:
       size: 10000Gi
     # ...
     rack:
-      topologyKey: failure-domain.beta.kubernetes.io/zone
+      topologyKey: topology.kubernetes.io/zone
     # ...
 ----

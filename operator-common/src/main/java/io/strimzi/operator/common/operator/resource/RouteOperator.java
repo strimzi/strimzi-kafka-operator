@@ -41,7 +41,7 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
      * @return A future that succeeds when the Route has an assigned address.
      */
     public Future<Void> hasAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isAddressReady);
+        return waitFor(namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isAddressReady);
     }
 
     /**

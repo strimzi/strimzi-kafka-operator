@@ -45,9 +45,17 @@ COPY ./tmp/mirror-maker-agent.jar ${KAFKA_HOME}/libs/
 COPY ./tmp/tracing-agent.jar ${KAFKA_HOME}/libs/
 
 #####
-# Add 3dr party libs
+# Add 3rd party libs
 #####
 COPY kafka-thirdparty-libs/${THIRD_PARTY_LIBS}/target/dependency/ ${KAFKA_HOME}/libs/
+
+#####
+# Add Cruise Control
+#####
+ENV CRUISE_CONTROL_HOME=/opt/cruise-control
+RUN mkdir $CRUISE_CONTROL_HOME
+COPY kafka-thirdparty-libs/cc/target/dependency/ ${CRUISE_CONTROL_HOME}/libs/
+COPY ./cruise-control-scripts $CRUISE_CONTROL_HOME
 
 #####
 # Add Stunnel

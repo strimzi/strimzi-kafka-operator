@@ -108,7 +108,10 @@ public @interface Crd {
          * @return The subresources of a custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
-        Subresources subresources() default @Subresources(status = {});
+        Subresources subresources() default @Subresources(
+                status = {},
+                scale = {}
+                );
 
         /**
          * The subresources of a custom resources that this is the definition for.
@@ -116,8 +119,19 @@ public @interface Crd {
          */
         @interface Subresources {
             Status[] status();
+            Scale[] scale() default {};
 
             @interface Status {
+            }
+
+            /**
+             * The scale subresource of a custom resources that this is the definition for.
+             * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#customresourcesubresourcescale-v1beta1-apiextensions-k8s-io">Kubernetes 1.18 API documtation</a>
+             */
+            @interface Scale {
+                String specReplicasPath();
+                String statusReplicasPath();
+                String labelSelectorPath() default "";
             }
         }
 

@@ -10,6 +10,7 @@ import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.MetricsRegistry;
 import com.yammer.metrics.core.MetricsRegistryListener;
+import kafka.metrics.KafkaYammerMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,31 @@ public class KafkaAgent {
         this.sessionConnectedFile = sessionConnectedFile;
     }
 
+    /**
+     * Since Kafka 2.6.0, a new class KafkaYammerMetrics exists which has the default Metrics Registry. The old default
+     * registry does not work there anymore. So if the new class exists, we use it and if it doesn't exist we use the
+     * old one. More details can be found here: https://github.com/apache/kafka/blob/2.6.0/core/src/main/java/kafka/metrics/KafkaYammerMetrics.java
+     *
+     * Once we support only 2.6.0 and newer, we can clean this up and use only KafkaYammerMetrics all the time.
+     *
+     * @return  MetricsRegistry with Kafka metrics
+     */
+    private MetricsRegistry metricsRegistry()   {
+        try {
+            Class.forName("kafka.metrics.KafkaYammerMetrics");
+            LOGGER.info("KafkaYammerMetrics found and will be used.");
+            return KafkaYammerMetrics.defaultRegistry();
+        } catch (ClassNotFoundException e) {
+            LOGGER.info("KafkaYammerMetrics not found. Metrics will be used.");
+            return Metrics.defaultRegistry();
+        }
+    }
+
     private void run() {
-        MetricsRegistry metricsRegistry = Metrics.defaultRegistry();
+        LOGGER.info("Starting metrics registry");
+
+        MetricsRegistry metricsRegistry = metricsRegistry();
+
         metricsRegistry.addListener(new MetricsRegistryListener() {
             @Override
             public void onMetricRemoved(MetricName metricName) {
@@ -105,9 +129,11 @@ public class KafkaAgent {
                 boolean ready = false;
                 Integer running = Integer.valueOf(3);
                 Object value = brokerState.value();
-                if (running.equals(value)) {
+
+                if ((value instanceof Integer && running.equals(value))
+                        || (value instanceof Byte && running.equals(((Byte) value).intValue()))) {
                     try {
-                        LOGGER.info("Running as server according to {} => ready", brokerStateName);
+                        LOGGER.trace("Running as server according to {} => ready", brokerStateName);
                         touch(brokerReadyFile);
                     } catch (IOException e) {
                         LOGGER.error("Could not write readiness file {}", brokerReadyFile, e);
@@ -115,7 +141,7 @@ public class KafkaAgent {
                     ready = true;
 
                 } else if (i++ % 60 == 0) {
-                    LOGGER.debug("Metric {} = {}", brokerStateName, value);
+                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, value, value.getClass());
                 }
                 return ready;
             }
@@ -174,6 +200,7 @@ public class KafkaAgent {
                 LOGGER.error("Session connected file already exists and could not be deleted: {}", sessionConnectedFile);
                 System.exit(1);
             } else {
+                LOGGER.info("Starting KafkaAgent with brokerReadyFile={} and sessionConnectedFile={}", brokerReadyFile, sessionConnectedFile);
                 new KafkaAgent(brokerReadyFile, sessionConnectedFile).run();
             }
         }

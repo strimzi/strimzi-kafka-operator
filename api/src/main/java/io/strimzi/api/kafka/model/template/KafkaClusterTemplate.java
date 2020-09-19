@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -27,7 +28,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
         "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
-        "podDisruptionBudget", "kafkaContainer", "tlsSidecarContainer", "initContainer","clusterCa"})
+        "podDisruptionBudget", "kafkaContainer", "tlsSidecarContainer", "initContainer","clusterCaCert"})
 @EqualsAndHashCode
 public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -180,6 +181,8 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
         this.kafkaContainer = kafkaContainer;
     }
 
+    @DeprecatedProperty
+    @Deprecated
     @Description("Template for the Kafka broker TLS sidecar container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getTlsSidecarContainer() {

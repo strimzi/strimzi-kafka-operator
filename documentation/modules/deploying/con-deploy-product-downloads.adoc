@@ -1,0 +1,22 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-tasks-prep.adoc
+
+[id='downloads-{context}']
+= Downloading Strimzi release artifacts
+
+ifdef::Downloading[]
+To install Strimzi, download the release artifacts from {ReleaseDownload}.
+endif::Downloading[]
+
+ifndef::Downloading[]
+To install Strimzi, download and extract the release artifacts from the `amq-streams-__<version>__-ocp-install-examples.zip` file from the {ZipDownload}.
+endif::Downloading[]
+
+Strimzi release artifacts include sample YAML files to help you deploy the components of Strimzi to Kubernetes, perform common operations,
+and configure your Kafka cluster.
+
+You deploy Strimzi to a Kubernetes cluster using the `kubectl` command-line tool.
+
+NOTE: Additionally, Strimzi container images are available through the {DockerRepository}.
+However, we recommend that you use the YAML files provided to deploy Strimzi.

@@ -5,7 +5,7 @@
 [id='ref-kafka-entity-operator-{context}']
 = Entity Operator configuration properties
 
-The Entity Operator can be configured using the `entityOperator` property in `Kafka.spec`
+Use the `entityOperator` property in `Kafka.spec` to configure the Entity Operator.
 
 The `entityOperator` property supports several sub-properties:
 
@@ -14,16 +14,19 @@ The `entityOperator` property supports several sub-properties:
 * `userOperator`
 * `template`
 
-The `tlsSidecar` property can be used to configure the TLS sidecar container which is used to communicate with ZooKeeper.
-For more details about configuring the TLS sidecar, see xref:assembly-tls-sidecar-{context}[].
+The `tlsSidecar` property contains the configuration of the TLS sidecar container, which is used to communicate with ZooKeeper.
+For more information on configuring the TLS sidecar, see xref:assembly-tls-sidecar-{context}[].
 
-The `template` property can be used to configure details of the Entity Operator pod, such as labels, annotations, affinity, tolerations and so on.
+The `template` property contains the configuration of the Entity Operator pod, such as labels, annotations, affinity, and tolerations.
+For more information on configuring templates, see xref:assembly-customizing-kubernetes-resources-str[].
 
 The `topicOperator` property contains the configuration of the Topic Operator.
 When this option is missing, the Entity Operator is deployed without the Topic Operator.
 
 The `userOperator` property contains the configuration of the User Operator.
 When this option is missing, the Entity Operator is deployed without the User Operator.
+
+For more information on the properties to configure the Entity Operator, see the xref:type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference].
 
 .Example of basic configuration enabling both operators
 [source,yaml,subs=attributes+]
@@ -41,5 +44,7 @@ spec:
     topicOperator: {}
     userOperator: {}
 ----
+
+If an empty object (`{}`) is used for the `topicOperator` and `userOperator`, all properties use their default values.
 
 When both `topicOperator` and `userOperator` properties are missing, the Entity Operator is not deployed.

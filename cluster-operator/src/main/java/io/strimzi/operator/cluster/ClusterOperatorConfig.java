@@ -12,6 +12,8 @@ import io.strimzi.operator.cluster.model.NoImageException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +31,8 @@ import static java.util.Collections.unmodifiableSet;
  * Cluster Operator configuration
  */
 public class ClusterOperatorConfig {
+    private static final Logger log = LogManager.getLogger(ClusterOperatorConfig.class.getName());
+
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
@@ -43,13 +47,14 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
     public static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
-    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
-    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
+    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE"; // Used only to produce warning if defined at startup
+    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE";
     public static final String STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE = "STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE";
     public static final String STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     public static final String STRIMZI_DEFAULT_USER_OPERATOR_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     public static final String STRIMZI_DEFAULT_KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     public static final String STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE = "STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE";
+    public static final String STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
@@ -91,8 +96,21 @@ public class ClusterOperatorConfig {
      * @return  Cluster Operator configuration instance
      */
     public static ClusterOperatorConfig fromMap(Map<String, String> map) {
+        warningsForRemovedEndVars(map);
         KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES));
         return fromMap(map, lookup);
+    }
+
+    /**
+     * Logs warnings for removed / deprecated environment variables
+     *
+     * @param map   map from which loading configuration parameters
+     */
+    private static void warningsForRemovedEndVars(Map<String, String> map) {
+        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE))    {
+            log.warn("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
+                    "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE);
+        }
     }
 
     /**
@@ -194,14 +212,32 @@ public class ClusterOperatorConfig {
                 Util.parseMap(connectS2IImages),
                 Util.parseMap(mirrorMakerImages),
                 Util.parseMap(mirrorMaker2Images));
+
+        String image = "";
+        String envVar = "";
+
         try {
+            image = "Kafka";
+            envVar = STRIMZI_KAFKA_IMAGES;
             lookup.validateKafkaImages(lookup.supportedVersions());
+
+            image = "Kafka Connect";
+            envVar = STRIMZI_KAFKA_CONNECT_IMAGES;
             lookup.validateKafkaConnectImages(lookup.supportedVersions());
+
+            image = "Kafka Connect S2I";
+            envVar = STRIMZI_KAFKA_CONNECT_S2I_IMAGES;
             lookup.validateKafkaConnectS2IImages(lookup.supportedVersions());
+
+            image = "Kafka Mirror Maker";
+            envVar = STRIMZI_KAFKA_MIRROR_MAKER_IMAGES;
             lookup.validateKafkaMirrorMakerImages(lookup.supportedVersions());
+
+            image = "Kafka Mirror Maker 2";
+            envVar = STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES;
             lookup.validateKafkaMirrorMaker2Images(lookup.supportedVersionsForFeature("kafkaMirrorMaker2"));
         } catch (NoImageException e) {
-            throw new InvalidConfigurationException(e);
+            throw new InvalidConfigurationException("Failed to parse default container image configuration for " + image + " from environment variable " + envVar, e);
         }
         return lookup;
     }

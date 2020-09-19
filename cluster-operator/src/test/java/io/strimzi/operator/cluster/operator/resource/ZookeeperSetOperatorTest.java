@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,18 +35,13 @@ public class ZookeeperSetOperatorTest {
     }
 
     private Kafka getResource() {
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kafkaName = "foo";
+        String kafkaNamespace = "test";
         int replicas = 3;
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout);
-    }
-
-    private ClusterCa getInitialSecrets(String clusterName) {
-        String clusterCmNamespace = "test";
-        return ResourceUtils.createInitialClusterCa(clusterCmNamespace, clusterName);
+        return ResourceUtils.createKafka(kafkaNamespace, kafkaName, replicas, image, healthDelay, healthTimeout);
     }
 
     private StatefulSetDiff diff() {
@@ -75,17 +69,8 @@ public class ZookeeperSetOperatorTest {
 
     @Test
     public void testNeedsRollingUpdateImage() {
-        needsRollingUpdateImage(0);
-    }
-
-    @Test
-    public void testNeedsRollingUpdateStunnelImage() {
-        needsRollingUpdateImage(1);
-    }
-
-    private void needsRollingUpdateImage(int container) {
-        a.getSpec().getTemplate().getSpec().getContainers().get(container).setImage(
-                a.getSpec().getTemplate().getSpec().getContainers().get(container).getImage() + "-foo");
+        a.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(
+                a.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo");
         assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
     }
 

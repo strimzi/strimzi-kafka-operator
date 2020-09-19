@@ -5,9 +5,11 @@ metadata:
   labels:
     app: strimzi
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
+  - apiGroups:
+      - ""
+    resources:
+      # The Kafka Brokers require "get" permissions to view the node they are on
+      # This information is used to generate a Rack ID that is used for High Availability configurations
+      - nodes
+    verbs:
+      - get

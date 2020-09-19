@@ -15,7 +15,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -59,7 +58,12 @@ import static java.util.Collections.unmodifiableList;
                         )
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
+                        status = @Crd.Spec.Subresources.Status(),
+                        scale = @Crd.Spec.Subresources.Scale(
+                                specReplicasPath = KafkaConnectS2I.SPEC_REPLICAS_PATH,
+                                statusReplicasPath = KafkaConnectS2I.STATUS_REPLICAS_PATH,
+                                labelSelectorPath = KafkaConnectS2I.LABEL_SELECTOR_PATH
+                        )
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
@@ -79,8 +83,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaConnectS2IStatus> {
-
+public class KafkaConnectS2I extends CustomResource implements HasSpecAndStatus<KafkaConnectS2ISpec, KafkaConnectS2IStatus>, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
@@ -96,6 +99,9 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kcs2i";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
+    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
+    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
+    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
     private ObjectMeta metadata;

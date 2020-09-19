@@ -1,0 +1,106 @@
+// Module included in the following assemblies:
+//
+// assembly-using-kafka-connect-with-plugins.adoc
+
+[id='creating-new-image-from-base-{context}']
+= Creating a Docker image from the Kafka Connect base image
+
+This procedure shows how to create a custom image and add it to the `/opt/kafka/plugins` directory.
+
+You can use the Kafka container image on {DockerRepository} as a base image for creating your own custom image with additional connector plug-ins.
+
+At startup, the Strimzi version of Kafka Connect loads any third-party connector plug-ins contained in the `/opt/kafka/plugins` directory.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Create a new `Dockerfile` using `{DockerKafkaConnect}` as the base image:
++
+[source,subs="+quotes,attributes"]
+----
+FROM {DockerKafkaConnect}
+USER root:root
+COPY ./_my-plugins_/ /opt/kafka/plugins/
+USER {DockerImageUser}
+----
++
+.Example plug-in file
+[source,subs="+quotes"]
+----
+$ tree ./_my-plugins_/
+./_my-plugins_/
+├── debezium-connector-mongodb
+│   ├── bson-3.4.2.jar
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mongodb-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mongodb-driver-3.4.2.jar
+│   ├── mongodb-driver-core-3.4.2.jar
+│   └── README.md
+├── debezium-connector-mysql
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mysql-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mysql-binlog-connector-java-0.13.0.jar
+│   ├── mysql-connector-java-5.1.40.jar
+│   ├── README.md
+│   └── wkb-1.0.2.jar
+└── debezium-connector-postgres
+    ├── CHANGELOG.md
+    ├── CONTRIBUTE.md
+    ├── COPYRIGHT.txt
+    ├── debezium-connector-postgres-0.7.1.jar
+    ├── debezium-core-0.7.1.jar
+    ├── LICENSE.txt
+    ├── postgresql-42.0.0.jar
+    ├── protobuf-java-2.6.1.jar
+    └── README.md
+----
+
+. Build the container image.
+
+. Push your custom image to your container registry.
+
+. Point to the new container image.
++
+You can either:
++
+* Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource.
++
+If set, this property overrides the `STRIMZI_KAFKA_CONNECT_IMAGES` variable in the Cluster Operator.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec: <1>
+  #...
+  image: my-new-container-image <2>
+  config: <3>
+    #...
+----
+<1> link:{BookURLUsing}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster^].
+<2> The docker image for the pods.
+<3> Configuration of the Kafka Connect _workers_ (not connectors).
++
+or
++
+* In the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_KAFKA_CONNECT_IMAGES` variable to point to the new container image, and then reinstall the Cluster Operator.
+
+.Additional resources
+
+See the _Using Strimzi_ guide for more information on:
+
+* link:{BookURLUsing}#assembly-configuring-container-images-deployment-configuration-kafka-connect[Container images and the `KafkaConnect.spec.image property`^]
+* link:{BookURLUsing}#ref-operator-cluster-str[Cluster Operator configuration and the `STRIMZI_KAFKA_CONNECT_IMAGES` variable^]

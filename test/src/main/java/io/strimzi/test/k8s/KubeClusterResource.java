@@ -6,9 +6,10 @@ package io.strimzi.test.k8s;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cluster.KubeCluster;
+import io.strimzi.test.k8s.cluster.Minishift;
+import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
-import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +44,7 @@ public class KubeClusterResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClusterResource.class);
 
-    private static final String CO_INSTALL_DIR = "../install/cluster-operator";
+    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../install/cluster-operator";
 
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
@@ -61,9 +62,6 @@ public class KubeClusterResource {
     private Stack<String> clusterOperatorConfigs = new Stack<>();
 
     private TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
-
-    protected String testClass;
-    protected String testName;
 
     public static synchronized KubeClusterResource getInstance() {
         if (cluster == null) {
@@ -93,8 +91,6 @@ public class KubeClusterResource {
      * Configuration files are loaded from install/cluster-operator directory.
      */
     public void applyClusterOperatorInstallFiles() {
-        timeMeasuringSystem.setTestName(testClass, testClass);
-        timeMeasuringSystem.startOperation(Operation.CO_CREATION);
         clusterOperatorConfigs.clear();
         Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
@@ -104,7 +100,6 @@ public class KubeClusterResource {
             clusterOperatorConfigs.push(entry.getKey().getPath());
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).apply(entry.getKey().getPath());
         }
-        timeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
 
     public void setTestNamespace(String testNamespace) {
@@ -165,6 +160,14 @@ public class KubeClusterResource {
     }
 
     /**
+     * Provides approriate Helm client for running Helm operations in specific namespace
+     * @return Helm client
+     */
+    public static HelmClient helmClusterClient() {
+        return cluster.helmClient().namespace(cluster.getNamespace());
+    }
+
+    /**
      * Provides appropriate Kubernetes client with expected namespace for running cluster
      * @param inNamespace Namespace will be used as a current namespace for client
      * @return Kubernetes client with expected namespace in configuration
@@ -177,15 +180,11 @@ public class KubeClusterResource {
      * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
      */
     public void deleteClusterOperatorInstallFiles() {
-        timeMeasuringSystem.setTestName(testClass, testName);
-        timeMeasuringSystem.startOperation(Operation.CO_DELETION);
-
         while (!clusterOperatorConfigs.empty()) {
             String clusterOperatorConfig = clusterOperatorConfigs.pop();
             LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).delete(clusterOperatorConfig);
         }
-        timeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
 
     /**
@@ -203,13 +202,13 @@ public class KubeClusterResource {
                 cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
             }
 
-            LOGGER.info("Creating namespace: {}", namespace);
+            LOGGER.info("Creating Namespace {}", namespace);
             deploymentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
         }
         testNamespace = useNamespace;
-        LOGGER.info("Using namespace {}", useNamespace);
+        LOGGER.info("Using Namespace {}", useNamespace);
         cluster.setNamespace(useNamespace);
     }
 
@@ -228,13 +227,13 @@ public class KubeClusterResource {
     public void deleteNamespaces() {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
-            LOGGER.info("Deleting namespace: {}", namespace);
+            LOGGER.info("Deleting Namespace {}", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
         bindingsNamespaces = null;
-        LOGGER.info("Using namespace {}", testNamespace);
+        LOGGER.info("Using Namespace {}", testNamespace);
         setNamespace(testNamespace);
     }
 
@@ -246,7 +245,7 @@ public class KubeClusterResource {
      */
     public void createCustomResources(String... resources) {
         for (String resource : resources) {
-            LOGGER.info("Creating resources {} in namespace {}", resource, getNamespace());
+            LOGGER.info("Creating resources {} in Namespace {}", resource, getNamespace());
             deploymentResources.add(resource);
             cmdKubeClient().clientWithAdmin().namespace(getNamespace()).create(resource);
         }
@@ -336,5 +335,14 @@ public class KubeClusterResource {
 
     public String getDefaultOlmNamespace() {
         return cluster().defaultOlmNamespace();
+    }
+
+    public boolean isNotKubernetes() {
+        return cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift;
+    }
+
+    /** Returns list of currently deployed resources */
+    public List<String> getListOfDeployedResources() {
+        return deploymentResources;
     }
 }

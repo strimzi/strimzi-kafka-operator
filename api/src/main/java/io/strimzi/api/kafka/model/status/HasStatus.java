@@ -5,5 +5,6 @@
 package io.strimzi.api.kafka.model.status;
 
 public interface HasStatus<S extends Status> {
+    void setStatus(S status);
     S getStatus();
 }

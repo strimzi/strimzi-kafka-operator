@@ -1,0 +1,273 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-cluster-operator.adoc
+
+[id='ref-operator-cluster-{context}']
+= Cluster Operator configuration
+
+The Cluster Operator can be configured through the following supported environment variables and through the logging configuration.
+
+`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
+When not set, set to empty string, or to `*` the Cluster Operator will operate in all namespaces.
+The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^]
+to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
+
+[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default is 120000 ms. The interval between periodic reconciliations, in milliseconds.
+
+`STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
+The timeout for internal operations, in milliseconds. This value should be
+increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
+
+`STRIMZI_KAFKA_IMAGES`:: Required.
+This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
+The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
+This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
+The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
+This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
+The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
+This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].
+
+`STRIMZI_KAFKA_CONNECT_S2I_IMAGES`:: Required.
+This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
+The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
+This is used when a `KafkaConnectS2I.spec.version` property is specified but not the `KafkaConnectS2I.spec.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka-connect-s2i[].
+
+`STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
+This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
+The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
+For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
+This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:con-common-configuration-images-reference[].
+
+`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
+The image name to use as the default when deploying the topic operator,
+if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
+
+`STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional, default `{DockerUserOperator}`.
+The image name to use as the default when deploying the user operator,
+if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
+
+`STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `{DockerEntityOperatorStunnel}`.
+The image name to use as the default when deploying the sidecar container which provides TLS support for the Entity Operator, if
+no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_IMAGE_PULL_POLICY`:: Optional.
+The `ImagePullPolicy` which will be applied to containers in all pods managed by Strimzi Cluster Operator.
+The valid values are `Always`, `IfNotPresent`, and `Never`.
+If not specified, the Kubernetes defaults will be used.
+Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka MirrorMaker clusters.
+
+`STRIMZI_IMAGE_PULL_SECRETS`:: Optional.
+A comma-separated list of `Secret` names.
+The secrets referenced here contain the credentials to the container registries where the container images are pulled from.
+The secrets are used in the `imagePullSecrets` field for all `Pods` created by the Cluster Operator.
+Changing this list results in a rolling update of all your Kafka, Kafka Connect, and Kafka MirrorMaker clusters.
+
+`STRIMZI_KUBERNETES_VERSION`:: Optional.
+Overrides the Kubernetes version information detected from the API server.
+See the example below:
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_KUBERNETES_VERSION
+    value: |
+           major=1
+           minor=16
+           gitVersion=v1.16.2
+           gitCommit=c97fe5036ef3df2967d086711e6c0c405941e14b
+           gitTreeState=clean
+           buildDate=2019-10-15T19:09:08Z
+           goVersion=go1.12.10
+           compiler=gc
+           platform=linux/amd64
+----
+
+`KUBERNETES_SERVICE_DNS_DOMAIN`:: Optional.
+Overrides the default Kubernetes DNS domain name suffix.
++
+By default, services assigned in the Kubernetes cluster have a DNS domain name that uses the default suffix `cluster.local`.
++
+For example, for broker _kafka-0_:
++
+[source,shell,subs="+quotes"]
+----
+_<cluster-name>_-kafka-0._<cluster-name>_-kafka-brokers._<namespace>_.svc._cluster.local_
+----
++
+The DNS domain name is added to the Kafka broker certificates used for hostname verification.
++
+If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
+
+[discrete]
+== Configuration by ConfigMap
+
+The Cluster Operator's logging is configured by the `strimzi-cluster-operator` `ConfigMap`.
+
+A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
+This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
+You configure Cluster Operator logging by changing the data field `log4j2.properties` in this `ConfigMap`.
+
+To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
+[source,shell,subs=+quotes]
+kubectl apply -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
+
+Alternatively, edit the `ConfigMap` directly:
+[source,shell,subs=+quotes]
+kubectl edit cm strimzi-cluster-operator
+
+To change the frequency of the reload interval, set a time in seconds in the `monitorInterval` option in the created `ConfigMap`.
+
+If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
+
+If the `ConfigMap` is accidentally deleted after the Cluster Operator is deployed, the most recently loaded logging configuration is used.
+Create a new `ConfigMap` to load a new logging configuration.
+
+NOTE: Do not remove the monitorInterval option from the ConfigMap.
+
+== Periodic reconciliation
+
+Although the Cluster Operator reacts to all notifications about the desired cluster resources received from the Kubernetes cluster,
+if the operator is not running, or if a notification is not received for any reason, the desired resources will get out of sync with the state of the running Kubernetes cluster.
+
+In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them.
+You can set the time interval for the periodic reconciliations using the xref:STRIMZI_FULL_RECONCILIATION_INTERVAL_MS[] variable.
+
+= Provisioning Role-Based Access Control (RBAC)
+
+For the Cluster Operator to function it needs permission within the Kubernetes cluster to interact with resources such as `Kafka`, `KafkaConnect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets` and `Services`.
+Such permission is described in terms of Kubernetes role-based access control (RBAC) resources:
+
+* `ServiceAccount`,
+* `Role` and `ClusterRole`,
+* `RoleBinding` and `ClusterRoleBinding`.
+
+In addition to running under its own `ServiceAccount` with a `ClusterRoleBinding`, the Cluster Operator manages some RBAC resources for the components that need access to Kubernetes resources.
+
+Kubernetes also includes privilege escalation protections that prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges that the granting `ServiceAccount` does not have.
+Because the Cluster Operator must be able to create the `ClusterRoleBindings`, and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.
+
+[id='delegated-privileges-{context}']
+== Delegated privileges
+
+When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings`, and `ClusterRoleBindings`, as follows:
+
+* The Kafka broker pods use a `ServiceAccount` called `_cluster-name_-kafka`
+  - When the rack feature is used, the `strimzi-_cluster-name_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
+  - When the rack feature is not used no binding is created
+* The ZooKeeper pods use a `ServiceAccount` called `_cluster-name_-zookeeper`
+* The Entity Operator pod uses a `ServiceAccount` called `_cluster-name_-entity-operator`
+    - The Topic Operator produces Kubernetes events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-entity-operator` which grants this access via the `strimzi-entity-operator` `RoleBinding`
+* The pods for `KafkaConnect` and `KafkaConnectS2I` resources use a `ServiceAccount` called `_cluster-name_-cluster-connect`
+* The pods for `KafkaMirrorMaker` use a `ServiceAccount` called `_cluster-name_-mirror-maker`
+* The pods for `KafkaMirrorMaker2` use a `ServiceAccount` called `_cluster-name_-mirrormaker2`
+* The pods for `KafkaBridge` use a `ServiceAccount` called `_cluster-name_-bridge`
+
+== `ServiceAccount`
+
+The Cluster Operator is best run using a `ServiceAccount`:
+
+[source,yaml,options="nowrap"]
+.Example `ServiceAccount` for the Cluster Operator
+----
+include::install/cluster-operator/010-ServiceAccount-strimzi-cluster-operator.yaml[]
+----
+
+The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`:
+
+[source,yaml,numbered,options="nowrap",highlight='12']
+.Partial example of `Deployment` for the Cluster Operator
+----
+include::install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
+      # ...
+----
+
+Note line 12, where the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
+
+== `ClusterRoles`
+
+The Cluster Operator needs to operate using `ClusterRoles` that gives access to the necessary resources.
+Depending on the Kubernetes cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
+
+NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.
+The Cluster Operator will not run under the cluster admin account.
+
+The `ClusterRoles` follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and ZooKeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage Kubernetes resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
+
+Cluster Operator uses ClusterRoles to grant permission at the namespace-scoped resources level and cluster-scoped resources level:
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` with namespaced resources for the Cluster Operator
+----
+include::install/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml[]
+----
+
+The second includes the permissions needed for cluster-scoped resources.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` with cluster-scoped resources for the Cluster Operator
+----
+include::install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
+----
+
+The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` for the Cluster Operator allowing it to delegate access to Kubernetes nodes to the Kafka broker pods
+----
+include::install/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml[]
+----
+
+The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
+----
+include::install/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml[]
+----
+
+== `ClusterRoleBindings`
+
+The operator needs `ClusterRoleBindings` and `RoleBindings` which associates its `ClusterRole` with its `ServiceAccount`:
+`ClusterRoleBindings` are needed for `ClusterRoles` containing cluster-scoped resources.
+
+[source,yaml,options="nowrap"]
+.Example `ClusterRoleBinding` for the Cluster Operator
+----
+include::install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
+----
+
+`ClusterRoleBindings` are also needed for the `ClusterRoles` needed for delegation:
+
+[source,yaml,options="nowrap"]
+.Examples `RoleBinding` for the Cluster Operator
+----
+include::install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
+----
+
+`ClusterRoles` containing only namespaced resources are bound using `RoleBindings` only.
+
+[source,yaml,options="nowrap"]
+----
+include::install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml[]
+----
+
+[source,yaml,options="nowrap"]
+----
+include::install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml[]
+----

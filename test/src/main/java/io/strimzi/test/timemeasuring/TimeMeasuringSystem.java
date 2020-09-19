@@ -208,7 +208,7 @@ public class TimeMeasuringSystem {
         instance.saveResults(instance.getSumDuration(), "duration_sum_report", path);
     }
 
-    public int getDurationInSecconds(String testClass, String testName, String operationID) {
+    public int getDurationInSeconds(String testClass, String testName, String operationID) {
         return (int) (instance.getTestDuration(testClass, testName, operationID) / 1000);
     }
 

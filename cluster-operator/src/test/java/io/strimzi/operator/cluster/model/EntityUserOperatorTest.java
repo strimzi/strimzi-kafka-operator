@@ -82,6 +82,7 @@ public class EntityUserOperatorTest {
             .withLogging(userOperatorLogging)
             .withNewJvmOptions()
                 .addAllToJavaSystemProperties(javaSystemProperties)
+                .withNewXmx("256m")
             .endJvmOptions()
             .build();
 
@@ -90,7 +91,7 @@ public class EntityUserOperatorTest {
             .build();
 
     private final Kafka resource =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                     .withEntityOperator(entityOperatorSpec)
                     .endSpec()
@@ -101,6 +102,7 @@ public class EntityUserOperatorTest {
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ZOOKEEPER_CONNECT).withValue(String.format("%s:%d", "localhost", EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_PORT)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(String.format("%s:%d", "foo-kafka-bootstrap", EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(uoWatchedNamespace).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(uoReconciliationInterval * 1000)).build());
@@ -108,9 +110,12 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME).withValue(KafkaCluster.clientsCaKeySecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clientsCaCertSecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_NAMESPACE).withValue(namespace).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME).withValue(EntityOperator.secretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xmx256m").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
 
         return expected;
@@ -148,6 +153,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.getReconciliationIntervalMs(), is(uoReconciliationInterval * 1000L));
         assertThat(entityUserOperator.getZookeeperSessionTimeoutMs(), is(uoZookeeperSessionTimeout * 1000L));
         assertThat(entityUserOperator.getZookeeperConnect(), is(EntityUserOperator.defaultZookeeperConnect(cluster)));
+        assertThat(entityUserOperator.getKafkaBootstrapServers(), is(String.format("%s:%d", KafkaCluster.serviceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
         assertThat(entityUserOperator.getLogging().getType(), is(userOperatorLogging.getType()));
         assertThat(((InlineLogging) entityUserOperator.getLogging()).getLoggers(), is(userOperatorLogging.getLoggers()));
     }
@@ -160,7 +166,7 @@ public class EntityUserOperatorTest {
                 .withUserOperator(entityUserOperatorSpec)
                 .build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -176,12 +182,13 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(entityUserOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(entityUserOperator.getZookeeperConnect(), is(EntityUserOperator.defaultZookeeperConnect(cluster)));
+        assertThat(entityUserOperator.getKafkaBootstrapServers(), is(EntityUserOperator.defaultBootstrapServers(cluster)));
         assertThat(entityUserOperator.getLogging(), is(nullValue()));
     }
 
     @Test
     public void testFromCrdNoEntityOperator() {
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
         assertThat(entityUserOperator, is(nullValue()));
@@ -191,7 +198,7 @@ public class EntityUserOperatorTest {
     public void testFromCrdNoUserOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -209,12 +216,12 @@ public class EntityUserOperatorTest {
         assertThat(container.getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
         assertThat(container.getImage(), is(entityUserOperator.getImage()));
         checkEnvVars(getExpectedEnvVars(), container.getEnv());
-        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(livenessProbe.getInitialDelaySeconds())));
-        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(new Integer(livenessProbe.getTimeoutSeconds())));
-        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(readinessProbe.getInitialDelaySeconds())));
-        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(new Integer(readinessProbe.getTimeoutSeconds())));
+        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(livenessProbe.getInitialDelaySeconds())));
+        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(livenessProbe.getTimeoutSeconds())));
+        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(readinessProbe.getInitialDelaySeconds())));
+        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(readinessProbe.getTimeoutSeconds())));
         assertThat(container.getPorts().size(), is(1));
-        assertThat(container.getPorts().get(0).getContainerPort(), is(new Integer(EntityUserOperator.HEALTHCHECK_PORT)));
+        assertThat(container.getPorts().get(0).getContainerPort(), is(Integer.valueOf(EntityUserOperator.HEALTHCHECK_PORT)));
         assertThat(container.getPorts().get(0).getName(), is(EntityUserOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(container.getVolumeMounts().get(0).getMountPath(), is("/opt/user-operator/custom-config/"));
@@ -232,7 +239,7 @@ public class EntityUserOperatorTest {
         ca.setValidityDays(42);
         ca.setRenewalDays(69);
         Kafka customValues =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .withClientsCa(ca)
@@ -241,7 +248,7 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(customValues);
 
         Kafka defaultValues =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -258,7 +265,7 @@ public class EntityUserOperatorTest {
     public void testEntityUserOperatorEnvVarValidityAndRenewal() {
         int validity = 100;
         int renewal = 42;
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, singletonMap("animal", "wombat"), singletonMap("foo", "bar"), emptyMap()))
                 .editSpec()
                 .withNewClientsCa()

@@ -10,6 +10,4 @@ You can configure the `Kafka` resource to automatically deploy Kafka Exporter in
 
 Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to offsets, consumer groups, consumer lag and topics.
 
-For information on Kafka Exporter and why it is important to monitor consumer lag for performance, see xref:assembly-kafka-exporter-str[Kafka Exporter].
-
-include::../modules/kafka-exporter/proc-kafka-exporter-configuring.adoc[leveloffset=+1]
+For information on setting up Kafka Exporter and why it is important to monitor consumer lag for performance, see link:{BookURLDeploying}#assembly-metrics-kafka-exporter-str[Kafka Exporter] in the _Deploying Strimzi_ guide.

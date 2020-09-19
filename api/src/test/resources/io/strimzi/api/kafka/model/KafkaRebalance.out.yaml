@@ -1,0 +1,14 @@
+---
+apiVersion: "kafka.strimzi.io/v1alpha1"
+kind: "KafkaRebalance"
+metadata:
+  name: "my-rebalance"
+spec:
+  goals:
+  - "DiskCapacityGoal"
+  - "CpuCapacityGoal"
+  skipHardGoalCheck: true
+  concurrentPartitionMovementsPerBroker: 0
+  concurrentIntraBrokerPartitionMovements: 0
+  concurrentLeaderMovements: 0
+  replicationThrottle: 0

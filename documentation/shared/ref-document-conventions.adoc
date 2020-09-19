@@ -7,11 +7,11 @@
 
 .Replaceables
 
-In this document, replaceable text is styled in monospace and italics.
+In this document, replaceable text is styled in `monospace`, with italics, uppercase, and hyphens.
 
-For example, in the following code, you will want to replace `_my-namespace_` with the name of your namespace:
+For example, in the following code, you will want to replace `_MY-NAMESPACE_` with the name of your namespace:
 
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _MY-NAMESPACE_/' install/cluster-operator/*RoleBinding*.yaml
 ----

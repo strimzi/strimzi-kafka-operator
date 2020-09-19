@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.18.0-SNAPSHOT</version>
+        <version>0.20.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>systemtest</artifactId>
@@ -58,7 +58,35 @@
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model</artifactId>
+            <artifactId>kubernetes-model-extensions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-apps</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-storageclass</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-rbac</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-networking</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-batch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>openshift-model</artifactId>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -88,12 +116,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-runner</artifactId>
-            <version>${junit.platform.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${jupiter.version}</version>
@@ -106,15 +128,16 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+            <version>${junit.platform.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <version>${jupiter.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.joshka</groupId>
-            <artifactId>junit-json-params</artifactId>
-            <version>${junit-json-params.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.json</groupId>
@@ -130,6 +153,12 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.12</artifactId>
             <version>${kafka.version}</version>
             <scope>compile</scope>
         </dependency>
@@ -168,12 +197,6 @@
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
-            <artifactId>vertx-web-common</artifactId>
-            <version>${vertx.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
             <version>${vertx.version}</version>
             <scope>test</scope>
@@ -189,20 +212,9 @@
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
-            <version>${netty.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
             <version>${hamcrest.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.strimzi</groupId>
-            <artifactId>kafka-oauth-common</artifactId>
-            <version>${strimzi-oauth.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -215,6 +227,16 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${fasterxml.jackson-databind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>test-container</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>config-model</artifactId>
         </dependency>
     </dependencies>
 
@@ -237,26 +259,14 @@
                 <directory>..</directory>
                 <includes>
                     <include>kafka-versions.yaml</include>
+                    <include>bridge.version</include>
                 </includes>
             </resource>
         </resources>
     </build>
 
     <profiles>
-        <profile>
-            <id>acceptance</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>acceptance &amp; !flaky</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>regression</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>regression &amp; !flaky &amp; !cci_flaky</groups>
-            </properties>
-        </profile>
+
         <profile>
             <id>all</id>
             <properties>
@@ -266,27 +276,31 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
         </profile>
+
         <profile>
-            <id>flaky</id>
+            <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>flaky</groups>
+                <groups>acceptance</groups>
             </properties>
         </profile>
+
         <profile>
-            <id>upgrade</id>
+            <id>regression</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>upgrade &amp; !flaky</groups>
+                <groups>regression</groups>
             </properties>
         </profile>
+
         <profile>
-            <id>travis</id>
+            <id>smoke</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>travis</groups>
+                <groups>smoke</groups>
             </properties>
         </profile>
+
         <profile>
             <id>bridge</id>
             <properties>
@@ -294,61 +308,6 @@
                 <groups>bridge</groups>
             </properties>
         </profile>
-        <profile>
-            <id>scalability</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>scalability &amp; !flaky</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>specific</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>specific</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>nodeport</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>nodeport</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>loadbalancer</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>loadbalancer</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>networkpolicies</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>networkpolicies</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>prometheus</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>prometheus</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>tracing</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>tracing</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>oauth</id>
-            <properties>
-                <skipTests>false</skipTests>
-                <groups>oauth</groups>
-            </properties>
-        </profile>
+
     </profiles>
 </project>

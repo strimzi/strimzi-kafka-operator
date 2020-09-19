@@ -3,6 +3,7 @@
 # Run Apache Kafka on Kubernetes and OpenShift
 
 [![Build Status](https://travis-ci.org/strimzi/strimzi-kafka-operator.svg?branch=master)](https://travis-ci.org/strimzi/strimzi-kafka-operator)
+[![Build Status](https://dev.azure.com/cncf/strimzi/_apis/build/status/build?branchName=master)](https://dev.azure.com/cncf/strimzi/_build/latest?definitionId=16&branchName=master)
 [![GitHub release](https://img.shields.io/github/release/strimzi/strimzi-kafka-operator.svg)](https://github.com/strimzi/strimzi-kafka-operator/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Twitter Follow](https://img.shields.io/twitter/follow/strimziio.svg?style=social&label=Follow&style=for-the-badge)](https://twitter.com/strimziio)
@@ -11,9 +12,9 @@ Strimzi provides a way to run an [Apache Kafka][kafka] cluster on
 [Kubernetes][k8s] or [OpenShift][os] in various deployment configurations.
 See our [website][strimzi] for more details about the project.
 
-## Quickstart
+## Quick Starts
 
-To get up and running quickly, check our Quickstart guides for [OKD (OpenShift Origin)](https://strimzi.io/quickstarts/okd/) and [Minikube](https://strimzi.io/quickstarts/minikube/). 
+To get up and running quickly, check our [Quick Start for Minikube, OKD (OpenShift Origin) and Kubernetes Kind](https://strimzi.io/quickstarts/). 
 
 ## Documentation
 
@@ -38,8 +39,8 @@ All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.co
 might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
 label.
 
-The [Hacking guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) describes how to build Strimzi and how to 
-test your changes before submitting a patch or opening a PR.
+The [Dev guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/development-docs/DEV_GUIDE.md) describes how to build Strimzi.
+Before submitting a patch, please make sure to understand, how to test your changes before opening a PR [Test guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/development-docs/TESTING.md).
 
 The [Documentation Contributor Guide](https://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
 

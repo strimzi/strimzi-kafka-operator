@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +13,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -65,7 +71,7 @@ import io.vertx.core.Vertx;
  *     <li>A set of MirrorMaker 2.0 connectors</li>
  * </ul>
  */
-public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>, KafkaMirrorMaker2Status> {
+public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
     private static final Logger log = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
@@ -75,7 +81,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     public static final String MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
     public static final String MIRRORMAKER2_CHECKPOINT_CONNECTOR_SUFFIX = ".MirrorCheckpointConnector";
     public static final String MIRRORMAKER2_HEARTBEAT_CONNECTOR_SUFFIX = ".MirrorHeartbeatConnector";
-    private static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> MIRRORMAKER2_CONNECTORS = new HashMap<>();
+    private static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> MIRRORMAKER2_CONNECTORS = new HashMap<>(3);
 
     static {
         MIRRORMAKER2_CONNECTORS.put(MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getSourceConnector);
@@ -114,67 +120,65 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     @Override
-    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        Promise<Void> createOrUpdatePromise = Promise.promise();
-        String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
+    protected Future<KafkaMirrorMaker2Status> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
         KafkaMirrorMaker2Cluster mirrorMaker2Cluster;
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = new KafkaMirrorMaker2Status();
         try {
-            if (kafkaMirrorMaker2.getSpec() == null) {
-                log.error("{}: Resource lacks spec property", reconciliation, kafkaMirrorMaker2.getMetadata().getName());
-                throw new InvalidResourceException("spec property is required");
-            }
             mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(kafkaMirrorMaker2, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, Future.failedFuture(e));
-            this.maybeUpdateStatusCommon(resourceOperator, kafkaMirrorMaker2, reconciliation, kafkaMirrorMaker2Status,
-                (mirrormaker2, status) -> {
-                    return new KafkaMirrorMaker2Builder(mirrormaker2).withStatus(status).build();
-                });
-            return Future.failedFuture(e);
+            return Future.failedFuture(new ReconciliationException(kafkaMirrorMaker2Status, e));
         }
+
+        Promise<KafkaMirrorMaker2Status> createOrUpdatePromise = Promise.promise();
+        String namespace = reconciliation.namespace();
 
         ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(mirrorMaker2Cluster.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) mirrorMaker2Cluster.getLogging()).getName()) :
                 null);
 
-        Map<String, String> annotations = new HashMap<>();
-        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG));
+        Map<String, String> annotations = new HashMap<>(1);
+        annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
+        String desiredLogging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
 
-        log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation, name, namespace);
-        log.info("{}: Updating Kafka MirrorMaker 2.0 cluster {} in {}", reconciliation, name, namespace);
-        log.info("{}: Updating Kafka MirrorMaker 2.0 generatePodDisruptionBudget {}", reconciliation, mirrorMaker2Cluster.generatePodDisruptionBudget());
+        boolean mirrorMaker2HasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
+
+        log.debug("{}: Updating Kafka MirrorMaker 2.0 cluster", reconciliation);
         mirrorMaker2ServiceAccount(namespace, mirrorMaker2Cluster)
                 .compose(i -> networkPolicyOperator.reconcile(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), true)))
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
-                .compose(i -> configMapOperations.reconcile(namespace, mirrorMaker2Cluster.getAncillaryConfigName(), logAndMetricsConfigMap))
+                .compose(i -> configMapOperations.reconcile(namespace, mirrorMaker2Cluster.getAncillaryConfigMapName(), logAndMetricsConfigMap))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
                 .compose(i -> deploymentOperations.reconcile(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> deploymentOperations.readiness(namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
+                .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, desiredLogging))
                 .map((Void) null)
-                .setHandler(reconciliationResult -> {
+                .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult);
-                    kafkaMirrorMaker2Status.setUrl(KafkaMirrorMaker2Resources.url(mirrorMaker2Cluster.getCluster(), namespace, KafkaMirrorMaker2Cluster.REST_API_PORT));
 
-                    this.maybeUpdateStatusCommon(resourceOperator, kafkaMirrorMaker2, reconciliation, kafkaMirrorMaker2Status,
-                        (mirrormaker2, status) -> new KafkaMirrorMaker2Builder(mirrormaker2).withStatus(status).build()).setHandler(statusResult -> {
-                            // If both features succeeded, createOrUpdate succeeded as well
-                            // If one or both of them failed, we prefer the reconciliation failure as the main error
-                            if (reconciliationResult.succeeded() && statusResult.succeeded()) {
-                                createOrUpdatePromise.complete();
-                            } else if (reconciliationResult.failed()) {
-                                createOrUpdatePromise.fail(reconciliationResult.cause());
-                            } else {
-                                createOrUpdatePromise.fail(statusResult.cause());
-                            }
-                        });
+                    if (!mirrorMaker2HasZeroReplicas) {
+                        kafkaMirrorMaker2Status.setUrl(KafkaMirrorMaker2Resources.url(mirrorMaker2Cluster.getCluster(), namespace, KafkaMirrorMaker2Cluster.REST_API_PORT));
+                    }
+
+                    kafkaMirrorMaker2Status.setReplicas(mirrorMaker2Cluster.getReplicas());
+                    kafkaMirrorMaker2Status.setLabelSelector(mirrorMaker2Cluster.getSelectorLabels().toSelectorString());
+
+                    if (reconciliationResult.succeeded())   {
+                        createOrUpdatePromise.complete(kafkaMirrorMaker2Status);
+                    } else {
+                        createOrUpdatePromise.fail(new ReconciliationException(kafkaMirrorMaker2Status, reconciliationResult.cause()));
+                    }
                 });
         return createOrUpdatePromise.future();
+    }
+
+    @Override
+    protected KafkaMirrorMaker2Status createStatus() {
+        return new KafkaMirrorMaker2Status();
     }
 
     private Future<ReconcileResult<ServiceAccount>> mirrorMaker2ServiceAccount(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
@@ -189,7 +193,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param kafkaMirrorMaker2 The MirrorMaker 2.0
      * @return A future, failed if any of the connectors could not be reconciled.
      */
-    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status) {
+    protected Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
         String mirrorMaker2Name = kafkaMirrorMaker2.getMetadata().getName();
         if (kafkaMirrorMaker2.getSpec() == null) {
             return maybeUpdateMirrorMaker2Status(reconciliation, kafkaMirrorMaker2,
@@ -206,16 +210,16 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         .map(mirror -> mirror.getSourceCluster() + "->" + mirror.getTargetCluster() + connectorEntry.getKey())
                         .collect(Collectors.toSet()));
             }
-            log.debug("{}: {}} cluster: delete MirrorMaker 2.0 connectors: {}", reconciliation, kind(), deleteMirrorMaker2ConnectorNames);
+            log.debug("{}: delete MirrorMaker 2.0 connectors: {}", reconciliation, deleteMirrorMaker2ConnectorNames);
             Stream<Future<Void>> deletionFutures = deleteMirrorMaker2ConnectorNames.stream()
                     .map(connectorName -> apiClient.delete(host, KafkaConnectCluster.REST_API_PORT, connectorName));
             Stream<Future<Void>> createUpdateFutures = mirrors.stream()
-                    .map(mirror -> reconcileMirrorMaker2Connectors(reconciliation, host, apiClient, kafkaMirrorMaker2, mirror, mirrorMaker2Cluster, mirrorMaker2Status));
+                    .map(mirror -> reconcileMirrorMaker2Connectors(reconciliation, host, apiClient, kafkaMirrorMaker2, mirror, mirrorMaker2Cluster, mirrorMaker2Status, desiredLogging));
             return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
         });
     }
 
-    private Future<Void> reconcileMirrorMaker2Connectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status) {
+    private Future<Void> reconcileMirrorMaker2Connectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status, String desiredLogging) {
         String targetClusterAlias = mirror.getTargetCluster();
         String sourceClusterAlias = mirror.getSourceCluster();
         if (targetClusterAlias == null) {
@@ -253,12 +257,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .build();                      
 
                         prepareMirrorMaker2ConnectorConfig(mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
-                        log.debug("{}: {}} cluster: creating/updating connector {} config: {}", reconciliation, kind(), connectorName, asJson(connectorSpec).toString());
+                        log.debug("{}: creating/updating connector {} config: {}", reconciliation, connectorName, asJson(connectorSpec).toString());
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
                     })                            
                     .collect(Collectors.toList()))
-                    .map((Void) null);
-    }    
+                    .map((Void) null).compose(i -> apiClient.updateConnectLoggers(host, KafkaConnectCluster.REST_API_PORT, desiredLogging));
+    }
 
     private static void prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         Map<String, Object> config = connectorSpec.getConfig();
@@ -277,6 +281,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         if (mirror.getGroupsBlacklistPattern() != null) {
             config.put("groups.blacklist", mirror.getGroupsBlacklistPattern());
         }
+
+        if (mirrorMaker2Cluster.getTracing() != null)   {
+            config.put("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+            config.put("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+        }
+
         config.putAll(mirror.getAdditionalProperties());
     }
 
@@ -376,9 +386,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     private Future<Map<String, Object>> reconcileMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
         return maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
-                .setHandler(result -> {
+                .onComplete(result -> {
                     if (result.succeeded()) {
                         mirrorMaker2Status.getConnectors().add(result.result());
+                        mirrorMaker2Status.getConnectors().sort(new ConnectorsComparatorByName());
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());
                     }
@@ -395,6 +406,21 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             (mirror1, status2) -> {
                 return new KafkaMirrorMaker2Builder(mirror1).withStatus(status2).build();
             });
+    }
+
+    /**
+     * This comparator compares two maps where connectors' configurations are stored.
+     * The comparison is done by using only one property - 'name'
+     */
+    static class ConnectorsComparatorByName implements Comparator<Map<String, Object>>, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public int compare(Map<String, Object> m1, Map<String, Object> m2) {
+            String name1 = m1.get("name") == null ? "" : m1.get("name").toString();
+            String name2 = m2.get("name") == null ? "" : m2.get("name").toString();
+            return name1.compareTo(name2);
+        }
     }
 
 }

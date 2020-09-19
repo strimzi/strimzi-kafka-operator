@@ -1,0 +1,23 @@
+apiVersion: v2
+appVersion: "0.1.0"
+description: "Strimzi: Apache Kafka running on Kubernetes"
+name: strimzi-kafka-operator
+version: 0.1.0
+icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+keywords:
+- kafka
+- queue
+- stream
+- event
+- messaging
+- datastore
+- topic
+home: https://strimzi.io/
+sources:
+- https://github.com/strimzi/strimzi-kafka-operator
+maintainers:
+- name: Frawless
+- name: ppatierno
+- name: samuel-hawker
+- name: scholzj
+- name: tombentley

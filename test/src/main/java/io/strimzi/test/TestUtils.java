@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.vertx.core.VertxException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,23 +61,29 @@ public final class TestUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(TestUtils.class);
 
+    public static final String USER_PATH = System.getProperty("user.dir");
+
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    public static final String CRD_TOPIC = "../install/cluster-operator/043-Crd-kafkatopic.yaml";
+    public static final String CRD_TOPIC = USER_PATH + "/../install/cluster-operator/043-Crd-kafkatopic.yaml";
 
-    public static final String CRD_KAFKA = "../install/cluster-operator/040-Crd-kafka.yaml";
+    public static final String CRD_KAFKA = USER_PATH + "/../install/cluster-operator/040-Crd-kafka.yaml";
 
-    public static final String CRD_KAFKA_CONNECT = "../install/cluster-operator/041-Crd-kafkaconnect.yaml";
+    public static final String CRD_KAFKA_CONNECT = USER_PATH + "/../install/cluster-operator/041-Crd-kafkaconnect.yaml";
 
-    public static final String CRD_KAFKA_CONNECT_S2I = "../install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
+    public static final String CRD_KAFKA_CONNECT_S2I = USER_PATH + "/../install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
 
-    public static final String CRD_KAFKA_USER = "../install/cluster-operator/044-Crd-kafkauser.yaml";
+    public static final String CRD_KAFKA_USER = USER_PATH + "/../install/cluster-operator/044-Crd-kafkauser.yaml";
 
-    public static final String CRD_KAFKA_MIRROR_MAKER = "../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
+    public static final String CRD_KAFKA_MIRROR_MAKER = USER_PATH + "/../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
 
-    public static final String CRD_KAFKA_BRIDGE = "../install/cluster-operator/046-Crd-kafkabridge.yaml";
+    public static final String CRD_KAFKA_BRIDGE = USER_PATH + "/../install/cluster-operator/046-Crd-kafkabridge.yaml";
 
-    public static final String CRD_KAFKA_MIRROR_MAKER_2 = "../install/cluster-operator/048-Crd-kafkamirrormaker2.yaml";
+    public static final String CRD_KAFKA_MIRROR_MAKER_2 = USER_PATH + "/../install/cluster-operator/048-Crd-kafkamirrormaker2.yaml";
+
+    public static final String CRD_KAFKA_CONNECTOR = USER_PATH + "/../install/cluster-operator/047-Crd-kafkaconnector.yaml";
+
+    public static final String CRD_KAFKA_REBALANCE = USER_PATH + "/../install/cluster-operator/049-Crd-kafkarebalance.yaml";
 
     private TestUtils() {
         // All static methods
@@ -96,7 +104,7 @@ public final class TestUtils {
 
     /**
      * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
-     * or throw a TimeoutException if it doesn't returns true within {@code timeoutMs} milliseconds.
+     * or throw a WaitException if it doesn't returns true within {@code timeoutMs} milliseconds.
      * @return The remaining time left until timeout occurs
      * (helpful if you have several calls which need to share a common timeout),
      * */
@@ -120,9 +128,9 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 onTimeout.run();
-                TimeoutException exception = new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description);
-                exception.printStackTrace();
-                throw exception;
+                WaitException waitException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
+                waitException.printStackTrace();
+                throw waitException;
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
@@ -147,6 +155,7 @@ public final class TestUtils {
 
     public static String getFileAsString(String filePath) {
         try {
+            LOGGER.info(filePath);
             return new String(Files.readAllBytes(Paths.get(filePath)), "UTF-8");
         } catch (IOException e) {
             LOGGER.info("File with path {} not found", filePath);
@@ -340,6 +349,11 @@ public final class TestUtils {
         }
     }
 
+    public static void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
+    }
+
     /**
      * Changes the {@code subject} of the RoleBinding in the given YAML resource to be the
      * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
@@ -356,26 +370,6 @@ public final class TestUtils {
             subject.put("kind", "ServiceAccount")
                     .put("name", "strimzi-cluster-operator")
                     .put("namespace", namespace);
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String changeDeploymentNamespaceUpgrade(File deploymentFile, String namespace) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(deploymentFile);
-            // Change the docker org of the images in the 050-deployment.yaml
-            ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
-            for (JsonNode envVar : containerNode.get("env")) {
-                String varName = envVar.get("name").textValue();
-                if (varName.matches("STRIMZI_NAMESPACE")) {
-                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
-                    ((ObjectNode) envVar).remove("valueFrom");
-                    ((ObjectNode) envVar).put("value", namespace);
-                }
-            }
             return mapper.writeValueAsString(node);
         } catch (IOException e) {
             throw new RuntimeException(e);

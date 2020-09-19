@@ -1,0 +1,125 @@
+// Module included in the following assemblies:
+//
+// assembly-resource-status-access.adoc
+
+[id='con-custom-resources-status-{context}']
+
+= Strimzi custom resource status information
+
+Several resources have a `status` property, as described in the following table.
+
+.Custom resource status properties
+[cols="3*",options="header",stripes="none",separator=¦]
+|===
+
+m¦Strimzi resource
+¦Schema reference
+¦Publishes status information on...
+
+m¦Kafka
+¦xref:type-KafkaStatus-reference[]
+¦The Kafka cluster.
+
+m¦KafkaConnect
+¦xref:type-KafkaConnectStatus-reference[]
+¦The Kafka Connect cluster, if deployed.
+
+m¦KafkaConnectS2I
+¦xref:type-KafkaConnectS2IStatus-reference[]
+¦The Kafka Connect cluster with Source-to-Image support, if deployed.
+
+m¦KafkaConnector
+¦xref:type-KafkaConnectorStatus-reference[]
+¦`KafkaConnector` resources, if deployed.
+
+m¦KafkaMirrorMaker
+¦xref:type-KafkaMirrorMakerStatus-reference[]
+¦The Kafka MirrorMaker tool, if deployed.
+
+m¦KafkaTopic
+¦xref:type-KafkaTopicStatus-reference[]
+¦Kafka topics in your Kafka cluster.
+
+m¦KafkaUser
+¦xref:type-KafkaUserStatus-reference[]
+¦Kafka users in your Kafka cluster.
+
+m¦KafkaBridge
+¦xref:type-KafkaBridgeStatus-reference[]
+¦The Strimzi Kafka Bridge, if deployed.
+
+|===
+
+The `status` property of a resource provides information on the resource's:
+
+* _Current state_, in the `status.conditions` property
+
+* _Last observed generation_, in the `status.observedGeneration` property
+
+The `status` property also provides resource-specific information. For example:
+
+* `KafkaConnectStatus` provides the REST API endpoint for Kafka Connect connectors.
+
+* `KafkaUserStatus` provides the user name of the Kafka user and the `Secret` in which their credentials are stored.
+
+* `KafkaBridgeStatus` provides the HTTP address at which external client applications can access the Bridge service.
+
+A resource's _current state_ is useful for tracking progress related to the resource achieving its _desired state_, as defined by the `spec` property. The status conditions provide the time and reason the state of the resource changed and details of events preventing or delaying the operator from realizing the resource's desired state.
+
+The _last observed generation_ is the generation of the resource that was last reconciled by the Cluster Operator. If the value of `observedGeneration` is different from the value of `metadata.generation`, the operator has not yet processed the latest update to the resource. If these values are the same, the status information reflects the most recent changes to the resource.
+
+Strimzi creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
+When performing an update on a custom resource using `kubectl edit`, for example, its `status` is not editable. Moreover, changing the `status` would not affect the configuration of the Kafka cluster.
+
+Here we see the `status` property specified for a Kafka custom resource.
+
+.Kafka custom resource with status
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+spec:
+  # ...
+status:
+  conditions: <1>
+  - lastTransitionTime: 2019-07-23T23:46:57+0000
+    status: "True"
+    type: Ready <2>
+  observedGeneration: 4 <3>
+  listeners: <4>
+  - addresses:
+    - host: my-cluster-kafka-bootstrap.myproject.svc
+      port: 9092
+    type: plain
+  - addresses:
+    - host: my-cluster-kafka-bootstrap.myproject.svc
+      port: 9093
+    certificates:
+    - |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
+    type: tls
+  - addresses:
+    - host: 172.29.49.180
+      port: 9094
+    certificates:
+    - |
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
+    type: external
+    # ...
+----
+<1> Status `conditions` describe criteria related to the status that cannot be deduced from the existing resource information, or are specific to the instance of a resource.
+<2> The `Ready` condition indicates whether the Cluster Operator currently considers the Kafka cluster able to handle traffic.
+<3> The `observedGeneration` indicates the generation of the `Kafka` custom resource that was last reconciled by the Cluster Operator.
+<4> The `listeners` describe the current Kafka bootstrap addresses by type.
++
+IMPORTANT: The address in the custom resource status for external listeners with type `nodeport` is currently not supported.
+
+NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a ready state.
+
+.Accessing status information
+You can access status information for a resource from the command line. For more information, see xref:proc-accessing-resource-status-{context}[].

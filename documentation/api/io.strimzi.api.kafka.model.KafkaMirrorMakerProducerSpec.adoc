@@ -1,0 +1,52 @@
+Configures a MirrorMaker producer.
+
+[id='property-producer-abort-on-send-{context}']
+=== `abortOnSendFailure`
+
+Use the `producer.abortOnSendFailure` property to configure how to handle message send failure from the producer.
+
+By default, if an error occurs when sending a message from Kafka MirrorMaker to a Kafka cluster:
+
+* The Kafka MirrorMaker container is terminated in Kubernetes.
+* The container is then recreated.
+
+If the `abortOnSendFailure` option is set to `false`, message sending errors are ignored.
+
+[id='property-producer-config-{context}']
+=== `config`
+
+Use the `producer.config` properties to configure Kafka options for the producer.
+
+The `config` property contains the Kafka MirrorMaker producer configuration options as keys, with values set in one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
+You can also xref:con-common-configuration-ssl-reference[configure the `ssl.endpoint.identification.algorithm` property] to enable or disable hostname verification.
+
+*Exceptions*
+
+You can specify and configure the options listed in the {ApacheKafkaProducerConfig}.
+
+However, there are exceptions for options automatically configured and managed directly by Strimzi related to:
+
+* Kafka cluster bootstrap address
+* Security (encryption, authentication, and authorization)
+* Interceptors
+
+Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+
+* `bootstrap.servers`
+* `interceptor.classes`
+* `ssl.` (xref:con-common-configuration-ssl-reference[not including specific exceptions])
+* `sasl.`
+* `security.`
+
+When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
+All other options are passed to Kafka MirrorMaker.
+
+IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
+When an invalid configuration is provided, the Kafka MirrorMaker might not start or might become unstable.
+In such cases, the configuration in the `KafkaMirrorMaker.spec.producer.config` object should be fixed and the Cluster Operator will roll out the new configuration for Kafka MirrorMaker.

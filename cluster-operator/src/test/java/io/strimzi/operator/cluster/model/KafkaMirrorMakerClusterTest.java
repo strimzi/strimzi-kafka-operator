@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -52,6 +54,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaMirrorMakerClusterTest {
@@ -88,7 +91,7 @@ public class KafkaMirrorMakerClusterTest {
             .withOffsetCommitInterval(offsetCommitInterval)
             .withConfig((Map<String, Object>) TestUtils.fromJson(consumerConfigurationJson, Map.class))
             .build();
-    private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMakerCluster(namespace, cluster))
+    private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
             .withNewSpec()
             .withImage(image)
             .withReplicas(replicas)
@@ -117,9 +120,9 @@ public class KafkaMirrorMakerClusterTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND,
                 Labels.STRIMZI_NAME_LABEL, name,
-                Labels.KUBERNETES_NAME_LABEL, Labels.KUBERNETES_NAME,
+                Labels.KUBERNETES_NAME_LABEL, KafkaMirrorMakerCluster.APPLICATION_NAME,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
-                Labels.KUBERNETES_PART_OF_LABEL, this.cluster,
+                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
@@ -164,7 +167,7 @@ public class KafkaMirrorMakerClusterTest {
                 .withNumStreams(numStreams)
                 .build();
 
-        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMakerCluster(namespace, cluster))
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
                 .withNewSpec()
                     .withReplicas(replicas)
                     .withProducer(producer)
@@ -201,7 +204,7 @@ public class KafkaMirrorMakerClusterTest {
         Map<String, String> expectedLabels = expectedLabels();
         assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
-        assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(dep.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaMirrorMakerResources.deploymentName(this.cluster)));
@@ -450,7 +453,11 @@ public class KafkaMirrorMakerClusterTest {
 
     @Test
     public void testTemplate() {
-        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
+                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
+        Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
+        expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
         Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
@@ -458,6 +465,15 @@ public class KafkaMirrorMakerClusterTest {
 
         Map<String, String> pdbLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> pdbAnots = TestUtils.map("a5", "v5", "a6", "v6");
+
+        HostAlias hostAlias1 = new HostAliasBuilder()
+                .withHostnames("my-host-1", "my-host-2")
+                .withIp("192.168.1.86")
+                .build();
+        HostAlias hostAlias2 = new HostAliasBuilder()
+                .withHostnames("my-host-3")
+                .withIp("192.168.1.87")
+                .build();
 
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
@@ -475,6 +491,7 @@ public class KafkaMirrorMakerClusterTest {
                             .endMetadata()
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
+                            .withHostAliases(hostAlias1, hostAlias2)
                         .endPod()
                         .withNewPodDisruptionBudget()
                             .withNewMetadata()
@@ -489,7 +506,7 @@ public class KafkaMirrorMakerClusterTest {
 
         // Check Deployment
         Deployment dep = mmc.generateDeployment(emptyMap(), true, null, null);
-        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
@@ -497,6 +514,7 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
@@ -597,7 +615,7 @@ public class KafkaMirrorMakerClusterTest {
         KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = mmc.generateDeployment(emptyMap(), true, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -726,15 +744,15 @@ public class KafkaMirrorMakerClusterTest {
         Probe readinessProbe = cont.getReadinessProbe();
 
         assertThat(livenessProbe.getExec().getCommand().get(0), is("/opt/kafka/kafka_mirror_maker_liveness.sh"));
-        assertThat(livenessProbe.getInitialDelaySeconds(), is(new Integer(60)));
-        assertThat(livenessProbe.getTimeoutSeconds(), is(new Integer(5)));
+        assertThat(livenessProbe.getInitialDelaySeconds(), is(Integer.valueOf(60)));
+        assertThat(livenessProbe.getTimeoutSeconds(), is(Integer.valueOf(5)));
 
         assertThat(readinessProbe.getExec().getCommand().size(), is(3));
         assertThat(readinessProbe.getExec().getCommand().get(0), is("test"));
         assertThat(readinessProbe.getExec().getCommand().get(1), is("-f"));
         assertThat(readinessProbe.getExec().getCommand().get(2), is("/tmp/mirror-maker-ready"));
-        assertThat(readinessProbe.getInitialDelaySeconds(), is(new Integer(60)));
-        assertThat(readinessProbe.getTimeoutSeconds(), is(new Integer(5)));
+        assertThat(readinessProbe.getInitialDelaySeconds(), is(Integer.valueOf(60)));
+        assertThat(readinessProbe.getTimeoutSeconds(), is(Integer.valueOf(5)));
 
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_READINESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("10"), is(true));
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_LIVENESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("10"), is(true));
@@ -764,17 +782,17 @@ public class KafkaMirrorMakerClusterTest {
         Probe readinessProbe = cont.getReadinessProbe();
 
         assertThat(livenessProbe.getExec().getCommand().get(0), is("/opt/kafka/kafka_mirror_maker_liveness.sh"));
-        assertThat(livenessProbe.getInitialDelaySeconds(), is(new Integer(120)));
-        assertThat(livenessProbe.getTimeoutSeconds(), is(new Integer(10)));
-        assertThat(livenessProbe.getPeriodSeconds(), is(new Integer(60)));
+        assertThat(livenessProbe.getInitialDelaySeconds(), is(Integer.valueOf(120)));
+        assertThat(livenessProbe.getTimeoutSeconds(), is(Integer.valueOf(10)));
+        assertThat(livenessProbe.getPeriodSeconds(), is(Integer.valueOf(60)));
 
         assertThat(readinessProbe.getExec().getCommand().size(), is(3));
         assertThat(readinessProbe.getExec().getCommand().get(0), is("test"));
         assertThat(readinessProbe.getExec().getCommand().get(1), is("-f"));
         assertThat(readinessProbe.getExec().getCommand().get(2), is("/tmp/mirror-maker-ready"));
-        assertThat(readinessProbe.getInitialDelaySeconds(), is(new Integer(121)));
-        assertThat(readinessProbe.getTimeoutSeconds(), is(new Integer(11)));
-        assertThat(readinessProbe.getPeriodSeconds(), is(new Integer(61)));
+        assertThat(readinessProbe.getInitialDelaySeconds(), is(Integer.valueOf(121)));
+        assertThat(readinessProbe.getTimeoutSeconds(), is(Integer.valueOf(11)));
+        assertThat(readinessProbe.getPeriodSeconds(), is(Integer.valueOf(61)));
 
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_READINESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("61"), is(true));
         assertThat(cont.getEnv().stream().filter(env -> "STRIMZI_LIVENESS_PERIOD".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("60"), is(true));
@@ -1390,13 +1408,13 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_CONSUMER.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_CONSUMER.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_CONSUMER.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
-                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_TOKENS_NOT_JWT, "true", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
 
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER.equals(var.getName())).findFirst().orElse(null).getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER.equals(var.getName())).findFirst().orElse(null).getValue().trim(),
-                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_TOKENS_NOT_JWT, "true", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
     }
 
 }

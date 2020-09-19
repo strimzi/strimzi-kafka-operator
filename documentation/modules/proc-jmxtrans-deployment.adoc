@@ -19,7 +19,7 @@ To configure a JmxTrans deployment, define the following properties:
 For more information on these properties see, xref:type-JmxTransSpec-reference[JmxTransSpec schema reference].
 
 NOTE: JmxTrans will not come up enable you specify that JmxOptions on the Kafka broker.
-For more information see, xref:assembly-kafka-jmx-options[Kafka Jmx Options]
+For more information see, xref:assembly-jmx-options-{context}[Kafka Jmx Options]
 .Configuring JmxTrans output definitions
 
 Output definitions specify where JMX metrics are pushed to, and in which data format.

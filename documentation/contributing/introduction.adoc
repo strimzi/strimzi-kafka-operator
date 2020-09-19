@@ -1,21 +1,140 @@
 = Introduction
 
-This guide is meant to assist contributors to the Strimzi documentation.
+This guide provides information to assist contributors to the Strimzi documentation.
 
-== Dependencies
+Strimzi documentation is written in Asciidoc.
 
-* asciidoctor
-* python
+== Documentation tools
+
+Following tools are needed to build the documentation:
+
+https://asciidoctor.org/[`asciidoctor`^]:: Documentation generation tool
+https://www.gnu.org/software/make/[`make`^]:: Make build system to build complete documentation
+https://github.com/mikefarah/yq[`yq`^]:: YAML build tool to build documentation using _make_ targets
+
+Additionally, for generating the API reference you will also need:
+
+https://adoptopenjdk.net/[`java`^]:: Java for building code and generating the API reference
+https://maven.apache.org/[`mvn`^]:: Maven for running the Java build
+
+For most documentation updates, `asciidoctor` offers the simplest way to check the build.
 
 == Project layout
 
+Strimzi uses git to manage repositories.
+
+https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: The public GitHub repo hosts all of the Strimzi Operators code and documentation.
+https://github.com/strimzi/strimzi-kafka-bridge[`strimzi-kafka-bridge`^] (GitHub):: The public GitHub repo hosts all of the Strimzi Kafka Bridge code.
+https://github.com/strimzi/strimzi-kafka-oauth[`strimzi-kafka-oauth`^] (GitHub):: The public GitHub repo hosts all of the Strimzi OAuth 2.0 code.
+
+The main documentation is in the Strimzi Operators repository, in the https://github.com/strimzi/strimzi-kafka-operator/tree/master/documentation[`documentation` folder^].
+The _documentation_ folder is split into _category_ folders to manage the content.
+
+Documentation category folders contain files related to Strimzi guides (Deploying, Quickstart, Overview, Using), and the files that provide the content for one or more of these guides – _assemblies_ and _modules_.
+Assemblies, which usually encapsulate a feature or process, bring the related content contained in modules together.
+
+An assembly is like a sub-section or chapter in a book.
+For example, the _Deploying Strimzi_ guide has a chapter called _Verifying the Strimzi deployment_, which is contained in its own assembly.
+
+.Documentation folder descriptions
 [source,options="nowrap",subs="+quotes"]
 ----
-quickstart/                          # Quickstart guide
-using/                               # User guide
-assemblies/                          # Assemblies for all guides
-modules/                             # Modules for all guides
-shared/                              # Shared include files
-shared/attributes.adoc               # Global book attributes
-shared/images/                       # Shared image files
+api/                          # Property descriptions for the Custom Resource API Reference section of the Using Strimzi guide
+contributing/                 # Documentation contributor guide (this book)
+deploying/                    # Deploying Strimzi
+quickstart/                   # Strimzi Quick Start guide
+overview/                     # Strimzi Overview guide
+using/                        # Using Strimzi
+assemblies/                   # Assemblies provide content for all guides
+modules/                      # Modules provide the content for assemblies
+shared/                       # Shared include files
+shared/attributes.adoc        # Global book attributes
+shared/images/                # Shared image files
 ----
+
+=== Strimzi Overview guide
+
+The intention of the _Strimzi Overview guide_ is for developing an understanding of Strimzi and Apache Kafka.
+The guide does not contain any instructions.
+It provides an overview of the concepts behind Apache Kafka, the Kafka component architecture, and how Strimzi supports Kafka in a Kubernetes cluster.
+The guide also describes how Strimzi _Operators_ help manage a deployment.
+
+The guide contains high-level outlines of the processes required to deploy, configure, secure and monitor a deployment of Strimzi.
+
+=== Deploying Strimzi
+
+The _Deploying Strimzi_ guide provides instructions on all the options available for deploying and upgrading Strimzi.
+The guide describes what is deployed, and the order of deployment required to run Apache Kafka in a Kubernetes cluster.
+
+As well as describing the deployment steps, the guide also provides pre- and post-deployment instructions to prepare for and verify a deployment.
+Additional deployment options described include the steps to introduce metrics.
+
+Upgrade instructions are provided for Strimzi and Kafka upgrades.
+
+=== Strimzi Quick Start guide
+
+The _Strimzi Quick Start guide_ provides instructions for evaluating Strimzi using _Minikube_.
+The steps describe how to get a Strimzi deployment up-and-running as quickly as possible.
+
+In contrast to the _Deploying_ guide, this guide provides a reduced set of instructions for a specific type of deployment, with minimal configuration.
+
+=== Using Strimzi
+
+The _Using Strimzi_ guide provides configuration instructions for Kafka components, and instructions for using Strimzi Operators.
+The majority of the content relates to how you might want to modify your deployment and introduce additional features, such as Cruise Control or distributed tracing.
+
+=== Custom Resource API Reference
+
+The _Using Strimzi_ guide (documentation/using/master.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
+
+The _Custom Resource API Reference_ is built from two files.
+
+.Custom Resource API Reference files
+[source,asciidoc,options="nowrap"]
+----
+\include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
+\include::modules/appendix_crds.adoc[]
+----
+
+The `con-common-configuration-properties.adoc` file contains descriptions of common configuration properties.
+The content for the `documentation/modules/appendix_crds.adoc` file is generated directly from descriptions in the Java code.
+
+Java files in the `api/` folder are annotated so that the descriptions are picked up in the build.
+
+.Java annotations for documentation
+[source,java,options="nowrap"]
+----
+import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
+----
+
+The tables in `appendix_crds.adoc` are built from `@Description` annotations in the Java files.
+
+Additional information is included by adding:
+
+. An `@DescriptionFile` annotation to the Java file
+. A corresponding description file (`.adoc`) in the `documentation/api/` folder
+. An `include:__DESCRIPTION-FILE-NAME__` reference to the `appendix_crds.adoc`
+
+The `include:__DESCRIPTION-FILE-NAME__` reference is added automatically by the Maven build, so you do not need to add it manually.
+
+For example, to add additional configuration for the `KafkaUserQuotas` custom resource:
+
+. `api/src/main/java/io/strimzi/api/kafka/model/KafkaUserQuotas.java` contains:
+** `import io.strimzi.crdgenerator.annotations.Description`
+** `import io.strimzi.crdgenerator.annotations.DescriptionFile`
+** `@Description("_descriptions for individual properties..._");`
+** An `@DescriptionFile` annotation
+. `documentation/api` includes the `io.strimzi.api.kafka.model.KafkaUserQuotas.adoc` file containing the additional configuration description.
++
+The description file requires the same name as the related Java package.
+. `appendix_crds.adoc` contains a reference to include the additional configuration description:
++
+[source,asciidoc,options="nowrap"]
+----
+### `KafkaUserQuotas` schema reference
+
+/include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
+----
+
+If you change anything in the `api` module of the Java code, you must rebuild the _Custom Resource API Reference_ using a xref:make-tooling[make command].

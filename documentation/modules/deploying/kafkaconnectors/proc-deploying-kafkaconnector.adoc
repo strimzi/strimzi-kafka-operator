@@ -1,0 +1,56 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect.adoc
+
+[id='proc-deploying-kafkaconnector-{context}']
+= Deploying a `KafkaConnector` resource to Kafka Connect
+
+This procedure describes how to deploy the example `KafkaConnector` to a Kafka Connect cluster.
+
+The example YAML will create a `FileStreamSourceConnector` to send each line of the license file to Kafka as a message in a topic named `my-topic`.
+
+.Prerequisites
+
+* A Kafka Connect deployment in which link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[`KafkaConnectors` are enabled^]
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `examples/connect/source-connector.yaml` file:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnector
+metadata:
+  name: my-source-connector <1>
+  labels:
+    strimzi.io/cluster: my-connect-cluster <2>
+spec:
+  class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
+  tasksMax: 2 <4>
+  config: <5>
+    file: "/opt/kafka/LICENSE"
+    topic: my-topic
+    # ...
+----
++
+<1> Enter a name for the `KafkaConnector` resource. This will be used as the name of the connector within Kafka Connect. You can choose any name that is valid for a Kubernetes resource.
+<2> Enter the name of the Kafka Connect cluster in which to create the connector.
+<3> The name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
+<4> The maximum number of tasks that the connector can create.
+<5> Configuration settings for the connector. Available configuration options depend on the connector class.
+
+. Create the `KafkaConnector` in your Kubernetes cluster:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f examples/connect/source-connector.yaml
+----
+
+. Check that the resource was created:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kctr --selector strimzi.io/cluster=my-connect-cluster -o name
+----

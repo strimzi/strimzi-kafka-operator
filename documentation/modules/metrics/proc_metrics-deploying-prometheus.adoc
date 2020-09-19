@@ -1,0 +1,58 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-prometheus-deploy.adoc/
+
+[id='proc-metrics-deploying-prometheus-{context}']
+
+= Deploying Prometheus
+
+To obtain monitoring data in your Kafka cluster,
+you can use your own Prometheus deployment or deploy Prometheus by applying the xref:ref-metrics-config-files-{context}[example installation resource file for the Prometheus docker image and the YAML files for Prometheus-related resources].
+
+The deployment process creates a `ClusterRoleBinding` and discovers an Alertmanager instance in the namespace specified for the deployment.
+
+NOTE: By default, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery. Targets are discovered and scraped for each endpoint port address. For endpoint discovery, the port address may be derived from service (`role: service`) or pod (`role: pod`) discovery.
+
+.Prerequisites
+
+* Check the xref:ref-metrics-alertmanager-examples-{context}[example alerting rules provided]
+
+.Procedure
+
+. Modify the Prometheus installation file (`prometheus.yaml`) according to the namespace Prometheus is going to be installed into:
++
+On Linux, use:
++
+[source,shell,subs="+quotes,attributes"]
+sed -i 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
++
+On MacOS, use:
++
+[source,shell,subs="+quotes,attributes"]
+sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
+
+. Edit the `PodMonitor` resource in `strimzi-pod-monitor.yaml` to define Prometheus jobs that will scrape the metrics data from pods.
++
+Update the `namespaceSelector.matchNames` property with the namespace where the pods to scrape the metrics from are running.
++
+`PodMonitor` is used to scrape data directly from pods for Apache Kafka, ZooKeeper, Operators, the Kafka Bridge and Cruise Control.
+
+. Edit the `prometheus.yaml` installation file to include additional configuration for scraping metrics directly from nodes.
++
+The Grafana dashboards provided show metrics for CPU, memory and disk volume usage, which come directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
++
+The Prometheus Operator does not have a monitoring resource like `PodMonitor` for scraping the nodes, so the `prometheus-additional.yaml` file contains the additional configuration needed.
+
+.. Create a `Secret` resource:
++
+[source,shell,subs="+quotes,attributes"]
+kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
+
+.. Edit the `additionalScrapeConfigs` property in the `prometheus.yaml` file to include the name of the `Secret` and the `prometheus-additional.yaml` file.
+
+. Deploy the Prometheus resources:
++
+[source,shell,subs="+quotes,attributes"]
+kubectl apply -f strimzi-pod-monitor.yaml
+kubectl apply -f prometheus-rules.yaml
+kubectl apply -f prometheus.yaml

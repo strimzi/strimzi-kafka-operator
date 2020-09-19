@@ -11,14 +11,12 @@
 = TLS sidecar
 
 A sidecar is a container that runs in a pod but serves a supporting purpose.
-In {ProductName}, the TLS sidecar uses TLS to encrypt and decrypt all communication between the various components and ZooKeeper.
-ZooKeeper does not have native TLS support.
+In Strimzi, the TLS sidecar uses TLS to encrypt and decrypt all communication between the various components and ZooKeeper.
 
 The TLS sidecar is used in:
 
-* Kafka brokers
-* ZooKeeper nodes
 * Entity Operator
+* Cruise Control
 
 include::../modules/ref-tls-sidecar.adoc[leveloffset=+1]
 

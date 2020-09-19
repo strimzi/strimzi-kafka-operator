@@ -1,0 +1,45 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-stopping-cluster-rebalance-{context}']
+
+= Stopping a cluster rebalance
+
+Once started, a cluster rebalance operation might take some time to complete and affect the overall performance of the Kafka cluster.  
+
+If you want to stop a cluster rebalance operation that is in progress, apply the `stop` annotation to the `KafkaRebalance` custom resource. 
+This instructs Cruise Control to finish the current batch of partition reassignments and then stop the rebalance.
+When the rebalance has stopped, completed partition reassignments have already been applied; therefore, the state of the Kafka cluster is different when compared to prior to the start of the rebalance operation.
+If further rebalancing is required, you should generate a new optimization proposal. 
+
+NOTE: The performance of the Kafka cluster in the intermediate (stopped) state might be worse than in the initial state.
+
+.Prerequisites
+
+* You have xref:proc-approving-optimization-proposal-{context}[approved the optimization proposal] by annotating the `KafkaRebalance` custom resource with `approve`. 
+
+* The status of the `KafkaRebalance` custom resource is `Rebalancing`.
+
+.Procedure
+
+. Annotate the `KafkaRebalance` resource in Kubernetes:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance=stop
+----
+
+. Check the status of the `KafkaRebalance` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe kafkarebalance _rebalance-cr-name_
+----
+
+. Wait until the status changes to `Stopped`.
+
+
+.Additional resources
+
+* xref:con-optimization-proposals-{context}[]

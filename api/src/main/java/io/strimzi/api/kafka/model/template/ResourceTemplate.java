@@ -33,7 +33,7 @@ public class ResourceTemplate implements Serializable, UnknownPropertyPreserving
     private MetadataTemplate metadata;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the resource.")
+    @Description("Metadata applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;

@@ -1,0 +1,21 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-tasks-prep.adoc
+
+[id='container-images-{context}']
+
+= Pushing container images to your own registry
+
+Container images for Strimzi are available in the {DockerRepository}.
+The installation YAML files provided by Strimzi will pull the images directly from the {DockerRepository}.
+
+If you do not have access to the {DockerRepository} or want to use your own container repository:
+
+. Pull *all* container images listed here
+. Push them into your own registry
+. Update the image names in the YAML files used in deployment
+
+NOTE: Each Kafka version supported for the release has a separate image.
+
+//dev-generated content, do not modify
+include::snip-images.adoc[]

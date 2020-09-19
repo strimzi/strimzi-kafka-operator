@@ -1,0 +1,111 @@
+// Module included in the following assemblies:
+//
+// assembly_deploy-intro-custom-resources.adoc
+
+[id='con-custom-resources-example-{context}']
+= Strimzi custom resource example
+
+CRDs require a one-time installation in a cluster to define the schemas used to instantiate and manage Strimzi-specific resources.
+
+After a new custom resource type is added to your cluster by installing a CRD, you can create instances of the resource based on its specification.
+
+Depending on the cluster setup, installation typically requires cluster admin privileges.
+
+NOTE: Access to manage custom resources is limited to Strimzi administrators.
+For more information, see link:{BookURLDeploying}#adding-users-the-strimzi-admin-role-str[Designating Strimzi administrators^] in the _Deploying Strimzi_ guide.
+
+A CRD defines a new `kind` of resource, such as `kind:Kafka`, within a Kubernetes cluster.
+
+The Kubernetes API server allows custom resources to be created based on the `kind` and understands from the CRD how to validate and store the custom resource when it is added to the Kubernetes cluster.
+
+WARNING: When CRDs are deleted, custom resources of that type are also deleted. Additionally, the resources created by the custom resource, such as pods and statefulsets are also deleted.
+
+Each Strimzi-specific custom resource conforms to the schema defined by the CRD for the resource's `kind`.
+The custom resources for Strimzi components have common configuration properties, which are defined under `spec`.
+
+To understand the relationship between a CRD and a custom resource, let's look at a sample of the CRD for a Kafka topic.
+
+.Kafka topic CRD
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: CustomResourceDefinition
+metadata: <1>
+  name: kafkatopics.kafka.strimzi.io
+  labels:
+    app: strimzi
+spec: <2>
+  group: kafka.strimzi.io
+  versions:
+    {ApiVersion}
+  scope: Namespaced
+  names:
+    # ...
+    singular: kafkatopic
+    plural: kafkatopics
+    shortNames:
+    - kt <3>
+  additionalPrinterColumns: <4>
+      # ...
+  subresources:
+    status: {} <5>
+  validation: <6>
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            partitions:
+              type: integer
+              minimum: 1
+            replicas:
+              type: integer
+              minimum: 1
+              maximum: 32767
+      # ...
+----
+<1> The metadata for the topic CRD, its name and a label to identify the CRD.
+<2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `kubectl get kafkatopic my-topic` or `kubectl get kafkatopics`.
+<3> The shortname can be used in CLI commands. For example, `kubectl get kt` can be used as an abbreviation instead of `kubectl get kafkatopic`.
+<4> The information presented when using a `get` command on the custom resource.
+<5> The current status of the CRD as described in the link:{BookURLUsing}#type-Kafka-reference[schema reference^] for the resource.
+<6> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
+
+NOTE: You can identify the CRD YAML files supplied with the Strimzi installation files, because the file names contain an index number followed by ‘Crd’.
+
+Here is a corresponding example of a `KafkaTopic` custom resource.
+
+.Kafka topic custom resource
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaTopic <1>
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster <2>
+spec: <3>
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 7200000
+    segment.bytes: 1073741824
+status:
+  conditions: <4>
+    lastTransitionTime: "2019-08-20T11:37:00.706Z"
+    status: "True"
+    type: Ready
+  observedGeneration: 1
+  / ...
+----
+<1> The `kind` and `apiVersion` identify the CRD of which the custom resource is an instance.
+<2> A label, applicable only to `KafkaTopic` and `KafkaUser` resources, that defines the name of the Kafka cluster (which is same as the name of the `Kafka` resource) to which a topic or user belongs.
++
+//The name is used by the xref:con-topic-operator-cluster-label-deploying[Topic Operator] and xref:con-user-operator-cluster-label-deploying-uo[User Operator] to identify the Kafka cluster when creating a topic or user, and in subsequent handling.
+<3> The spec shows the number of partitions and replicas for the topic as well as the configuration parameters for the topic itself. In this example, the retention period for a message to remain in the topic and the segment file size for the log are specified.
+<4> Status conditions for the `KafkaTopic` resource. The `type` condition changed to `Ready` at the `lastTransitionTime`.
+
+Custom resources can be applied to a cluster through the platform CLI.
+When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
+
+After a `KafkaTopic` custom resource is created, the Topic Operator is notified and corresponding Kafka topics are created in Strimzi.

@@ -1,11 +1,12 @@
 // This assembly is included in:
 //
 // overview/master.adoc
+// deploying/assembly_deploy-intro.adoc
 
 [id="overview-components_{context}"]
-= {ProductName} Operators
+= Strimzi Operators
 
-Having discussed the basics of Kafka, we can now look at how {ProductName} supports Kafka using _Operators_ to deploy and manage the components and dependencies of Kafka to Kubernetes.
+Strimzi supports Kafka using _Operators_ to deploy and manage the components and dependencies of Kafka to Kubernetes.
 
 //standard operator intro
 include::../../shared/snip-intro-operators.adoc[leveloffset=+1]

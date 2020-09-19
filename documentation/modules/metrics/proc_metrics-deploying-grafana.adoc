@@ -1,0 +1,23 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-grafana.adoc
+
+[id='proc-metrics-deploying-grafana-{context}']
+
+= Deploying Grafana
+
+To provide visualizations of Prometheus metrics,
+you can use your own Grafana installation or deploy Grafana by applying the `grafana.yaml` file provided in the `examples/metrics` directory.
+
+.Prerequisites
+* xref:proc-metrics-kafka-deploy-options-{context}[Metrics are configured for the Kafka cluster resource]
+* xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed]
+
+.Procedure
+
+. Deploy Grafana:
++
+[source,shell,subs="+quotes,attributes"]
+kubectl apply -f grafana.yaml
+
+. xref:proc-metrics-grafana-dashboard-{context}[Enable the Grafana dashboards].

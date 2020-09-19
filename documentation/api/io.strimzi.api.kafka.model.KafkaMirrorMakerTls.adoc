@@ -1,5 +1,8 @@
-Use the `tls` property to configure TLS encryption.
-Provide a list of secrets with key names under which the certificates are stored in X.509 format.
+Configures TLS trusted certificates for connecting MirrorMaker to the cluster.
+
+=== `trustedCertificates`
+Having xref:type-KafkaClientAuthenticationTls-reference[set `tls` to configure TLS encryption], use the
+`trustedCertificates` property to provide a list of secrets with key names under which the certificates are stored in X.509 format.
 
 .An example TLS encryption configuration
 [source,yaml,subs=attributes+]
@@ -8,4 +11,14 @@ tls:
   trustedCertificates:
     - secretName: my-cluster-cluster-ca-cert
       certificate: ca.crt
+----
+
+If you want to enable TLS, but use the default set of public certification authorities shipped with Java,
+you can specify `trustedCertificates` as an empty array:
+
+.An example of enabling TLS with the default Java certificates
+[source,yaml,subs=attributes+]
+----
+tls:
+  trustedCertificates: []
 ----

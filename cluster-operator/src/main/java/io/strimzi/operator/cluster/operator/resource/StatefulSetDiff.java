@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +26,8 @@ public class StatefulSetDiff extends AbstractResourceDiff {
     private static final String SHORTENED_STRIMZI_DOMAIN = Annotations.STRIMZI_DOMAIN.substring(0, Annotations.STRIMZI_DOMAIN.length() - 1);
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-        "^(/spec/revisionHistoryLimit"
+        "^(/metadata/managedFields"
+        + "|/spec/revisionHistoryLimit"
         + "|/spec/template/metadata/annotations/" + SHORTENED_STRIMZI_DOMAIN + "~1generation"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
@@ -106,7 +108,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
             // Any volume claim template changes apart from size change should trigger rolling update
             // Size changes should not trigger rolling update. Therefore we need to separate these two in the diff.
             changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue) && !VOLUME_SIZE.matcher(pathValue).matches();
-            changesVolumeSize |= VOLUME_SIZE.matcher(pathValue).matches();
+            changesVolumeSize |= isVolumeSizeChanged(pathValue, source, target);
             // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
             // by k8s
             changesSpecTemplate |= equalsOrPrefix("/spec/template", pathValue);
@@ -119,6 +121,15 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         this.changesSpecTemplate = changesSpecTemplate;
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
         this.changesVolumeSize = changesVolumeSize;
+    }
+
+    private boolean isVolumeSizeChanged(String pathValue, JsonNode source, JsonNode target) {
+        if (VOLUME_SIZE.matcher(pathValue).matches()) {
+            JsonNode current = lookupPath(source, pathValue);
+            JsonNode desired = lookupPath(target, pathValue);
+            return StorageUtils.parseMemory(current.asText()) != StorageUtils.parseMemory(desired.asText());
+        }
+        return false;
     }
 
     boolean compareMemoryAndCpuResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {

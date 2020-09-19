@@ -155,12 +155,12 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 if (crVersion == null) {
                     image = images.get(defaultVersion().version());
                     if (image == null) {
-                        throw new NoImageException("No image for default version " + defaultVersion());
+                        throw new NoImageException("No image for default version " + defaultVersion() + " in " + images.toString());
                     }
                 } else {
                     image = images.get(crVersion);
                     if (image == null) {
-                        throw new NoImageException("No image for version " + crVersion);
+                        throw new NoImageException("No image for version " + crVersion + " in " + images.toString());
                     }
                 }
             } else {
@@ -288,7 +288,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          */
         public void validateKafkaMirrorMakerImages(Iterable<String> versions) throws NoImageException {
             for (String version : versions) {
-                image(null, version, kafkaConnectImages, ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES);
+                image(null, version, kafkaMirrorMakerImages, ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES);
             }
         }
 

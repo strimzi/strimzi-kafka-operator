@@ -3,49 +3,36 @@ include::shared/attributes.adoc[]
 
 :context: str
 
-= Using {ProductLongName}
+= Using Strimzi
 
 include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
-include::assemblies/assembly-getting-started.adoc[leveloffset=+1]
-
 include::assemblies/assembly-deployment-configuration.adoc[leveloffset=+1]
+
+include::assemblies/assembly-securing-external-listeners.adoc[leveloffset=+1]
+
+include::assemblies/assembly-securing-access.adoc[leveloffset=+1]
 
 include::assemblies/assembly-operators.adoc[leveloffset=+1]
 
-include::assemblies/assembly-using-the-topic-operator.adoc[leveloffset=+1]
-
-include::assemblies/assembly-using-the-user-operator.adoc[leveloffset=+1]
-
 include::assemblies/assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
 
-include::assemblies/assembly-metrics-setup.adoc[leveloffset=+1]
+include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[leveloffset=+1]
 
-include::assemblies/assembly-distributed-tracing.adoc[leveloffset=+1]
-
-include::assemblies/assembly-kafka-exporter.adoc[leveloffset=+1]
+include::assemblies/tracing/assembly-distributed-tracing.adoc[leveloffset=+1]
 
 include::assemblies/security/assembly-security.adoc[leveloffset=+1]
-
-include::assemblies/assembly-upgrade.adoc[leveloffset=+1]
-
-include::assemblies/assembly-upgrade-resources.adoc[leveloffset=+1]
 
 include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]
 
 [appendix]
 include::modules/appendix_faq.adoc[leveloffset=+1]
 
-ifdef::InstallationAppendix[]
-include::modules/appendix_deploying_kubernetes_cluster.adoc[]
-
-include::modules/appendix_deploying_openshift_cluster.adoc[]
-endif::InstallationAppendix[]
-
 [appendix]
 [id='api_reference-{context}']
 :parent-context: {context}
 :context: reference
 ## Custom Resource API Reference
+include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
 include::modules/appendix_crds.adoc[]
 :context: {parent-context}

@@ -1,0 +1,198 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='con-optimization-goals-{context}']
+= Optimization goals overview
+
+To rebalance a Kafka cluster, Cruise Control uses optimization goals to generate xref:con-optimization-proposals-{context}[optimization proposals], which you can approve or reject.  
+
+Optimization goals are constraints on workload redistribution and resource utilization across a Kafka cluster. 
+Strimzi supports most of the optimization goals developed in the Cruise Control project. 
+The supported goals, in the default descending order of priority, are as follows:
+
+. Rack-awareness
+. Replica capacity
+. _Capacity_: Disk capacity, Network inbound capacity, Network outbound capacity, CPU capacity
+. Replica distribution
+. Potential network output
+. _Resource distribution_: Disk utilization distribution, Network inbound utilization distribution, Network outbound utilization distribution, CPU utilization distribution
++
+[NOTE]
+====
+The resource distribution goals are controlled using xref:capacity-configuration[capacity limits] on broker resources.
+====
+. Leader bytes-in rate distribution
+. Topic replica distribution
+. Leader replica distribution
+. Preferred leader election
+//. Intra-broker disk capacity
+//. Intra-broker disk usage distribution   
+
+For more information on each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
+
+NOTE: Intra-broker disk goals, "Write your own" goals, and Kafka assigner goals are not yet supported.
+
+[discrete]
+== Goals configuration in Strimzi custom resources
+
+You configure optimization goals in `Kafka` and `KafkaRebalance` custom resources. Cruise Control has configurations for xref:hard-soft-goals[hard] optimization goals that must be satisfied, as well as xref:master-goals[master], xref:#default-goals[default], and xref:#user-provided-goals[user-provided] optimization goals. 
+Optimization goals for resource distribution (disk, network inbound, network outbound, and CPU) are subject to xref:capacity-configuration[capacity limits] on broker resources.
+
+The following sections describe each goal configuration in more detail.
+
+[[hard-soft-goals]]
+[discrete]
+=== Hard goals and soft goals
+
+Hard goals are goals that _must_ be satisfied in optimization proposals. 
+Goals that are not configured as hard goals are known as _soft goals_. 
+You can think of soft goals as _best effort_ goals: they do _not_ need to be satisfied in optimization proposals, but are included in optimization calculations.
+An optimization proposal that violates one or more soft goals, but satisfies all hard goals, is valid.
+
+Cruise Control will calculate optimization proposals that satisfy all the hard goals and as many soft goals as possible (in their priority order). 
+An optimization proposal that does _not_ satisfy all the hard goals is rejected by Cruise Control and not sent to the user for approval.
+
+NOTE: For example, you might have a soft goal to distribute a topic's replicas evenly across the cluster (the topic replica distribution goal). 
+Cruise Control will ignore this goal if doing so enables all the configured hard goals to be met.
+
+In Cruise Control, the following xref:master-goals[master optimization goals] are preset as hard goals:
+
+[source]
+RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; CPUCapacityGoal
+
+You configure hard goals in the Cruise Control deployment configuration, by editing the `hard.goals` property in `Kafka.spec.cruiseControl.config`.
+
+* To inherit the preset hard goals from Cruise Control, do not specify the `hard.goals` property in `Kafka.spec.cruiseControl.config`
+
+* To change the preset hard goals, specify the desired goals in the `hard.goals` property, using their fully-qualified domain names.
+
+.Example `Kafka` configuration for hard optimization goals
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+  cruiseControl:
+    brokerCapacity:
+      inboundNetwork: 10000KB/s
+      outboundNetwork: 10000KB/s
+    config:
+      hard.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal
+      # ...
+----
+
+Increasing the number of configured hard goals will reduce the likelihood of Cruise Control generating valid optimization proposals.
+
+If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does _not_ check that the list of user-provided optimization goals (in `KafkaRebalance.spec.goals`) contains _all_ the configured hard goals (`hard.goals`). 
+Therefore, if some, but not all, of the user-provided optimization goals are in the `hard.goals` list, Cruise Control will still treat them as hard goals even if `skipHardGoalCheck: true` is specified.
+
+[[master-goals]]
+[discrete]
+=== Master optimization goals
+
+The _master optimization goals_ are available to all users.
+Goals that are not listed in the master optimization goals are not available for use in Cruise Control operations.
+
+Unless you change the Cruise Control xref:proc-deploying-cruise-control-{context}[deployment configuration], Strimzi will inherit the following master optimization goals from Cruise Control, in descending priority order:
+
+[source]
+RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; CPUCapacityGoal; ReplicaDistributionGoal; PotentialNwOutGoal; DiskUsageDistributionGoal; NetworkInboundUsageDistributionGoal; NetworkOutboundUsageDistributionGoal; CpuUsageDistributionGoal; TopicReplicaDistributionGoal; LeaderReplicaDistributionGoal; LeaderBytesInDistributionGoal; PreferredLeaderElectionGoal
+
+Six of these goals are preset as xref:hard-soft-goals[hard goals].
+
+To reduce complexity, we recommend that you use the inherited master optimization goals, unless you need to _completely_ exclude one or more goals from use in `KafkaRebalance` resources. The priority order of the master optimization goals can be modified, if desired, in the configuration for xref:default-goals[default optimization goals].
+
+You configure master optimization goals, if necessary, in the Cruise Control deployment configuration: `Kafka.spec.cruiseControl.config.goals`
+
+* To accept the inherited master optimization goals, do not specify the `goals` property in `Kafka.spec.cruiseControl.config`.
+
+* If you need to modify the inherited master optimization goals, specify a list of goals, in descending priority order, in the `goals` configuration option.
+
+NOTE: If you change the inherited master optimization goals, you must ensure that the hard goals, if configured in the `hard.goals` property in `Kafka.spec.cruiseControl.config`, are a subset of the master optimization goals that you configured. Otherwise, errors will occur when generating optimization proposals.
+
+[[default-goals]]
+[discrete]
+=== Default optimization goals
+
+Cruise Control uses the _default optimization goals_ to generate the _cached optimization proposal_.
+For more information about the cached optimization proposal, see xref:con-optimization-proposals-{context}[]. 
+
+You can override the default optimization goals by setting xref:user-provided-goals[user-provided optimization goals] in a `KafkaRebalance` custom resource.
+
+Unless you specify `default.goals` in the Cruise Control xref:proc-deploying-cruise-control-{context}[deployment configuration], the master optimization goals are used as the default optimization goals. 
+In this case, the cached optimization proposal is generated using the master optimization goals.
+
+* To use the master optimization goals as the default goals, do not specify the `default.goals` property in `Kafka.spec.cruiseControl.config`.
+
+* To modify the default optimization goals, edit the `default.goals` property in `Kafka.spec.cruiseControl.config`.
+You must use a subset of the master optimization goals.
+ 
+.Example `Kafka` configuration for default optimization goals
+
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+  cruiseControl:
+    brokerCapacity:
+      inboundNetwork: 10000KB/s
+      outboundNetwork: 10000KB/s
+    config:
+      default.goals: >
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
+      # ...         
+----
+
+If no default optimization goals are specified, the cached proposal is generated using the master optimization goals.
+
+[[user-provided-goals]]
+[discrete]
+=== User-provided optimization goals
+
+_User-provided optimization goals_ narrow down the configured default goals for a particular optimization proposal. 
+You can set them, as required, in `spec.goals` in a `KafkaRebalance` custom resource:
+
+----
+KafkaRebalance.spec.goals
+----
+
+User-provided optimization goals can generate optimization proposals for different scenarios.
+For example, you might want to optimize leader replica distribution across the Kafka cluster without considering disk capacity or disk utilization. 
+So, you create a `KafkaRebalance` custom resource containing a single user-provided goal for leader replica distribution.
+
+User-provided optimization goals must:
+
+* Include all configured xref:hard-soft-goals[hard goals], or an error occurs
+* Be a subset of the master optimization goals
+
+To ignore the configured hard goals when generating an optimization proposal, add the `skipHardGoalCheck: true` property to the `KafkaRebalance` custom resource. See xref:proc-generating-optimization-proposals-{context}[]. 
+
+.Additional resources
+
+* xref:ref-cruise-control-configuration-{context}[]
+
+* link:https://github.com/linkedin/cruise-control/wiki/Configurations[Configurations^] in the Cruise Control Wiki.

@@ -31,6 +31,8 @@ public class KafkaConnectStatus extends Status {
 
     private String url;
     private List<ConnectorPlugin> connectorPlugins;
+    private int replicas;
+    private String labelSelector;
 
     @Description("The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.")
     public String getUrl() {
@@ -49,5 +51,25 @@ public class KafkaConnectStatus extends Status {
 
     public void setConnectorPlugins(List<ConnectorPlugin> connectorPlugins) {
         this.connectorPlugins = connectorPlugins;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The current number of pods being used to provide this resource.")
+    public int getReplicas() {
+        return replicas;
+    }
+
+    public void setReplicas(int replicas) {
+        this.replicas = replicas;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("Label selector for pods providing this resource.")
+    public String getLabelSelector() {
+        return labelSelector;
+    }
+
+    public void setLabelSelector(String labelSelector) {
+        this.labelSelector = labelSelector;
     }
 }

@@ -3,39 +3,41 @@
 // assembly-deployment-configuration.adoc
 
 [id='assembly-oauth-authentication_{context}']
-= Using {oauth} token-based authentication
+= Using OAuth 2.0 token-based authentication
 
-{ProductName} supports the use of {oauth} authentication using the _SASL OAUTHBEARER_ mechanism.
+Strimzi supports the use of OAuth 2.0 authentication using the _SASL OAUTHBEARER_ mechanism.
 
-{oauth} enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
+OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
 
-You can configure {oauth} authentication, then xref:assembly-oauth-authorization_{context}[{oauth} authorization].
-{oauth} authentication can also be used in conjunction with xref:simple-acl-using-uo[ACL-based Kafka authorization].
+You can configure OAuth 2.0 authentication, then xref:assembly-oauth-authorization_{context}[OAuth 2.0 authorization].
 
-Using {oauth} token-based authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
+OAuth 2.0 authentication can also be used in conjunction with `simple` or OPA-based xref:con-securing-kafka-authorization-str[Kafka authorization].
+
+Using OAuth 2.0 token-based authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
 
 The application client passes an access token as a means of authenticating, which application servers can also use to determine the level of access to grant.
 The authorization server handles the granting of access and inquiries about access.
 
-In the context of {ProductName}:
+In the context of Strimzi:
 
-* Kafka brokers act as {oauth} resource servers
-* Kafka clients act as {oauth} application clients
+* Kafka brokers act as OAuth 2.0 resource servers
+* Kafka clients act as OAuth 2.0 application clients
 
 Kafka clients authenticate to Kafka brokers.
-The brokers and clients communicate with the {oauth} authorization server, as necessary, to obtain or validate access tokens.
+The brokers and clients communicate with the OAuth 2.0 authorization server, as necessary, to obtain or validate access tokens.
 
-For a deployment of {ProductName}, {oauth} integration provides:
+For a deployment of Strimzi, OAuth 2.0 integration provides:
 
-* Server-side {oauth} support for Kafka brokers
-* Client-side {oauth} support for Kafka MirrorMaker, Kafka Connect and the Kafka Bridge
+* Server-side OAuth 2.0 support for Kafka brokers
+* Client-side OAuth 2.0 support for Kafka MirrorMaker, Kafka Connect and the Kafka Bridge
 
 .Additional resources
 
-* {oauth2-site}
+* link:https://oauth.net/2/[OAuth 2.0 site^]
 
 include::modules/con-oauth-authentication-flow.adoc[leveloffset=+1]
 include::modules/con-oauth-authentication-broker.adoc[leveloffset=+1]
+include::modules/con-oauth-reauthentication.adoc[leveloffset=+1]
 include::modules/con-oauth-authentication-client.adoc[leveloffset=+1]
 include::modules/con-oauth-authentication-client-options.adoc[leveloffset=+1]
 include::modules/con-oauth-config.adoc[leveloffset=+1]

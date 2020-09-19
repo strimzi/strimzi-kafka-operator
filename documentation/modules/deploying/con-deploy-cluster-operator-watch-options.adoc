@@ -1,0 +1,35 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-cluster-operator.adoc
+
+[id='con-cluster-operator-watch-options-{context}']
+
+= Watch options for a Cluster Operator deployment
+
+When the Cluster Operator is running, it starts to _watch_ for updates of Kafka resources.
+
+You can choose to deploy the Cluster Operator to watch Kafka resources from:
+
+* A single namespace (the same namespace containing the Cluster Operator)
+* Multiple namespaces
+* All namespaces
+
+NOTE: Strimzi provides example YAML files to make the deployment process easier.
+
+The Cluster Operator watches for changes to the following resources:
+
+* `Kafka` for the Kafka cluster.
+* `KafkaConnect` for the Kafka Connect cluster.
+* `KafkaConnectS2I` for the Kafka Connect cluster with Source2Image support.
+* `KafkaConnector` for creating and managing connectors in a Kafka Connect cluster.
+* `KafkaMirrorMaker` for the Kafka MirrorMaker instance.
+* `KafkaBridge` for the Kafka Bridge instance
+
+When one of these resources is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new cluster for the resource by creating the necessary Kubernetes resources, such as StatefulSets, Services and ConfigMaps.
+
+Each time a Kafka resource is updated, the operator performs corresponding updates on the Kubernetes resources that make up the cluster for the resource.
+
+Resources are either patched or deleted, and then recreated in order to make the cluster for the resource reflect the desired state of the cluster.
+This operation might cause a rolling update that might lead to service disruption.
+
+When a resource is deleted, the operator undeploys the cluster and deletes all related Kubernetes resources.

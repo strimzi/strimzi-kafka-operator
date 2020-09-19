@@ -8,9 +8,11 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -27,7 +29,6 @@ import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +38,10 @@ import java.util.Map;
 /**
  * Represents the Entity Operator deployment
  */
+@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class EntityOperator extends AbstractModel {
+    protected static final String APPLICATION_NAME = "entity-operator";
+
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_NAME = "eo-certs";
     protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/eo-certs/";
@@ -54,16 +58,17 @@ public class EntityOperator extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
 
+    private SecurityContext templateTlsSidecarContainerSecurityContext;
+
+
     private boolean isDeployed;
     private String tlsSidecarImage;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
-     * @param labels
+
      */
-    protected EntityOperator(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected EntityOperator(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = entityOperatorName(cluster);
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
@@ -94,7 +99,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        return ZookeeperCluster.serviceName(cluster) + ":" + EntityOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
+        return ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     public void setZookeeperConnect(String zookeeperConnect) {
@@ -129,16 +134,9 @@ public class EntityOperator extends AbstractModel {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
 
-            String namespace = kafkaAssembly.getMetadata().getNamespace();
-            result = new EntityOperator(
-                    namespace,
-                    kafkaAssembly.getMetadata().getName(),
-                    Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+            result = new EntityOperator(kafkaAssembly);
 
             result.setOwnerReference(kafkaAssembly);
-
-            result.setUserAffinity(affinity(entityOperatorSpec));
-            result.setTolerations(tolerations(entityOperatorSpec));
 
             EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(kafkaAssembly);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(kafkaAssembly);
@@ -158,14 +156,30 @@ public class EntityOperator extends AbstractModel {
                     topicOperator.setContainerEnvVars(template.getTopicOperatorContainer().getEnv());
                 }
 
+                if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getSecurityContext() != null) {
+                    topicOperator.setContainerSecurityContext(template.getTopicOperatorContainer().getSecurityContext());
+                }
+
                 if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getEnv() != null) {
                     userOperator.setContainerEnvVars(template.getUserOperatorContainer().getEnv());
+                }
+
+                if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getSecurityContext() != null) {
+                    userOperator.setContainerSecurityContext(template.getUserOperatorContainer().getSecurityContext());
                 }
 
                 if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
                     result.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
                 }
+
+                if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
+                    result.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
+                }
             }
+
+            // Entity Operator needs special treatment for Affinity and Tolerations because of deprecated fields in spec
+            result.setUserAffinity(affinity(entityOperatorSpec));
+            result.setTolerations(tolerations(entityOperatorSpec));
 
             result.setTlsSidecar(tlsSidecar);
             result.setTopicOperator(topicOperator);
@@ -184,16 +198,7 @@ public class EntityOperator extends AbstractModel {
 
     @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(EntityOperatorSpec entityOperatorSpec) {
-        if (entityOperatorSpec.getTemplate() != null
-                && entityOperatorSpec.getTemplate().getPod() != null
-                && entityOperatorSpec.getTemplate().getPod().getTolerations() != null) {
-            if (entityOperatorSpec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.tolerations and spec.template.deployment.tolerations; latter takes precedence");
-            }
-            return entityOperatorSpec.getTemplate().getPod().getTolerations();
-        } else {
-            return entityOperatorSpec.getTolerations();
-        }
+        return ModelUtils.tolerations("spec.entityOperator.tolerations", entityOperatorSpec.getTolerations(), "spec.entityOperator.template.pod.tolerations", entityOperatorSpec.getTemplate() == null ? null : entityOperatorSpec.getTemplate().getPod());
     }
 
     @SuppressWarnings("deprecation")
@@ -202,7 +207,7 @@ public class EntityOperator extends AbstractModel {
                 && entityOperatorSpec.getTemplate().getPod() != null
                 && entityOperatorSpec.getTemplate().getPod().getAffinity() != null) {
             if (entityOperatorSpec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.affinity and spec.template.deployment.affinity; latter takes precedence");
+                log.warn("Affinity given on both spec.entityOperator.affinity and spec.entityOperator.template.pod.affinity; latter takes precedence");
             }
             return entityOperatorSpec.getTemplate().getPod().getAffinity();
         } else {
@@ -240,7 +245,7 @@ public class EntityOperator extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(3);
 
         if (topicOperator != null) {
             containers.addAll(topicOperator.getContainers(imagePullPolicy));
@@ -258,8 +263,8 @@ public class EntityOperator extends AbstractModel {
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
                 .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
-                .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
-                .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
+                .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
+                .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(getTlsSidecarEnvVars())
                 .withVolumeMounts(VolumeUtils.createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
@@ -268,6 +273,7 @@ public class EntityOperator extends AbstractModel {
                             .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
+                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
                 .build();
 
         containers.add(tlsSidecarContainer);
@@ -280,13 +286,16 @@ public class EntityOperator extends AbstractModel {
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
 
+        // Add shared environment variables used for all containers
+        varList.addAll(getRequiredEnvVars());
+
         addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
 
         return varList;
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>();
+        List<Volume> volumeList = new ArrayList<>(4);
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes());
         }
@@ -372,13 +381,17 @@ public class EntityOperator extends AbstractModel {
             });
         }
 
-        if (javaSystemProperties != null) {
-            strimziJavaOpts.append(' ').append(ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties));
+        String optsTrim = strimziJavaOpts.toString().trim();
+        if (!optsTrim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
         }
 
-        String trim = strimziJavaOpts.toString().trim();
-        if (!trim.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, trim));
+        if (javaSystemProperties != null) {
+            String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
+            if (!propsTrim.isEmpty()) {
+                envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
+            }
         }
     }
+
 }

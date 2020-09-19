@@ -5,7 +5,7 @@ metadata:
   annotations:
     openshift.io/display-name: "Apache Kafka MirrorMaker"
     description: >-
-      This template installs Kafka MirrorMaker to mirror Kafka clusters. 
+      This template installs Kafka MirrorMaker to mirror Kafka clusters.
       For more information about using this template see https://strimzi.io
     tags: "messaging,datastore"
     iconClass: "fa fa-cubes"
@@ -31,7 +31,7 @@ parameters:
   displayName: The Kafka version to use
   name: KAFKA_VERSION
   required: true
-  value: "2.4.0"
+  value: "2.6.0"
 - description: The consumer group id to which this consumer belongs
   displayName: The consumer group id
   name: MIRROR_MAKER_GROUP_ID

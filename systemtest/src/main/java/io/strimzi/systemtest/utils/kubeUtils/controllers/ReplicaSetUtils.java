@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +16,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ReplicaSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ReplicaSetUtils.class);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ReplicaSetUtils() { }
 
@@ -23,8 +25,8 @@ public class ReplicaSetUtils {
      * @param name The name of the ReplicaSet
      */
     public static void waitForReplicaSetDeletion(String name) {
-        LOGGER.debug("Waiting for deletion of ReplicaSet of Deployment {}", name);
-        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+        LOGGER.debug("Waiting for ReplicaSet of Deployment {} deletion", name);
+        TestUtils.waitFor("ReplicaSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 if (!kubeClient().replicaSetExists(name)) {
                     return true;

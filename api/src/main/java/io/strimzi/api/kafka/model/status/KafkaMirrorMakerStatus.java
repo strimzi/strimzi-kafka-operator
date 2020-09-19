@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.status;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -24,4 +25,27 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class KafkaMirrorMakerStatus extends Status {
     private static final long serialVersionUID = 1L;
+
+    private int replicas;
+    private String labelSelector;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The current number of pods being used to provide this resource.")
+    public int getReplicas() {
+        return replicas;
+    }
+
+    public void setReplicas(int replicas) {
+        this.replicas = replicas;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("Label selector for pods providing this resource.")
+    public String getLabelSelector() {
+        return labelSelector;
+    }
+
+    public void setLabelSelector(String labelSelector) {
+        this.labelSelector = labelSelector;
+    }
 }

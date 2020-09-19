@@ -14,16 +14,16 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -35,11 +35,13 @@ import java.util.Map;
         "affinity", "tolerations", "jvmOptions",
         "logging", "metrics", "tracing", "template"})
 @EqualsAndHashCode
-public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializable {
-
+public class KafkaMirrorMakerSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
-    private int replicas;
+    private static final int DEFAULT_REPLICAS = 3;
+
+    private int replicas = DEFAULT_REPLICAS;
+
     private String version;
     private String image;
     private String whitelist;
@@ -55,10 +57,9 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     private Map<String, Object> metrics;
     private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`.")
-    @Minimum(1)
+    @Minimum(0)
     @JsonProperty(required = true)
     public int getReplicas() {
         return replicas;
@@ -190,6 +191,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
@@ -227,15 +229,5 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
 
     public void setTemplate(KafkaMirrorMakerTemplate template) {
         this.template = template;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
     }
 }

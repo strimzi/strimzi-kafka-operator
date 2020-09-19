@@ -1,0 +1,66 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-cluster-operator.adoc
+
+[id='deploying-cluster-operator-to-watch-multiple-namespaces-{context}']
+= Deploying the Cluster Operator to watch multiple namespaces
+
+This procedure shows how to deploy the Cluster Operator to watch Strimzi resources across multiple namespaces in your Kubernetes cluster.
+
+.Prerequisites
+
+* This procedure requires use of a Kubernetes user account which is able to create `CustomResourceDefinitions`, `ClusterRoles` and `ClusterRoleBindings`.
+Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means that permission to create, edit, and delete these resources is limited to Kubernetes cluster administrators, such as `system:admin`.
+
+.Procedure
+
+. Edit the Strimzi installation files to use the namespace the Cluster Operator is going to be installed into.
++
+For example, in this procedure the Cluster Operator is installed into the namespace `_my-cluster-operator-namespace_`.
++
+include::snip-cluster-operator-namespace-sed.adoc[]
+
+. Edit the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file
+to add a list of all the namespaces the Cluster Operator will watch to the `STRIMZI_NAMESPACE` environment variable.
++
+For example, in this  procedure the Cluster Operator will watch the namespaces `watched-namespace-1`, `watched-namespace-2`, `watched-namespace-3`.
++
+[source,yaml,subs="attributes"]
+----
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  # ...
+  template:
+    spec:
+      serviceAccountName: strimzi-cluster-operator
+      containers:
+      - name: strimzi-cluster-operator
+        image: {DockerClusterOperator}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: STRIMZI_NAMESPACE
+          value: watched-namespace-1,watched-namespace-2,watched-namespace-3
+----
+
+. For each namespace listed, install the `RoleBindings`.
++
+In this example, we replace `_watched-namespace_` in these commands with the namespaces listed in the previous step,
+repeating them for `watched-namespace-1`, `watched-namespace-2`, `watched-namespace-3`:
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl apply -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _watched-namespace_
+kubectl apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _watched-namespace_
+kubectl apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _watched-namespace_
+
+. Deploy the Cluster Operator:
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl apply -f install/cluster-operator -n _my-cluster-operator-namespace_
+
+. Verify that the Cluster Operator was successfully deployed:
++
+[source,shell,subs="attributes+"]
+----
+kubectl get deployments
+----

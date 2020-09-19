@@ -1,0 +1,131 @@
+// This module is included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-deploying-cruise-control-{context}']
+= Deploying Cruise Control
+
+To deploy Cruise Control to your Strimzi cluster, define the configuration using the `cruiseControl` property in the `Kafka` resource, and then create or update the resource.
+
+Deploy one instance of Cruise Control per Kafka cluster.
+
+.Prerequisites
+
+* A Kubernetes cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `Kafka` resource and add the `cruiseControl` property.
++
+The properties you can configure are shown in this example configuration:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    brokerCapacity: <1>
+      inboundNetwork: 10000KB/s
+      outboundNetwork: 10000KB/s
+      # ...
+    config: <2>
+      default.goals: >
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+         # ...
+      cpu.balance.threshold: 1.1
+      metadata.max.age.ms: 300000
+      send.buffer.bytes: 131072
+      # ...
+    resources: <3>
+      requests:
+        cpu: 200m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 128Mi
+    logging: <4>
+        type: inline
+        loggers:
+          cruisecontrol.root.logger: "INFO"
+    template: <5>
+      pod:
+        metadata:
+          labels:
+            label1: value1
+        securityContext:
+          runAsUser: 1000001
+          fsGroup: 0
+        terminationGracePeriodSeconds: 120
+    readinessProbe: <6>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe: <7>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+# ...
+----
+<1> Specifies capacity limits for broker resources. For more information, see xref:capacity-configuration[Capacity configuration].
+<2> Defines the Cruise Control configuration, including the default optimization goals (in `default.goals`) and any customizations to the master optimization goals (in `goals`) or the hard goals (in `hard.goals`). 
+You can provide any xref:ref-cruise-control-configuration-{context}[standard Cruise Control configuration option] apart from those managed directly by Strimzi. 
+For more information on configuring optimization goals, see xref:con-optimization-goals-{context}[]. 
+<3> CPU and memory resources reserved for Cruise Control. For more information, see xref:assembly-resource-limits-and-requests-deployment-configuration-kafka[].
+<4> Defined loggers and log levels added directly (inline) or indirectly (external) through a ConfigMap. A custom ConfigMap must be placed under the log4j.properties key. Cruise Control has a single logger named `cruisecontrol.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information, see xref:logging-configuration[Logging configuration].
+<5> xref:assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
+<6> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck readiness probes].
+<7> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck liveness probes].
+
+. Create or update the resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f _kafka.yaml_
+----
+
+. Verify that Cruise Control was successfully deployed:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments -l app.kubernetes.io/name=strimzi
+----
+
+[discrete]
+== Auto-created topics
+
+The following table shows the three topics that are automatically created when Cruise Control is deployed. These topics are required for Cruise Control to work properly and must not be deleted or changed.
+
+.Auto-created topics
+[cols="20,20,60",options="header",stripes="none",separator=¦]
+|===
+
+m¦Auto-created topic
+¦Created by
+¦Function
+
+m¦strimzi.cruisecontrol.metrics
+¦Strimzi Metrics Reporter
+¦Stores the raw metrics from the Metrics Reporter in each Kafka broker.
+
+m¦strimzi.cruisecontrol.partitionmetricsamples
+¦Cruise Control
+¦Stores the derived metrics for each partition. These are created by the link:https://github.com/linkedin/cruise-control/wiki/Overview#metric-sample-aggregator[Metric Sample Aggregator^].
+
+m¦strimzi.cruisecontrol.modeltrainingsamples
+¦Cruise Control
+¦Stores the metrics samples used to create the link:https://github.com/linkedin/cruise-control/wiki/Overview#cluster-workload-model[Cluster Workload Model^].
+
+|===
+
+To prevent the removal of records that are needed by Cruise Control, log compaction is disabled in the auto-created topics.
+
+.What to do next
+After configuring and deploying Cruise Control, you can xref:proc-generating-optimization-proposals-{context}[generate optimization proposals]. 
+
+.Additional resources
+
+xref:type-CruiseControlTemplate-reference[].

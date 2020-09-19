@@ -13,10 +13,10 @@
 
 = Prometheus metrics
 
-{ProductName} supports Prometheus metrics using link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^] to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
+Strimzi supports Prometheus metrics using link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^] to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
 When metrics are enabled, they are exposed on port 9404.
 
-For more information about configuring Prometheus and Grafana, see xref:assembly-metrics-setup-str[Metrics].
+For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
 
 include::../modules/ref-prometheus-metrics.adoc[leveloffset=+1]
 

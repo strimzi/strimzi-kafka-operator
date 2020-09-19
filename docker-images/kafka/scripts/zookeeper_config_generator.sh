@@ -1,38 +1,47 @@
 #!/usr/bin/env bash
-
-# We need to first identify which version of ZK we are starting in, so we know which config format to use
-ZK_MINOR=$(ls libs | grep -Po 'zookeeper-\K\d+.\d+.\d+' | head -1 | cut -d. -f2)
+set -e
 
 # Write the config file
 cat <<EOF
-# the directory where the snapshot is stored.
+# The directory where the snapshot is stored.
 dataDir=${ZOOKEEPER_DATA_DIR}
-EOF
 
-if [[ ZK_MINOR -lt 5 ]]; then
-    echo "clientPort=$(expr 10 \* 2181 + $ZOOKEEPER_ID - 1)"
-else
-    echo "4lw.commands.whitelist=*"
-    echo "standaloneEnabled=false"
-    echo "reconfigEnabled=true"
-fi
+# Other options
+4lw.commands.whitelist=*
+standaloneEnabled=false
+reconfigEnabled=true
+clientPort=12181
+clientPortAddress=127.0.0.1
 
-cat <<EOF
+# TLS options
+serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory
+ssl.clientAuth=need
+ssl.quorum.clientAuth=need
+secureClientPort=2181
+sslQuorum=true
+
+ssl.trustStore.location=/tmp/zookeeper/cluster.truststore.p12
+ssl.trustStore.password=${CERTS_STORE_PASSWORD}
+ssl.trustStore.type=PKCS12
+ssl.quorum.trustStore.location=/tmp/zookeeper/cluster.truststore.p12
+ssl.quorum.trustStore.password=${CERTS_STORE_PASSWORD}
+ssl.quorum.trustStore.type=PKCS12
+
+ssl.keyStore.location=/tmp/zookeeper/cluster.keystore.p12
+ssl.keyStore.password=${CERTS_STORE_PASSWORD}
+ssl.keyStore.type=PKCS12
+ssl.quorum.keyStore.location=/tmp/zookeeper/cluster.keystore.p12
+ssl.quorum.keyStore.password=${CERTS_STORE_PASSWORD}
+ssl.quorum.keyStore.type=PKCS12
 
 # Provided configuration
 ${ZOOKEEPER_CONFIGURATION}
+
 # Zookeeper nodes configuration
 EOF
 
 NODE=1
-FOLLOWER_PORT=$(expr 10 \* 2888)
-ELECTION_PORT=$(expr 10 \* 3888)
-CLIENT_PORT=$(expr 10 \* 2181)
 while [[ $NODE -le $ZOOKEEPER_NODE_COUNT ]]; do
-    if [[ ZK_MINOR -lt 5 ]]; then
-        echo "server.${NODE}=127.0.0.1:$(expr $FOLLOWER_PORT + $NODE - 1):$(expr $ELECTION_PORT + $NODE - 1)"
-    else
-        echo "server.${NODE}=127.0.0.1:$(expr $FOLLOWER_PORT + $NODE - 1):$(expr $ELECTION_PORT + $NODE - 1):participant;127.0.0.1:$(expr $CLIENT_PORT + $NODE - 1)"
-    fi
-    let NODE=NODE+1
+    echo "server.${NODE}=${BASE_HOSTNAME}-$((NODE-1)).${BASE_FQDN}:2888:3888:participant;127.0.0.1:12181"
+    (( NODE=NODE+1 ))
 done

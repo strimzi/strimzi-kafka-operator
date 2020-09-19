@@ -4,141 +4,117 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.HttpUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.junit5.VertxExtension;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-
-import java.util.Random;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.bridge.HttpBridgeST.NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag(INTERNAL_CLIENTS_USED)
 @Tag(BRIDGE)
 @Tag(REGRESSION)
-@Tag(NODEPORT_SUPPORTED)
-@Tag(EXTERNAL_CLIENTS_USED)
-@ExtendWith(VertxExtension.class)
-class HttpBridgeScramShaST extends HttpBridgeBaseST {
+class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
+    private static final String NAMESPACE = "bridge-scram-sha-cluster-test";
 
-    private String bridgeHost = "";
-    private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
-    private String userName = "bob";
+    private String kafkaClientsPodName;
 
     @Test
-    void testSendSimpleMessageTlsScramSha() throws Exception {
-        int messageCount = 50;
-        String topicName = "topic-simple-send-" + new Random().nextInt(Integer.MAX_VALUE);
+    void testSendSimpleMessageTlsScramSha() {
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
-        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
-        JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
-        KafkaBridgeUtils.checkSendResponse(response, messageCount);
+        kafkaBridgeClientJob.producerStrimziBridge().done();
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
-        Future<Integer> consumer = kafkaClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount, "SASL_SSL");
-        assertThat(consumer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(messageCount));
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(USER_NAME)
+            .withUsingPodName(kafkaClientsPodName)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .build();
+
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
 
     @Test
-    void testReceiveSimpleMessageTlsScramSha() throws Exception {
-        String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
-        // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+    void testReceiveSimpleMessageTlsScramSha() {
+        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+
+        kafkaBridgeClientJob.consumerStrimziBridge().done();
+
         // Send messages to Kafka
-        Future<Integer> producer = kafkaClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, MESSAGE_COUNT, "SASL_SSL");
-        assertThat(producer.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS), is(MESSAGE_COUNT));
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withTopicName(TOPIC_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(USER_NAME)
+            .withUsingPodName(kafkaClientsPodName)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .build();
 
-        String name = "kafka-consumer-simple-receive";
-        String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
+        assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
-        JsonObject config = new JsonObject();
-        config.put("name", name);
-        config.put("format", "json");
-        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        // Create consumer
-        JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
-        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));
-        // Create topics json
-        JsonArray topic = new JsonArray();
-        topic.add(topicName);
-        JsonObject topics = new JsonObject();
-        topics.put("topics", topic);
-        // Subscribe
-        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
-        // Try to consume messages
-        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
-        if (bridgeResponse.size() == 0) {
-            // Real consuming
-            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
-        }
-
-        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
-        // Delete consumer
-        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @BeforeAll
-    void setup() throws InterruptedException {
-        LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
-
-        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
-        KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuth(auth);
+    void setup() throws Exception {
+        deployClusterOperator(NAMESPACE);
+        LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewKafkaListenerExternalNodePort()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationScramSha512())
-                        .endKafkaListenerExternalNodePort()
-                        .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
 
         // Create Kafka user
-        KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-        SecretUtils.waitForSecretReady(userName);
+        KafkaUser scramShaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
+
+        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME, scramShaUser).done();
+
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
-        passwordSecret.setSecretName(userName);
+        passwordSecret.setSecretName(USER_NAME);
         passwordSecret.setPassword("password");
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -146,23 +122,21 @@ class HttpBridgeScramShaST extends HttpBridgeBaseST {
         certSecret.setCertificate("ca.crt");
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
 
+
         // Deploy http bridge
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
-            .withNewKafkaClientAuthenticationScramSha512()
-                .withNewUsername(userName)
-                .withPasswordSecret(passwordSecret)
-            .endKafkaClientAuthenticationScramSha512()
+                .withNewConsumer()
+                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                .endConsumer()
+                .withNewKafkaClientAuthenticationScramSha512()
+                    .withNewUsername(USER_NAME)
+                    .withPasswordSecret(passwordSecret)
+                .endKafkaClientAuthenticationScramSha512()
                 .withNewTls()
-                .withTrustedCertificates(certSecret)
+                    .withTrustedCertificates(certSecret)
                 .endTls()
-            .endSpec().done();
-
-        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
-        KubernetesResource.createServiceResource(service, NAMESPACE).done();
-        ServiceUtils.waitForNodePortService(bridgeExternalService);
-
-        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
-        bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
+            .endSpec()
+            .done();
     }
 }

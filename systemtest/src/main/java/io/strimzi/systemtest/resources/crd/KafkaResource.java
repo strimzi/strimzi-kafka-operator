@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -12,36 +13,33 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternal;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalConfiguration;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
-public class KafkaResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
-    private static final String PATH_TO_KAFKA_METRICS_CONFIG = "../examples/metrics/kafka-metrics.yaml";
-    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = "../examples/kafka/kafka-ephemeral.yaml";
-    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = "../examples/kafka/kafka-persistent.yaml";
+public class KafkaResource {
+    private static final String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-metrics.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-cruise-control-metrics.yaml";
+    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-ephemeral.yaml";
+    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-persistent.yaml";
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaClient() {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
@@ -85,8 +83,8 @@ public class KafkaResource {
 
     public static DoneableKafka kafkaJBOD(String name, int kafkaReplicas, int zookeeperReplicas, JbodStorage jbodStorage) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).
-            editSpec()
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .editSpec()
                 .editKafka()
                     .withStorage(jbodStorage)
                 .endKafka()
@@ -107,15 +105,42 @@ public class KafkaResource {
             .build());
     }
 
+    public static DoneableKafka kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    public static DoneableKafka kafkaAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG);
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    public static DoneableKafka kafkaWithMetricsAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
+
+        Map<String, String> rule = new HashMap<>();
+        rule.put("pattern", "kafka.cruisecontrol<name=(.+)><>(\\w+)");
+        rule.put("name", "kafka_cruisecontrol_$1_$2");
+        rule.put("type", "GAUGE");
+
+        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .editSpec()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
+                .withNewCruiseControl()
+                    .addToMetrics("lowercaseOutputName", true)
+                    .addToMetrics("rules", Collections.singletonList(rule))
+                .endCruiseControl()
+            .endSpec()
+            .build());
+    }
+
     public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_EPHEMERAL_CONFIG);
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
     }
 
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
-        String tOImage = StUtils.changeOrgAndTag(ResourceManager.getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
-        String uOImage = StUtils.changeOrgAndTag(ResourceManager.getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
-
         return new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(name)
@@ -130,11 +155,21 @@ public class KafkaResource {
                     .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
                     .withNewListeners()
-                        .withNewPlain().endPlain()
-                        .withNewTls().endTls()
+                        .addNewGenericKafkaListener()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                        .endGenericKafkaListener()
                     .endListeners()
                     .withNewInlineLogging()
-                        .addToLoggers("kafka.root.logger.level", "DEBUG")
+                        .addToLoggers("log4j.rootLogger", "DEBUG")
                     .endInlineLogging()
                 .endKafka()
                 .editZookeeper()
@@ -144,8 +179,6 @@ public class KafkaResource {
                     .endInlineLogging()
                 .endZookeeper()
                 .editEntityOperator()
-                    .editTopicOperator().withImage(tOImage).endTopicOperator()
-                    .editUserOperator().withImage(uOImage).endUserOperator()
                     .editUserOperator()
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
@@ -162,7 +195,7 @@ public class KafkaResource {
 
     static DoneableKafka deployKafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
                         kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(k);
@@ -174,8 +207,7 @@ public class KafkaResource {
                             throw e;
                         }
                     }
-                }
-            );
+                });
             return waitFor(deleteLater(k));
         });
     }
@@ -191,13 +223,20 @@ public class KafkaResource {
         return kafka;
     }
 
+    public static Kafka kafkaWithCruiseControlWithoutWait(String name, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
+        kafka = defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build();
+
+        return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
+    }
+
     /**
      * This method is used for delete specific Kafka cluster without wait for all resources deletion.
      * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
-     * @param kafka kafka cluster specification
+     * @param resourceName kafka cluster name
      */
-    public static void deleteKafkaWithoutWait(Kafka kafka) {
-        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafka);
+    public static void deleteKafkaWithoutWait(String resourceName) {
+        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath) {
@@ -208,28 +247,17 @@ public class KafkaResource {
      * Wait until the ZK, Kafka and EO are all ready
      */
     private static Kafka waitFor(Kafka kafka) {
-        String name = kafka.getMetadata().getName();
-        String namespace = kafka.getMetadata().getNamespace();
-        LOGGER.info("Waiting for Kafka {} in namespace {}", name, namespace);
-        LOGGER.info("Waiting for Zookeeper pods");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
-        LOGGER.info("Zookeeper pods are ready");
-        LOGGER.info("Waiting for Kafka pods");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
-        LOGGER.info("Kafka pods are ready");
-        // EO should not be deployed if it does not contain UO and TO
-        if (kafka.getSpec().getEntityOperator().getTopicOperator() != null || kafka.getSpec().getEntityOperator().getUserOperator() != null) {
-            LOGGER.info("Waiting for Entity Operator pods");
-            DeploymentUtils.waitForDeploymentReady(io.strimzi.api.kafka.model.KafkaResources.entityOperatorDeploymentName(name));
-            LOGGER.info("Entity Operator pods are ready");
-        }
-        // Kafka Exporter is not setup everytime
+        long timeout = ResourceOperation.getTimeoutForResourceReadiness(kafka.getKind());
+
+        // Kafka Exporter is not setup every time
         if (kafka.getSpec().getKafkaExporter() != null) {
-            LOGGER.info("Waiting for Kafka Exporter pods");
-            DeploymentUtils.waitForDeploymentReady(KafkaExporterResources.deploymentName(name));
-            LOGGER.info("Kafka Exporter pods are ready");
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_EXPORTER_DEPLOYMENT);
         }
-        return kafka;
+        // Cruise Control is not setup every time
+        if (kafka.getSpec().getCruiseControl() != null) {
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
+        }
+        return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, Ready, timeout);
     }
 
     private static Kafka deleteLater(Kafka kafka) {
@@ -241,36 +269,17 @@ public class KafkaResource {
     }
 
     public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName) {
-        KafkaListenerTls kafkaListenerTls = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().getTls();
-        return kafkaListenerTls.getConfiguration() == null ?
-                KafkaResources.clusterCaCertificateSecretName(clusterName) : kafkaListenerTls.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+        List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+        GenericKafkaListener tlsListener = listeners.stream().filter(listener -> "tls".equals(listener.getName())).findFirst().orElseThrow(() -> new RuntimeException());
+        return tlsListener.getConfiguration() == null ?
+                KafkaResources.clusterCaCertificateSecretName(clusterName) : tlsListener.getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
     public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName) {
-        KafkaListenerExternal kafkaListenerExternal = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().getExternal();
-
-        KafkaListenerExternalConfiguration kafkaListenerExternalConfiguration;
-
-        switch (kafkaListenerExternal.getType()) {
-            case KafkaListenerExternalRoute.TYPE_ROUTE:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalRoute) kafkaListenerExternal).getConfiguration();
-                break;
-            case KafkaListenerExternalNodePort.TYPE_NODEPORT:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalNodePort) kafkaListenerExternal).getConfiguration();
-                break;
-            case KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalLoadBalancer) kafkaListenerExternal).getConfiguration();
-                break;
-            case KafkaListenerExternalIngress.TYPE_INGRESS:
-                kafkaListenerExternalConfiguration = ((KafkaListenerExternalIngress) kafkaListenerExternal).getConfiguration();
-                break;
-            default:
-                kafkaListenerExternalConfiguration = null;
-                break;
-        }
-
-        return kafkaListenerExternalConfiguration == null ?
-                KafkaResources.clusterCaCertificateSecretName(clusterName) : kafkaListenerExternalConfiguration.getBrokerCertChainAndKey().getSecretName();
+        List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+        GenericKafkaListener external = listeners.stream().filter(listener -> "external".equals(listener.getName())).findFirst().orElseThrow(() -> new RuntimeException());
+        return external.getConfiguration() == null ?
+                KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {

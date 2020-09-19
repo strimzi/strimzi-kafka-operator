@@ -30,7 +30,7 @@ public abstract class KafkaUserAuthorization implements UnknownPropertyPreservin
 
     @Description("Authorization type. " +
             "Currently the only supported type is `simple`. " +
-            "`simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer` class for authorization.")
+            "`simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer` class for authorization.")
     public abstract String getType();
 
     @Override
@@ -41,7 +41,7 @@ public abstract class KafkaUserAuthorization implements UnknownPropertyPreservin
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
+            this.additionalProperties = new HashMap<>(1);
         }
         this.additionalProperties.put(name, value);
     }

@@ -1,0 +1,65 @@
+Configures Kafka MirrorMaker.
+
+[id='property-mm-whitelist-{context}']
+=== `whitelist`
+
+Use the `whitelist` property to configure a list of topics that Kafka MirrorMaker mirrors from the source to the target Kafka cluster.
+
+The property allows any regular expression from the simplest case with a single topic name to complex patterns.
+For example, you can mirror topics A and B using "A|B" or all topics using "*".
+You can also pass multiple regular expressions separated by commas to the Kafka MirrorMaker.
+
+[id='property-mm-producer-consumer-{context}']
+=== `KafkaMirrorMakerConsumerSpec` and `KafkaMirrorMakerProducerSpec`
+
+Use the `KafkaMirrorMakerConsumerSpec` and `KafkaMirrorMakerProducerSpec` to configure source (consumer) and target (producer) clusters.
+
+Kafka MirrorMaker always works together with two Kafka clusters (source and target).
+To establish a connection, the bootstrap servers for the source and the target Kafka clusters are specified as comma-separated lists of `_HOSTNAME:PORT_` pairs.
+Each comma-separated list contains one or more Kafka brokers or a `Service` pointing to Kafka brokers specified as a `_HOSTNAME:PORT_` pair.
+
+[id='property-mm-loggers-{context}']
+=== `logging`
+
+Kafka MirrorMaker has its own configurable logger:
+
+* `mirrormaker.root.logger`
+
+MirrorMaker uses the Apache `log4j` logger implementation.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+For more information about log levels, see {ApacheLoggers}.
+
+Here we see examples of `inline` and `external` logging:
+
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      mirrormaker.root.logger: "INFO"
+  # ...
+----
+
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+spec:
+  # ...
+  logging:
+    type: external
+    name: customConfigMap
+  # ...
+----
+
+.Garbage collector (GC)
+
+Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].

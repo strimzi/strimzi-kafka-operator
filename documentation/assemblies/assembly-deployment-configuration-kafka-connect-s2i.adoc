@@ -11,7 +11,7 @@
 :parent-context-deployment-configuration-kafka-connect-s2i: {context}
 
 [id='assembly-deployment-configuration-kafka-connect-s2i-{context}']
-= Kafka Connect cluster with Source2Image support
+= Kafka Connect cluster configuration with Source2Image support
 
 :context: deployment-configuration-kafka-connect-s2i
 
@@ -29,6 +29,8 @@ include::assembly-kafka-connect-authentication.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect-configuration.adoc[leveloffset=+1]
 
+include::assembly-kafka-connect-authorization.adoc[leveloffset=+1]
+
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
 
 include::../modules/con-kafka-connect-s2i-logging.adoc[leveloffset=+1]
@@ -45,11 +47,9 @@ include::assembly-scheduling.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect-external-configuration.adoc[leveloffset=+1]
 
-include::../modules/kafkaconnectors/proc-enabling-kafkaconnectors.adoc[leveloffset=+1]
+include::../modules/deploying/kafkaconnectors/proc-enabling-kafkaconnectors.adoc[leveloffset=+1]
 
 include::../modules/ref-list-of-kafka-connect-s2i-resources.adoc[leveloffset=+1]
-
-include::../modules/proc-using-openshift-builds-create-image.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
 :context: {parent-context-deployment-configuration-kafka-connect-s2i}

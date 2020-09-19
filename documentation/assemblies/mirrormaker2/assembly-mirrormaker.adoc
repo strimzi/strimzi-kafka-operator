@@ -3,9 +3,9 @@
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
 [id='assembly-mirrormaker-{context}']
-= Using {ProductName} with MirrorMaker 2.0.
+= Kafka MirrorMaker 2.0 configuration
 
-This section describes using {ProductName} with MirrorMaker 2.0.
+This section describes how to configure a Kafka MirrorMaker 2.0 deployment in your Strimzi cluster.
 
 MirrorMaker 2.0 is used to replicate data between two or more active Kafka clusters, within or across data centers.
 
@@ -16,9 +16,24 @@ Data replication across clusters supports scenarios that require:
 * Restriction of data access to a specific cluster
 * Provision of data at a specific location to improve latency
 
-NOTE: MirrorMaker 2.0 has features not supported by the previous version of MirrorMaker.
+If you are using MirrorMaker 2.0, you configure the `KafkaMirrorMaker2` resource.
 
-//Describes the underlying archiecture and how it is used in replication
+MirrorMaker 2.0 introduces an entirely new way of replicating data between clusters.
+
+As a result, the resource configuration differs from the previous version of MirrorMaker.
+If you choose to use MirrorMaker 2.0, there is currently no legacy support, so any resources must be manually converted into the new format.
+
+How MirrorMaker 2.0 replicates data is described here:
+
+* xref:con-mirrormaker-{context}[MirrorMaker 2.0 data replication]
+
+The following procedure shows how the resource is configured for MirrorMaker 2.0:
+
+* xref:proc-mirrormaker-replication-{context}[Synchronizing data between Kafka clusters]
+
+The full schema of the `KafkaMirrorMaker2` resource is described in the xref:type-KafkaMirrorMaker2-reference[KafkaMirrorMaker2 schema reference].
+
+//Describes the underlying architecture and how it is used in replication
 include::modules/con-mirrormaker-replication.adoc[leveloffset=+1]
 
 //Handling of ACLs in replication

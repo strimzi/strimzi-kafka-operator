@@ -1,0 +1,28 @@
+// This assembly is included in the following assemblies:
+//
+// deploying/assembly-deploy-create-cluster.adoc
+
+[id='kafka-cluster-{context}']
+= Deploying Kafka
+
+Apache Kafka is an open-source distributed publish-subscribe messaging system for fault-tolerant real-time data feeds.
+
+The procedures in this section show:
+
+* How to use the Cluster Operator to deploy:
+** xref:deploying-kafka-cluster-{context}[An _ephemeral_ or _persistent_ Kafka cluster]
+** The Topic Operator and User Operator by configuring the `Kafka` custom resource:
+*** xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[Topic Operator]
+*** xref:deploying-the-user-operator-using-the-cluster-operator-{context}[User Operator]
+* Alternative standalone deployment procedures for the Topic Operator and User Operator:
+** xref:deploying-the-topic-operator-standalone-{context}[Deploy the standalone Topic Operator]
+** xref:deploying-the-user-operator-standalone-{context}[Deploy the standalone User Operator]
+
+When installing Kafka, Strimzi also installs a ZooKeeper cluster and adds the necessary configuration to connect Kafka with ZooKeeper.
+
+//Deploy Kafka cluster with storage option
+include::modules/proc-deploy-kafka-cluster.adoc[leveloffset=+1]
+//Include Topic Operator in deployment
+include::modules/proc-deploy-topic-operator-with-cluster-operator.adoc[leveloffset=+1]
+//Include User Operator in deployment
+include::modules/proc-deploy-user-operator-with-cluster-operator.adoc[leveloffset=+1]

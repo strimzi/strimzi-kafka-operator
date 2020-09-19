@@ -4,34 +4,55 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 import io.vertx.kafka.client.producer.RecordMetadata;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 
-public class Producer extends ClientHandlerBase<Integer> {
+public class Producer extends ClientHandlerBase<Integer> implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
-    private Properties properties;
+    private KafkaClientProperties properties;
     private final AtomicInteger numSent = new AtomicInteger(0);
     private final String topic;
-    private final String clientName;
+    private String clientName;
+    private final Integer partition;
+    private KafkaProducer<String, String> producer;
 
-    Producer(Properties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
+             String topic, String clientName, Integer partition) {
+        super(resultPromise, msgCntPredicate);
+        this.properties = properties;
+        this.partition = partition;
+        this.topic = topic;
+        this.clientName = clientName;
+        this.vertx = Vertx.vertx();
+        this.producer = KafkaProducer.create(vertx, properties.getProperties());
+    }
+
+    Producer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
+             String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;
+        this.partition = null;
         this.clientName = clientName;
+        this.vertx = Vertx.vertx();
+        this.producer = KafkaProducer.create(vertx, properties.getProperties());
     }
 
     @Override
     protected void handleClient() {
-        KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties);
+        LOGGER.info("Creating instance of Vert.x for the client {}", this.getClass().getName());
+
+        LOGGER.info("Producer is starting with following properties: {}", properties.getProperties().toString());
 
         if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {
@@ -40,17 +61,37 @@ public class Producer extends ClientHandlerBase<Integer> {
                     resultPromise.complete(numSent.get());
                 }
             });
-            vertx.setPeriodic(1000, id -> sendNext(producer, topic));
+            vertx.setPeriodic(1000, id -> sendNext(topic));
         } else {
-            sendNext(producer, topic);
+            sendNext(topic);
         }
     }
 
-    private void sendNext(KafkaProducer<String, String> producer, String topic) {
+    @Override
+    public void close() {
+        if (vertx != null) {
+
+            if (producer != null) {
+                LOGGER.info("Closing Producer instance {} with client.id {}", producer.getClass().getName(), properties.getProperties().get(ProducerConfig.CLIENT_ID_CONFIG));
+                producer.close();
+            }
+
+            LOGGER.info("Closing Vert.x instance {}", this.getClass().getName());
+            vertx.close();
+        }
+    }
+
+    private void sendNext(String topic) {
         if (msgCntPredicate.negate().test(numSent.get())) {
 
-            KafkaProducerRecord<String, String> record =
-                    KafkaProducerRecord.create(topic, String.valueOf("\"Sending messages\": \"Hello-world - " + numSent.get() + "\""));
+            KafkaProducerRecord<String, String> record;
+
+            if (partition != null) {
+                // send messages to the specific partition
+                record = KafkaProducerRecord.create(topic, null, "\"Hello-world - " + numSent.get() + "\"", partition);
+            } else {
+                record = KafkaProducerRecord.create(topic, "\"Hello-world - " + numSent.get() + "\"");
+            }
 
             producer.send(record, done -> {
                 if (done.succeeded()) {
@@ -67,15 +108,17 @@ public class Producer extends ClientHandlerBase<Integer> {
                     }
 
                     if (msgCntPredicate.negate().test(-1)) {
-                        sendNext(producer, topic);
+                        sendNext(topic);
                     }
-
                 } else {
-                    LOGGER.warn("Producer cannot connect to topic {}: {}", topic, done.cause().toString());
-                    sendNext(producer, topic);
+                    LOGGER.debug("Producer cannot connect to topic {}: {}", topic, done.cause().toString());
+                    sendNext(topic);
                 }
             });
-
         }
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
     }
 }

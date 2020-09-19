@@ -1,7 +1,7 @@
 // Module included in the following assemblies:
 //
 // overview/assembly-overview-components.adoc
-// assembly-getting-started-user-operator.adoc
+// assembly-using-the-user-operator.adoc
 
 [id='overview-concepts-user-operator-{context}']
 = User Operator

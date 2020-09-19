@@ -73,7 +73,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @return A Future which will complete once all the pods has been deleted.
      */
     public Future<ReconcileResult<Pod>> deletePod(String namespace, String name) {
-        Labels labels = Labels.fromMap(null).withName(name);
+        Labels labels = Labels.EMPTY.withStrimziName(name);
         String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
         return podOperations.reconcile(namespace, podName, null);
     }
@@ -97,7 +97,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * generation sequence number of the desired state.
      */
     public Future<Void> waitForObserved(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isObserved);
+        return waitFor(namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 
     /**

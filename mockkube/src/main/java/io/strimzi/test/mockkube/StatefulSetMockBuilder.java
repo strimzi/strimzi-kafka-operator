@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.mockkube;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -86,7 +87,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
         super.nameScopedMocks(resourceName, resource);
         EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
         when(c.withGracePeriod(anyLong())).thenReturn(resource);
-        when(resource.cascading(false)).thenReturn(c);
+        when(resource.withPropagationPolicy(DeletionPropagation.ORPHAN)).thenReturn(c);
         mockNoncascadingPatch(resourceName, c);
         mockScale(resourceName, resource);
         mockNoncascadingDelete(resourceName, c);
@@ -126,7 +127,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
 
     @Override
     protected void mockCreate(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
-        when(resource.create(any())).thenAnswer(cinvocation -> {
+        when(resource.create(any(StatefulSet.class))).thenAnswer(cinvocation -> {
             checkNotExists(resourceName);
             StatefulSet argument = cinvocation.getArgument(0);
             LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
@@ -193,14 +194,14 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
 
     @Override
     protected void mockDelete(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
-        when(resource.cascading(true).delete()).thenAnswer(i -> {
+        when(resource.withPropagationPolicy(DeletionPropagation.FOREGROUND).delete()).thenAnswer(i -> {
             LOGGER.debug("delete {} {}", resourceType, resourceName);
             StatefulSet removed = db.remove(resourceName);
             if (removed != null) {
                 fireWatchers(resourceName, removed, Watcher.Action.DELETED, "delete");
                 for (Map.Entry<String, Pod> pod : new HashMap<>(podDb).entrySet()) {
                     if (pod.getKey().matches(resourceName + "-[0-9]+")) {
-                        mockPods.inNamespace(removed.getMetadata().getNamespace()).withName(pod.getKey()).cascading(true).delete();
+                        mockPods.inNamespace(removed.getMetadata().getNamespace()).withName(pod.getKey()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                     }
                 }
             }
@@ -226,7 +227,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
             LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
             for (int i = oldScale - 1; i >= newScale; i--) {
                 String newPodName = argument.getMetadata().getName() + "-" + i;
-                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).cascading(true).delete();
+                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
             }
         } else {
             db.put(resourceName, copyResource(argument));

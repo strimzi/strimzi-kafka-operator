@@ -8,11 +8,13 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
@@ -27,14 +29,21 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private SecretUtils() { }
 
     public static void waitForSecretReady(String secretName) {
-        LOGGER.info("Waiting for Kafka user secret {}", secretName);
-        TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
-            () -> kubeClient().getSecret(secretName) != null);
-        LOGGER.info("Kafka user secret {} created", secretName);
+        waitForSecretReady(secretName, () -> { });
+    }
+
+    public static void waitForSecretReady(String secretName, Runnable onTimeout) {
+        LOGGER.info("Waiting for Secret {}", secretName);
+        TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+            () -> kubeClient().getSecret(secretName) != null,
+            onTimeout);
+        LOGGER.info("Secret {} created", secretName);
     }
 
     public static void createSecret(String secretName, String dataKey, String dataValue) {
@@ -85,8 +94,8 @@ public class SecretUtils {
     }
 
     public static void waitForClusterSecretsDeletion(String clusterName) {
-        LOGGER.info("Waiting for Kafka cluster {} secrets deletion", clusterName);
-        TestUtils.waitFor("Expected secrets for Kafka cluster " + clusterName + " will be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_SECRET_CREATION,
+        LOGGER.info("Waiting for Secret {} deletion", clusterName);
+        TestUtils.waitFor("Secret " + clusterName + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 List<Secret> secretList = kubeClient().listSecrets(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
                 if (secretList.isEmpty()) {
@@ -99,7 +108,7 @@ public class SecretUtils {
                     return false;
                 }
             });
-        LOGGER.info("Kafka cluster {} secrets deleted", clusterName);
+        LOGGER.info("Secret {} deleted", clusterName);
     }
 
     public static void createCustomSecret(String name, String clusterName, String namespace, String certPath, String keyPath) {
@@ -112,5 +121,33 @@ public class SecretUtils {
         certsPaths.put("ca.key", keyPath);
 
         SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
+        waitForSecretReady(name);
+    }
+
+    public static void waitForCertToChange(String originalCert, String secretName) {
+        LOGGER.info("Waiting for Secret {} certificate change", secretName);
+        TestUtils.waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+            Secret secret = kubeClient().getSecret(secretName);
+            if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
+                String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
+                boolean changed = !originalCert.equals(currentCert);
+                if (changed) {
+                    LOGGER.info("Certificate in Secret {} has changed, was {}, is now {}", secretName, originalCert, currentCert);
+                }
+                return changed;
+            } else {
+                return false;
+            }
+        });
+    }
+
+    public static void deleteSecretWithWait(String secretName, String namespace) {
+        kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
+
+        LOGGER.info("Waiting for Secret: {} to be deleted", secretName);
+        TestUtils.waitFor(String.format("Deletion of secret: {}", secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+            () -> kubeClient().getSecret(secretName) == null);
+
+        LOGGER.info("Secret: {} successfully deleted", secretName);
     }
 }

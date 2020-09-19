@@ -2,7 +2,7 @@
 set -x
 
 # Defaults
-CONFIG_REGEX="USER=([A-Za-z\_]*)"
+CONFIG_REGEX="USER=([A-Za-z0-9\_]*)"
 PRODUCER_CONFIGURATION_ENV="PRODUCER_CONFIGURATION"
 
 # Create options for consumer

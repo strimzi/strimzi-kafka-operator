@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.18.0-SNAPSHOT</version>
+    <version>0.20.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -35,19 +35,31 @@
             <name>Tom Bentley</name>
             <email>tbentley@redhat.com</email>
             <organization>Red Hat</organization>
-            <organizationUrl>http://www.redhat.com</organizationUrl>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
         </developer>
         <developer>
             <name>Paolo Patierno</name>
             <email>ppatierno@live.com</email>
             <organization>Red Hat</organization>
-            <organizationUrl>http://www.redhat.com</organizationUrl>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
         </developer>
         <developer>
             <name>Jakub Scholz</name>
             <email>github@scholzj.com</email>
             <organization>Red Hat</organization>
-            <organizationUrl>http://www.redhat.com</organizationUrl>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Sam Hawker</name>
+            <email>sam.b.hawker@gmail.com</email>
+            <organization>IBM</organization>
+            <organizationUrl>https://www.ibm.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Jakub Stejskal</name>
+            <email>xstejs24@gmail.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
         </developer>
     </developers>
 
@@ -56,62 +68,67 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.version>3.8.1</maven.compiler.version>
-        <maven.surefire.version>2.22.1</maven.surefire.version>
-        <maven.failsafe.version>2.22.1</maven.failsafe.version>
+        <maven.surefire.version>3.0.0-M5</maven.surefire.version>
+        <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
         <maven.assembly.version>3.1.0</maven.assembly.version>
         <maven.shade.version>3.1.0</maven.shade.version>
         <maven.javadoc.version>3.1.0</maven.javadoc.version>
         <maven.source.version>3.0.1</maven.source.version>
         <maven.dependency.version>3.1.1</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
-        <maven.checkstyle.version>3.1.0</maven.checkstyle.version>
-        <spotbugs.version>3.1.12</spotbugs.version>
+        <maven.checkstyle.version>3.1.1</maven.checkstyle.version>
+        <spotbugs.version>4.0.3</spotbugs.version>
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <sundrio.version>0.19.0</sundrio.version>
 
-        <fabric8.kubernetes-client.version>4.6.4</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>4.6.4</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>4.6.4</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>4.10.3</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>4.10.3</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>4.10.3</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <okhttp.version>3.12.6</okhttp.version>
         <okio.version>1.15.0</okio.version>
-        <vertx.version>3.8.5</vertx.version>
-        <vertx-juni5.version>3.8.5</vertx-juni5.version>
-        <log4j.version>2.13.0</log4j.version>
+        <vertx.version>3.9.1</vertx.version>
+        <vertx-junit5.version>3.9.1</vertx-junit5.version>
+        <log4j.version>2.13.3</log4j.version>
         <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson-core.version>2.10.2</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.10.2</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.10.2</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.10.2</fasterxml.jackson-annotations.version>
-        <kafka.version>2.4.0</kafka.version>
+        <kafka.version>2.6.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.10</scala-library.version>
-        <zookeeper.version>3.5.6</zookeeper.version>
+        <zookeeper.version>3.5.8</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <quartz.version>2.2.1</quartz.version>
-        <debezium.version>1.0.0.Final</debezium.version>
-        <jaeger.version>1.0.0</jaeger.version>
+        <quartz.version>2.3.2</quartz.version>
+        <debezium.version>1.2.1.Final</debezium.version>
+        <jaeger.version>1.3.2</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
-        <opentracing-kafka.version>0.1.4</opentracing-kafka.version>
-        <strimzi-oauth.version>0.3.0</strimzi-oauth.version>
+        <opentracing-kafka.version>0.1.13</opentracing-kafka.version>
+        <strimzi-oauth.version>0.6.0</strimzi-oauth.version>
 
-        <junit-json-params.version>5.5.1-r0</junit-json-params.version>
+        <test-containers.version>1.14.0</test-containers.version>
         <javax.json-api.version>1.1.4</javax.json-api.version>
         <javax.json.version>1.1.4</javax.json.version>
         <rest-assured.version>4.1.1</rest-assured.version>
         <json-path.version>4.1.1</json-path.version>
-        <jupiter.version>5.5.1</jupiter.version>
-        <junit.platform.version>1.5.1</junit.platform.version>
+        <jupiter.version>5.6.2</jupiter.version>
+        <junit.platform.version>1.6.2</junit.platform.version>
+        <junit-platform-surefire-provider.version>1.3.2</junit-platform-surefire-provider.version>
         <gson.version>2.8.2</gson.version>
-        <vertx.kafka.client>3.7.1</vertx.kafka.client>
-        <netty.version>4.1.45.Final</netty.version>
+        <vertx.kafka.client>3.9.1</vertx.kafka.client>
+        <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
+        <netty.version>4.1.50.Final</netty.version>
         <micrometer.version>1.3.1</micrometer.version>
+        <!-- property to skip surefire tests during failsafe execution -->
+        <!--suppress UnresolvedMavenProperty -->
+        <skip.surefire.tests>${skipTests}</skip.surefire.tests>
     </properties>
 
     <distributionManagement>
@@ -130,6 +147,7 @@
         <module>mirror-maker-agent</module>
         <module>tracing-agent</module>
         <module>test</module>
+        <module>test-container</module>
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
@@ -220,8 +238,58 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-extensions</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-core</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-rbac</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-apps</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-apiextensions</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-networking</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-policy</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-storageclass</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-batch</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>openshift-model</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
                 <artifactId>openshift-client</artifactId>
-                <version>${fabric8.kubernetes-client.version}</version>
+                <version>${fabric8.openshift-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -578,8 +646,23 @@
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
+                <artifactId>kafka-oauth-common</artifactId>
+                <version>${strimzi-oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
                 <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
                 <version>${strimzi-oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
@@ -602,8 +685,18 @@
             <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-junit5</artifactId>
-                <version>${vertx-juni5.version}</version>
+                <version>${vertx-junit5.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-micrometer-metrics</artifactId>
+                <version>${vertx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${test-containers.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -769,6 +862,10 @@
                         <ENV_VAR_EXISTS_BOOLEAN>true</ENV_VAR_EXISTS_BOOLEAN>
                     </environmentVariables>
                     <trimStackTrace>false</trimStackTrace>
+                    <forkCount>1</forkCount>
+                    <!-- This is workaround for https://issues.apache.org/jira/browse/SUREFIRE-1809 -->
+                    <useModulePath>false</useModulePath>
+                    <skipTests>${skip.surefire.tests}</skipTests>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -779,7 +876,7 @@
                     <dependency>
                         <groupId>io.vertx</groupId>
                         <artifactId>vertx-junit5</artifactId>
-                        <version>${vertx-juni5.version}</version>
+                        <version>${vertx-junit5.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -798,9 +895,31 @@
                                 <include>**/IT*.java</include>
                                 <include>**/*IT.java</include>
                                 <include>**/ST*.java</include>
-                                <include>**/*ST*.java</include>
+                                <include>**/*ST.java</include>
                             </includes>
                             <trimStackTrace>false</trimStackTrace>
+                            <forkCount>0</forkCount>
+                            <!-- This is workaround for https://issues.apache.org/jira/browse/SUREFIRE-1809 -->
+                            <useModulePath>false</useModulePath>
+                            <statelessTestsetReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                                <disable>false</disable>
+                                <version>3.0</version>
+                                <usePhrasedFileName>false</usePhrasedFileName>
+                                <usePhrasedTestSuiteClassName>true</usePhrasedTestSuiteClassName>
+                                <usePhrasedTestCaseClassName>true</usePhrasedTestCaseClassName>
+                                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+                            </statelessTestsetReporter>
+                            <consoleOutputReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5ConsoleOutputReporter">
+                                <disable>false</disable>
+                                <encoding>UTF-8</encoding>
+                                <usePhrasedFileName>true</usePhrasedFileName>
+                            </consoleOutputReporter>
+                            <statelessTestsetInfoReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoReporter">
+                                <disable>false</disable>
+                                <usePhrasedFileName>false</usePhrasedFileName>
+                                <usePhrasedClassNameInRunning>false</usePhrasedClassNameInRunning>
+                                <usePhrasedClassNameInTestCaseSummary>true</usePhrasedClassNameInTestCaseSummary>
+                            </statelessTestsetInfoReporter>
                         </configuration>
                     </execution>
                 </executions>
@@ -822,7 +941,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>3.1.12</version><dependencies>
+                <version>4.0.0</version><dependencies>
                 <!-- overwrite dependency on spotbugs if you want to specify the version of˓→spotbugs -->
                 <dependency>
                     <groupId>com.github.spotbugs</groupId>
@@ -868,6 +987,7 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:connect-file</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
+                                <ignoredUnusedDeclaredDependency>io.micrometer:micrometer-registry-prometheus</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
@@ -1011,12 +1131,12 @@
             <id>java-version</id>
             <activation>
                 <property>
-                    <name>env.JAVA_VERSION</name>
+                    <name>env.JAVA_VERSION_BUILD</name>
                 </property>
             </activation>
             <properties>
-                <maven.compiler.source>${env.JAVA_VERSION}</maven.compiler.source>
-                <maven.compiler.target>${env.JAVA_VERSION}</maven.compiler.target>
+                <maven.compiler.source>${env.JAVA_VERSION_BUILD}</maven.compiler.source>
+                <maven.compiler.target>${env.JAVA_VERSION_BUILD}</maven.compiler.target>
             </properties>
         </profile>
         <profile>
@@ -1035,6 +1155,8 @@
             </activation>
             <properties>
                 <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+                <maven.compiler.source>11</maven.compiler.source>
+                <maven.compiler.target>11</maven.compiler.target>
             </properties>
         </profile>
     </profiles>

@@ -15,6 +15,7 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DocGeneratorTest {
 
@@ -25,6 +26,6 @@ public class DocGeneratorTest {
         DocGenerator crdGenerator = new DocGenerator(1, singletonList(ExampleCrd.class), w, new KubeLinker("{KubeApiReferenceBase}"));
         crdGenerator.generate(ExampleCrd.class);
         String s = w.toString();
-        assertThat(CrdTestUtils.readResource("simpleTest.adoc"), is(s));
+        assertEquals(CrdTestUtils.readResource("simpleTest.adoc"), s);
     }
 }

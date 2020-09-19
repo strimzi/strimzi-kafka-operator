@@ -10,7 +10,7 @@
 
 = Kafka broker configuration
 
-{ProductName} allows you to customize the configuration of the Kafka brokers in your Kafka cluster.
+Strimzi allows you to customize the configuration of the Kafka brokers in your Kafka cluster.
 You can specify and configure most of the options listed in the "Broker Configs" section of the {ApacheKafkaBrokerConfig}. You cannot configure options that are related to the following areas:
 
 * Security (Encryption, Authentication, and Authorization)
@@ -20,8 +20,16 @@ You can specify and configure most of the options listed in the "Broker Configs"
 * Inter-broker communication
 * ZooKeeper connectivity
 
-These options are automatically configured by {ProductName}.
+These options are automatically configured by Strimzi.
 
-include::../modules/ref-kafka-broker-configuration.adoc[leveloffset=+1]
+For more information on broker configuration, see the xref:type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema].
+
+.Listener configuration
+You configure listeners for connecting to Kafka brokers.
+For more information on configuring listeners, see xref:configuration-points-listeners-{context}[Listener configuration]
+
+.Authorizing access to Kafka
+You can configure your Kafka cluster to allow or decline actions executed by users.
+For more information on securing access to Kafka brokers, see xref:assembly-securing-kafka-str[Managing access to Kafka].
 
 include::../modules/proc-configuring-kafka-brokers.adoc[leveloffset=+1]

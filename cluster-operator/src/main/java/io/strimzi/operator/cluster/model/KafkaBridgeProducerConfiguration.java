@@ -11,21 +11,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
 /**
  * Class for handling Kafka Bridge producer configuration passed by the user
  */
 public class KafkaBridgeProducerConfiguration extends AbstractConfiguration {
 
-    private static final List<String> FORBIDDEN_OPTIONS;
-
+    private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIXES.split(", "));
-
-        DEFAULTS = new HashMap<>();
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+        DEFAULTS = new HashMap<>(0);
     }
 
     /**
@@ -35,6 +33,6 @@ public class KafkaBridgeProducerConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaBridgeProducerConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }

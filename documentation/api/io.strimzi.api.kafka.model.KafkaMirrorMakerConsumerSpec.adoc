@@ -1,0 +1,68 @@
+Configures a MirrorMaker consumer.
+
+[id='property-consumer-streams-{context}']
+=== `numStreams`
+
+Use the `consumer.numStreams` property to configure the number of streams for the consumer.
+
+You can increase the throughput in mirroring topics by increasing the number of consumer threads.
+Consumer threads belong to the consumer group specified for Kafka MirrorMaker.
+Topic partitions are assigned across the consumer threads, which consume messages in parallel.
+
+[id='property-consumer-offset-autocommit-{context}']
+=== `offsetCommitInterval`
+
+Use the `consumer.offsetCommitInterval` property to configure an offset auto-commit interval for the consumer.
+
+You can specify the regular time interval at which an offset is committed after Kafka MirrorMaker has consumed data from the source Kafka cluster.
+The time interval is set in milliseconds, with a default value of 60,000.
+
+[id='property-consumer-config-{context}']
+=== `config`
+
+Use the `consumer.config` properties to configure Kafka options for the consumer.
+
+The `config` property contains the Kafka MirrorMaker consumer configuration options as keys, with values set in one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
+You can also xref:con-common-configuration-ssl-reference[configure the `ssl.endpoint.identification.algorithm` property] to enable or disable hostname verification.
+
+*Exceptions*
+
+You can specify and configure the options listed in the {ApacheKafkaConsumerConfig}.
+
+However, there are exceptions for options automatically configured and managed directly by Strimzi related to:
+
+* Kafka cluster bootstrap address
+* Security (encryption, authentication, and authorization)
+* Consumer group identifier
+* Interceptors
+
+Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+
+* `bootstrap.servers`
+* `group.id`
+* `interceptor.classes`
+* `ssl.` (xref:con-common-configuration-ssl-reference[not including specific exceptions])
+* `sasl.`
+* `security.`
+
+When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
+All other options are passed to Kafka MirrorMaker.
+
+IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
+When an invalid configuration is provided, the Kafka MirrorMaker might not start or might become unstable.
+In such cases, the configuration in the `KafkaMirrorMaker.spec.consumer.config` object should be fixed and the Cluster Operator will roll out the new configuration for Kafka MirrorMaker.
+
+[id='property-consumer-group-{context}']
+=== `groupId`
+
+Use the `consumer.groupId` property to configure a consumer group identifier for the consumer.
+
+Kafka MirrorMaker uses a Kafka consumer to consume messages, behaving like any other Kafka consumer client.
+Messages consumed from the source Kafka cluster are mirrored to a target Kafka cluster.
+A group identifier is required, as the consumer needs to be part of a consumer group for the assignment of partitions.

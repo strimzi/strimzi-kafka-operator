@@ -1,0 +1,45 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-kafka-cluster.adoc
+
+[id='deploying-the-topic-operator-using-the-cluster-operator-{context}']
+= Deploying the Topic Operator using the Cluster Operator
+
+This procedure describes how to deploy the Topic Operator using the Cluster Operator.
+
+You configure the `entityOperator` property of the `Kafka` resource to include the `topicOperator`.
+
+If you want to use the Topic Operator with a Kafka cluster that is not managed by Strimzi,
+you must xref:deploying-the-topic-operator-standalone-{context}[deploy the Topic Operator as a standalone component].
+
+For more information about configuring the `entityOperator` and `topicOperator` properties,
+see link:{BookURLUsing}#assembly-kafka-entity-operator-deployment-configuration-kafka[Entity Operator^] in the _Using Strimzi_ guide.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Edit the `entityOperator` properties of the `Kafka` resource to include `topicOperator`:
++
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  #...
+  entityOperator:
+    *topicOperator: {}*
+    userOperator: {}
+----
+. Configure the Topic Operator `spec` using the properties described in link:{BookURLUsing}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
++
+Use an empty object (`{}`) if you want all properties to use their default values.
+. Create or update the resource:
++
+Use `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_

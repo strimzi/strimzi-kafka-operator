@@ -60,6 +60,12 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Cluster",
+                                description = "The name of the Kafka cluster this topic belongs to",
+                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Partitions",
                                 description = "The desired number of partitions in the topic",
                                 jsonPath = ".spec.partitions",
@@ -154,7 +160,7 @@ public class KafkaTopic extends CustomResource implements UnknownPropertyPreserv
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
+            this.additionalProperties = new HashMap<>(1);
         }
         this.additionalProperties.put(name, value);
     }

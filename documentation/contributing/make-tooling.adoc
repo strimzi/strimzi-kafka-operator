@@ -7,10 +7,24 @@ Make is a useful tool for building your documentation and pushing it to a public
 
 == Make commands to build documentation
 
-`make clean`:: Delete all temporary files
-`make check`:: Execute the custom checks in `.travis/check_docs.sh`
-`make build`:: Build the docs using asciidoc, excluding the generated documentation
-`make buildall`:: Build the docs using asciidoc, including the generated documentation (requires link:https://maven.apache.org/[`mvn`]).
-`make publish`:: Build the docs via `make build` and publish them using `rsync`. The publish destination is configured via a `Makefile.publish` (not included in this PR; provided by each user so they can publish to their own location). The `Makefile.publish` needs to configure a single `PUBLISH_DEST` variable which is the remote directory (`<host>:<dir>`) to copy the generated docs to.
+`make docu_clean`:: Delete all temporary files
+`make docu_check`:: Execute the documentation checks in `.travis/check_docs.sh`
+`make docu_html`:: Generate the HTML version of all the guides (the HTML files can be found in `documentation/html)
+`make docu_htmlnoheader`:: Generate the HTML version of all the guides without the HTML headers so they are suitable for including into a website (the HTML files can be found in `documentation/htmlnoheader)
 
-See the output in your browser at file in your project directory at: `documentation/html/index.html`
+== Generate the Custom Resource API Reference
+
+The `documentation/modules/appendix_crds.adoc` file provides the main content for the _Custom Resource API Reference_.
+It is generated directly from the Java code when building the operators.
+
+If you change the Strimzi API, you need to regenerate the API Reference before submitting your PR by running the following from the root:
+
+[source,shell,subs=attributes+]
+----
+mvn clean -DskipTests install
+make crd_install
+----
+
+The build uses https://github.com/mikefarah/yq[`yq`^], so make sure it is kept up-to-date for it to work properly.
+
+NOTE: You only have to generate the _Custom Resource API Reference_ if you changed anything in the `api` module of the Java code.

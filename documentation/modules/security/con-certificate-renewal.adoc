@@ -3,21 +3,34 @@
 // assembly-security.adoc
 
 [id='con-certificate-renewal-{context}']
-= Certificate renewal
+= Certificate renewal and validity periods
 
-The cluster CA and clients CA certificates are only valid for a limited time period, known as the validity period.
+Cluster CA and clients CA certificates are only valid for a limited time period, known as the validity period.
 This is usually defined as a number of days since the certificate was generated.
-For auto-generated CA certificates, you can configure the validity period in `Kafka.spec.clusterCa.validityDays` and `Kafka.spec.clientsCa.validityDays`.
-The default validity period for both certificates is 365 days.
-Manually-installed CA certificates should have their own validity period defined.
 
-When a CA certificate expires, components and clients which still trust that certificate will not accept TLS connections from peers whose certificate were signed by the CA private key.
+For auto-generated CA certificates, you can configure the validity period of:
+
+* Cluster CA certificates in `Kafka.spec.clusterCa.validityDays`
+* Client CA certificates in `Kafka.spec.clientsCa.validityDays`
+
+The default validity period for both certificates is 365 days.
+Manually-installed CA certificates should have their own validity periods defined.
+
+When a CA certificate expires, components and clients that still trust that certificate will not accept TLS connections from peers whose certificates were signed by the CA private key.
 The components and clients need to trust the _new_ CA certificate instead.
 
 To allow the renewal of CA certificates without a loss of service, the Cluster Operator will initiate certificate renewal before the old CA certificates expire.
-You can configure the renewal period in `Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clientsCa.renewalDays` (both default to 30 days).
+
+You can configure the renewal period of:
+
+* Cluster CA certificates in `Kafka.spec.clusterCa.renewalDays`
+* Client CA certificates in `Kafka.spec.clientsCa.renewalDays`
+
+The default renewal period for both certificates is 30 days.
+
 The renewal period is measured backwards, from the expiry date of the current certificate.
 
+.Validity period against renewal period
 [source]
 ----
 Not Before                                     Not After
@@ -26,7 +39,31 @@ Not Before                                     Not After
                               <--- renewalDays --->|
 ----
 
-The behavior of the Cluster Operator during the renewal period depends on whether the relevant setting is enabled, in either `Kafka.spec.clusterCa.generateCertificateAuthority` or `Kafka.spec.clientsCa.generateCertificateAuthority`.
+To make a change to the validity and renewal periods after creating the Kafka cluster, you configure and apply the `Kafka` custom resource,
+and xref:proc-renewing-ca-certs-manually-{context}[manually renew the CA certificates].
+If you do not manually renew the certificates, the new periods will be used the next time the certificate is renewed automatically.
+
+.Example Kafka configuration for certificate validity and renewal periods
+[source,shell,subs="+quotes"]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+# ...
+spec:
+# ...
+  clusterCa:
+    renewalDays: 30
+    validityDays: 365
+    generateCertificateAuthority: true
+  clientsCa:
+    renewalDays: 30
+    validityDays: 365
+    generateCertificateAuthority: true
+# ...
+----
+
+The behavior of the Cluster Operator during the renewal period depends on whether the relevant setting is enabled
+in either `Kafka.spec.clusterCa.generateCertificateAuthority` or `Kafka.spec.clientsCa.generateCertificateAuthority`.
 
 == Renewal process with generated CAs
 

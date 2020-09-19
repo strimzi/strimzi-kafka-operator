@@ -1,0 +1,34 @@
+// Module included in the following assemblies:
+//
+// metrics/assembly_metrics-kafka-exporter.adoc
+
+[id='con-metrics-kafka-exporter-alerts-{context}']
+
+= Example Kafka Exporter alerting rules
+
+If you performed the steps to introduce metrics to your deployment, you will already have your Kafka cluster configured to use the alert notification rules that support Kafka Exporter.
+
+The rules for Kafka Exporter are defined in `prometheus-rules.yaml`, and are deployed with Prometheus.
+For more information, see  xref:assembly-metrics-prometheus-{context}[Prometheus].
+
+The sample alert notification rules specific to Kafka Exporter are as follows:
+
+`UnderReplicatedPartition`:: An alert to warn that a topic is under-replicated and the broker is not replicating to enough partitions.
+The default configuration is for an alert if there are one or more under-replicated partitions for a topic.
+The alert might signify that a Kafka instance is down or the Kafka cluster is overloaded.
+A planned restart of the Kafka broker may be required to restart the replication process.
+
+`TooLargeConsumerGroupLag`:: An alert to warn that the lag on a consumer group is too large for a specific topic partition.
+The default configuration is 1000 records.
+A large lag might indicate that consumers are too slow and are falling behind the producers.
+
+`NoMessageForTooLong`:: An alert to warn that a topic has not received messages for a period of time.
+The default configuration for the time period is 10 minutes.
+The delay might be a result of a configuration issue preventing a producer from publishing messages to the topic.
+
+Adapt the default configuration of these rules according to your specific needs.
+
+.Additional resources
+* xref:assembly-metrics-setup-{context}[]
+* xref:ref-metrics-config-files-{context}[]
+* xref:con-metrics-prometheus-alerts-{context}[]

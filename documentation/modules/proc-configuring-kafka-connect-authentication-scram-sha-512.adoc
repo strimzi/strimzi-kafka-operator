@@ -5,28 +5,36 @@
 [id='proc-configuring-kafka-connect-authentication-scram-sha-512-{context}']
 = Configuring SCRAM-SHA-512 authentication in Kafka Connect
 
+You can configure Kafka Connect to connect to Kafka brokers using SASL-based authentication using the SCRAM-SHA-512 mechanism.
+
+The following procedure includes creating a Secret from a text file. The Secret will contain the password used for authentication in one of its fields. Secrets created by the User Operator can also be used.
+
 .Prerequisites
 
 * A Kubernetes cluster
 * A running Cluster Operator
-* Username of the user which should be used for authentication
-* If they exist, the name of the `Secret` with the password used for authentication and the key under which the password is stored in the `Secret`
+* Username of the user for authentication
 
 .Procedure
 
-. (Optional) If they do not already exist, prepare a file with the password used in authentication and create the `Secret`.
+. Create a text file that contains the password, in cleartext, to use for authentication:
 +
-NOTE: Secrets created by the User Operator may be used.
-+
-This can be done using `kubectl create`:
-[source,shell,subs=+quotes]
-echo -n '_<password>_' > _<my-password.txt>_
-kubectl create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
+[source,shell,subs="+quotes"]
+----
+echo -n _PASSWORD_ > _MY-CONNECT-PASSWORD_.txt
+----
 
-. Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
+. Create the Secret from the file, setting your own field name (key) for the password:
++
+[source,shell,subs="+quotes"]
+----
+kubectl create secret generic _MY-CONNECT-SECRET_ --from-file=_PASSWORD-FIELD-NAME_=./_MY-CONNECT-PASSWORD_.txt
+----
+
+. Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the username and Secret.
 For example:
 +
-[source,yaml,subs=attributes+]
+[source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: KafkaConnect
@@ -36,15 +44,21 @@ spec:
   # ...
   authentication:
     type: scram-sha-512
-    username: _<my-username>_
+    username: _MY-CONNECT-USERNAME_
     passwordSecret:
-      secretName: _<my-secret>_
-      password: _<my-password.txt>_
+      secretName: _MY-CONNECT-SECRET-NAME_
+      password: _PASSWORD-FIELD-NAME_
   # ...
 ----
 +
-. Create or update the resource.
+[WARNING]
+====
+Do NOT specify the actual password in the `passwordSecret.password` property.
+====
+
+. Create or update the resource:
 +
-On Kubernetes this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+----
+kubectl apply -f _YOUR-FILE_
+----

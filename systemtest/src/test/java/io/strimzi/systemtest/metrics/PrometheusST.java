@@ -4,11 +4,12 @@
  */
 package io.strimzi.systemtest.metrics;
 
-import io.strimzi.systemtest.BaseST;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,30 +17,26 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.List;
 
+import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.PROMETHEUS;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag(REGRESSION)
 @Tag(PROMETHEUS)
-public class PrometheusST extends BaseST {
+@Tag(METRICS)
+public class PrometheusST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PrometheusST.class);
 
     public static final String NAMESPACE = "prometheus-test";
 
-    private static final String PROMETHEUS = "prometheus";
     private static final String PROMETHEUS_POD = "prometheus-prometheus-0";
     private static final String ALERTMANAGER = "alertmanager";
     private static final String ALERTMANAGER_POD = "alertmanager-alertmanager-0";
-
-    @Test
-    public void testPrometheusService() {
-        assertThat("Prometheus service not found", kubeClient().getService(PROMETHEUS) != null);
-        assertThat("Prometheus service port is not 9090", kubeClient().getService(PROMETHEUS).getSpec().getPorts().get(0).getPort() == 9090);
-    }
 
     @Test
     public void testAlertManagerService() {
@@ -69,29 +66,25 @@ public class PrometheusST extends BaseST {
         assertThat("alertmanager-alertmanager secret does not contain key alertmanager.yaml", kubeClient().getSecret("alertmanager-alertmanager").getData().get("alertmanager.yaml") != null);
     }
 
-    // No need to recreate environment after failed test. Only values from collected metrics are checked
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) { }
-
     @BeforeAll
     void setup() throws IOException {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
-        cmdKubeClient().apply(FileUtils.downloadYamlAndReplaceNamespace("https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.downloadYamlAndReplaceNamespace("https://raw.githubusercontent.com/coreos/prometheus-operator/v0.38.1/bundle.yaml", NAMESPACE));
 
-        SecretUtils.createSecretFromFile("../examples/metrics/prometheus-additional-properties/prometheus-additional.yaml", "prometheus-additional.yaml", "additional-scrape-configs", NAMESPACE);
-        SecretUtils.createSecretFromFile("../examples/metrics/prometheus-alertmanager-config/alert-manager-config.yaml", "alertmanager.yaml", "alertmanager-alertmanager", NAMESPACE);
+        SecretUtils.createSecretFromFile(TestUtils.USER_PATH + "/../examples/metrics/prometheus-additional-properties/prometheus-additional.yaml", "prometheus-additional.yaml", "additional-scrape-configs", NAMESPACE);
+        SecretUtils.createSecretFromFile(TestUtils.USER_PATH + "/../examples/metrics/prometheus-alertmanager-config/alert-manager-config.yaml", "alertmanager.yaml", "alertmanager-alertmanager", NAMESPACE);
 
         SecretUtils.waitForSecretReady("additional-scrape-configs");
         SecretUtils.waitForSecretReady("alertmanager-alertmanager");
 
-        DeploymentUtils.waitForDeploymentReady("prometheus-operator", 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady("prometheus-operator", 1);
 
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/strimzi-service-monitor.yaml", NAMESPACE));
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus-rules.yaml", NAMESPACE));
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/alert-manager.yaml", NAMESPACE));
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../examples/metrics/prometheus-install/prometheus.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../examples/metrics/prometheus-install/strimzi-pod-monitor.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../examples/metrics/prometheus-install/prometheus-rules.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../examples/metrics/prometheus-install/alert-manager.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../examples/metrics/prometheus-install/prometheus.yaml", NAMESPACE));
 
         PodUtils.waitForPod(ALERTMANAGER_POD);
         PodUtils.waitForPod(PROMETHEUS_POD);

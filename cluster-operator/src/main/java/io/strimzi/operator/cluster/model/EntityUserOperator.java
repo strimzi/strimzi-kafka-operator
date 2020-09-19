@@ -7,6 +7,8 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -23,18 +25,19 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 /**
  * Represents the User Operator deployment
  */
 public class EntityUserOperator extends AbstractModel {
+    protected static final String APPLICATION_NAME = "entity-user-operator";
 
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
@@ -46,6 +49,7 @@ public class EntityUserOperator extends AbstractModel {
 
     // User Operator configuration keys
     public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
+    public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -55,9 +59,12 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_CLIENTS_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
+    public static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
+    public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
+    private String kafkaBootstrapServers;
     private String zookeeperConnect;
     private String watchedNamespace;
     private String resourceLabels;
@@ -66,28 +73,28 @@ public class EntityUserOperator extends AbstractModel {
     private int clientsCaValidityDays;
     private int clientsCaRenewalDays;
     protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected SecurityContext templateContainerSecurityContext;
 
     /**
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
-     * @param labels
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected EntityUserOperator(String namespace, String cluster, Labels labels) {
-        super(namespace, cluster, labels);
+    protected EntityUserOperator(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
         this.name = userOperatorName(cluster);
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
 
-                // create a default configuration
+        // create a default configuration
+        this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.zookeeperSessionTimeoutMs = EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
-        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
         this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
@@ -146,6 +153,18 @@ public class EntityUserOperator extends AbstractModel {
         return zookeeperConnect;
     }
 
+    public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
+    }
+
+    public String getKafkaBootstrapServers() {
+        return kafkaBootstrapServers;
+    }
+
+    protected static String defaultBootstrapServers(String cluster) {
+        return KafkaCluster.serviceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
+    }
+
     public static String userOperatorName(String cluster) {
         return cluster + NAME_SUFFIX;
     }
@@ -169,7 +188,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     @Override
-    String getAncillaryConfigMapKeyLogConfig() {
+    public String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
     }
 
@@ -188,10 +207,7 @@ public class EntityUserOperator extends AbstractModel {
             if (userOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityUserOperator(
-                        namespace,
-                        kafkaAssembly.getMetadata().getName(),
-                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+                result = new EntityUserOperator(kafkaAssembly);
 
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();
@@ -239,11 +255,12 @@ public class EntityUserOperator extends AbstractModel {
                 .withArgs("/opt/strimzi/bin/user_operator_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
-                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessProbeOptions))
-                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessProbeOptions))
+                .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
+                .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME))
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build());
     }
 
@@ -251,6 +268,7 @@ public class EntityUserOperator extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
@@ -260,8 +278,13 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_NAMESPACE, namespace));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
+        varList.add(buildEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
+        varList.add(buildEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, EntityOperator.secretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
@@ -269,11 +292,13 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return singletonList(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        return asList(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
+                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
+                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
     public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
@@ -305,5 +330,22 @@ public class EntityUserOperator extends AbstractModel {
 
     public void setContainerEnvVars(List<ContainerEnvVar> envVars) {
         templateContainerEnvVars = envVars;
+    }
+
+    public void setContainerSecurityContext(SecurityContext securityContext) {
+        templateContainerSecurityContext = securityContext;
+    }
+
+    /**
+     * Transforms properties to log4j2 properties file format and adds property for reloading the config
+     * @param properties map with properties
+     * @return modified string with monitorInterval
+     */
+    @Override
+    public String createLog4jProperties(OrderedProperties properties) {
+        if (!properties.asMap().keySet().contains("monitorInterval")) {
+            properties.addPair("monitorInterval", "30");
+        }
+        return super.createLog4jProperties(properties);
     }
 }

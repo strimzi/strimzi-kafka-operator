@@ -1,0 +1,55 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-kafka-connect.adoc
+
+[id='con-creating-managing-connectors-{context}']
+
+= Creating and managing connectors
+
+When you have created a container image for your connector plug-in, you need to create a connector instance in your Kafka Connect cluster.
+You can then configure, monitor, and manage a running connector instance.
+
+A connector is an instance of a particular _connector class_ that knows how to communicate with the relevant external system in terms of messages.
+Connectors are available for many external systems, or you can create your own.
+
+You can create _source_ and _sink_ types of connector.
+
+Source connector:: A source connector is a runtime entity that fetches data from an external system and feeds it to Kafka as messages.
+Sink connector:: A sink connector is a runtime entity that fetches messages from Kafka topics and feeds them to an external system.
+
+Strimzi provides two APIs for creating and managing connectors:
+
+* `KafkaConnector` resources (referred to as `KafkaConnectors`)
+* Kafka Connect REST API
+
+Using the APIs, you can:
+
+* Check the status of a connector instance
+* Reconfigure a running connector
+* Increase or decrease the number of tasks for a connector instance
+* Restart failed tasks (not supported by `KafkaConnector` resource)
+* Pause a connector instance
+* Resume a previously paused connector instance
+* Delete a connector instance
+
+== `KafkaConnector` resources
+
+`KafkaConnectors` allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way, so an HTTP client such as cURL is not required.
+Like other Kafka resources, you declare a connector’s desired state in a `KafkaConnector` YAML file that is deployed to your Kubernetes cluster to create the connector instance.
+
+You manage a running connector instance by updating its corresponding `KafkaConnector`, and then applying the updates. You remove a connector by deleting its corresponding `KafkaConnector`.
+
+To ensure compatibility with earlier versions of Strimzi, `KafkaConnectors` are disabled by default. To enable them for a Kafka Connect cluster, you must use annotations on the `KafkaConnect` resource.
+For instructions, see link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[Enabling `KafkaConnector` resources] in the _Using Strimzi_ guide.
+
+When `KafkaConnectors` are enabled, the Cluster Operator begins to watch for them. It updates the configurations of running connector instances to match the configurations defined in their `KafkaConnectors`.
+
+Strimzi includes an example `KafkaConnector`, named `examples/connect/source-connector.yaml`. You can use this example to create and manage a `FileStreamSourceConnector`.
+
+== Availability of the Kafka Connect REST API
+
+The Kafka Connect REST API is available on port 8083 as the `<connect-cluster-name>-connect-api` service.
+
+If `KafkaConnectors` are enabled, manual changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator.
+
+The operations supported by the REST API are described in the link:https://kafka.apache.org/documentation/#connect_rest[Apache Kafka documentation^].

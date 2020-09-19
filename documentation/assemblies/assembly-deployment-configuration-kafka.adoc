@@ -29,9 +29,7 @@ include::assembly-kafka-broker-replicas.adoc[leveloffset=+1]
 
 include::assembly-kafka-broker-configuration.adoc[leveloffset=+1]
 
-include::assembly-configuring-kafka-listeners.adoc[leveloffset=+1]
-
-include::assembly-kafka-authentication-and-authorization.adoc[leveloffset=+1]
+include::../modules/overview/con-configuration-points-listeners.adoc[leveloffset=+1]
 
 include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
 
@@ -52,6 +50,8 @@ include::assembly-healthchecks.adoc[leveloffset=+1]
 include::assembly-prometheus-metrics.adoc[leveloffset=+1]
 
 include::assembly-kafka-jmx-options.adoc[leveloffset=+1]
+
+include::assembly-jmxtrans.adoc[leveloffset=+1]
 
 include::assembly-jvm-options.adoc[leveloffset=+1]
 

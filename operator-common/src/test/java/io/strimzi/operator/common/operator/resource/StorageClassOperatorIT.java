@@ -31,7 +31,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
     protected StorageClass getOriginal()  {
         return new StorageClassBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withLabels(singletonMap("state", "new"))
                 .endMetadata()
                 .withReclaimPolicy("Delete")
@@ -46,7 +46,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
         // Most of the fields seem to be immutable, we patch only labels
         return new StorageClassBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withLabels(singletonMap("state", "modified"))
                 .endMetadata()
                 .withReclaimPolicy("Delete")
@@ -57,11 +57,13 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, StorageClass expected, StorageClass actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getReclaimPolicy(), is(expected.getReclaimPolicy())));
-        context.verify(() -> assertThat(actual.getProvisioner(), is(expected.getProvisioner())));
-        context.verify(() -> assertThat(actual.getParameters(), is(expected.getParameters())));
+    protected void assertResources(VertxTestContext context, StorageClass expected, StorageClass actual) {
+        context.verify(() -> {
+            assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+            assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+            assertThat(actual.getReclaimPolicy(), is(expected.getReclaimPolicy()));
+            assertThat(actual.getProvisioner(), is(expected.getProvisioner()));
+            assertThat(actual.getParameters(), is(expected.getParameters()));
+        });
     }
 }

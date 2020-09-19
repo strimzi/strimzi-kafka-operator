@@ -8,9 +8,7 @@
 Liveness and readiness probes can be configured using the `livenessProbe` and `readinessProbe` properties in following resources:
 
 * `Kafka.spec.kafka`
-* `Kafka.spec.kafka.tlsSidecar`
 * `Kafka.spec.zookeeper`
-* `Kafka.spec.zookeeper.tlsSidecar`
 * `Kafka.spec.entityOperator.tlsSidecar`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`

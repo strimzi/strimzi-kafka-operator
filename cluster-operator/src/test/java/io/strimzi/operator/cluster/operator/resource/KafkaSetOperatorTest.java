@@ -18,8 +18,6 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.AbstractModel.containerEnvVars;
-import static io.strimzi.operator.cluster.model.KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -45,13 +43,13 @@ public class KafkaSetOperatorTest {
     }
 
     private Kafka getResource() {
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
+        String kafkaName = "foo";
+        String kafkaNamespace = "test";
         int replicas = 3;
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return new KafkaBuilder(ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName,
+        return new KafkaBuilder(ResourceUtils.createKafka(kafkaNamespace, kafkaName,
                 replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editKafka()
@@ -110,16 +108,6 @@ public class KafkaSetOperatorTest {
     public void testNeedsRollingUpdateWhenReadinessTimeoutChanges() {
         Integer newTimeout = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1;
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(newTimeout);
-        assertThat(KafkaSetOperator.needsRollingUpdate(createDiff()), is(true));
-    }
-
-    @Test
-    public void testNeedsRollingUpdateWhenEnvZkConnectChanges() {
-        String envVar = ENV_VAR_KAFKA_ZOOKEEPER_CONNECT;
-        String newEnvVarValue = containerEnvVars(currectSts.getSpec().getTemplate().getSpec().getContainers().get(1))
-            .get(envVar) + "-foo";
-        EnvVar newEnvVar = new EnvVar(envVar, newEnvVarValue, null);
-        currectSts.getSpec().getTemplate().getSpec().getContainers().get(1).getEnv().add(newEnvVar);
         assertThat(KafkaSetOperator.needsRollingUpdate(createDiff()), is(true));
     }
 

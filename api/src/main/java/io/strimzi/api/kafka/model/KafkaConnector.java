@@ -46,8 +46,32 @@ import static java.util.Collections.unmodifiableList;
                                 storage = true)
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
-                )
+                        status = @Crd.Spec.Subresources.Status(),
+                        scale = @Crd.Spec.Subresources.Scale(
+                                specReplicasPath = KafkaConnector.SPEC_REPLICAS_PATH,
+                                statusReplicasPath = KafkaConnector.STATUS_REPLICAS_PATH
+                        )
+                ),
+                additionalPrinterColumns = {
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Cluster",
+                                description = "The name of the Kafka Connect cluster this connector belongs to",
+                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Connector class",
+                                description = "The class used by this connector",
+                                jsonPath = ".spec.class",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Max Tasks",
+                                description = "Maximum number of tasks",
+                                jsonPath = ".spec.tasksMax",
+                                type = "integer"
+                        )
+                }
         )
 )
 @Buildable(
@@ -71,6 +95,8 @@ public class KafkaConnector extends CustomResource implements UnknownPropertyPre
     public static final String RESOURCE_KIND = "KafkaConnector";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String SHORT_NAME = "kctr";
+    public static final String SPEC_REPLICAS_PATH = ".spec.tasksMax";
+    public static final String STATUS_REPLICAS_PATH = ".status.tasksMax";
 
     private KafkaConnectorSpec spec;
     private KafkaConnectorStatus status;
@@ -132,7 +158,7 @@ public class KafkaConnector extends CustomResource implements UnknownPropertyPre
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
+            this.additionalProperties = new HashMap<>(1);
         }
         this.additionalProperties.put(name, value);
     }

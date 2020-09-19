@@ -1,0 +1,22 @@
+You can set custom security context and environment variables for a container.
+
+The environment variables are defined under the `env` property as a list of objects with `name` and `value` fields.
+The following example shows two custom environment variables and a custom security context set for the Kafka broker containers:
+
+[source,yaml,subs=attributes+]
+----
+# ...
+template:
+  kafkaContainer:
+    env:
+    - name: EXAMPLE_ENV_1
+      value: example.env.one
+    - name: EXAMPLE_ENV_2
+      value: example.env.two
+    securityContext:
+      runAsUser: 2000
+# ...
+----
+
+Environment variables prefixed with `KAFKA_` are internal to Strimzi and should be avoided.
+If you set a custom environment variable that is already in use by Strimzi, it is ignored and a warning is recorded in the log.

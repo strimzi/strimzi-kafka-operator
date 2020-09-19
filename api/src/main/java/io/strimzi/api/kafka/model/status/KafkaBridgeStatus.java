@@ -27,6 +27,8 @@ public class KafkaBridgeStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private String url;
+    private int replicas;
+    private String labelSelector;
 
     @Description("The URL at which external client applications can access the Kafka Bridge.")
     public String getUrl() {
@@ -35,5 +37,25 @@ public class KafkaBridgeStatus extends Status {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The current number of pods being used to provide this resource.")
+    public int getReplicas() {
+        return replicas;
+    }
+
+    public void setReplicas(int replicas) {
+        this.replicas = replicas;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("Label selector for pods providing this resource.")
+    public String getLabelSelector() {
+        return labelSelector;
+    }
+
+    public void setLabelSelector(String labelSelector) {
+        this.labelSelector = labelSelector;
     }
 }

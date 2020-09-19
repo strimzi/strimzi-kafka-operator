@@ -31,7 +31,7 @@ public class KafkaUserQuotasIT {
 
     private static EmbeddedZooKeeper zkServer;
 
-    private KafkaUserQuotasOperator kuq;
+    private static KafkaUserQuotasOperator kuq;
 
     private KafkaUserQuotas defaultQuotas;
 
@@ -39,88 +39,144 @@ public class KafkaUserQuotasIT {
 
 
     @BeforeAll
-    public static void startZk() throws IOException, InterruptedException {
+    public static void before() throws IOException, InterruptedException {
         vertx = Vertx.vertx();
+        // Start ZookKeeper Server
         zkServer = new EmbeddedZooKeeper();
+        kuq = new KafkaUserQuotasOperator(vertx, zkServer.getZkConnectString(), 6_000);
     }
 
     @AfterAll
-    public static void stopZk() {
+    public static void after() {
         vertx.close();
+        // Teardown ZooKeeper Server
         zkServer.close();
     }
 
     @BeforeEach
-    public void createKUQ() {
+    public void beforeEach() {
         defaultQuotas = new KafkaUserQuotas();
         defaultQuotas.setConsumerByteRate(1000);
         defaultQuotas.setProducerByteRate(2000);
-        kuq = new KafkaUserQuotasOperator(vertx, zkServer.getZkConnectString(), 6_000);
     }
 
     @Test
-    public void testUserExistsAfterCreate() {
-        assertThat(kuq.exists("userExists"), is(false));
-        kuq.createOrUpdate("userExists", defaultQuotas);
-        assertThat(kuq.exists("userExists"), is(true));
+    public void testTlsUserExistsAfterCreate() {
+        testUserExistsAfterCreate("CN=userExists");
     }
 
     @Test
-    public void testUserDoesNotExistPriorToCreate() {
-        assertThat(kuq.exists("userNotExists"), is(false));
+    public void testRegularUserExistsAfterCreate() {
+        testUserExistsAfterCreate("userExists");
+    }
+
+    public void testUserExistsAfterCreate(String username) {
+        assertThat(kuq.exists(username), is(false));
+        kuq.createOrUpdate(username, defaultQuotas);
+        assertThat(kuq.exists(username), is(true));
     }
 
     @Test
-    public void testCreateOrUpdate() {
-        assertThat(kuq.exists("normalCreate"), is(false));
-        assertThat(kuq.getQuotas("normalCreate"), is(nullValue()));
-        assertThat(kuq.isPathExist("/config/users/normalCreate"), is(false));
+    public void testTlsUserDoesNotExistPriorToCreate() {
+        testUserDoesNotExistPriorToCreate("CN=userNotExists");
+    }
+
+    @Test
+    public void testRegularUserDoesNotExistPriorToCreate() {
+        testUserDoesNotExistPriorToCreate("userNotExists");
+    }
+
+    public void testUserDoesNotExistPriorToCreate(String username) {
+        assertThat(kuq.exists(username), is(false));
+    }
+
+    @Test
+    public void testCreateOrUpdateTlsUser() {
+        testCreateOrUpdate("CN=tlsUser");
+    }
+
+    @Test
+    public void testCreateOrUpdateRegularUser() {
+        testCreateOrUpdate("user");
+    }
+
+    public void testCreateOrUpdate(String username) {
+        assertThat(kuq.exists(username), is(false));
+        assertThat(kuq.getQuotas(username), is(nullValue()));
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
 
         KafkaUserQuotas newQuotas = new KafkaUserQuotas();
         newQuotas.setConsumerByteRate(1000);
         newQuotas.setProducerByteRate(2000);
-        kuq.createOrUpdate("normalCreate", newQuotas);
-        assertThat(kuq.exists("normalCreate"), is(true));
-        assertThat(kuq.getQuotas("normalCreate").getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
-        assertThat(kuq.getQuotas("normalCreate").getJsonObject("config").getString("producer_byte_rate"), is("2000"));
-        assertThat(kuq.isPathExist("/config/users/normalCreate"), is(true));
+        kuq.createOrUpdate(username, newQuotas);
+        assertThat(kuq.exists(username), is(true));
+        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
+        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("2000"));
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
     }
 
     @Test
-    public void testCreateOrUpdateTwice() {
-        assertThat(kuq.isPathExist("/config/users/doublelCreate"), is(false));
-        assertThat(kuq.exists("doubleCreate"), is(false));
-        assertThat(kuq.getQuotas("doubleCreate"), is(nullValue()));
-
-        kuq.createOrUpdate("doubleCreate", defaultQuotas);
-        kuq.createOrUpdate("doubleCreate", defaultQuotas);
-        assertThat(kuq.exists("doubleCreate"), is(true));
-        assertThat(kuq.getQuotas("doubleCreate").getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
-        assertThat(kuq.getQuotas("doubleCreate").getJsonObject("config").getString("producer_byte_rate"), is("2000"));
-        assertThat(kuq.isPathExist("/config/users/doubleCreate"), is(true));
+    public void testCreateOrUpdateTwiceTlsUser() {
+        testCreateOrUpdateTwice("CN=doubleCreate");
     }
 
     @Test
-    public void testDelete() {
-        kuq.createOrUpdate("normalDelete", defaultQuotas);
-        assertThat(kuq.isPathExist("/config/users/normalDelete"), is(true));
-        assertThat(kuq.exists("normalDelete"), is(true));
+    public void testCreateOrUpdateTwiceRegularUSer() {
+        testCreateOrUpdateTwice("doubleCreate");
+    }
 
-        kuq.delete("normalDelete");
-        assertThat(kuq.exists("normalDelete"), is(false));
-        assertThat(kuq.isPathExist("/config/users/normalDelete"), is(false));
+    public void testCreateOrUpdateTwice(String username) {
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
+        assertThat(kuq.exists(username), is(false));
+        assertThat(kuq.getQuotas(username), is(nullValue()));
+
+        kuq.createOrUpdate(username, defaultQuotas);
+        kuq.createOrUpdate(username, defaultQuotas);
+        assertThat(kuq.exists(username), is(true));
+        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
+        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("2000"));
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
     }
 
     @Test
-    public void testDeleteTwice() {
-        kuq.createOrUpdate("doubleDelete", defaultQuotas);
-        assertThat(kuq.isPathExist("/config/users/doubleDelete"), is(true));
-        assertThat(kuq.exists("doubleDelete"), is(true));
+    public void testDeleteTlsUser() {
+        testDelete("CN=normalDelete");
+    }
 
-        kuq.delete("doubleDelete");
-        kuq.delete("doubleDelete");
-        assertThat(kuq.exists("doubleDelete"), is(false));
-        assertThat(kuq.isPathExist("/config/users/doubleDelete"), is(false));
+    @Test
+    public void testDeleteRegularUser() {
+        testDelete("normalDelete");
+    }
+
+    public void testDelete(String username) {
+        kuq.createOrUpdate(username, defaultQuotas);
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+        assertThat(kuq.exists(username), is(true));
+
+        kuq.delete(username);
+        assertThat(kuq.exists(username), is(false));
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
+    }
+
+    @Test
+    public void testDeleteTwiceTlsUser() {
+        testDeleteTwice("CN=doubleDelete");
+    }
+
+    @Test
+    public void testDeleteTwiceRegularUser() {
+        testDeleteTwice("doubleDelete");
+    }
+
+    public void testDeleteTwice(String username) {
+        kuq.createOrUpdate(username, defaultQuotas);
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+        assertThat(kuq.exists(username), is(true));
+
+        kuq.delete(username);
+        kuq.delete(username);
+        assertThat(kuq.exists(username), is(false));
+        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
     }
 
     @Test
@@ -264,37 +320,53 @@ public class KafkaUserQuotasIT {
     }
 
     @Test
-    public void testReconcileCreatesUserWithQuotas(VertxTestContext testContext)  {
-        String user = "createTestUser";
+    public void testReconcileCreatesTlsUserWithQuotas(VertxTestContext testContext)  {
+        testReconcileCreatesUserWithQuotas("CN=createTestUser", testContext);
+    }
+
+    @Test
+    public void testReconcileCreatesRegularUserWithQuotas(VertxTestContext testContext)  {
+        testReconcileCreatesUserWithQuotas("createTestUser", testContext);
+    }
+
+    public void testReconcileCreatesUserWithQuotas(String username, VertxTestContext testContext)  {
         KafkaUserQuotas quotas = new KafkaUserQuotas();
         quotas.setConsumerByteRate(2_000_000);
         quotas.setProducerByteRate(1_000_000);
         quotas.setRequestPercentage(50);
 
-        assertThat(kuq.exists(user), is(false));
+        assertThat(kuq.exists(username), is(false));
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(user, quotas)
-            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(user), is(true));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("2000000"));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("1000000"));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("50"));
-                assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+        kuq.reconcile(username, quotas)
+            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+                assertThat(kuq.exists(username), is(true));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("2000000"));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("1000000"));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("request_percentage"), is("50"));
+                assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
                 async.flag();
             })));
     }
 
     @Test
-    public void testReconcileUpdatesUserQuotaValues(VertxTestContext testContext)  {
-        String user = "updateTestUser";
+    public void testReconcileUpdatesTlsUserQuotaValues(VertxTestContext testContext)  {
+        testReconcileUpdatesUserQuotaValues("CN=updateTestUser", testContext);
+    }
+
+    @Test
+    public void testReconcileUpdatesRegularUserQuotaValues(VertxTestContext testContext)  {
+        testReconcileUpdatesUserQuotaValues("updateTestUser", testContext);
+    }
+
+    public void testReconcileUpdatesUserQuotaValues(String username, VertxTestContext testContext)  {
         KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
 
-        kuq.createOrUpdate(user, initialQuotas);
-        assertThat(kuq.exists(user), is(true));
+        kuq.createOrUpdate(username, initialQuotas);
+        assertThat(kuq.exists(username), is(true));
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
         updatedQuotas.setConsumerByteRate(4_000_000);
@@ -302,61 +374,83 @@ public class KafkaUserQuotasIT {
         updatedQuotas.setRequestPercentage(75);
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(user, updatedQuotas)
-            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(user), is(true));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is("75"));
-                assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+        kuq.reconcile(username, updatedQuotas)
+            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+                assertThat(kuq.exists(username), is(true));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("request_percentage"), is("75"));
+                assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
                 async.flag();
             })));
     }
 
     @Test
-    public void testReconcileUpdatesUserQuotasWithFieldRemovals(VertxTestContext testContext)  {
-        String user = "updateTestUser";
+    public void testReconcileUpdatesTlsUserQuotasWithFieldRemovals(VertxTestContext testContext)  {
+        testReconcileUpdatesUserQuotasWithFieldRemovals("CN=updateTestUser", testContext);
+    }
+
+    @Test
+    public void testReconcileUpdatesRegularUserQuotasWithFieldRemovals(VertxTestContext testContext)  {
+        testReconcileUpdatesUserQuotasWithFieldRemovals("updateTestUser", testContext);
+    }
+
+    public void testReconcileUpdatesUserQuotasWithFieldRemovals(String username, VertxTestContext testContext)  {
         KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
 
-        kuq.createOrUpdate(user, initialQuotas);
-        assertThat(kuq.exists(user), is(true));
+        kuq.createOrUpdate(username, initialQuotas);
+        assertThat(kuq.exists(username), is(true));
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
         updatedQuotas.setConsumerByteRate(4_000_000);
         updatedQuotas.setProducerByteRate(3_000_000);
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(user, updatedQuotas)
-            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(user), is(true));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
-                assertThat(kuq.getQuotas(user).getJsonObject("config").getString("request_percentage"), is(nullValue()));
-                assertThat(kuq.isPathExist("/config/users/" + user), is(true));
+        kuq.reconcile(username, updatedQuotas)
+            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+                assertThat(kuq.exists(username), is(true));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
+                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("request_percentage"), is(nullValue()));
+                assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
                 async.flag();
             })));
 
     }
 
     @Test
-    public void testReconcileDeletesUserForNullQuota(VertxTestContext testContext)  {
-        String user = "deleteTestUser";
+    public void testReconcileDeletesTlsUserForNullQuota(VertxTestContext testContext)  {
+        testReconcileDeletesUserForNullQuota("CN=deleteTestUser", testContext);
+    }
+
+    @Test
+    public void testReconcileDeletesRegularUserForNullQuota(VertxTestContext testContext)  {
+        testReconcileDeletesUserForNullQuota("deleteTestUser", testContext);
+    }
+
+    public void testReconcileDeletesUserForNullQuota(String username, VertxTestContext testContext)  {
         KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
 
-        kuq.createOrUpdate(user, initialQuotas);
-        assertThat(kuq.exists(user), is(true));
+        kuq.createOrUpdate(username, initialQuotas);
+        assertThat(kuq.exists(username), is(true));
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(user, null)
-            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(user), is(false));
+        kuq.reconcile(username, null)
+            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+                assertThat(kuq.exists(username), is(false));
                 async.flag();
             })));
+    }
+
+    @Test
+    public void testEncodeUser()    {
+        assertThat(KafkaUserQuotasOperator.encodeUsername("jack"), is("jack"));
+        assertThat(KafkaUserQuotasOperator.encodeUsername("CN=grealish"), is("CN%3Dgrealish"));
     }
 }

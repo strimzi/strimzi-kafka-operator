@@ -5,9 +5,10 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.strimzi.operator.common.model.Labels;
@@ -18,6 +19,8 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,11 +67,21 @@ public class KafkaBridgeUtils {
         }
     }
 
-    public static void waitUntilKafkaBridgeStatus(String clusterName, String state) {
-        LOGGER.info("Waiting till Kafka Bridge CR will be in state: {}", state);
-        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
-        );
-        LOGGER.info("Kafka Bridge CR is in state: {}", state);
+    /**
+     * Wait until KafkaBridge is in desired state
+     * @param clusterName name of KafkaBridge cluster
+     * @param state desired state
+     */
+    public static void waitForKafkaBridgeStatus(String clusterName, Enum<?> state) {
+        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+        ResourceManager.waitForResourceStatus(KafkaBridgeResource.kafkaBridgeClient(), kafkaBridge, state);
+    }
+
+    public static void waitForKafkaBridgeReady(String clusterName) {
+        waitForKafkaBridgeStatus(clusterName, Ready);
+    }
+
+    public static void waitForKafkaBridgeNotReady(String clusterName) {
+        waitForKafkaBridgeStatus(clusterName, NotReady);
     }
 }

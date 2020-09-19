@@ -5,6 +5,11 @@
 [id='proc-accessing-kafka-using-nodeports-{context}']
 = Accessing Kafka using node ports
 
+This procedure describes how to access a Strimzi Kafka cluster from an external client using node ports.
+
+To connect to a broker, you need a hostname and port number for the Kafka _bootstrap address_,
+as well as the certificate used for authentication.
+
 .Prerequisites
 
 * A Kubernetes cluster
@@ -12,9 +17,9 @@
 
 .Procedure
 
-. Deploy Kafka cluster with an external listener enabled and configured to the type `nodeport`.
+. Configure a `Kafka` resource with an external listener set to the `nodeport` type.
 +
-An example configuration with an external listener configured to use node ports:
+For example:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -24,9 +29,12 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: nodeport
         tls: true
+        authentication:
+          type: tls
         # ...
     # ...
   zookeeper:
@@ -35,43 +43,24 @@ spec:
 
 . Create or update the resource.
 +
-This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _KAFKA-CONFIG-FILE_
++
+`NodePort` type services are created for each Kafka broker, as well as an external _bootstrap service_.
+The bootstrap service routes external traffic to the Kafka brokers.
+Node addresses used for connection are propagated to the `status` of the Kafka custom resource.
++
+The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
 
-. Find the port number of the bootstrap service.
+. Retrieve the bootstrap address you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +
-This can be done using `kubectl get`:
 [source,shell,subs=+quotes]
-kubectl get service _cluster-name_-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}'
-+
-The port should be used in the Kafka _bootstrap_ address.
+kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
 
-. Find the address of the Kubernetes node.
-+
-This can be done using `kubectl get`:
-[source,shell,subs=+quotes]
-kubectl get node _node-name_ -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
-+
-If several different addresses are returned, select the address type you want based on the following order:
-+
-.. ExternalDNS
-.. ExternalIP
-.. Hostname
-.. InternalDNS
-.. InternalIP
-+
-Use the address with the port found in the previous step in the Kafka _bootstrap_ address.
-
-. Unless TLS encryption was disabled, extract the public certificate of the broker certification authority.
-+
-This can be done using `kubectl get`:
+. If TLS encryption is enabled, extract the public certificate of the broker certification authority.
 +
 [source,shell,subs=+quotes]
-kubectl get secret _cluster-name_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
-
-.Additional resources
-* For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

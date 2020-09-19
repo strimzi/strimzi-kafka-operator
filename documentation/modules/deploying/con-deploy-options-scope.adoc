@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-options.adoc
+
+[id='deploy-options-scope-{context}']
+= Additional deployment configuration options
+
+The deployment procedures in this guide describe a deployment using the example installation YAML files provided with Strimzi.
+The procedures highlight any important configuration considerations, but they do not describe all the configuration options available.
+
+You can use custom resources to refine your deployment.
+
+You may wish to review the configuration options available for Kafka components before you deploy Strimzi.
+For more information on the configuration through custom resources, see link:{BookURLUsing}#assembly-deployment-configuration-str[Deployment configuration^] in the _Using Strimzi_ guide.
+
+== Securing Kafka
+
+On deployment, the Cluster Operator automatically sets up TLS certificates for data encryption and authentication within your cluster.
+
+Strimzi provides additional configuration options for _encryption_, _authentication_ and _authorization_, which are described in the _Using Strimzi_ guide:
+
+* Secure data exchange between the Kafka cluster and clients by link:{BookURLUsing}#assembly-deployment-configuration-str[configuration of Kafka resources^].
+* Configure your deployment to use an authorization server to provide link:{BookURLUsing}#assembly-oauth-authentication_str[OAuth 2.0 authentication^] and link:{BookURLUsing}#assembly-oauth-authorization_str[OAuth 2.0 authorization^].
+* link:{BookURLUsing}#security-str[Secure Kafka using your own certificates^].
+
+== Monitoring your deployment
+
+Strimzi supports additional deployment options to monitor your deployment.
+
+* Extract metrics and monitor Kafka components by xref:assembly-metrics-setup-str[deploying Prometheus and Grafana with your Kafka cluster].
+* Extract additional metrics, particularly related to monitoring consumer lag, by xref:assembly-kafka-exporter-{context}[deploying Kafka Exporter with your Kafka cluster].
+* Track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^], as described in the _Using Strimzi_ guide.

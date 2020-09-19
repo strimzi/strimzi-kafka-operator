@@ -4,65 +4,98 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Random;
+
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserUtils.class);
+    private static final String KAFKA_USER_NAME_PREFIX = "my-user-";
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private KafkaUserUtils() {}
 
+    /**
+     * Generated random name for the KafkaUser resource
+     * @return random name with additional salt
+     */
+    public static String generateRandomNameOfKafkaUser() {
+        String salt = new Random().nextInt(Integer.MAX_VALUE) + "-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        return  KAFKA_USER_NAME_PREFIX + salt;
+    }
+
     public static void waitForKafkaUserCreation(String userName) {
-        LOGGER.info("Waiting for Kafka user creation {}", userName);
-        SecretUtils.waitForSecretReady(userName);
-        TestUtils.waitFor("Waits for Kafka user creation " + userName,
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KafkaUserResource.kafkaUserClient()
-                .inNamespace(kubeClient().getNamespace())
-                .withName(userName).get().getStatus().getConditions().get(0).getType().equals("Ready")
-        );
-        LOGGER.info("Kafka user {} created", userName);
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
+
+        SecretUtils.waitForSecretReady(userName,
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
+
+        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, Ready);
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
-        LOGGER.info("Waiting for Kafka user deletion {}", userName);
-        TestUtils.waitFor("Waits for Kafka user deletion " + userName,
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
+        LOGGER.info("Waiting for KafkaUser deletion {}", userName);
+        TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+            () -> {
+                if (KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("KafkaUser {} is not deleted yet! Triggering force delete by cmd client!", userName);
+                    cmdKubeClient().deleteByName(KafkaUser.RESOURCE_KIND, userName);
+                    return false;
+                }
+            },
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
-        LOGGER.info("Kafka user {} deleted", userName);
+        LOGGER.info("KafkaUser {} deleted", userName);
     }
 
     public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
-        TestUtils.waitFor("Wait until increase observation generation from " + observation + " for user " + userName,
-            Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SECRET_CREATION,
+        TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> observation < KafkaUserResource.kafkaUserClient()
                 .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
     }
 
-    public static void waitForKafkaUserCreationError(String userName, String eoPodName) {
-        String errorMessage = "InvalidResourceException: Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.";
-        final String messageUserWasNotAdded = "User(" + kubeClient().getNamespace() + "/" + userName + "): createOrUpdate failed";
-        TestUtils.waitFor("User operator has expected error", Constants.GLOBAL_POLL_INTERVAL, 60000,
-            () -> {
-                String logs = kubeClient().logs(eoPodName, "user-operator");
-                return logs.contains(errorMessage) && logs.contains(messageUserWasNotAdded);
-            });
+    public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
+        LOGGER.info("Wait until KafkaUser {} status is available", userName);
+        TestUtils.waitFor("KafkaUser " + userName + " status is available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null,
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+        );
+        LOGGER.info("KafkaUser {} status is available", userName);
     }
 
-    public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
-        LOGGER.info("Waiting till kafka user name:{} is created in CRDs", userName);
-        TestUtils.waitFor("Waiting for " + userName + " to be created in CRDs", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null
-        );
-        LOGGER.info("Kafka user name:{} is created in CRDs", userName);
+    /**
+     * Wait until KafkaUser is in desired state
+     * @param userName name of KafkaUser
+     * @param state desired state
+     */
+    public static void waitForKafkaUserStatus(String userName, Enum<?> state) {
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
+        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
+    }
+
+    public static void waitForKafkaUserReady(String userName) {
+        waitForKafkaUserStatus(userName, Ready);
+    }
+
+    public static void waitForKafkaUserNotReady(String userName) {
+        waitForKafkaUserStatus(userName, NotReady);
     }
 }

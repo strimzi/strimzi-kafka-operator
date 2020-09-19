@@ -1,0 +1,21 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='assembly-kafka-exporter-{context}']
+= Add Kafka Exporter
+
+{kafka-exporter-project} is an open source project to enhance monitoring of Apache Kafka brokers and clients.
+Kafka Exporter is provided with Strimzi for deployment with a Kafka cluster to extract additional metrics data from Kafka brokers related to offsets, consumer groups, consumer lag, and topics.
+
+The metrics data is used, for example, to help identify slow consumers.
+
+Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
+
+If you are already using Prometheus and Grafana for monitoring of built-in Kafka metrics, you can configure Prometheus to also scrape the Kafka Exporter Prometheus endpoint.
+
+include::modules/kafka-exporter/con_kafka-exporter-lag.adoc[leveloffset=+1]
+include::modules/kafka-exporter/con_kafka-exporter-alerts.adoc[leveloffset=+1]
+include::modules/kafka-exporter/ref_kafka-exporter-metrics.adoc[leveloffset=+1]
+include::modules/kafka-exporter/proc_kafka-exporter-configuring.adoc[leveloffset=+1]
+include::modules/kafka-exporter/proc_kafka-exporter-enabling-grafana.adoc[leveloffset=+1]

@@ -83,6 +83,7 @@ public class EntityTopicOperatorTest {
             .withReadinessProbe(readinessProbe)
             .withLogging(topicOperatorLogging)
             .withNewJvmOptions()
+                    .withNewXms("128m")
                     .addAllToJavaSystemProperties(javaSystemProperties)
             .endJvmOptions()
             .build();
@@ -92,7 +93,7 @@ public class EntityTopicOperatorTest {
             .build();
 
     private final Kafka resource =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                     .withEntityOperator(entityOperatorSpec)
                     .endSpec()
@@ -109,8 +110,9 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(toReconciliationInterval * 1000)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(toZookeeperSessionTimeout * 1000)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(toTopicMetadataMaxAttempts)).build());
-        expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xms128m").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
         return expected;
     }
@@ -154,7 +156,7 @@ public class EntityTopicOperatorTest {
                 .withTopicOperator(entityTopicOperatorSpec)
                 .build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -178,7 +180,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testFromCrdNoEntityOperator() {
-        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
         assertThat(entityTopicOperator, is(nullValue()));
@@ -188,7 +190,7 @@ public class EntityTopicOperatorTest {
     public void testFromCrdNoTopicOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -206,12 +208,12 @@ public class EntityTopicOperatorTest {
         assertThat(container.getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
         assertThat(container.getImage(), is(entityTopicOperator.getImage()));
         assertThat(container.getEnv(), is(getExpectedEnvVars()));
-        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(livenessProbe.getInitialDelaySeconds())));
-        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(new Integer(livenessProbe.getTimeoutSeconds())));
-        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(readinessProbe.getInitialDelaySeconds())));
-        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(new Integer(readinessProbe.getTimeoutSeconds())));
+        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(livenessProbe.getInitialDelaySeconds())));
+        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(livenessProbe.getTimeoutSeconds())));
+        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(readinessProbe.getInitialDelaySeconds())));
+        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(readinessProbe.getTimeoutSeconds())));
         assertThat(container.getPorts().size(), is(1));
-        assertThat(container.getPorts().get(0).getContainerPort(), is(new Integer(EntityTopicOperator.HEALTHCHECK_PORT)));
+        assertThat(container.getPorts().get(0).getContainerPort(), is(Integer.valueOf(EntityTopicOperator.HEALTHCHECK_PORT)));
         assertThat(container.getPorts().get(0).getName(), is(EntityTopicOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(

@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.18.0-SNAPSHOT</version>
+        <version>0.20.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>api</artifactId>
@@ -23,7 +23,19 @@
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model</artifactId>
+            <artifactId>kubernetes-model-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-rbac</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-networking</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-apiextensions</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -63,6 +75,10 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
@@ -107,7 +123,7 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
-                        <configuration combine.self="override">>
+                        <configuration combine.self="override">
                             <compilerArgs>
                                 <arg>-Xlint:unchecked,deprecation</arg>
                             </compilerArgs>
@@ -144,6 +160,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaRebalance=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -161,7 +178,7 @@
                                 <argument>io.strimzi.crdgenerator.DocGenerator</argument>
                                 <argument>--linker</argument>
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
-                                <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/</argument>
+                                <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/</argument>
                                 <argument>modules/appendix_crds.adoc</argument>
                                 <argument>io.strimzi.api.kafka.model.Kafka</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnect</argument>
@@ -172,6 +189,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaRebalance</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>

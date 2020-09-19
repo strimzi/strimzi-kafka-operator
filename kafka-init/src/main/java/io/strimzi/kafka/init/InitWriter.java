@@ -7,6 +7,7 @@ package io.strimzi.kafka.init;
 import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
+import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.operator.cluster.model.NodeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,8 +15,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class InitWriter {
 
@@ -59,19 +60,45 @@ public class InitWriter {
      * @return if the operation was executed successfully
      */
     public boolean writeExternalAddress() {
-
         List<NodeAddress> addresses = client.nodes().withName(config.getNodeName()).get().getStatus().getAddresses();
-        log.info("NodeLabels = {}", addresses);
-        String externalAddress = NodeUtils.findAddress(addresses, config.getAddressType());
+        StringBuilder externalAddresses = new StringBuilder();
 
-        if (externalAddress == null) {
+        String address = NodeUtils.findAddress(addresses, null);
+
+        if (address == null) {
             log.error("External address not found");
             return false;
         } else  {
-            log.info("External address found {}", externalAddress);
+            log.info("Default External address found {}", address);
+            externalAddresses.append(externalAddressExport(null, address));
         }
 
-        return write(FILE_EXTERNAL_ADDRESS, externalAddress);
+        for (NodeAddressType type : NodeAddressType.values())   {
+            address = NodeUtils.findAddress(addresses, type);
+            log.info("External {} address found {}", type.toValue(), address);
+            externalAddresses.append(externalAddressExport(type, address));
+        }
+
+        return write(FILE_EXTERNAL_ADDRESS, externalAddresses.toString());
+    }
+
+    /**
+     * Formats address type and address into shell export command for environment variable
+     *
+     * @param type      Type of the address. Use null for default address
+     * @param address   Address for given type
+     * @return          String with the shell command
+     */
+    private String externalAddressExport(NodeAddressType type, String address) {
+        String envVar;
+
+        if (type != null) {
+            envVar = String.format("STRIMZI_NODEPORT_%s_ADDRESS", type.toValue().toUpperCase(Locale.ENGLISH));
+        } else {
+            envVar = "STRIMZI_NODEPORT_DEFAULT_ADDRESS";
+        }
+
+        return String.format("export %s=%s", envVar, address) + System.lineSeparator();
     }
 
     /**
@@ -100,43 +127,5 @@ public class InitWriter {
         }
 
         return isWritten;
-    }
-
-    /**
-     * Tries to find the right address of the node. The different addresses has different prioprities:
-     *      1. ExternalDNS
-     *      2. ExternalIP
-     *      3. Hostname
-     *      4. InternalDNS
-     *      5. InternalIP
-     *
-     * @param addresses List of addresses which are assigned to our node
-     * @return  Address of the node
-     */
-    protected String findAddress(List<NodeAddress> addresses)   {
-        if (addresses == null)  {
-            return null;
-        }
-
-        Map<String, String> addressMap = addresses.stream().collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress));
-
-        // If user set preferred address type, we should check it first
-        if (config.getAddressType() != null && addressMap.containsKey(config.getAddressType())) {
-            return addressMap.get(config.getAddressType());
-        }
-
-        if (addressMap.containsKey("ExternalDNS"))  {
-            return addressMap.get("ExternalDNS");
-        } else if (addressMap.containsKey("ExternalIP"))  {
-            return addressMap.get("ExternalIP");
-        } else if (addressMap.containsKey("InternalDNS"))  {
-            return addressMap.get("InternalDNS");
-        } else if (addressMap.containsKey("InternalIP"))  {
-            return addressMap.get("InternalIP");
-        } else if (addressMap.containsKey("Hostname")) {
-            return addressMap.get("Hostname");
-        }
-
-        return null;
     }
 }

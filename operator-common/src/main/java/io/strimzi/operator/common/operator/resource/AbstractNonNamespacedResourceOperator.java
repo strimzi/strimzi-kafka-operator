@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -96,16 +97,16 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 if (desired != null) {
                     if (current == null) {
                         log.debug("{} {} does not exist, creating it", resourceKind, name);
-                        internalCreate(name, desired).setHandler(future);
+                        internalCreate(name, desired).onComplete(future);
                     } else {
                         log.debug("{} {} already exists, patching it", resourceKind, name);
-                        internalPatch(name, current, desired).setHandler(future);
+                        internalPatch(name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
                         log.debug("{} {} exist, deleting it", resourceKind, name);
-                        internalDelete(name).setHandler(future);
+                        internalDelete(name).onComplete(future);
                     } else {
                         log.debug("{} {} does not exist, noop", resourceKind, name);
                         future.complete(ReconcileResult.noop(null));
@@ -173,7 +174,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
     protected Future<ReconcileResult<T>> internalPatch(String name, T current, T desired, boolean cascading) {
         try {
-            T result = operation().withName(name).cascading(cascading).patch(desired);
+            T result = operation().withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
             log.debug("{} {} has been patched", resourceKind, name);
             return Future.succeededFuture(wasChanged(current, result) ?
                     ReconcileResult.patched(result) : ReconcileResult.noop(result));
@@ -281,14 +282,16 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * is ready.
      *
      * @param name The resource name.
+     * @param logState The state we are waiting for use in log messages
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
      * @param predicate The predicate.
      * @return a future that completes when the resource identified by the given {@code name} is ready.
      */
-    public Future<Void> waitFor(String name, long pollIntervalMs, final long timeoutMs, Predicate<String> predicate) {
+    public Future<Void> waitFor(String name, String logState, long pollIntervalMs, final long timeoutMs, Predicate<String> predicate) {
         return Util.waitFor(vertx,
             String.format("%s resource %s", resourceKind, name),
+            logState,
             pollIntervalMs,
             timeoutMs,
             () -> predicate.test(name));

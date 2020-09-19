@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatusBuilder;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.junit5.VertxTestContext;
 
 import java.util.ArrayList;
@@ -82,13 +83,13 @@ public class MockK8s implements K8s {
 
     @Override
     public Future<KafkaTopic> createResource(KafkaTopic topicResource) {
-        Future<KafkaTopic> handler = Future.future();
+        Promise<KafkaTopic> handler = Promise.promise();
         AsyncResult<Void> response = createResponse.apply(new ResourceName(topicResource));
         if (response.succeeded()) {
             AsyncResult<KafkaTopic> old = byName.put(new ResourceName(topicResource), Future.succeededFuture(topicResource));
             if (old != null) {
                 handler.handle(Future.failedFuture("resource already existed: " + topicResource.getMetadata().getName()));
-                return handler;
+                return handler.future();
             }
         }
         if (response.succeeded()) {
@@ -96,18 +97,18 @@ public class MockK8s implements K8s {
         } else {
             handler.fail(response.cause());
         }
-        return handler;
+        return handler.future();
     }
 
     @Override
     public Future<KafkaTopic> updateResource(KafkaTopic topicResource) {
-        Future<KafkaTopic> handler = Future.future();
+        Promise<KafkaTopic> handler = Promise.promise();
         AsyncResult<Void> response = modifyResponse.apply(new ResourceName(topicResource));
         if (response.succeeded()) {
             AsyncResult<KafkaTopic> old = byName.put(new ResourceName(topicResource), Future.succeededFuture(topicResource));
             if (old == null) {
                 handler.handle(Future.failedFuture("resource does not exist, cannot be updated: " + topicResource.getMetadata().getName()));
-                return handler;
+                return handler.future();
             }
         }
         if (response.succeeded()) {
@@ -120,7 +121,7 @@ public class MockK8s implements K8s {
         } else {
             handler.fail(response.cause());
         }
-        return handler;
+        return handler.future();
     }
 
     private List<KafkaTopicStatus> statuses = new ArrayList<>();
@@ -142,23 +143,23 @@ public class MockK8s implements K8s {
 
     @Override
     public Future<Void> deleteResource(ResourceName resourceName) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         AsyncResult<Void> response = deleteResponse.apply(resourceName);
         if (response.succeeded()) {
             if (byName.remove(resourceName) == null) {
                 handler.handle(Future.failedFuture("resource does not exist, cannot be deleted: " + resourceName));
-                return handler;
+                return handler.future();
             }
         }
         handler.handle(response);
-        return handler;
+        return handler.future();
     }
 
     @Override
     public Future<List<KafkaTopic>> listResources() {
-        Future<List<KafkaTopic>> handler = Future.future();
+        Promise<List<KafkaTopic>> handler = Promise.promise();
         handler.handle(listResponse.get());
-        return handler;
+        return handler.future();
     }
 
     public void setListMapsResult(Supplier<AsyncResult<List<KafkaTopic>>> response) {
@@ -167,18 +168,18 @@ public class MockK8s implements K8s {
 
     @Override
     public Future<KafkaTopic> getFromName(ResourceName resourceName) {
-        Future<KafkaTopic> handler = Future.future();
+        Promise<KafkaTopic> handler = Promise.promise();
         AsyncResult<KafkaTopic> resourceFuture = byName.get(resourceName);
         handler.handle(resourceFuture != null ? resourceFuture : Future.succeededFuture());
-        return handler;
+        return handler.future();
     }
 
     @Override
     public Future<Void> createEvent(Event event) {
-        Future<Void> handler = Future.future();
+        Promise<Void> handler = Promise.promise();
         events.add(event);
         handler.handle(Future.succeededFuture());
-        return handler;
+        return handler.future();
     }
 
     public void assertExists(VertxTestContext context, ResourceName resourceName) {

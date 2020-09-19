@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.logs;
 
 import io.strimzi.systemtest.Environment;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -45,13 +47,23 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     }
 
     @Override
+    public void handleAfterEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
+        String testClass = extensionContext.getRequiredTestClass().getName();
+        String testMethod = extensionContext.getRequiredTestMethod().getName();
+        collectLogs(testClass, testMethod);
+        throw throwable;
+    }
+
+    @Override
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         String testClass = extensionContext.getRequiredTestClass().getName();
         collectLogs(testClass, "");
         throw throwable;
     }
 
-    void collectLogs(String testClass, String testMethod) {
+    public static void collectLogs(String testClass, String testMethod) {
+        // Stop test execution time counter in case of failures
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
         // Get current date to create a unique folder
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -68,5 +80,6 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         logCollector.collectStatefulSets();
         logCollector.collectReplicaSets();
         logCollector.collectStrimzi();
+        logCollector.collectClusterInfo();
     }
 }

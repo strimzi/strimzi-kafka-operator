@@ -12,19 +12,16 @@ import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
-
-    public static final String PATH_TO_KAFKA_USER_CONFIG = "../examples/user/kafka-user.yaml";
 
     public static MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUserClient() {
         return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
@@ -32,7 +29,7 @@ public class KafkaUserResource {
 
     public static DoneableKafkaUser tlsUser(String clusterName, String name) {
         return user(defaultUser(clusterName, name)
-            .editSpec()
+            .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
             .endSpec()
@@ -41,7 +38,7 @@ public class KafkaUserResource {
 
     public static DoneableKafkaUser scramShaUser(String clusterName, String name) {
         return user(defaultUser(clusterName, name)
-            .editSpec()
+            .withNewSpec()
                 .withNewKafkaUserScramSha512ClientAuthentication()
                 .endKafkaUserScramSha512ClientAuthentication()
             .endSpec()
@@ -49,8 +46,7 @@ public class KafkaUserResource {
     }
 
     public static KafkaUserBuilder defaultUser(String clusterName, String name) {
-        KafkaUser kafkaUser = getKafkaUserFromYaml(PATH_TO_KAFKA_USER_CONFIG);
-        return new KafkaUserBuilder(kafkaUser)
+        return new KafkaUserBuilder()
             .withNewMetadata()
                 .withClusterName(clusterName)
                 .withName(name)
@@ -72,24 +68,16 @@ public class KafkaUserResource {
         return user;
     }
 
-    private static KafkaUser getKafkaUserFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaUser.class);
-    }
-
     private static KafkaUser waitFor(KafkaUser kafkaUser) {
-        LOGGER.info("Waiting for Kafka User {}", kafkaUser.getMetadata().getName());
-        SecretUtils.waitForSecretReady(kafkaUser.getMetadata().getName());
-        KafkaUserUtils.waitForKafkaUserCreation(kafkaUser.getMetadata().getName());
-        LOGGER.info("Kafka User {} is ready", kafkaUser.getMetadata().getName());
-        return kafkaUser;
+        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, Ready);
     }
 
     private static KafkaUser deleteLater(KafkaUser kafkaUser) {
         return ResourceManager.deleteLater(kafkaUserClient(), kafkaUser);
     }
 
-    public static DoneableKafkaUser userWithQuota(String clusterName, String userName, Integer prodRate, Integer consRate, Integer requestPerc) {
-        return user(defaultUser(clusterName, userName)
+    public static DoneableKafkaUser userWithQuota(KafkaUser user, Integer prodRate, Integer consRate, Integer requestPerc) {
+        return user(new KafkaUserBuilder(user)
                 .editSpec()
                     .withNewQuotas()
                         .withConsumerByteRate(consRate)

@@ -32,7 +32,7 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
+        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, Crds.kafkaConnect());
     }
 
     @Override
@@ -46,11 +46,11 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
     }
 
     @Override
-    protected KafkaConnect getResource() {
+    protected KafkaConnect getResource(String resourceName) {
         return new KafkaConnectBuilder()
                 .withApiVersion(KafkaConnect.RESOURCE_GROUP + "/" + KafkaConnect.V1BETA1)
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

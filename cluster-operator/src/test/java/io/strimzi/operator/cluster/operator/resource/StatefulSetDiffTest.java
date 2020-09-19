@@ -190,6 +190,56 @@ public class StatefulSetDiffTest {
     }
 
     @Test
+    public void testPvcSizeUnitChangeIgnored() {
+        StatefulSet ss1 = new StatefulSetBuilder()
+                .withNewMetadata()
+                .withNamespace("test")
+                .withName("foo")
+                .endMetadata()
+                .withNewSpec()
+                .withNewTemplate()
+                .withNewSpec()
+                .addToVolumes(0, new VolumeBuilder()
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withDefaultMode(1).build())
+                        .build())
+                .endSpec()
+                .endTemplate()
+                .withVolumeClaimTemplates(new PersistentVolumeClaimBuilder()
+                        .withNewSpec()
+                        .withNewResources()
+                        .withRequests(singletonMap("storage", new Quantity("3072Gi")))
+                        .endResources()
+                        .endSpec()
+                        .build())
+                .endSpec()
+                .build();
+        StatefulSet ss2 = new StatefulSetBuilder()
+                .withNewMetadata()
+                .withNamespace("test")
+                .withName("foo")
+                .endMetadata()
+                .withNewSpec()
+                .withNewTemplate()
+                .withNewSpec()
+                .addToVolumes(0, new VolumeBuilder()
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withDefaultMode(2).build())
+                        .build())
+                .endSpec()
+                .endTemplate()
+                .withVolumeClaimTemplates(new PersistentVolumeClaimBuilder()
+                        .withNewSpec()
+                        .withNewResources()
+                        .withRequests(singletonMap("storage", new Quantity("3Ti")))
+                        .endResources()
+                        .endSpec()
+                        .build())
+                .endSpec()
+                .build();
+        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates(), is(false));
+        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(false));
+    }
+
+    @Test
     public void testNewPvcNotIgnored() {
         StatefulSet ss1 = new StatefulSetBuilder()
                 .withNewMetadata()

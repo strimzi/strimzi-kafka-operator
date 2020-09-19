@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -15,20 +16,18 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
-public class KafkaMirrorMakerResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerResource.class);
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = "../examples/kafka-mirror-maker/kafka-mirror-maker.yaml";
+public class KafkaMirrorMakerResource {
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = TestUtils.USER_PATH + "/../examples/mirror-maker/kafka-mirror-maker.yaml";
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMakerClient() {
         return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());
@@ -82,7 +81,7 @@ public class KafkaMirrorMakerResource {
 
     private static DoneableKafkaMirrorMaker deployKafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
         return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, kB -> {
-            TestUtils.waitFor("KafkaMirrorMaker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("KafkaMirrorMaker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
                         kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kB);
@@ -105,8 +104,8 @@ public class KafkaMirrorMakerResource {
         return kafkaMirrorMaker;
     }
 
-    public static void deleteKafkaMirrorMakerWithoutWait(KafkaMirrorMaker kafkaMirrorMaker) {
-        kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafkaMirrorMaker);
+    public static void deleteKafkaMirrorMakerWithoutWait(String resourceName) {
+        kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static KafkaMirrorMaker getKafkaMirrorMakerFromYaml(String yamlPath) {
@@ -114,10 +113,7 @@ public class KafkaMirrorMakerResource {
     }
 
     private static KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
-        LOGGER.info("Waiting for Kafka MirrorMaker {}", kafkaMirrorMaker.getMetadata().getName());
-        DeploymentUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker", kafkaMirrorMaker.getSpec().getReplicas());
-        LOGGER.info("Kafka MirrorMaker {} is ready", kafkaMirrorMaker.getMetadata().getName());
-        return kafkaMirrorMaker;
+        return ResourceManager.waitForResourceStatus(kafkaMirrorMakerClient(), kafkaMirrorMaker, Ready);
     }
 
     private static KafkaMirrorMaker deleteLater(KafkaMirrorMaker kafkaMirrorMaker) {

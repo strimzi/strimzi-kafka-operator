@@ -5,18 +5,25 @@
 [id='con-kafka-connect-multiple-instances-{context}']
 = Kafka Connect configuration for multiple instances
 
-If you are running multiple instances of Kafka Connect, pay attention to the default configuration of the following properties:
+If you are running multiple instances of Kafka Connect, you have to change the default configuration of the following `config` properties:
 
 [source,yaml,subs="attributes+"]
 ----
-# ...
-  group.id: connect-cluster <1>
-  offset.storage.topic: connect-cluster-offsets <2>
-  config.storage.topic: connect-cluster-configs <3>
-  status.storage.topic: connect-cluster-status  <4>
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    group.id: connect-cluster <1>
+    offset.storage.topic: connect-cluster-offsets <2>
+    config.storage.topic: connect-cluster-configs <3>
+    status.storage.topic: connect-cluster-status  <4>
+    # ...
 # ...
 ----
-<1> Kafka Connect cluster group the instance belongs to.
+<1> Kafka Connect cluster group that the instance belongs to.
 <2> Kafka topic that stores connector offsets.
 <3> Kafka topic that stores connector and task status configurations.
 <4> Kafka topic that stores connector and task status updates.

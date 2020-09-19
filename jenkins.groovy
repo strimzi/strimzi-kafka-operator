@@ -16,13 +16,14 @@ def downloadOcOrigin() {
 
     sh(script: "tar xzf openshift.tar.gz -C /tmp/openshift --strip-components 1")
     sh(script: "sudo cp /tmp/openshift/oc /usr/bin/oc")
+    sh(script: "sudo cp /tmp/openshift/kubectl /usr/bin/kubectl")
     sh(script: "sudo rm -rf /tmp/openshift/")
     sh(script: "sudo rm -rf openshift.tar.gz")
 }
 
 def downloadCRC() {
     downloadOcOrigin()
-    def crcBundleUrl = "https://mirror.openshift.com/pub/openshift-v4/clients/crc/latest/crc-linux-amd64.tar.xz"
+    def crcBundleUrl = "https://mirror.openshift.com/pub/openshift-v4/clients/crc/1.6.0/crc-linux-amd64.tar.xz"
     withCredentials([string(credentialsId: 'crc-secret', variable: 'secret')]) {
         sh(script: "echo \'${secret}\' > ${WORKSPACE}/crcSecret")
     }
@@ -154,9 +155,16 @@ def clearImages() {
     sh "docker rmi -f \$(docker images -q) 2>/dev/null || echo 'No more images to remove.'"
 }
 
+def installHelm(String workspace) {
+    sh(script: "${workspace}/.travis/setup-helm.sh")
+}
+
+def installYq(String workspace) {
+    sh(script: "${workspace}/.travis/install_yq.sh")
+}
 
 def buildStrimziImages() {
-    sh(script: "make docker_build")
+    sh(script: "MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make docker_build")
     sh(script: "make docker_tag")
     // Login to internal registries
     sh(script: "docker login ${env.DOCKER_REGISTRY} -u \$(oc whoami) -p \$(oc whoami -t)")
@@ -167,7 +175,7 @@ def buildStrimziImages() {
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
     withMaven(mavenOpts: '-Djansi.force=true') {
-        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress"
+        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress -Dfailsafe.rerunFailingTestsCount=2"
     }
 }
 

@@ -8,9 +8,8 @@
 
 You can provide your own server certificates and private keys for the following types of listeners:
 
-* TLS listeners for inter-cluster communication
-
-* External listeners (`route`, `loadbalancer`, `ingress`, and `nodeport` types) which have TLS encryption enabled, for communication between Kafka clients and Kafka brokers
+* Internal TLS listeners for communication within the Kubernetes cluster
+* External listeners (`route`, `loadbalancer`, `ingress`, and `nodeport` types), which have TLS encryption enabled, for communication between Kafka clients and Kafka brokers
 
 These user-provided certificates are called _Kafka listener certificates_.
 

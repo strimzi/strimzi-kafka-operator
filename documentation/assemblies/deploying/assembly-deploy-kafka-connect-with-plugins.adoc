@@ -1,0 +1,38 @@
+// This assembly is included in the following assemblies:
+//
+// deploying/assembly-deploy-kafka-connect.adoc
+
+[id='using-kafka-connect-with-plug-ins-{context}']
+= Extending Kafka Connect with connector plug-ins
+
+The Strimzi container images for Kafka Connect include two built-in file connectors for moving file-based data into and out of your Kafka cluster.
+
+.File connectors
+[cols="2*",options="header",stripes="none",separator=¦]
+|===
+
+¦File Connector
+¦Description
+
+m¦FileStreamSourceConnector
+¦Transfers data to your Kafka cluster from a file (the source).
+
+m¦FileStreamSinkConnector
+¦Transfers data from your Kafka cluster to a file (the sink).
+
+|===
+
+The Cluster Operator can also use images that you have created to deploy a Kafka Connect cluster to your Kubernetes cluster.
+
+The procedures in this section show how to add your own connector classes to connector images by:
+
+* xref:creating-new-image-from-base-{context}[Creating a container image from the Kafka Connect base image (manually or using continuous integration)]
+
+* xref:using-openshift-s2i-create-image-{context}[Creating a container image using OpenShift builds and Source-to-Image (S2I) (available only on OpenShift)]
+
+IMPORTANT: You create the configuration for connectors directly xref:con-creating-managing-connectors-{context}[using the Kafka Connect REST API or KafkaConnector custom resources].
+
+//Procedure to create a container images from base image
+include::modules/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]
+//Procedure to create a base images from OpenShift builds and S2I
+include::modules/proc-deploy-kafka-connect-openshift-builds-image.adoc[leveloffset=+1]

@@ -1,0 +1,40 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='cruise-control-concepts-{context}']
+= Cruise Control for cluster rebalancing
+
+You can deploy {CruiseControlProject} to your Strimzi cluster and use it to _rebalance_ the Kafka cluster. 
+
+Cruise Control is an open source system for automating Kafka operations, such as monitoring cluster workload, rebalancing a cluster based on predefined constraints, and detecting and fixing anomalies. 
+It consists of four main components--the Load Monitor, the Analyzer, the Anomaly Detector, and the Executor--and a REST API for client interactions.
+Strimzi utilizes the REST API to support the following Cruise Control features:
+
+* Generating _optimization proposals_ from multiple _optimization goals_. 
+
+* Rebalancing a Kafka cluster based on an optimization proposal.
+
+Other Cruise Control features are not currently supported, including anomaly detection, notifications, write-your-own goals, and changing the topic replication factor.
+
+Example YAML files for Cruise Control are provided in `examples/cruise-control/`.
+
+include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/con-optimization-goals.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/con-optimization-proposals.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/con-rebalance-performance.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-generating-optimization-proposals.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-approving-optimization-proposal.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-stopping-cluster-rebalance.adoc[leveloffset=+1]
+
+include::../../modules/cruise-control/proc-fixing-problems-with-kafkarebalance.adoc[leveloffset=+1]

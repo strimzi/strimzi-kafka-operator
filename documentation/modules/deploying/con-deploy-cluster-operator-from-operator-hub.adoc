@@ -1,0 +1,13 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-cluster-operator.adoc
+
+[id='deploying-cluster-operator-from-operator-hub-{context}']
+= Deploying the Cluster Operator from OperatorHub.io
+
+{OperatorHub} is a catalog of Kubernetes Operators sourced from multiple providers.
+It offers you an alternative way to install stable versions of Strimzi using the Strimzi Kafka Operator.
+
+The {OperatorLifecycleManager} is used for the installation and management of all Operators published on {OperatorHub}.
+
+To install Strimzi from {OperatorHub}, locate the _Strimzi Kafka Operator_ and follow the instructions provided.

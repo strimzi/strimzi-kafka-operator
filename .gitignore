@@ -29,7 +29,8 @@ documentation/htmlnoheader/**
 documentation/**/build/**
 master.html
 
-helm-charts/strimzi-kafka-operator-*.*.*.tgz
+helm-charts/helm2/strimzi-kafka-operator-*.*.*.tgz
+helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
 
 docker-images/kafka/.*.tmp
 docker-images/kafka/tmp/**
@@ -48,3 +49,6 @@ systemtest/my-plugins/
 
 # Hacking directory with different script utilities and more complex YAML examples used by developers for development and testing
 /hacking/
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*

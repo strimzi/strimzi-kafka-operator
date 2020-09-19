@@ -1,0 +1,33 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-cluster-operator.adoc
+
+[id='deploying-cluster-operator-helm-chart-{context}']
+= Deploying the Cluster Operator using a Helm Chart
+
+As an alternative to using the YAML deployment files,
+this procedure shows how to deploy the Cluster Operator using a Helm chart provided with Strimzi.
+
+.Prerequisites
+
+* The Helm client must be installed on a local machine.
+* Helm must be installed to the Kubernetes cluster.
+
+For more information about Helm, see the https://helm.sh/[Helm website^].
+
+.Procedure
+
+. Add the Strimzi Helm Chart repository:
++
+[source,shell,subs=attributes+]
+helm repo add strimzi {ChartRepositoryUrl}
+
+. Deploy the Cluster Operator using the Helm command line tool:
++
+[source,shell,subs=attributes+]
+helm install {ChartReleaseCoordinate}
+
+. Verify that the Cluster Operator has been deployed successfully using the Helm command line tool:
++
+[source,shell]
+helm ls

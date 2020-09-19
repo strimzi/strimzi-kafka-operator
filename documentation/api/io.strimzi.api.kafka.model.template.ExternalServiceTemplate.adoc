@@ -1,0 +1,19 @@
+When exposing Kafka outside of Kubernetes using loadbalancers or node ports, you can use properties, in addition to labels and annotations, to customize how a Service is created.
+
+.An example showing customized external services
+[source,yaml,subs=attributes+]
+----
+# ...
+template:
+  externalBootstrapService:
+    externalTrafficPolicy: Local
+    loadBalancerSourceRanges:
+      - 10.0.0.0/8
+      - 88.208.76.87/32
+  perPodService:
+    externalTrafficPolicy: Local
+    loadBalancerSourceRanges:
+      - 10.0.0.0/8
+      - 88.208.76.87/32
+# ...
+----

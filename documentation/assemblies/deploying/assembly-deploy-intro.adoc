@@ -1,0 +1,26 @@
+// This assembly is included in:
+//
+// deploying/master.adoc
+
+[id="deploy-intro_{context}"]
+= Deployment overview
+
+//Standard introduction text for the product
+include::../../shared/snip-intro-text.adoc[leveloffset=+1]
+
+This guide provides instructions on all the options available for deploying and upgrading Strimzi,
+describing what is deployed, and the order of deployment required to run Apache Kafka in a Kubernetes cluster.
+
+As well as describing the deployment steps, the guide also provides pre- and post-deployment instructions to prepare for and verify a deployment.
+Additional deployment options described include the steps to introduce metrics.
+Upgrade instructions are provided for Strimzi and Kafka upgrades.
+
+Strimzi is designed to work on all types of Kubernetes cluster regardless of distribution,
+from public and private clouds to local deployments intended for development.
+
+//Description of Operator support for managing a deployment
+include::../../modules/overview/con-key-features-product.adoc[leveloffset=+1]
+//Operators overviews
+include::../overview/assembly-overview-components.adoc[leveloffset=+1]
+//Custom resources intro
+include::assembly-deploy-intro-custom-resources.adoc[leveloffset=+1]

@@ -4,6 +4,27 @@
  */
 package io.strimzi.operator.topic;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.api.model.Event;
@@ -16,11 +37,15 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -41,26 +66,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.emptyMap;
@@ -69,9 +74,6 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import io.vertx.core.VertxOptions;
-import io.vertx.micrometer.MicrometerMetricsOptions;
-import io.vertx.micrometer.VertxPrometheusOptions;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public abstract class TopicOperatorBaseIT {
@@ -86,18 +88,10 @@ public abstract class TopicOperatorBaseIT {
 
     public static final String NAMESPACE = "topic-operator-it";
 
-    protected Vertx vertx;
+    protected static Vertx vertx;
     protected KafkaCluster kafkaCluster;
     protected volatile AdminClient adminClient;
     protected KubernetesClient kubeClient;
-    protected Thread kafkaHook = new Thread() {
-        @Override
-        public void run() {
-            if (kafkaCluster != null) {
-                kafkaCluster.shutdown();
-            }
-        }
-    };
 
     protected volatile String deploymentId;
     protected Set<String> preExistingEvents;
@@ -106,6 +100,11 @@ public abstract class TopicOperatorBaseIT {
 
     @BeforeAll
     public static void setupKubeCluster() throws IOException {
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
@@ -115,7 +114,7 @@ public abstract class TopicOperatorBaseIT {
         oldNamespace = cluster.setNamespace(NAMESPACE);
         LOGGER.info("#### Creating " + "../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         LOGGER.info(new String(Files.readAllBytes(new File("../install/topic-operator/02-Role-strimzi-topic-operator.yaml").toPath())));
-        cmdKubeClient().create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
+        cmdKubeClient().create(TestUtils.USER_PATH + "/../install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
         LOGGER.info(new String(Files.readAllBytes(new File(TestUtils.CRD_TOPIC).toPath())));
         cmdKubeClient().create(TestUtils.CRD_TOPIC);
@@ -127,26 +126,29 @@ public abstract class TopicOperatorBaseIT {
 
     @AfterAll
     public static void teardownKubeCluster() {
+        CountDownLatch latch = new CountDownLatch(1);
         if (oldNamespace != null) {
             cmdKubeClient()
                     .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                     .delete(TestUtils.CRD_TOPIC)
-                    .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
+                    .delete(TestUtils.USER_PATH + "/../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                     .deleteNamespace(NAMESPACE);
             cmdKubeClient().namespace(oldNamespace);
+        }
+        vertx.close(result -> {
+            latch.countDown();
+        });
+        try {
+            latch.await(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error(e);
         }
     }
 
     @BeforeEach
     public void setup() throws Exception {
-        VertxOptions options = new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true));
-        vertx = Vertx.vertx(options);
         LOGGER.info("Setting up test");
         cluster.before();
-        Runtime.getRuntime().addShutdownHook(kafkaHook);
         int counts = 3;
         do {
             try {
@@ -197,6 +199,7 @@ public abstract class TopicOperatorBaseIT {
 
     @AfterEach
     public void teardown() throws InterruptedException, TimeoutException, ExecutionException {
+        CountDownLatch latch = new CountDownLatch(1);
         try {
             LOGGER.info("Tearing down test");
 
@@ -232,12 +235,16 @@ public abstract class TopicOperatorBaseIT {
 
             adminClient.close();
             if (kafkaCluster != null) {
-                kafkaCluster.shutdown();
+                try {
+                    kafkaCluster.shutdown();
+                } catch (Exception e) {
+                    LOGGER.warn(e);
+                }
             }
-            Runtime.getRuntime().removeShutdownHook(kafkaHook);
             LOGGER.info("Finished tearing down test");
-            vertx.close();
+            latch.countDown();
         }
+        latch.await(30, TimeUnit.SECONDS);
     }
 
     protected void startTopicOperator() throws InterruptedException, ExecutionException, TimeoutException {
@@ -314,9 +321,11 @@ public abstract class TopicOperatorBaseIT {
         waitFor(() -> {
             KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
             if (kafkaTopic != null) {
-                if (kafkaTopic.getStatus() != null
-                        && kafkaTopic.getStatus().getConditions() != null) {
-                    List<Condition> conditions = kafkaTopic.getStatus().getConditions();
+                KafkaTopicStatus status = kafkaTopic.getStatus();
+                if (status != null
+                        && Objects.equals(status.getObservedGeneration(), kafkaTopic.getMetadata().getGeneration())
+                        && status.getConditions() != null) {
+                    List<Condition> conditions = status.getConditions();
                     assertThat(conditions.size() > 0, is(true));
                     if (conditions.stream().anyMatch(condition ->
                             "Ready".equals(condition.getType()) &&
@@ -334,18 +343,28 @@ public abstract class TopicOperatorBaseIT {
     }
 
     protected void assertStatusNotReady(String topicName, String message) throws InterruptedException, ExecutionException, TimeoutException {
+        assertStatusNotReady(topicName, null, message);
+    }
+
+    protected void assertStatusNotReady(String topicName, Class<? extends Exception> reason, String message) throws InterruptedException, ExecutionException, TimeoutException {
         waitFor(() -> {
             KafkaTopic kafkaTopic = operation().inNamespace(NAMESPACE).withName(topicName).get();
             if (kafkaTopic != null) {
-                if (kafkaTopic.getStatus() != null
-                        && kafkaTopic.getStatus().getConditions() != null) {
-                    List<Condition> conditions = kafkaTopic.getStatus().getConditions();
+                KafkaTopicStatus status = kafkaTopic.getStatus();
+                if (status != null
+                        && Objects.equals(status.getObservedGeneration(), kafkaTopic.getMetadata().getGeneration())
+                        && status.getConditions() != null) {
+                    List<Condition> conditions = status.getConditions();
                     assertThat(conditions.size() > 0, is(true));
                     Optional<Condition> unreadyCondition = conditions.stream().filter(condition ->
                             "NotReady".equals(condition.getType()) &&
-                            "True".equals(condition.getStatus())).findFirst();
+                                    "True".equals(condition.getStatus())).findFirst();
                     if (unreadyCondition.isPresent()) {
-                        assertThat(unreadyCondition.get().getMessage(), is(message));
+                        if (reason != null) {
+                            assertThat(unreadyCondition.get().getReason() + ": " + unreadyCondition.get().getMessage(), is(reason.getSimpleName() + ": " + message));
+                        } else {
+                            assertThat(unreadyCondition.get().getMessage(), is(message));
+                        }
                         return true;
                     } else {
                         LOGGER.info(conditions);
@@ -387,7 +406,7 @@ public abstract class TopicOperatorBaseIT {
         return createTopic(topicName, new NewTopic(topicName, singletonMap(0, replicaAssignments)));
     }
 
-    private String createTopic(String topicName, NewTopic o) throws InterruptedException, ExecutionException, TimeoutException {
+    protected String createTopic(String topicName, NewTopic o) throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Creating topic {}", topicName);
         // Create a topic
         String resourceName = new TopicName(topicName).asKubeName().toString();
@@ -438,7 +457,11 @@ public abstract class TopicOperatorBaseIT {
 
         Map<String, ConfigEntry> m = new HashMap<>();
         for (ConfigEntry entry: config.entries()) {
-            m.put(entry.name(), entry);
+            if (entry.name().equals(key)
+                || entry.source() != ConfigEntry.ConfigSource.DEFAULT_CONFIG
+                    && entry.source() != ConfigEntry.ConfigSource.STATIC_BROKER_CONFIG) {
+                m.put(entry.name(), entry);
+            }
         }
         final String changedValue = mutator.apply(m.get(key).value());
         m.put(key, new ConfigEntry(key, changedValue));
@@ -558,7 +581,7 @@ public abstract class TopicOperatorBaseIT {
     }
 
     protected MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
-        return kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+        return kubeClient.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     protected void waitForTopicInKafka(String topicName) throws InterruptedException, ExecutionException, TimeoutException {

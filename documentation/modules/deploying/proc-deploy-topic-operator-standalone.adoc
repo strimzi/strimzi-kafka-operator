@@ -1,0 +1,63 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-standalone-operators.adoc
+
+[id='deploying-the-topic-operator-standalone-{context}']
+= Deploying the standalone Topic Operator
+
+This procedure shows how to deploy the Topic Operator as a standalone component.
+
+A standalone deployment requires configuration of environment variables, and is more complicated than xref:deploying-the-topic-operator-using-the-cluster-operator-str[deploying the Topic Operator using the Cluster Operator].
+However, a standalone deployment is more flexible as the Topic Operator can operate with _any_ Kafka cluster, not necessarily one deployed by the Cluster Operator.
+
+.Prerequisites
+
+* You need an existing Kafka cluster for the Topic Operator to connect to.
+
+.Procedure
+
+. Edit the `Deployment.spec.template.spec.containers[0].env` properties in the `install/topic-operator/05-Deployment-strimzi-topic-operator.yaml` file by setting:
++
+.. `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` to list the bootstrap brokers in your Kafka cluster, given as a comma-separated list of `_hostname_:‍_port_` pairs.
+.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This should be the same ZooKeeper cluster that your Kafka cluster is using.
+.. `STRIMZI_NAMESPACE` to the Kubernetes namespace in which you want the operator to watch for  `KafkaTopic` resources.
+.. `STRIMZI_RESOURCE_LABELS` to the label selector used to identify the `KafkaTopic` resources managed by the operator.
+.. `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` to specify the interval between periodic reconciliations, in milliseconds.
+.. `STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS` to specify the number of attempts at getting topic metadata from Kafka.
+The time between each attempt is defined as an exponential back-off.
+Consider increasing this value when topic creation could take more time due to the number of partitions or replicas.
+Default `6`.
+.. `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS` to the ZooKeeper session timeout, in milliseconds.
+For example, `10000`.
+Default `20000` (20 seconds).
+.. `STRIMZI_TOPICS_PATH` to the Zookeeper node path where the Topic Operator stores its metadata.
+Default `/strimzi/topics`.
+.. `STRIMZI_TLS_ENABLED` to enable TLS support for encrypting the communication with Kafka brokers.
+Default `true`.
+.. `STRIMZI_TRUSTSTORE_LOCATION` to the path to the truststore containing certificates for enabling TLS based communication.
+Mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
+.. `STRIMZI_TRUSTSTORE_PASSWORD` to the password for accessing the truststore defined by `STRIMZI_TRUSTSTORE_LOCATION`.
+Mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
+.. `STRIMZI_KEYSTORE_LOCATION` to the path to the keystore containing private keys for enabling TLS based communication.
+Mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
+.. `STRIMZI_KEYSTORE_PASSWORD` to the password for accessing the keystore defined by `STRIMZI_KEYSTORE_LOCATION`.
+Mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
+.. `STRIMZI_LOG_LEVEL` to the level for printing logging messages.
+The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
+Default `INFO`.
+.. `STRIMZI_JAVA_OPTS` _(optional)_ to the Java options used for the JVM running the Topic Operator. An example is `-Xmx=512M -Xms=256M`.
+.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` _(optional)_ to list the `-D` options which are set to the Topic Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
+
+. Deploy the Topic Operator:
++
+[source,shell,subs=+quotes]
+kubectl apply -f install/topic-operator
+
+. Verify that the Topic Operator has been deployed successfully:
++
+[source,shell,subs=+quotes]
+kubectl describe deployment strimzi-topic-operator
++
+The Topic Operator is deployed when the `Replicas:` entry shows `1 available`.
++
+NOTE: You may experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the images have not been downloaded before.

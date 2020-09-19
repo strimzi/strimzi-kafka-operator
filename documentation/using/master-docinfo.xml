@@ -1,14 +1,14 @@
 <!-- No need to manually update the following attribute for each title change, although it should be technically possible to do so -->
 <!-- As far as I know, the topmost Level 0 title in the `master.adoc` file resolves to this attribute -->
-<title>Using {ProductLongName}</title>
+<title>Using Strimzi</title>
 
-<productname>{ProductLongName}</productname>
+<productname>Strimzi</productname>
 <productnumber>{ProductVersion}</productnumber>
 
         <!-- The subtitle can be changed manually, as it is only required by CCUTIL and only visible on the portal  -->
-<subtitle>For Use with {ProductName}</subtitle>
+<subtitle>For Use with Strimzi</subtitle>
 <release>{ProductVersion}</release>
 <abstract>
-<para>This guide provides a getting started experience for {ProductName}.</para>
+<para>This guide describes how to configure and manage Strimzi.</para>
 </abstract>
 <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

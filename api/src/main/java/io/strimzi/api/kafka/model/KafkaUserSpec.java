@@ -6,15 +6,10 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.template.KafkaUserTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
-import static java.util.Collections.emptyMap;
 
 @Buildable(
         editableEnabled = false,
@@ -23,14 +18,13 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "authentication", "authorization", "quotas" })
 @EqualsAndHashCode
-public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
-
+public class KafkaUserSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
     private KafkaUserAuthentication authentication;
     private KafkaUserAuthorization authorization;
     private KafkaUserQuotas quotas;
-    private Map<String, Object> additionalProperties;
+    private KafkaUserTemplate template;
 
     @Description("Authentication mechanism enabled for this Kafka user.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -64,16 +58,13 @@ public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
         this.quotas = kafkaUserQuotas;
     }
 
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+    @Description("Template to specify how Kafka User `Secrets` are generated.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public KafkaUserTemplate getTemplate() {
+        return template;
     }
 
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
-        }
-        this.additionalProperties.put(name, value);
+    public void setTemplate(KafkaUserTemplate template) {
+        this.template = template;
     }
 }

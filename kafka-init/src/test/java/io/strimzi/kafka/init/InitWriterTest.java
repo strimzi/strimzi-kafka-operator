@@ -9,31 +9,33 @@ import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.api.model.NodeAddressBuilder;
 import io.fabric8.kubernetes.api.model.NodeStatus;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class InitWriterTest {
 
     @TempDir
     public File tempDir;
 
-    private static Map<String, String> envVars = new HashMap<>(2);
+    private static Map<String, String> envVars = new HashMap<>(3);
     private static Map<String, String> labels = new HashMap<>(4);
     private static List<NodeAddress> addresses = new ArrayList<>(3);
 
@@ -42,7 +44,7 @@ public class InitWriterTest {
         envVars.put(InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone");
         envVars.put(InitWriterConfig.EXTERNAL_ADDRESS, "true");
 
-        // metadata labels related to the Kubernetes/OpenShift cluster node
+        // metadata labels related to the Kubernetes cluster node
         labels.put("beta.kubernetes.io/arch", "amd64");
         labels.put("beta.kubernetes.io", "linux");
         labels.put("kubernetes.io/hostname", "localhost");
@@ -70,6 +72,7 @@ public class InitWriterTest {
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(true));
+        assertThat(readFile(rackFolder + "/rack.id"), is("eu-zone1"));
     }
 
     @Test
@@ -89,10 +92,16 @@ public class InitWriterTest {
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeExternalAddress(), is(true));
+        assertThat(readFile(addressFolder + "/external.address"), is("export STRIMZI_NODEPORT_DEFAULT_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_EXTERNALIP_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_EXTERNALDNS_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_INTERNALIP_ADDRESS=192.168.2.94\n" +
+                "export STRIMZI_NODEPORT_INTERNALDNS_ADDRESS=my.internal.address\n" +
+                "export STRIMZI_NODEPORT_HOSTNAME_ADDRESS=my.external.address\n"));
     }
 
     @Test
-    public void testNoLabel() {
+    public void testWriteRackFailWithMissingKubernetesZoneLabel() {
 
         // the cluster node will not have the requested label
         Map<String, String> labels = new HashMap<>(InitWriterTest.labels);
@@ -107,7 +116,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testNoFolder() throws IOException {
+    public void testWriteRackFailsWhenInitFolderDoesNotExist() {
 
         // specify a not existing folder for emulating IOException in the rack writer
         Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
@@ -121,53 +130,8 @@ public class InitWriterTest {
         assertThat(writer.writeRack(), is(false));
     }
 
-    @Test
-    public void testFindAddressWithType()   {
-        Map<String, String> envs = new HashMap<>(envVars);
-        envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
-        InitWriterConfig config = InitWriterConfig.fromMap(envs);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is("my.internal.address"));
-    }
-
-    @Test
-    public void testFindAddress()   {
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is("my.external.address"));
-    }
-
-    @Test
-    public void testFindAddressNotFound()   {
-        List<NodeAddress> addresses = new ArrayList<>(3);
-        addresses.add(new NodeAddressBuilder().withType("SomeAddress").withAddress("my.external.address").build());
-        addresses.add(new NodeAddressBuilder().withType("SomeOtherAddress").withAddress("my.internal.address").build());
-        addresses.add(new NodeAddressBuilder().withType("YetAnotherAddress").withAddress("192.168.2.94").build());
-
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is(nullValue()));
-    }
-
-    @Test
-    public void testFindAddressesNull()   {
-        List<NodeAddress> addresses = null;
-
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is(nullValue()));
+    private String readFile(String file) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(file)));
     }
 
     /**

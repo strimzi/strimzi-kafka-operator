@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -97,16 +98,16 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                 if (desired != null) {
                     if (current == null) {
                         log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                        internalCreate(namespace, name, desired).setHandler(future);
+                        internalCreate(namespace, name, desired).onComplete(future);
                     } else {
                         log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
-                        internalPatch(namespace, name, current, desired).setHandler(future);
+                        internalPatch(namespace, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
                         log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                        internalDelete(namespace, name).setHandler(future);
+                        internalDelete(namespace, name).onComplete(future);
                     } else {
                         log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop(null));
@@ -145,7 +146,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
         try {
-            operation().inNamespace(namespace).withName(name).cascading(cascading).withGracePeriod(-1L).delete();
+            operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
             log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.deleted());
         } catch (Exception e) {
@@ -164,7 +165,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
     protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired, boolean cascading) {
         try {
-            T result = operation().inNamespace(namespace).withName(name).cascading(cascading).patch(desired);
+            T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
             log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
             return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
         } catch (Exception e) {
@@ -333,8 +334,26 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * is ready.
      */
     public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+        return waitFor(namespace, name, "ready", pollIntervalMs, timeoutMs, predicate);
+    }
+
+    /**
+     * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
+     * is ready.
+     *
+     * @param namespace The namespace.
+     * @param name The resource name.
+     * @param logState The state we are waiting for use in log messages
+     * @param pollIntervalMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
+     * @param predicate The predicate.
+     * @return A future that completes when the resource identified by the given {@code namespace} and {@code name}
+     * is ready.
+     */
+    public Future<Void> waitFor(String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
         return Util.waitFor(vertx,
             String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
+            logState,
             pollIntervalMs,
             timeoutMs,
             () -> predicate.test(namespace, name));

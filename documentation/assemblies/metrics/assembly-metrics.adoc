@@ -1,0 +1,36 @@
+// This assembly is included in the following assemblies:
+//
+// deploying/master.adoc
+
+[id='assembly-metrics-{context}']
+= Introducing Metrics to Kafka
+
+This section describes how to monitor your Strimzi deployment.
+
+Depending on your requirements, you can:
+
+* xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus and Grafana]
+* xref:assembly-kafka-exporter-{context}[Configure the `Kafka` resource to deploy Kafka Exporter with your Kafka cluster]
++
+Kafka Exporter provides additional monitoring related to consumer lag.
+
+With Prometheus and Grafana set up, you can use the example Grafana dashboards provided by Strimzi for monitoring.
+
+Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^], as described in the _Using Strimzi_ guide.
+
+.Additional resources
+* link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation]
+* link:https://grafana.com/docs/guides/getting_started/[Grafana documentation]
+* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka
+* link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache ZooKeeper
+
+//Example metrics files
+include::modules/ref_metrics-config-files.adoc[leveloffset=+1]
+//How to set up Prometheus and Grafana
+include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
+//How to set up Kafka Exporter
+include::assembly_metrics-kafka-exporter.adoc[leveloffset=+1]
+//How to set up Kafka Bridge
+include::assembly_metrics-kafka-bridge.adoc[leveloffset=+1]
+//How to set up Cruise Control
+include::assembly_metrics-cruise-control.adoc[leveloffset=+1]

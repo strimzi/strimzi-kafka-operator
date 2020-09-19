@@ -13,7 +13,7 @@
 
 :context: kafka-bridge-quickstart
 
-Use this quickstart to try out the {ProductName} Kafka Bridge in your local development environment. You will learn how to:
+Use this quickstart to try out the Strimzi Kafka Bridge in your local development environment. You will learn how to:
 
 * Deploy the Kafka Bridge to your Kubernetes cluster
 * Expose the Kafka Bridge service to your local machine by using port-forwarding
@@ -32,7 +32,7 @@ In this quickstart, you will produce and consume messages in JSON format, not bi
 .Prerequisites for the quickstart
 
 * Cluster administrator access to a local or remote Kubernetes cluster. 
-* {ProductName} is installed.
+* Strimzi is installed.
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
 * The Entity Operator is deployed and running as part of the Kafka cluster.  
 

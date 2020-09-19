@@ -8,11 +8,14 @@ import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.cmdClient.Oc;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class OpenShift implements KubeCluster {
 
     private static final String OC = "oc";
     private static final String OLM_NAMESPACE = "openshift-operators";
+    private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
 
     @Override
     public boolean isAvailable() {
@@ -22,9 +25,9 @@ public class OpenShift implements KubeCluster {
     @Override
     public boolean isClusterUp() {
         try {
-            return Exec.exec(OC, "status").exitStatus();
+            return Exec.exec(OC, "status").exitStatus() && Exec.exec(OC, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
-            e.printStackTrace();
+            LOGGER.debug("Error:", e);
             return false;
         }
     }

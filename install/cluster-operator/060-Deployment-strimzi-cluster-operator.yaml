@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-cluster-operator
+  labels:
+    app: strimzi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: strimzi-cluster-operator
+      strimzi.io/kind: cluster-operator
+  template:
+    metadata:
+      labels:
+        name: strimzi-cluster-operator
+        strimzi.io/kind: cluster-operator
+    spec:
+      serviceAccountName: strimzi-cluster-operator
+      volumes:
+        - name: co-config-volume
+          configMap:
+            name: strimzi-cluster-operator
+      containers:
+        - name: strimzi-cluster-operator
+          image: strimzi/operator:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          args:
+            - /opt/strimzi/bin/cluster_operator_run.sh
+          volumeMounts:
+            - name: co-config-volume
+              mountPath: /opt/strimzi/custom-config/
+          env:
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: "120000"
+            - name: STRIMZI_OPERATION_TIMEOUT_MS
+              value: "300000"
+            - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
+              value: strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
+              value: strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
+              value: strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE
+              value: strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_KAFKA_IMAGES
+              value: |
+                2.5.0=strimzi/kafka:latest-kafka-2.5.0
+                2.5.1=strimzi/kafka:latest-kafka-2.5.1
+                2.6.0=strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_KAFKA_CONNECT_IMAGES
+              value: |
+                2.5.0=strimzi/kafka:latest-kafka-2.5.0
+                2.5.1=strimzi/kafka:latest-kafka-2.5.1
+                2.6.0=strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGES
+              value: |
+                2.5.0=strimzi/kafka:latest-kafka-2.5.0
+                2.5.1=strimzi/kafka:latest-kafka-2.5.1
+                2.6.0=strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
+              value: |
+                2.5.0=strimzi/kafka:latest-kafka-2.5.0
+                2.5.1=strimzi/kafka:latest-kafka-2.5.1
+                2.6.0=strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
+              value: |
+                2.5.0=strimzi/kafka:latest-kafka-2.5.0
+                2.5.1=strimzi/kafka:latest-kafka-2.5.1
+                2.6.0=strimzi/kafka:latest-kafka-2.6.0
+            - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
+              value: strimzi/operator:latest
+            - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
+              value: strimzi/operator:latest
+            - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
+              value: strimzi/operator:latest
+            - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
+              value: strimzi/kafka-bridge:0.18.0
+            - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
+              value: strimzi/jmxtrans:latest
+          livenessProbe:
+            httpGet:
+              path: /healthy
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 384Mi
+            requests:
+              cpu: 200m
+              memory: 384Mi
+  strategy:
+    type: Recreate

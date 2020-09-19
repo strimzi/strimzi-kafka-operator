@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -111,7 +112,10 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.zookeeperContainer = zookeeperContainer;
     }
 
-    @Description("Template for the Kafka broker TLS sidecar container")
+    @DeprecatedProperty
+    @Deprecated
+    @Description("Template for the Zookeeper server TLS sidecar container. " +
+            "The TLS sidecar is not used anymore and this option will be ignored.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getTlsSidecarContainer() {
         return tlsSidecarContainer;

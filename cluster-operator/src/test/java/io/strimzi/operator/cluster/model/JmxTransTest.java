@@ -5,7 +5,17 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxTransSpec;
 import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
@@ -13,6 +23,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -20,15 +31,26 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.CustomMatchers.hasEntries;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasProperty;
 
 public class JmxTransTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -55,7 +77,7 @@ public class JmxTransTest {
                     .build())
             .build();
 
-    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog))
+    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog))
             .editSpec()
                 .withJmxTrans(jmxTransSpec)
                 .editKafka().withJmxOptions(new KafkaJmxOptionsBuilder()
@@ -157,5 +179,191 @@ public class JmxTransTest {
         assertThat(originalCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() >
                         scaledCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
                 is(true));
+    }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
+                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
+        Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
+        expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
+
+        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withNewKey("key1")
+                                    .withNewOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                        .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        List<Toleration> tolerations = singletonList(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editOrNewJmxTrans()
+                        .editOrNewTemplate()
+                            .withNewDeployment()
+                                .withNewMetadata()
+                                    .withLabels(depLabels)
+                                    .withAnnotations(depAnots)
+                                .endMetadata()
+                            .endDeployment()
+                            .withNewPod()
+                                .withNewMetadata()
+                                    .withLabels(podLabels)
+                                    .withAnnotations(podAnots)
+                                .endMetadata()
+                                .withNewPriorityClassName("top-priority")
+                                .withNewSchedulerName("my-scheduler")
+                                .withAffinity(affinity)
+                                .withTolerations(tolerations)
+                            .endPod()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+        JmxTrans jmxTrans = JmxTrans.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        Deployment dep = jmxTrans.generateDeployment(null, null);
+        assertThat(dep.getMetadata().getLabels(), hasEntries(expectedDepLabels));
+        assertThat(dep.getMetadata().getAnnotations(), hasEntries(depAnots));
+        assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
+
+        // Check Pods
+        assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), hasEntries(podLabels));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations(), hasEntries(podAnots));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+    }
+
+    @Test
+    public void testContainerEnvVars() {
+
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        testEnvs.add(envVar2);
+        ContainerTemplate container = new ContainerTemplate();
+        container.setEnv(testEnvs);
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editJmxTrans()
+                        .withNewTemplate()
+                            .withNewContainer()
+                                .withEnv(testEnvs)
+                            .endContainer()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+
+        List<EnvVar> envVars = JmxTrans.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
+                envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(true));
+        assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
+                envVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
+    }
+
+    @Test
+    public void testContainerEnvVarsConflict() {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = JmxTrans.ENV_VAR_JMXTRANS_LOGGING_LEVEL;
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
+
+        List<ContainerEnvVar> testEnvs = new ArrayList<>();
+        testEnvs.add(envVar1);
+        ContainerTemplate container = new ContainerTemplate();
+        container.setEnv(testEnvs);
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editJmxTrans()
+                        .withNewTemplate()
+                            .withNewContainer()
+                                .withEnv(testEnvs)
+                            .endContainer()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+
+        List<EnvVar> envVars = JmxTrans.fromCrd(resource, VERSIONS).getEnvVars();
+
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
+                envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
+    }
+
+    @Test
+    public void testContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editJmxTrans()
+                        .withNewTemplate()
+                            .withNewContainer()
+                                .withSecurityContext(securityContext)
+                            .endContainer()
+                        .endTemplate()
+                    .endJmxTrans()
+                .endSpec()
+                .build();
+
+        JmxTrans jmxTrans = JmxTrans.fromCrd(resource, VERSIONS);
+        assertThat(jmxTrans.templateContainerSecurityContext, is(securityContext));
+
+        Deployment deployment = jmxTrans.generateDeployment(null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(cluster + "-kafka-jmx-trans")),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
     }
 }

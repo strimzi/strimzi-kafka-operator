@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -26,6 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "labels", "annotations"})
+@DescriptionFile
 @EqualsAndHashCode
 public class MetadataTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -34,7 +36,7 @@ public class MetadataTemplate implements Serializable, UnknownPropertyPreserving
     private Map<String, String> annotations = new HashMap<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Labels which should be added to the resource template. " +
+    @Description("Labels added to the resource template. " +
             "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
@@ -45,7 +47,7 @@ public class MetadataTemplate implements Serializable, UnknownPropertyPreserving
         this.labels = labels;
     }
 
-    @Description("Annotations which should be added to the resource template. " +
+    @Description("Annotations added to the resource template. " +
             "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {

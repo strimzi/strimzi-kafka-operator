@@ -1,0 +1,52 @@
+// Module included in the following assemblies:
+//
+// metrics/assembly_metrics-kafka-exporter.adoc
+
+[id='proc-kafka-exporter-enabling-{context}']
+
+= Enabling the Kafka Exporter Grafana dashboard
+
+Strimzi provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Grafana].
+The Kafka Exporter dashboard is provided in the `examples/metrics` directory as a JSON file:
+
+* `strimzi-kafka-exporter.json`
+
+If you deployed Kafka Exporter with your Kafka cluster, you can visualize the metrics data it exposes on the Grafana dashboard.
+
+.Prerequisites
+
+* Kafka is deployed with xref:proc-kafka-exporter-configuring-{context}[Kafka Exporter metrics configuration]
+* xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed to the Kafka cluster]
+* xref:proc-metrics-deploying-grafana-{context}[Grafana is deployed to the Kafka cluster]
+
+This procedure assumes you already have access to the Grafana user interface and Prometheus has been added as a data source.
+If you are accessing the user interface for the first time, see xref:assembly-metrics-grafana-{context}[Grafana].
+
+.Procedure
+
+. xref:proc-metrics-grafana-dashboard-{context}[Access the Grafana user interface].
+
+. Select the _Strimzi Kafka Exporter_ dashboard.
++
+When metrics data has been collected for some time, the Kafka Exporter charts are populated.
+
+Strimzi Kafka Exporter:: Shows metrics for:
++
+* Topic count
+* Partition count
+* Replicas count
+* In-sync replicas count
+* Under-replicated partitions count
+* Partitions which are at their minimum in sync replica count
+* Partitions which are under their minimum in sync replica count
+* Partitions not on a preferred node
+* Messages in per second from topics
+* Messages consumed per second from topics
+* Messages consumed per minute by consumer groups
+* Lag by consumer group
+* Number of partitions
+* Latest offsets
+* Oldest offsets
+
+Use the Grafana charts to analyze lag and to check if actions to reduce lag are having an impact on an affected consumer group.
+If, for example, Kafka brokers are adjusted to reduce lag, the dashboard will show the  _Lag by consumer group_ chart going down and the _Messages consumed per minute_ chart going up.

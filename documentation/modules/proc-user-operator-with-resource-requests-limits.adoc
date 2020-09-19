@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-deploying-the-user-operator.adoc
+// assembly-using-the-user-operator.adoc
 
 [id='proc-user-operator-with-resource-requests-limits-{context}']
 = Configuring the User Operator with resource requests and limits
@@ -14,9 +14,11 @@ You can allocate resources, such as CPU and memory, to the User Operator and set
 .Procedure
 
 . Update the Kafka cluster configuration in an editor, as required:
++
 [source,shell,subs=+quotes]
-kubectl edit kafka my-cluster
-
+----
+kubectl edit kafka _MY-CLUSTER_
+----
 
 . In the `spec.entityOperator.userOperator.resources` property in the `Kafka` resource, set the resource requests and limits for the User Operator.
 +
@@ -25,7 +27,7 @@ kubectl edit kafka my-cluster
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
-  # kafka and zookeeper sections...
+  # Kafka and ZooKeeper sections...
   entityOperator:
     userOperator:
       resources:
@@ -37,8 +39,4 @@ spec:
           memory: 500Mi
 ----
 Save the file and exit the editor.
-The Cluster Operator will apply the changes automatically.
-
-.Additional resources
-
-* For more information about the schema of the `resources` object, see xref:type-ResourceRequirements-reference[].
+The Cluster Operator applies the changes automatically.

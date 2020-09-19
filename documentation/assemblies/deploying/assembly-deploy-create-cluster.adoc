@@ -1,0 +1,38 @@
+// This assembly is included in:
+//
+// assembly-getting-started.adoc
+// deploying/assembly-deploy-tasks.adoc
+
+[id="deploy-create-cluster_{context}"]
+= Create the Kafka cluster
+
+In order to create your Kafka cluster, you deploy the Cluster Operator to manage the Kafka cluster, then deploy the Kafka cluster.
+
+When deploying the Kafka cluster using the `Kafka` resource, you can deploy the Topic Operator and User Operator at the same time.
+Alternatively, if you are using a non-Strimzi Kafka cluster, you can deploy the Topic Operator and User Operator as standalone components.
+
+[discrete]
+== Deploying a Kafka cluster with the Topic Operator and User Operator
+
+Perform these deployment steps if you want to use the Topic Operator and User Operator with a Kafka cluster managed by Strimzi.
+
+. xref:cluster-operator-{context}[Deploy the Cluster Operator]
+. Use the Cluster Operator to deploy the:
+.. xref:kafka-cluster-{context}[Kafka cluster]
+.. xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[Topic Operator]
+.. xref:deploying-the-user-operator-using-the-cluster-operator-{context}[User Operator]
+
+[discrete]
+== Deploying a standalone Topic Operator and User Operator
+
+Perform these deployment steps if you want to use the Topic Operator and User Operator with a Kafka cluster that is *not managed* by Strimzi.
+
+. xref:deploying-the-topic-operator-standalone-{context}[Deploy the standalone Topic Operator]
+. xref:deploying-the-user-operator-standalone-{context}[Deploy the standalone User Operator]
+
+//Options and instruction for deploying Cluster Operator
+include::assembly-deploy-cluster-operator.adoc[leveloffset=+1]
+//Options and instructions for deploying Kafka resource
+include::assembly-deploy-kafka-cluster.adoc[leveloffset=+1]
+//Alternative standalone deployment of Topic Operator and Cluster Operator
+include::assembly-deploy-standalone-operators.adoc[leveloffset=+1]

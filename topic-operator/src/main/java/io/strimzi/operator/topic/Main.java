@@ -45,6 +45,7 @@ public class Main {
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
         Session session = new Session(kubeClient, config);

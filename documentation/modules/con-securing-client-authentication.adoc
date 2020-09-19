@@ -1,0 +1,112 @@
+// Module included in the following assemblies:
+//
+// assembly-securing-kafka-clients.adoc
+
+[id='con-securing-client-authentication-{context}']
+= User authentication
+
+User authentication is configured using the `authentication` property in `KafkaUser.spec`.
+The authentication mechanism enabled for the user is specified using the `type` field.
+
+Supported authentication mechanisms:
+
+* TLS client authentication
+* SCRAM-SHA-512 authentication
+
+When no authentication mechanism is specified, the User Operator does not create the user or its credentials.
+
+.Additional resources
+
+* xref:con-securing-kafka-authentication-{context}[When to use mutual TLS authentication or SCRAM-SHA Authentication authentication for clients]
+
+== TLS Client Authentication
+
+To use TLS client authentication, you set the `type` field to `tls`.
+
+.An example `KafkaUser` with TLS client authentication enabled
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  # ...
+----
+
+When the user is created by the User Operator, it creates a new Secret with the same name as the `KafkaUser` resource.
+The Secret contains a private and public key for TLS client authentication.
+The public key is contained in a user certificate, which is signed by the client Certificate Authority (CA).
+
+All keys are in X.509 format.
+
+Secrets provide private keys and certificates in PEM and PKCS #12 formats.
+
+For more information on securing Kafka communication with Secrets, see xref:security-{context}[].
+
+.An example `Secret` with user credentials
+[source,yaml,subs="attributes+"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data:
+  ca.crt: # Public key of the client CA
+  user.crt: # User certificate that contains the public key of the user
+  user.key: # Private key of the user
+  user.p12: # PKCS #12 archive file for storing certificates and keys
+  user.password: # Password for protecting the PKCS #12 archive file
+----
+
+== SCRAM-SHA-512 Authentication
+
+To use the SCRAM-SHA-512 authentication mechanism, you set the `type` field to `scram-sha-512`.
+
+.An example `KafkaUser` with SCRAM-SHA-512 authentication enabled
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: scram-sha-512
+  # ...
+----
+
+When the user is created by the User Operator, it creates a new secret with the same name as the `KafkaUser` resource.
+The secret contains the generated password in the `password` key, which is encoded with base64.
+In order to use the password, it must be decoded.
+
+.An example `Secret` with user credentials
+[source,yaml,subs="attributes+"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data:
+  password: Z2VuZXJhdGVkcGFzc3dvcmQ= <1>
+----
+<1> The generated password, base64 encoded.
+
+Decoding the generated password:
+----
+echo "Z2VuZXJhdGVkcGFzc3dvcmQ=" | base64 --decode
+----

@@ -7,6 +7,7 @@ package io.strimzi.test.k8s;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.DoneablePod;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -23,6 +24,8 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.batch.Job;
+import io.fabric8.kubernetes.api.model.batch.JobList;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -34,6 +37,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import okhttp3.Response;
@@ -66,9 +70,17 @@ public class KubeClient {
         this.namespace = namespace;
     }
 
+    // ============================
+    // ---------> CLIENT <---------
+    // ============================
+
     public KubernetesClient getClient() {
         return client;
     }
+
+    // ===============================
+    // ---------> NAMESPACE <---------
+    // ===============================
 
     public KubeClient namespace(String futureNamespace) {
         return new KubeClient(this.client, futureNamespace);
@@ -88,7 +100,7 @@ public class KubeClient {
     }
 
     public void deleteNamespace(String name) {
-        client.namespaces().withName(name).cascading(true).delete();
+        client.namespaces().withName(name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     /**
@@ -98,9 +110,12 @@ public class KubeClient {
         return client.namespaces().withName(namespaceName).isReady();
     }
 
+    // ================================
+    // ---------> CONFIG MAP <---------
+    // ================================
 
     public void deleteConfigMap(String configMapName) {
-        client.configMaps().inNamespace(getNamespace()).withName(configMapName).cascading(true).delete();
+        client.configMaps().inNamespace(getNamespace()).withName(configMapName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     public ConfigMap getConfigMap(String configMapName) {
@@ -123,6 +138,16 @@ public class KubeClient {
     public List<ConfigMap> listConfigMaps() {
         return client.configMaps().inNamespace(getNamespace()).list().getItems();
     }
+
+    public List<ConfigMap> listConfigMaps(String namePrefix) {
+        return listConfigMaps().stream()
+                .filter(cm -> cm.getMetadata().getName().startsWith(namePrefix))
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+    // ---------> POD <---------
+    // =========================
 
     public String execInPod(String podName, String container, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -232,6 +257,10 @@ public class KubeClient {
         return parsedDate;
     }
 
+    // ==================================
+    // ---------> STATEFUL SET <---------
+    // ==================================
+
     /**
      * Gets stateful set
      */
@@ -268,12 +297,12 @@ public class KubeClient {
     }
 
     public void deleteStatefulSet(String statefulSetName) {
-        client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).cascading(true).delete();
+        client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
-    public Deployment createOrReplaceDeployment(Deployment deployment) {
-        return client.apps().deployments().inNamespace(getNamespace()).createOrReplace(deployment);
-    }
+    // ================================
+    // ---------> DEPLOYMENT <---------
+    // ================================
 
     /**
      * Gets deployment
@@ -301,6 +330,25 @@ public class KubeClient {
     }
 
     /**
+     * Gets deployment status
+     */
+    public boolean getDeploymentStatus(String deploymentName) {
+        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).isReady();
+    }
+
+    public void deleteDeployment(String deploymentName) {
+        client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+    }
+
+    public Deployment createOrReplaceDeployment(Deployment deployment) {
+        return client.apps().deployments().inNamespace(getNamespace()).createOrReplace(deployment);
+    }
+
+    // =======================================
+    // ---------> DEPLOYMENT CONFIG <---------
+    // =======================================
+
+    /**
      * Gets deployment config
      */
     public DeploymentConfig getDeploymentConfig(String deploymentConfigName) {
@@ -319,19 +367,19 @@ public class KubeClient {
      * @param deploymentConfigName deployment config name
      */
     public void deleteDeploymentConfig(String deploymentConfigName) {
-        client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).cascading(true).delete();
+        client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     /**
-     * Gets deployment status
+     * Gets deployment config status
      */
-    public boolean getDeploymentStatus(String deploymentName) {
-        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).isReady();
+    public boolean getDeploymentConfigStatus(String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).isReady();
     }
 
-    public void deleteDeployment(String deploymentName) {
-        client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).cascading(true).delete();
-    }
+    // ==================================
+    // ---------> REPLICA SETS <---------
+    // ==================================
 
     public String getReplicaSetNameByPrefix(String namePrefix) {
         return client.apps().replicaSets().inNamespace(getNamespace()).list().getItems().stream()
@@ -343,19 +391,69 @@ public class KubeClient {
     }
 
     public void deleteReplicaSet(String replicaSetName) {
-        client.apps().replicaSets().inNamespace(getNamespace()).withName(replicaSetName).cascading(true).delete();
+        client.apps().replicaSets().inNamespace(getNamespace()).withName(replicaSetName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
+
+    // ==========================
+    // ---------> NODE <---------
+    // ==========================
 
     public String getNodeAddress() {
         return kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
     }
 
-    /**
-     * Gets deployment config status
-     */
-    public boolean getDeploymentConfigStatus(String deploymentConfigName) {
-        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).isReady();
+    public List<Node> listNodes() {
+        return client.nodes().list().getItems();
     }
+
+    /**
+     * Method which return list of kube cluster nodes
+     * @return list of nodes
+     */
+    public List<Node> getClusterNodes() {
+        return client.nodes().list().getItems();
+    }
+
+    // =========================
+    // ---------> JOB <---------
+    // =========================
+
+    public boolean jobExists(String jobName) {
+        return client.batch().jobs().inNamespace(getNamespace()).list().getItems().stream().anyMatch(j -> j.getMetadata().getName().startsWith(jobName));
+    }
+
+    public Job createJob(Job job) {
+        return client.batch().jobs().inNamespace(getNamespace()).createOrReplace(job);
+    }
+
+    public Job replaceJob(Job job) {
+        return client.batch().jobs().inNamespace(getNamespace()).createOrReplace(job);
+    }
+
+    public Boolean deleteJob(String jobName) {
+        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).delete();
+    }
+
+    public Job getJob(String jobName) {
+        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get();
+    }
+
+    public Boolean getJobStatus(String jobName) {
+        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus().getSucceeded().equals(1);
+    }
+
+    public JobList getJobList() {
+        return client.batch().jobs().inNamespace(getNamespace()).list();
+    }
+
+    public List<Job> listJobs(String namePrefix) {
+        return client.batch().jobs().inNamespace(getNamespace()).list().getItems().stream()
+            .filter(job -> job.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
+    }
+
+    // ============================
+    // ---------> SECRET <---------
+    // ============================
 
     public Secret createSecret(Secret secret) {
         return client.secrets().inNamespace(getNamespace()).createOrReplace(secret);
@@ -370,23 +468,7 @@ public class KubeClient {
     }
 
     public boolean deleteSecret(String secretName) {
-        return client.secrets().inNamespace(getNamespace()).withName(secretName).cascading(true).delete();
-    }
-
-    public Service createService(Service service) {
-        return client.services().inNamespace(getNamespace()).createOrReplace(service);
-    }
-
-    public Ingress createIngress(Ingress ingress) {
-        return client.extensions().ingresses().inNamespace(getNamespace()).createOrReplace(ingress);
-    }
-
-    public Boolean deleteIngress(Ingress ingress) {
-        return client.extensions().ingresses().inNamespace(getNamespace()).delete(ingress);
-    }
-
-    public List<Node> listNodes() {
-        return client.nodes().list().getItems();
+        return client.secrets().inNamespace(getNamespace()).withName(secretName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     public List<Secret> listSecrets() {
@@ -401,8 +483,28 @@ public class KubeClient {
             .collect(Collectors.toList());
     }
 
+    // =============================
+    // ---------> INGRESS <---------
+    // =============================
+
+    public Ingress createIngress(Ingress ingress) {
+        return client.extensions().ingresses().inNamespace(getNamespace()).createOrReplace(ingress);
+    }
+
+    public Boolean deleteIngress(Ingress ingress) {
+        return client.extensions().ingresses().inNamespace(getNamespace()).delete(ingress);
+    }
+
+    // =============================
+    // ---------> SERVICE <---------
+    // =============================
+
     public Service getService(String serviceName) {
         return client.services().inNamespace(getNamespace()).withName(serviceName).get();
+    }
+
+    public Service createService(Service service) {
+        return client.services().inNamespace(getNamespace()).createOrReplace(service);
     }
 
     /**
@@ -423,7 +525,7 @@ public class KubeClient {
     }
 
     public void deleteService(String serviceName) {
-        client.services().inNamespace(getNamespace()).withName(serviceName).cascading(true).delete();
+        client.services().inNamespace(getNamespace()).withName(serviceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     public void deleteService(Service service) {
@@ -434,6 +536,9 @@ public class KubeClient {
         return client.serviceAccounts().inNamespace(getNamespace()).list().getItems();
     }
 
+    // =========================
+    // ---------> LOG <---------
+    // =========================
 
     public String logs(String podName) {
         return client.pods().inNamespace(getNamespace()).withName(podName).getLog();
@@ -443,10 +548,16 @@ public class KubeClient {
         return client.pods().inNamespace(getNamespace()).withName(podName).inContainer(containerName).getLog();
     }
 
+    // ============================
+    // ---------> EVENTS <---------
+    // ============================
+
+    @SuppressWarnings("deprecation")
     public List<Event> listEvents() {
         return client.events().inNamespace(getNamespace()).list().getItems();
     }
 
+    @SuppressWarnings("deprecation")
     public List<Event> listEvents(String resourceType, String resourceName) {
         return client.events().inNamespace(getNamespace()).list().getItems().stream()
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
@@ -459,6 +570,10 @@ public class KubeClient {
                 .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
                 .collect(Collectors.toList());
     }
+
+    // ==================================
+    // ---------> ROLE BINDING <---------
+    // ==================================
 
     public RoleBinding createOrReplaceRoleBinding(RoleBinding roleBinding) {
         return client.rbac().roleBindings().inNamespace(getNamespace()).createOrReplace(roleBinding);
@@ -476,9 +591,13 @@ public class KubeClient {
         return client.rbac().roleBindings().list().getItems();
     }
 
-    public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return client.customResources(crd, resourceType, listClass, doneClass); //TODO namespace here
+    public <T extends HasMetadata, L extends KubernetesResourceList<T>, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinitionContext crdContext, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
+        return client.customResources(crdContext, resourceType, listClass, doneClass); //TODO namespace here
     }
+
+    // =========================
+    // ---------> CRD <---------
+    // =========================
 
     public List<CustomResourceDefinition> listCustomResourceDefinition() {
         return client.customResourceDefinitions().list().getItems();
@@ -510,6 +629,10 @@ public class KubeClient {
         }
     }
 
+    // ======================================
+    // ---------> CLUSTER SPECIFIC <---------
+    // ======================================
+
     /**
      * Method which return kubernetes version
      * @return kubernetes version
@@ -527,5 +650,14 @@ public class KubeClient {
     public String getClusterOperatorPodName() {
         LabelSelector selector = kubeClient().getDeploymentSelectors("strimzi-cluster-operator");
         return kubeClient().listPods(selector).get(0).getMetadata().getName();
+    }
+
+    /**
+     * Method which return list of kube cluster workers node
+     * @return list of worker nodes
+     */
+    public List<Node> getClusterWorkers() {
+        return getClusterNodes().stream().filter(node ->
+                node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/worker")).collect(Collectors.toList());
     }
 }

@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -88,7 +88,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.cascading(cascade)).thenReturn(mockResource);
+        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
         when(mockResource.patch(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -103,7 +103,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource()).setHandler(context.succeeding(rr -> context.verify(() -> {
+        op.createOrUpdate(resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
@@ -134,7 +134,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.failing(e -> context.verify(() -> {
+        op.createOrUpdate(resource).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, is(ex));
             async.flag();
         })));
@@ -145,7 +145,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(null);
-        when(mockResource.create(any())).thenReturn(resource);
+        when(mockResource.create((T) any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -159,7 +159,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.succeeding(rr -> context.verify(() -> {
+        op.createOrUpdate(resource).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
             async.flag();
@@ -179,7 +179,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
-        when(mockResource.create(any())).thenThrow(ex);
+        when(mockResource.create((T) any())).thenThrow(ex);
 
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
@@ -187,7 +187,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).setHandler(context.failing(e -> {
+        op.createOrUpdate(resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -211,7 +211,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.succeeding(rr -> context.verify(() -> {
+            .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockResource).get();
                 verify(mockResource, never()).delete();
                 async.flag();
@@ -220,15 +220,14 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
     @Test
     public void testReconcileDeleteWhenResourceExistsStillDeletes(VertxTestContext context) {
-        Deletable mockDeletable = mock(Deletable.class);
-
-        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
+        EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.cascading(eq(true))).thenReturn(mockERPD);
+        when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
+        when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -243,7 +242,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.succeeding(rr -> context.verify(() -> {
+            .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
                 async.flag();
             })));
@@ -251,15 +250,14 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
     @Test
     public void testReconcileDeletionSuccessfullyDeletes(VertxTestContext context) {
-        Deletable mockDeletable = mock(Deletable.class);
-
-        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
+        EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.cascading(eq(true))).thenReturn(mockERPD);
+        when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
+        when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -274,7 +272,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.succeeding(rr -> context.verify(() -> {
+            .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
                 async.flag();
             })));
@@ -283,7 +281,8 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     @Test
     public void testReconcileDeleteThrowsWhenDeletionThrows(VertxTestContext context) {
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
-        Deletable mockDeletable = mock(Deletable.class);
+        EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
+        EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
         when(mockDeletable.delete()).thenThrow(ex);
 
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
@@ -292,7 +291,8 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.cascading(eq(true))).thenReturn(mockERPD);
+        when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
+        when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -307,7 +307,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .setHandler(context.failing(e -> context.verify(() -> {
+            .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, is(ex));
                 async.flag();
             })));

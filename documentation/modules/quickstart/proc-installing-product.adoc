@@ -3,9 +3,9 @@
 // assembly-evaluation.adoc
 
 [id='proc-install-product-{context}']
-= Installing {ProductName}
+= Installing Strimzi
 
-Using the xref:proc-product-downloads-{context}[download files], install {ProductName} with the Custom Resource Definitions (CRDs) and RBAC configuration required for deployment.
+Using the xref:proc-product-downloads-{context}[download files], install Strimzi with the Custom Resource Definitions (CRDs) and RBAC configuration required for deployment.
 
 In this task you create namespaces in the cluster for your deployment.
 Use namespaces to separate functions.
@@ -18,14 +18,14 @@ Use namespaces to separate functions.
 
 . Log in to the Kubernetes cluster using an account that has cluster admin privileges.
 
-. Create a new `kafka` namespace for the {ProductName} Kafka Cluster Operator.
+. Create a new `kafka` namespace for the Strimzi Kafka Cluster Operator.
 +
 [source, shell, subs=+quotes ]
 ----
 kubectl create ns kafka
 ----
 
-. Modify the installation files to reference the `kafka` namespace where you will install the {ProductName} Kafka Cluster Operator.
+. Modify the installation files to reference the `kafka` namespace where you will install the Strimzi Kafka Cluster Operator.
 +
 NOTE: By default, the files work in the `myproject` namespace.
 +
@@ -51,7 +51,7 @@ sed -i '' 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBin
 kubectl create ns my-kafka-project
 ----
 
-. Edit the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file and set the `STRIMZI_NAMESPACE` environment variable to the namespace `my-kafka-project`.
+. Edit the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file and set the `STRIMZI_NAMESPACE` environment variable to the namespace `my-kafka-project`.
 +
 [source, yaml, subs=+quotes ]
 ----

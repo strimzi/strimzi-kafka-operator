@@ -1,0 +1,58 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-topic-operator.adoc
+
+[id='proc-configuring-kafka-topic-{context}']
+= Configuring a Kafka topic
+
+Use the properties of the `KafkaTopic` resource to configure a Kafka topic.
+
+You can use `kubectl apply` to create or modify topics, and `kubectl delete` to delete existing topics.
+
+For example:
+
+* `kubectl apply -f <topic-config-file>`
+* `kubectl delete KafkaTopic <topic-name>`
+
+This procedure shows how to create a topic with 10 partitions and 2 replicas.
+
+.Before you start
+
+It is important that you consider the following before making your changes:
+
+* Kafka does _not_ support making the following changes through the `KafkaTopic` resource:
+** Changing topic names using `spec.topicName`
+** Decreasing partition size using `spec.partitions`
+* You cannot use `spec.replicas` to change the number of replicas that were initially specified.
+* Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
+
+.Prerequisites
+
+* A running Kafka cluster xref:con-securing-kafka-authentication-{context}[configured with a Kafka broker listener using TLS authentication and encryption].
+* A running Topic Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
+* For deleting a topic, `delete.topic.enable=true` (default) in the `spec.kafka.config` of the `Kafka` resource.
+
+.Procedure
+
+. Prepare a file containing the `KafkaTopic` to be created.
++
+.An example `KafkaTopic`
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: orders
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 10
+  replicas: 2
+----
++
+TIP: When modifying a topic, you can get the current version of the resource using `kubectl get kafkatopic orders -o yaml`.
+
+. Create the `KafkaTopic` resource in Kubernetes.
++
+[source,shell,subs=+quotes]
+kubectl apply -f _TOPIC-CONFIG-FILE_

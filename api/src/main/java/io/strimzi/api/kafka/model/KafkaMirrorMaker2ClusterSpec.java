@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -20,6 +21,7 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -30,7 +32,7 @@ import static java.util.Collections.emptyMap;
 public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, Serializable {
 
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private static final long serialVersionUID = 1L;
 
@@ -100,7 +102,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
+            this.additionalProperties = new HashMap<>(1);
         }
         this.additionalProperties.put(name, value);
     }

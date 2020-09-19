@@ -6,7 +6,7 @@
 
 = Securing the Kafka Bridge
 
-{ProductName} does not currently provide any encryption, authentication, or authorization for the Kafka Bridge. This means that requests sent from external clients to the Kafka Bridge are:
+Strimzi does not currently provide any encryption, authentication, or authorization for the Kafka Bridge. This means that requests sent from external clients to the Kafka Bridge are:
 
 * Not encrypted, and must use HTTP rather than HTTPS
 

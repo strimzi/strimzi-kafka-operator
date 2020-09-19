@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.text.ParseException;
+import java.util.Map;
 
 /**
  * Gives a info about certain features availability regarding to kubernetes version
@@ -57,7 +58,7 @@ public class PlatformFeaturesAvailability {
             pfa.setImages(supported);
             return Future.succeededFuture(pfa);
         })
-        .setHandler(pfaPromise);
+        .onComplete(pfaPromise);
 
         return pfaPromise.future();
     }
@@ -103,7 +104,7 @@ public class PlatformFeaturesAvailability {
 
         if (kubernetesVersion != null) {
             try {
-                futureVersion = Future.succeededFuture(new VersionInfo(Util.parseMap(kubernetesVersion)));
+                futureVersion = Future.succeededFuture(parseVersionInfo(kubernetesVersion));
             } catch (ParseException e) {
                 throw new RuntimeException("Failed to parse the Kubernetes version information provided through STRIMZI_KUBERNETES_VERSION environment variable", e);
             }
@@ -114,6 +115,33 @@ public class PlatformFeaturesAvailability {
         return futureVersion;
     }
 
+    static VersionInfo parseVersionInfo(String str) throws ParseException {
+        Map<String, String> map = Util.parseMap(str);
+        VersionInfo.Builder vib = new VersionInfo.Builder();
+        for (Map.Entry<String, String> entry: map.entrySet()) {
+            if (entry.getKey().equals("major")) {
+                vib.withMajor(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("minor")) {
+                vib.withMinor(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("gitVersion")) {
+                vib.withGitVersion(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("gitCommit")) {
+                vib.withGitCommit(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("gitTreeState")) {
+                vib.withGitTreeState(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("buildDate")) {
+                vib.withBuildDate(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("goVersion")) {
+                vib.withGoVersion(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("compiler")) {
+                vib.withCompiler(map.get(entry.getKey()));
+            } else if (entry.getKey().equals("platform")) {
+                vib.withPlatform(map.get(entry.getKey()));
+            }
+        }
+        return vib.build();
+    }
+
     private static Future<VersionInfo> getVersionInfoFromKubernetes(Vertx vertx, KubernetesClient client)   {
         Promise<VersionInfo> promise = Promise.promise();
 
@@ -121,7 +149,7 @@ public class PlatformFeaturesAvailability {
             try {
                 request.complete(client.getVersion());
             } catch (Exception e) {
-                log.error("Detection of Kuberetes version failed.", e);
+                log.error("Detection of Kubernetes version failed.", e);
                 request.fail(e);
             }
         }, promise);

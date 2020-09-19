@@ -1,0 +1,136 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-generating-optimization-proposals-{context}']
+= Generating optimization proposals 
+
+When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
+
+Analyze the information in the optimization proposal and decide whether to approve it. 
+
+.Prerequisites
+
+* You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your Strimzi cluster.
+
+* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:capacity-configuration[capacity limits on broker resources].
+
+.Procedure
+
+. Create a `KafkaRebalance` resource:
+
+.. To use the _default optimization goals_ defined in the `Kafka` resource, leave the `spec` property empty:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels: 
+    strimzi.io/cluster: my-cluster
+spec: {}
+----
+
+.. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
++
+In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels: 
+    strimzi.io/cluster: my-cluster
+spec:    
+  goals:
+    - RackAwareGoal
+    - ReplicaCapacityGoal
+----
+
+.. To ignore the configured hard goals, add the `skipHardGoalCheck: true` property:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels: 
+    strimzi.io/cluster: my-cluster
+spec:    
+  goals:
+    - RackAwareGoal
+    - ReplicaCapacityGoal
+skipHardGoalCheck: true
+----
+
+. Create or update the resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f _your-file_
+----
++
+The Cluster Operator requests the optimization proposal from Cruise Control.
+This might take a few minutes depending on the size of the Kafka cluster. 
+
+. Check the status of the `KafkaRebalance` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe kafkarebalance _rebalance-cr-name_
+----
++
+Cruise Control returns one of two statuses:
+
+** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
+
+** `ProposalReady`: The optimization proposal is ready for review and, if desired, approval.
+The optimization proposal is contained in the `Status.Optimization Result` property of the `KafkaRebalance` resource.
+
+. Review the optimization proposal.
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe kafkarebalance _rebalance-cr-name_
+----
++
+Here is an example proposal:
++
+[source,shell,subs="+quotes"]
+----
+Status:
+  Conditions:
+    Last Transition Time:  2020-05-19T13:50:12.533Z
+    Status:                ProposalReady
+    Type:                  State
+  Observed Generation:     1
+  Optimization Result:
+    Data To Move MB:  0
+    Excluded Brokers For Leadership:
+    Excluded Brokers For Replica Move:
+    Excluded Topics:
+    Intra Broker Data To Move MB:         0
+    Monitored Partitions Percentage:      100
+    Num Intra Broker Replica Movements:   0
+    Num Leader Movements:                 0
+    Num Replica Movements:                26
+    On Demand Balancedness Score After:   81.8666802863978
+    On Demand Balancedness Score Before:  78.01176356230222
+    Recent Windows:                       1
+  Session Id:                             05539377-ca7b-45ef-b359-e13564f1458c
+----
++
+The properties in the `Optimization Result` section describe the pending cluster rebalance operation. 
+For descriptions of each property, see xref:contents-optimization-proposals[Contents of optimization proposals]. 
+
+.What to do next
+
+xref:proc-approving-optimization-proposal-{context}[] 
+
+.Additional resources
+
+* xref:con-optimization-proposals-{context}[] 

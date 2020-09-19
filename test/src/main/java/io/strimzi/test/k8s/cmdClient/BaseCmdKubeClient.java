@@ -214,6 +214,15 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public K scaleByName(String kind, String name, int replicas) {
+        try (Context context = defaultContext()) {
+            Exec.exec(null, namespacedCommand("scale", kind, name, "--replicas", Integer.toString(replicas)));
+            return (K) this;
+        }
+    }
+
+    @Override
     public ExecResult execInPod(String pod, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "--");
         cmd.addAll(asList(command));
@@ -222,9 +231,14 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult execInPodContainer(String pod, String container, String... command) {
+        return execInPodContainer(true, pod, container, command);
+    }
+
+    @Override
+    public ExecResult execInPodContainer(boolean logToOutput, String pod, String container, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "-c", container, "--");
         cmd.addAll(asList(command));
-        return Exec.exec(cmd);
+        return Exec.exec(null, cmd, 0, logToOutput);
     }
 
     @Override
@@ -241,8 +255,21 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    public ExecResult exec(boolean throwError, boolean logToOutput, String... command) {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(cmd());
+        cmd.addAll(asList(command));
+        return Exec.exec(null, cmd, 0, logToOutput, throwError);
+    }
+
+    @Override
     public ExecResult execInCurrentNamespace(String... commands) {
         return Exec.exec(namespacedCommand(commands));
+    }
+
+    @Override
+    public ExecResult execInCurrentNamespace(boolean logToOutput, String... commands) {
+        return Exec.exec(null, namespacedCommand(commands), 0, logToOutput);
     }
 
     enum ExType {
@@ -252,7 +279,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @SuppressWarnings("unchecked")
-    private K waitFor(String resource, String name, Predicate<JsonNode> ready) {
+    public K waitFor(String resource, String name, Predicate<JsonNode> condition) {
         long timeoutMs = 570_000L;
         long pollMs = 1_000L;
         ObjectMapper mapper = new ObjectMapper();
@@ -261,7 +288,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
                 String jsonString = Exec.exec(namespacedCommand("get", resource, name, "-o", "json")).out();
                 LOGGER.trace("{}", jsonString);
                 JsonNode actualObj = mapper.readTree(jsonString);
-                return ready.test(actualObj);
+                return condition.test(actualObj);
             } catch (KubeClusterException.NotFound e) {
                 return false;
             } catch (IOException e) {
@@ -340,6 +367,23 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @Override
     public String getResourceAsYaml(String resourceType, String resourceName) {
         return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "yaml")).out();
+    }
+
+    @Override
+    public String getResourcesAsYaml(String resourceType) {
+        return Exec.exec(namespacedCommand("get", resourceType, "-o", "yaml")).out();
+    }
+
+    @Override
+    public void createResourceAndApply(String template, Map<String, String> params) {
+        List<String> cmd = namespacedCommand("process", template, "-l", "app=" + template, "-o", "yaml");
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            cmd.add("-p");
+            cmd.add(entry.getKey() + "=" + entry.getValue());
+        }
+
+        String yaml = Exec.exec(cmd).out();
+        applyContent(yaml);
     }
 
     @Override

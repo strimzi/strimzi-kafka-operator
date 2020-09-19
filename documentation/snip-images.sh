@@ -28,7 +28,7 @@ done
 cat <<EOF
 
 a|
-{ProductName} image for running Kafka, including:
+Strimzi image for running Kafka, including:
 
 * Kafka Broker
 * Kafka Connect / S2I
@@ -41,7 +41,7 @@ a|
 * {DockerOrg}/operator:{DockerTag}
 
 a|
-{ProductName} image for running the operators:
+Strimzi image for running the operators:
 
 * Cluster Operator
 * Topic Operator
@@ -53,14 +53,14 @@ a|
 * {DockerOrg}/kafka-bridge:{BridgeDockerTag}
 
 a|
-{ProductName} image for running the {ProductName} kafka Bridge
+Strimzi image for running the Strimzi kafka Bridge
 
 |JmxTrans
 a|
 * {DockerOrg}/jmxtrans:{DockerTag}
 
 a|
-{ProductName} image for running the {ProductName} JmxTrans
+Strimzi image for running the Strimzi JmxTrans
 
 |===
 EOF

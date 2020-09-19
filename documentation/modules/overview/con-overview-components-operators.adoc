@@ -4,7 +4,7 @@
 
 [id="key-features-operators_{context}"]
 = Operators
-{ProductName} provides Operators for managing a Kafka cluster running within a Kubernetes cluster.
+Strimzi provides Operators for managing a Kafka cluster running within a Kubernetes cluster.
 
 Cluster Operator:: Deploys and manages Apache Kafka clusters, Kafka Connect, Kafka MirrorMaker, Kafka Bridge, Kafka Exporter, and the Entity Operator
 Entity Operator:: Comprises the Topic Operator and User Operator
@@ -13,6 +13,6 @@ User Operator:: Manages Kafka users
 
 The Cluster Operator can deploy the Topic Operator and User Operator as part of an *Entity Operator* configuration at the same time as a Kafka cluster.
 
-.Operators within the {ProductName} architecture
+.Operators within the Strimzi architecture
 
-image:operators.png[Operators]
+image:operators.png[Operators within the Strimzi architecture]

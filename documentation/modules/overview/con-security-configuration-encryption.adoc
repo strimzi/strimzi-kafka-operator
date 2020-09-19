@@ -5,7 +5,7 @@
 [id="security-configuration-encryption_{context}"]
 = Encryption
 
-{ProductName} supports Transport Layer Security (TLS), a protocol for encrypted communication.
+Strimzi supports Transport Layer Security (TLS), a protocol for encrypted communication.
 
 Communication is always encrypted for communication between:
 
@@ -18,17 +18,15 @@ Communication is always encrypted for communication between:
 You can also configure TLS between Kafka brokers and clients by applying TLS encryption to the listeners of the Kafka broker.
 TLS is specified for external clients when configuring an external listener.
 
-{ProductName} components and Kafka clients use digital certificates for encryption.
+Strimzi components and Kafka clients use digital certificates for encryption.
 The Cluster Operator sets up certificates to enable encryption within the Kafka cluster.
 You can provide your own server certificates, referred to as _Kafka listener certificates_,
 for communication between Kafka clients and Kafka brokers, and inter-cluster communication.
 
-{ProductName} uses _Secrets_ to store the certificates and private keys required for TLS in PEM and PKCS #12 format.
+Strimzi uses _Secrets_ to store the certificates and private keys required for TLS in PEM and PKCS #12 format.
 
 A TLS Certificate Authority (CA) issues certificates to authenticate the identity of a component.
-{ProductName} verifies the certificates for the components against the CA certificate.
+Strimzi verifies the certificates for the components against the CA certificate.
 
-* {ProductName} components are verified against the _cluster CA_ Certificate Authority (CA)
+* Strimzi components are verified against the _cluster CA_ Certificate Authority (CA)
 * Kafka clients are verified against the _clients CA_ Certificate Authority (CA)
-
-As ZooKeeper does not have native support for TLS, a _TLS sidecar_ deployment with ZooKeeper allows the Cluster Operator to provide data encryption and authentication between ZooKeeper nodes in a cluster.

@@ -1,0 +1,19 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-prometheus-deploy.adoc/
+
+[id='con-metrics-prometheus-resources-{context}']
+
+= Prometheus resources
+
+When you apply the Prometheus configuration, the following resources are created in your Kubernetes cluster and managed by the Prometheus Operator:
+
+* A `ClusterRole` that grants permissions to Prometheus to read the health endpoints exposed by the Kafka and ZooKeeper pods, cAdvisor and the kubelet for container metrics.
+* A `ServiceAccount` for the Prometheus pods to run under.
+* A `ClusterRoleBinding` which binds the `ClusterRole` to the `ServiceAccount`.
+* A `Deployment` to manage the Prometheus Operator pod.
+* A `PodMonitor` to manage the configuration of the Prometheus pod.
+* A `Prometheus` to manage the configuration of the Prometheus pod.
+* A `PrometheusRule` to manage alerting rules for the Prometheus pod.
+* A `Secret` to manage additional Prometheus settings.
+* A `Service` to allow applications running in the cluster to connect to Prometheus (for example, Grafana using Prometheus as datasource).

@@ -1,0 +1,152 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='ref-cruise-control-configuration-{context}']
+= Cruise Control configuration
+
+The `config` property in `Kafka.spec.cruiseControl` contains configuration options as keys with values as one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+NOTE: Strings that look like JSON or YAML will need to be explicitly quoted.
+
+You can specify and configure all the options listed in the "Configurations" section of the {CruiseControlConfigDocs}, apart from those managed directly by Strimzi.
+Specifically, you *cannot* modify configuration options with keys equal to or starting with one of the following strings:
+
+* `bootstrap.servers`
+* `zookeeper.`
+* `ssl.`
+* `security.`
+* `failed.brokers.zk.path`
+* `webserver.http.port`
+* `webserver.http.address`
+* `webserver.api.urlprefix`
+* `metric.reporter.sampler.bootstrap.servers`
+* `metric.reporter.topic`
+* `metric.reporter.topic.pattern`
+* `partition.metric.sample.store.topic`
+* `broker.metric.sample.store.topic`
+* `capacity.config.file`
+* `skip.sample.store.topic.rack.awareness.check`
+* `cruise.control.metrics.topic`
+* `sasl.`
+
+If restricted options are specified, they are ignored and a warning message is printed to the Cluster Operator log file.
+All the supported options are passed to Cruise Control.
+
+.An example Cruise Control configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    config:
+      default.goals: >
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+      cpu.balance.threshold: 1.1
+      metadata.max.age.ms: 300000
+      send.buffer.bytes: 131072
+    # ...
+----
+
+[[capacity-configuration]]
+[discrete]
+== Capacity configuration
+
+Cruise Control uses _capacity limits_ to determine if optimization goals for resource distribution are being broken. 
+There are four goals of this type:
+
+* `DiskUsageDistributionGoal`            - Disk utilization distribution
+* `CpuUsageDistributionGoal`             - CPU utilization distribution    
+* `NetworkInboundUsageDistributionGoal`  - Network inbound utilization distribution
+* `NetworkOutboundUsageDistributionGoal` - Network outbound utilization distribution
+
+You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` . 
+They are enabled by default and you can change their default values. 
+Capacity limits can be set for the following broker resources, using the standard Kubernetes byte units (K, M, G and T) or their bibyte (power of two) equivalents (Ki, Mi, Gi and Ti):
+
+* `disk`            - Disk storage per broker (Default: 100000Mi)
+* `cpuUtilization`  - CPU utilization as a percentage (Default: 100)
+* `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
+* `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
+
+Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
+
+.An example Cruise Control brokerCapacity configuration using bibyte units
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    brokerCapacity:
+      disk: 100Gi
+      cpuUtilization: 100
+      inboundNetwork: 10000KiB/s
+      outboundNetwork: 10000KiB/s
+    # ...
+----
+
+.Additional resources
+For more information, refer to the xref:type-BrokerCapacity-reference[].
+
+[[logging-configuration]]
+[discrete]
+== Logging configuration
+
+Cruise Control has its own configurable logger:
+
+* `cruisecontrol.root.logger`
+
+Cruise Control uses the Apache `log4j` logger implementation.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+# ...
+spec:
+  cruiseControl:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        cruisecontrol.root.logger: "INFO"
+    # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+# ...
+spec:
+  cruiseControl:
+    # ...
+    logging:
+      type: external
+      name: customConfigMap
+    # ...
+----

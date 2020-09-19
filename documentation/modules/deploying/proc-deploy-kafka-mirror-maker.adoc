@@ -1,0 +1,47 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-kafka-mirror-maker.adoc
+
+[id='deploying-kafka-mirror-maker-{context}']
+= Deploying Kafka MirrorMaker to your Kubernetes cluster
+
+This procedure shows how to deploy a Kafka MirrorMaker cluster to your Kubernetes cluster using the Cluster Operator.
+
+The deployment uses a YAML file to provide the specification to create a `KafkaMirrorMaker` or `KafkaMirrorMaker2` resource depending on the version of MirrorMaker deployed.
+
+In this procedure, we use the example files provided with Strimzi:
+
+* `examples/mirror-maker/kafka-mirror-maker.yaml`
+* `examples/mirror-maker/kafka-mirror-maker-2.yaml`
+
+For information about configuring `KafkaMirrorMaker` or `KafkaMirrorMaker2` resources,
+see link:{BookURLUsing}#assembly-deployment-configuration-kafka-mirror-maker-str[Kafka MirrorMaker configuration^] in the _Using Strimzi_ guide.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Deploy Kafka MirrorMaker to your Kubernetes cluster:
++
+For MirrorMaker:
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f examples/mirror-maker/kafka-mirror-maker.yaml
+----
++
+For MirrorMaker 2.0:
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f examples/mirror-maker/kafka-mirror-maker-2.yaml
+----
+
+. Verify that MirrorMaker was successfully deployed:
++
+[source,shell,subs="attributes+"]
+----
+kubectl get deployments
+----

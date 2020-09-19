@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.common.model.OrderedProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,6 +13,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 /**
  * Abstract class for processing and generating configuration passed by the user.
@@ -27,12 +30,12 @@ public abstract class AbstractConfiguration {
      *
      * @param configuration     Configuration in String format. Should contain zero or more lines with with key=value
      *                          pairs.
-     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
-     *                           these keys will be ignored.
+     * @param forbiddenPrefixes List with configuration key prefixes which are not allowed. All keys which start with one of
+     *                          these prefixes will be ignored.
      */
-    public AbstractConfiguration(String configuration, List<String> forbiddenOptions) {
+    public AbstractConfiguration(String configuration, List<String> forbiddenPrefixes) {
         options.addStringPairs(configuration);
-        filterForbidden(forbiddenOptions);
+        filterForbidden(forbiddenPrefixes);
     }
 
     /**
@@ -41,14 +44,14 @@ public abstract class AbstractConfiguration {
      *
      * @param configuration     Configuration in String format. Should contain zero or more lines with with key=value
      *                          pairs.
-     * @param forbiddenOptions  List with configuration keys which are not allowed. All keys which start with one of
-     *                          these keys will be ignored.
+     * @param forbiddenPrefixes List with configuration key prefixes which are not allowed. All keys which start with one of
+     *                          these prefixes will be ignored.
      * @param defaults          Properties object with default options
      */
-    public AbstractConfiguration(String configuration, List<String> forbiddenOptions, Map<String, String> defaults) {
+    public AbstractConfiguration(String configuration, List<String> forbiddenPrefixes, Map<String, String> defaults) {
         options.addMapPairs(defaults);
         options.addStringPairs(configuration);
-        filterForbidden(forbiddenOptions);
+        filterForbidden(forbiddenPrefixes);
     }
 
     /**
@@ -56,12 +59,12 @@ public abstract class AbstractConfiguration {
      * ConfigMap / CRD.
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
-     *                           these keys will be ignored.
+     * @param forbiddenPrefixes   List with configuration key prefixes which are not allowed. All keys which start with one of
+     *                           these prefixes will be ignored.
      */
-    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions) {
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes) {
         options.addIterablePairs(jsonOptions);
-        filterForbidden(forbiddenOptions);
+        filterForbidden(forbiddenPrefixes);
     }
 
     /**
@@ -69,13 +72,13 @@ public abstract class AbstractConfiguration {
      * ConfigMap / CRD.
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
-     *                           these keys will be ignored.
-     * @param exceptions        Exceptions excluded from forbidden options checking
+     * @param forbiddenPrefixes  List with configuration key prefixes which are not allowed. All keys which start with one of
+     *                           these prefixes will be ignored.
+     * @param forbiddenPrefixExceptions Exceptions excluded from forbidden prefix options checking
      */
-    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions, List<String> exceptions) {
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions) {
         options.addIterablePairs(jsonOptions);
-        filterForbidden(forbiddenOptions, exceptions);
+        filterForbidden(forbiddenPrefixes, forbiddenPrefixExceptions);
     }
 
     /**
@@ -83,14 +86,14 @@ public abstract class AbstractConfiguration {
      * ConfigMap / CRD.
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
-     *                           these keys will be ignored.
+     * @param forbiddenPrefixes   List with configuration key prefixes which are not allowed. All keys which start with one of
+     *                           these prefixes will be ignored.
      * @param defaults          Properties object with default options
      */
-    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions, Map<String, String> defaults) {
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes, Map<String, String> defaults) {
         options.addMapPairs(defaults);
         options.addIterablePairs(jsonOptions);
-        filterForbidden(forbiddenOptions);
+        filterForbidden(forbiddenPrefixes);
     }
 
     /**
@@ -98,29 +101,29 @@ public abstract class AbstractConfiguration {
      * ConfigMap / CRD.
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
-     *                           these keys will be ignored.
-     * @param exceptions        Exceptions excluded from forbidden options checking
+     * @param forbiddenPrefixes  List with configuration key prefixes which are not allowed. All keys which start with one of
+     *                           these prefixes will be ignored.
+     * @param forbiddenPrefixExceptions  Exceptions excluded from forbidden prefix options checking
      * @param defaults          Properties object with default options
      */
-    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions, List<String> exceptions, Map<String, String> defaults) {
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions, Map<String, String> defaults) {
         options.addMapPairs(defaults);
         options.addIterablePairs(jsonOptions);
-        filterForbidden(forbiddenOptions, exceptions);
+        filterForbidden(forbiddenPrefixes, forbiddenPrefixExceptions);
     }
 
     /**
      * Filters forbidden values from the configuration.
      *
-     * @param forbiddenOptions  List with configuration keys which are not allowed. All keys which start with one of
-     *                          these keys will be ignored.
-     * @param exceptions        Exceptions excluded from forbidden options checking
+     * @param forbiddenPrefixes List with configuration key prefixes which are not allowed. All keys which start with one of
+     *                          these prefixes will be ignored.
+     * @param forbiddenPrefixExceptions Exceptions excluded from forbidden prefix options checking
      */
-    private void filterForbidden(List<String> forbiddenOptions, List<String> exceptions)   {
-        options.filter(k -> forbiddenOptions.stream().anyMatch(s -> {
+    private void filterForbidden(List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions)   {
+        options.filter(k -> forbiddenPrefixes.stream().anyMatch(s -> {
             boolean forbidden = k.toLowerCase(Locale.ENGLISH).startsWith(s);
             if (forbidden) {
-                if (exceptions.contains(k))
+                if (forbiddenPrefixExceptions.contains(k))
                     forbidden = false;
             }
             if (forbidden) {
@@ -132,8 +135,8 @@ public abstract class AbstractConfiguration {
         }));
     }
 
-    private void filterForbidden(List<String> forbiddenOptions)   {
-        this.filterForbidden(forbiddenOptions, Collections.emptyList());
+    private void filterForbidden(List<String> forbiddenPrefixes)   {
+        this.filterForbidden(forbiddenPrefixes, Collections.emptyList());
     }
 
     public String getConfigOption(String configOption) {
@@ -166,7 +169,17 @@ public abstract class AbstractConfiguration {
      * in value returned by subsequent calls to getConfiguration()
      * @return A map of keys to values.
      */
-    OrderedProperties asOrderedProperties() {
+    public OrderedProperties asOrderedProperties() {
         return options;
+    }
+
+    /**
+     * Splits string with comma-separated values into a List
+     *
+     * @param prefixes  String with comma-separated items
+     * @return          List with the values as separate items
+     */
+    protected static List<String> splitPrefixesToList(String prefixes) {
+        return asList(prefixes.split("\\s*,+\\s*"));
     }
 }

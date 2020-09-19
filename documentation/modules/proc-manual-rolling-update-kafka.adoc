@@ -9,8 +9,10 @@ This procedure describes how to manually trigger a rolling update of an existing
 
 .Prerequisites
 
-* A running Kafka cluster.
-* A running Cluster Operator.
+See the _Deploying Strimzi_ guide for instructions on running a:
+
+* link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
+* link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
 
 .Procedure
 
@@ -25,9 +27,3 @@ kubectl annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-upda
 . Wait for the next reconciliation to occur (every two minutes by default).
 A rolling update of all pods within the annotated `StatefulSet` is triggered, as long as the annotation was detected by the reconciliation process.
 When the rolling update of all the pods is complete, the annotation is removed from the `StatefulSet`.
-
-.Additional resources
-
-* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the Kafka cluster, see xref:deploying-kafka-cluster-str[].
-

@@ -14,7 +14,7 @@ import java.util.List;
 class MockTopicOperator extends TopicOperator {
 
     public MockTopicOperator() {
-        super(null, null, null, null, null, null, null);
+        super(null, null, null, null, null, null, null, null);
     }
 
     static class MockOperatorEvent {
@@ -87,6 +87,11 @@ class MockTopicOperator extends TopicOperator {
 
     public void clearEvents() {
         mockOperatorEvents.clear();
+    }
+
+    @Override
+    public void initMetrics() {
+        return;
     }
 
     @Override

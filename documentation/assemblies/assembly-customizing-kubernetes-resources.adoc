@@ -1,0 +1,55 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-customizing-kubernetes-resources-{context}']
+= Customizing Kubernetes resources
+
+Strimzi creates several Kubernetes resources, such as `Deployments`, `StatefulSets`, `Pods`, and `Services`, which are managed by Strimzi operators.
+Only the operator that is responsible for managing a particular Kubernetes resource can change that resource.
+If you try to manually change an operator-managed Kubernetes resource, the operator will revert your changes back.
+
+However, changing an operator-managed Kubernetes resource can be useful if you want to perform certain tasks, such as:
+
+- Adding custom labels or annotations that control how `Pods` are treated by Istio or other services
+- Managing how `Loadbalancer`-type Services are created by the cluster
+
+You can make such changes using the `template` property in the Strimzi custom resources.
+The `template` property is supported in the following resources.
+The API reference provides more details about the customizable fields.
+
+`Kafka.spec.kafka`:: See xref:type-KafkaClusterTemplate-reference[]
+`Kafka.spec.zookeeper`:: See xref:type-ZookeeperClusterTemplate-reference[]
+`Kafka.spec.entityOperator`:: See xref:type-EntityOperatorTemplate-reference[]
+`Kafka.spec.kafkaExporter`:: See xref:type-KafkaExporterTemplate-reference[]
+`Kafka.spec.cruiseControl`:: See xref:type-CruiseControlTemplate-reference[]
+`Kafka.spec.jmxTrans`:: See xref:type-JmxTransTemplate-reference[]
+`KafkaConnect.spec`:: See xref:type-KafkaConnectTemplate-reference[]
+`KafkaConnectS2I.spec`:: See xref:type-KafkaConnectTemplate-reference[]
+`KafkaMirrorMaker.spec`:: See xref:type-KafkaMirrorMakerTemplate-reference[]
+`KafkaMirrorMaker2.spec`:: See xref:type-KafkaConnectTemplate-reference[]
+`KafkaBridge.spec`:: See xref:type-KafkaBridgeTemplate-reference[]
+`KafkaUser.spec`:: See xref:type-KafkaUserTemplate-reference[]
+
+In the following example, the `template` property is used to modify the labels in a Kafka broker's `StatefulSet`:
+
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  labels:
+    app: my-cluster
+spec:
+  kafka:
+    # ...
+    template:
+      statefulset:
+        metadata:
+          labels:
+            mylabel: myvalue
+    # ...
+----
+
+include::../modules/con-customizing-image-pull-policy.adoc[leveloffset=+1]

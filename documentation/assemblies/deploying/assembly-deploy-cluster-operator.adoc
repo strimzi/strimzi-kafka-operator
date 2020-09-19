@@ -1,0 +1,41 @@
+// This assembly is included in the following assemblies:
+//
+// deploying/assembly-deploy-create-cluster.adoc
+
+[id='cluster-operator-{context}']
+= Deploying the Cluster Operator
+
+The Cluster Operator is responsible for deploying and managing Apache Kafka clusters within a Kubernetes cluster.
+
+The procedures in this section show:
+
+* How to deploy the Cluster Operator to _watch_:
+** xref:deploying-cluster-operator-{context}[A single namespace]
+** xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[Multiple namespaces]
+** xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces]
+* Alternative deployment options:
+ifdef::Helm[]
+** xref:deploying-cluster-operator-helm-chart-{context}[How to deploy the Cluster Operator using a Helm chart]
+endif::Helm[]
+ifdef::OperatorHubio[]
+** xref:deploying-cluster-operator-from-operator-hub-{context}[How to deploy the Cluster Operator from _OperatorHub.io_]
+endif::OperatorHubio[]
+
+//Options for deploying the Cluster Operator
+include::modules/con-deploy-cluster-operator-watch-options.adoc[leveloffset=+1]
+//Deploy the Cluster Operator to watch a single namespace
+include::modules/proc-deploy-cluster-operator-watch-namespace.adoc[leveloffset=+1]
+//Deploy the Cluster Operator to watch multiple namespaces
+include::modules/proc-deploy-cluster-operator-watch-multiple-namespaces.adoc[leveloffset=+1]
+//Deploy the Cluster Operator to watch all namespaces
+include::modules/proc-deploy-cluster-operator-watch-whole-cluster.adoc[leveloffset=+1]
+
+//Deploy the Cluster Operator to using Helm
+ifdef::Helm[]
+include::modules/proc-deploy-cluster-operator-helm-chart.adoc[leveloffset=+1]
+endif::Helm[]
+
+//Deploy the Cluster Operator using operatorhub.io
+ifdef::OperatorHubio[]
+include::modules/con-deploy-cluster-operator-from-operator-hub.adoc[leveloffset=+1]
+endif::OperatorHubio[]

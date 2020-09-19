@@ -12,6 +12,19 @@ Kafka Bridge consumer and producer configuration is standard, as described in th
 HTTP-related configuration options set the port connection which the server listens on.
 
 [discrete]
+== CORS
+
+The Kafka Bridge supports the use of Cross-Origin Resource Sharing (CORS).
+CORS is a HTTP mechanism that allows browser access to selected resources from more than one origin, for example, resources on different domains.
+If you choose to use CORS, you can define a list of allowed resource origins and HTTP methods for interaction with the Kafka cluster through the Kafka Bridge.
+The lists are defined in the `http` specification of the Kafka Bridge configuration.
+
+CORS allows for _simple_ and _preflighted_ requests between origin sources on different domains.
+
+* A simple request is a HTTP request that must have an allowed origin defined in its header.
+* A preflighted request sends an initial OPTIONS HTTP request before the actual request to check that the origin and the method are allowed.
+
+[discrete]
 == Example YAML showing Kafka Bridge configuration
 [source,yaml,subs=attributes+]
 ----
@@ -24,6 +37,9 @@ spec:
   bootstrapServers: my-cluster-kafka:9092
   http:
     port: 8080
+    cors:
+      allowedOrigins: "https://strimzi.io"
+      allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
   consumer:
     config:
       auto.offset.reset: earliest
@@ -32,3 +48,6 @@ spec:
       delivery.timeout.ms: 300000
   # ...
 ----
+
+.Additional resources
+* link:{external-cors-link}[Fetch] CORS specification

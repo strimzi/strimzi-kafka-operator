@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-tasks-prep.adoc
+
+[id='deploy-prereqs-{context}']
+= Deployment prerequisites
+
+To deploy Strimzi, make sure:
+
+ifdef::Downloading[]
+* A Kubernetes {KubernetesVersion} cluster is available
+endif::Downloading[]
+ifndef::Downloading[]
+* An OpenShift {OpenShiftVersion} cluster is available
++
+Strimzi is based on Strimzi {StrimziVersion}.
+endif::Downloading[]
+* The `kubectl` command-line tool is installed and configured to connect to the running cluster.
+
+NOTE: Strimzi supports some features that are specific to OpenShift,
+where such integration benefits OpenShift users and there is no equivalent implementation using standard Kubernetes.
+
+ifdef::InstallationAppendix[]
+[discrete]
+== Alternatives if a Kubernetes cluster is not available
+
+If you do not have access to a Kubernetes cluster, as an alternative you can try installing Strimzi with:
+
+* xref:deploy-kubernetes-{context}[_Minikube_]
+* xref:deploy-openshift-{context}[_Minishift_]
+
+endif::InstallationAppendix[]

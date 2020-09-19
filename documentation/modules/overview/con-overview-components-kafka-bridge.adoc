@@ -5,8 +5,8 @@
 [id="overview-components-kafka-bridge_{context}"]
 = Kafka Bridge interface
 
-{ProductName} Kafka Bridge provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster. 
-Kafka Bridge offers the advantages of a web API connection to {ProductName}, without the need for client applications to interpret the Kafka protocol.
+Strimzi Kafka Bridge provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster. 
+Kafka Bridge offers the advantages of a web API connection to Strimzi, without the need for client applications to interpret the Kafka protocol.
 
 The API has two main resources — `consumers` and `topics` — that are exposed and made accessible through endpoints to interact with consumers and producers in your Kafka cluster. The resources relate only to the Kafka Bridge, not the consumers and producers connected directly to Kafka.
 

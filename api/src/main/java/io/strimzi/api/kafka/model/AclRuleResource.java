@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A representation of a single ACL rule for SimpleAclAuthorizer
+ * A representation of a single ACL rule for AclAuthorizer
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,

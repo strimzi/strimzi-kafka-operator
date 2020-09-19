@@ -1,0 +1,23 @@
+Specify additional labels and annotations for the secret created by the User Operator.
+
+.An example showing the `KafkaUserTemplate`
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  template:
+    secret:
+      metadata:
+        labels:
+          label1: value1
+        annotations:
+          anno1: value1
+  # ...
+----

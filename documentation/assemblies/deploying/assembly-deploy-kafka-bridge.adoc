@@ -1,0 +1,12 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-getting-started.adoc
+// deploying/assembly-deploy-tasks.adoc
+
+[id='kafka-bridge-{context}']
+= Deploy Kafka Bridge
+
+The Cluster Operator deploys one or more Kafka bridge replicas to send data between Kafka clusters and clients via HTTP API.
+
+//Procedure to deploy a Kafka Bridge cluster
+include::modules/proc-deploy-kafka-bridge.adoc[leveloffset=+1]

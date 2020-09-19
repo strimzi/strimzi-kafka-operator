@@ -4,33 +4,37 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.vertx.core.Vertx;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 
-
-public class Consumer extends ClientHandlerBase<Integer> {
+public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(Consumer.class);
-    private Properties properties;
+    private final KafkaClientProperties properties;
     private final AtomicInteger numReceived = new AtomicInteger(0);
     private final String topic;
     private final String clientName;
+    private final KafkaConsumer<String, String> consumer;
 
-    Consumer(Properties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+    Consumer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;
         this.clientName = clientName;
+        this.vertx = Vertx.vertx();
+        this.consumer = KafkaConsumer.create(vertx, properties.getProperties());
     }
 
     @Override
     protected void handleClient() {
-        KafkaConsumer<String, String> consumer = KafkaConsumer.create(vertx, properties);
+        LOGGER.info("Consumer is starting with following properties: {}", properties.getProperties().toString());
 
         if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {
@@ -58,6 +62,16 @@ public class Consumer extends ClientHandlerBase<Integer> {
                 resultPromise.completeExceptionally(ar.cause());
             }
         });
+    }
 
+    @Override
+    public void close() {
+        if (vertx != null) {
+            LOGGER.info("Closing Consumer instance {} with client.id {}", consumer.getClass().getName(), properties.getProperties().get(ConsumerConfig.CLIENT_ID_CONFIG));
+            consumer.close();
+
+            LOGGER.info("Closing Vert.x instance {}", this.getClass().getName());
+            vertx.close();
+        }
     }
 }

@@ -8,9 +8,7 @@
 Resource limits and requests are configured using the `resources` property in the following resources:
 
 * `Kafka.spec.kafka`
-* `Kafka.spec.kafka.tlsSidecar`
 * `Kafka.spec.zookeeper`
-* `Kafka.spec.zookeeper.tlsSidecar`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.entityOperator.tlsSidecar`
@@ -30,7 +28,7 @@ Reserving the resources ensures that they are always available.
 IMPORTANT: If the resource request is for more than the available free resources in the Kubernetes cluster, the pod is not scheduled.
 
 Resources requests are specified in the `requests` property.
-Resources requests currently supported by {ProductName}:
+Resources requests currently supported by Strimzi:
 
 * `cpu`
 * `memory`
@@ -56,7 +54,7 @@ A container can use the resources up to the limit only when they are available.
 Resource limits should be always higher than the resource requests.
 
 Resource limits are specified in the `limits` property.
-Resource limits currently supported by {ProductName}:
+Resource limits currently supported by Strimzi:
 
 * `cpu`
 * `memory`

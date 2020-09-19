@@ -5,9 +5,12 @@
 package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -22,6 +25,11 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
     void testKafkaUserV1alpha1() {
         assumeKube1_11Plus();
         createDelete(KafkaUser.class, "KafkaUserV1alpha1.yaml");
+    }
+
+    @Test
+    void testKafkaUserIsNotScaling() {
+        assertThrows(KubeClusterException.class, () -> createScaleDelete(KafkaUser.class, "KafkaUser.yaml"));
     }
 
     @Test
@@ -43,6 +51,7 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_USER);
+        waitForCrd("crd", "kafkausers.kafka.strimzi.io");
     }
 
     @AfterAll

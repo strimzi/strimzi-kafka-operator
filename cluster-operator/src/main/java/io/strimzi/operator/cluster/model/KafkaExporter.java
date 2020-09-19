@@ -4,16 +4,14 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -27,13 +25,14 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class KafkaExporter extends AbstractModel {
+    protected static final String APPLICATION_NAME = "kafka-exporter";
+
     // Configuration for mounting certificates
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_NAME = "kafka-exporter-certs";
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_MOUNT = "/etc/kafka-exporter/kafka-exporter-certs/";
@@ -61,18 +60,17 @@ public class KafkaExporter extends AbstractModel {
     private boolean isDeployed;
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected SecurityContext templateContainerSecurityContext;
 
     /**
      * Constructor
      *
-     * @param namespace Kubernetes/OpenShift namespace where Kafka Exporter resources are going to be created
-     * @param kafkaCluster kafkaCluster name
-     * @param labels    labels to add to the kafkaCluster
+     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaExporter(String namespace, String kafkaCluster, Labels labels) {
-        super(namespace, kafkaCluster, labels);
-        this.name = KafkaExporterResources.deploymentName(kafkaCluster);
-        this.serviceName = KafkaExporterResources.serviceName(kafkaCluster);
+    protected KafkaExporter(HasMetadata resource) {
+        super(resource, APPLICATION_NAME);
+        this.name = KafkaExporterResources.deploymentName(cluster);
+        this.serviceName = KafkaExporterResources.serviceName(cluster);
         this.replicas = 1;
         this.readinessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
@@ -84,12 +82,11 @@ public class KafkaExporter extends AbstractModel {
 
         // Kafka Exporter is all about metrics - they are always enabled
         this.isMetricsEnabled = true;
+
     }
 
     public static KafkaExporter fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        KafkaExporter kafkaExporter = new KafkaExporter(kafkaAssembly.getMetadata().getNamespace(),
-                kafkaAssembly.getMetadata().getName(),
-                Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+        KafkaExporter kafkaExporter = new KafkaExporter(kafkaAssembly);
 
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
         if (spec != null) {
@@ -135,11 +132,13 @@ public class KafkaExporter extends AbstractModel {
                     kafkaExporter.templateContainerEnvVars = template.getContainer().getEnv();
                 }
 
+                if (template.getContainer() != null && template.getContainer().getSecurityContext() != null) {
+                    kafkaExporter.templateContainerSecurityContext = template.getContainer().getSecurityContext();
+                }
+
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
             }
 
-            kafkaExporter.setUserAffinity(affinity(spec));
-            kafkaExporter.setTolerations(tolerations(spec));
             kafkaExporter.setVersion(versions.version(kafkaAssembly.getSpec().getKafka().getVersion()).version());
             kafkaExporter.setOwnerReference(kafkaAssembly);
         } else {
@@ -151,37 +150,6 @@ public class KafkaExporter extends AbstractModel {
 
     protected void setSaramaLoggingEnabled(boolean saramaLoggingEnabled) {
         this.saramaLoggingEnabled = saramaLoggingEnabled;
-    }
-
-    static List<Toleration> tolerations(KafkaExporterSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getTolerations() != null) {
-            return spec.getTemplate().getPod().getTolerations();
-        } else {
-            return null;
-        }
-    }
-
-    static Affinity affinity(KafkaExporterSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getAffinity() != null) {
-            return spec.getTemplate().getPod().getAffinity();
-        } else {
-            return null;
-        }
-    }
-
-    public Service generateService() {
-        if (!isDeployed()) {
-            return null;
-        }
-
-        List<ServicePort> ports = new ArrayList<>(1);
-
-        ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        return createService("ClusterIP", ports, mergeLabelsOrAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     protected List<ContainerPort> getContainerPortList() {
@@ -213,7 +181,7 @@ public class KafkaExporter extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -221,12 +189,13 @@ public class KafkaExporter extends AbstractModel {
                 .withCommand("/opt/kafka-exporter/kafka_exporter_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ModelUtils.createHttpProbe(livenessPath, METRICS_PORT_NAME, livenessProbeOptions))
-                .withReadinessProbe(ModelUtils.createHttpProbe(readinessPath, METRICS_PORT_NAME, readinessProbeOptions))
+                .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, METRICS_PORT_NAME))
+                .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, METRICS_PORT_NAME))
                 .withResources(getResources())
                 .withVolumeMounts(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build();
 
         containers.add(container);
@@ -244,6 +213,9 @@ public class KafkaExporter extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaCluster.serviceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

@@ -1,0 +1,63 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-standalone-operators.adoc
+
+[id='deploying-the-user-operator-standalone-{context}']
+= Deploying the standalone User Operator
+
+This procedure shows how to deploy the User Operator as a standalone component.
+
+A standalone deployment requires configuration of environment variables, and is more complicated than xref:deploying-the-user-operator-using-the-cluster-operator-str[deploying the User Operator using the Cluster Operator].
+However, a standalone deployment is more flexible as the User Operator can operate with _any_ Kafka cluster, not necessarily one deployed by the Cluster Operator.
+
+.Prerequisites
+
+* You need an existing Kafka cluster for the User Operator to connect to.
+
+.Procedure
+
+. Edit the following `Deployment.spec.template.spec.containers[0].env` properties in the `install/user-operator/05-Deployment-strimzi-user-operator.yaml` file by setting:
++
+.. `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` to list the Kafka brokers, given as a comma-separated list of `_hostname_:‍_port_` pairs.
+.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This must be the same ZooKeeper cluster that your Kafka cluster is using. Connecting to ZooKeeper nodes with TLS encryption is not supported.
+.. `STRIMZI_NAMESPACE` to the Kubernetes namespace in which you want the operator to watch for `KafkaUser` resources.
+.. `STRIMZI_LABELS` to the label selector used to identify the `KafkaUser` resources managed by the operator.
+.. `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` to specify the interval between periodic reconciliations, in milliseconds.
+.. `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS` to the ZooKeeper session timeout, in milliseconds.
+For example, `10000`.
+Default `20000` (20 seconds).
+.. `STRIMZI_CA_CERT_NAME` to point to a Kubernetes `Secret` that contains the public key of the Certificate Authority for signing new user certificates for TLS client authentication.
+The `Secret` must contain the public key of the Certificate Authority under the key `ca.crt`.
+.. `STRIMZI_CA_KEY_NAME` to point to a Kubernetes `Secret` that contains the private key of the Certificate Authority for signing new user certificates for TLS client authentication.
+The `Secret` must contain the private key of the Certificate Authority under the key `ca.key`.
+.. `STRIMZI_CLUSTER_CA_CERT_SECRET_NAME` to point to a Kubernetes `Secret` containing the public key of the Certificate Authority used for signing Kafka brokers certificates for enabling TLS-based communication.
+The `Secret` must contain the public key of the Certificate Authority under the key `ca.crt`.
+This environment variable is optional and should be set only if the communication with the Kafka cluster is TLS based.
+.. `STRIMZI_EO_KEY_SECRET_NAME` to point to a Kubernetes `Secret` containing the private key and related certificate for TLS client authentication against the Kafka cluster.
+The `Secret` must contain the keystore with the private key and certificate under the key `entity-operator.p12`, and the related password under the key `entity-operator.password`.
+This environment variable is optional and should be set only if TLS client authentication is needed when the communication with the Kafka cluster is TLS based.
+.. `STRIMZI_CA_VALIDITY` the validity period for the Certificate Authority.
+Default is `365` days.
+.. `STRIMZI_CA_RENEWAL` the renewal period for the Certificate Authority.
+.. `STRIMZI_LOG_LEVEL` to the level for printing logging messages.
+The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
+Default `INFO`.
+.. `STRIMZI_GC_LOG_ENABLED` to enable garbage collection (GC) logging.
+Default `true`.
+Default is `30` days to initiate certificate renewal before the old certificates expire.
+.. `STRIMZI_JAVA_OPTS` _(optional)_ to the Java options used for the JVM running User Operator. An example is `-Xmx=512M -Xms=256M`.
+.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` _(optional)_ to list the `-D` options which are set to the User Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
+
+. Deploy the User Operator:
++
+[source,shell,subs=+quotes]
+kubectl apply -f install/user-operator
+
+. Verify that the User Operator has been deployed successfully:
++
+[source,shell,subs=+quotes]
+kubectl describe deployment strimzi-user-operator
++
+The User Operator is deployed when the `Replicas:` entry shows `1 available`.
++
+NOTE: You may experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the images have not been downloaded before.

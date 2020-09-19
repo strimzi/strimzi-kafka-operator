@@ -15,7 +15,6 @@ _Please describe your pull request_
 
 _Please go through this checklist and make sure all applicable tasks have been done_
 
-- [ ] Update/write design documentation in `./design`
 - [ ] Write tests
 - [ ] Make sure all tests pass
 - [ ] Update documentation
@@ -23,4 +22,5 @@ _Please go through this checklist and make sure all applicable tasks have been d
 - [ ] Try your changes from Pod inside your Kubernetes and OpenShift cluster, not just locally
 - [ ] Reference relevant issue(s) and close them after merging
 - [ ] Update CHANGELOG.md
+- [ ] Supply screenshots for visual changes, such as Grafana dashboards
 

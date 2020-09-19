@@ -12,7 +12,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -51,7 +50,12 @@ import static java.util.Collections.unmodifiableList;
                         )
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
+                        status = @Crd.Spec.Subresources.Status(),
+                        scale = @Crd.Spec.Subresources.Scale(
+                                specReplicasPath = KafkaBridge.SPEC_REPLICAS_PATH,
+                                statusReplicasPath = KafkaBridge.STATUS_REPLICAS_PATH,
+                                labelSelectorPath = KafkaBridge.LABEL_SELECTOR_PATH
+                        )
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
@@ -79,8 +83,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaBridge extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaBridgeStatus> {
-
+public class KafkaBridge extends CustomResource implements HasSpecAndStatus<KafkaBridgeSpec, KafkaBridgeStatus>, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
@@ -95,6 +98,9 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kb";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
+    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
+    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
+    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
     private ObjectMeta metadata;
@@ -149,7 +155,7 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
+            this.additionalProperties = new HashMap<>(1);
         }
         this.additionalProperties.put(name, value);
     }

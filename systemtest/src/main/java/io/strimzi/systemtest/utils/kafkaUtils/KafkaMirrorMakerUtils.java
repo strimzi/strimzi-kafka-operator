@@ -4,26 +4,33 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.systemtest.Constants;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
-import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaMirrorMakerUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerUtils.class);
-
     private KafkaMirrorMakerUtils() {}
 
-    public static void waitUntilKafkaMirrorMakerStatus(String clusterName, String state) {
-        LOGGER.info("Waiting till Kafka MirrorMaker CR will be in state: {}", state);
-        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(kubeClient().getNamespace())
-                .withName(clusterName).get().getStatus().getConditions().get(0).getType().equals(state)
-        );
-        LOGGER.info("Kafka MirrorMaker CR is in state: {}", state);
+    /**
+     * Wait until KafkaMirrorMaker status is in desired state
+     * @param clusterName name of KafkaMirrorMaker cluster
+     * @param state desired state - like Ready
+     */
+    public static void waitForKafkaMirrorMakerStatus(String clusterName, Enum<?>  state) {
+        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+        ResourceManager.waitForResourceStatus(KafkaMirrorMakerResource.kafkaMirrorMakerClient(), kafkaMirrorMaker, state);
+    }
+
+    public static void waitForKafkaMirrorMakerReady(String clusterName) {
+        waitForKafkaMirrorMakerStatus(clusterName, Ready);
+    }
+
+    public static void waitForKafkaMirrorMakerNotReady(String clusterName) {
+        waitForKafkaMirrorMakerStatus(clusterName, NotReady);
     }
 }

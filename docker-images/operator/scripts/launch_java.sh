@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
+set -e
 set -x
-shift
-
-. ${STRIMZI_HOME}/bin/dynamic_resources.sh
 
 # expand gc options based upon java version
 function get_gc_opts {
@@ -20,11 +18,6 @@ function get_gc_opts {
   fi
 }
 
-MAX_HEAP=`get_heap_size`
-if [ -n "$MAX_HEAP" ]; then
-  JAVA_OPTS="-Xms${MAX_HEAP}m -Xmx${MAX_HEAP}m $JAVA_OPTS"
-fi
-
 export MALLOC_ARENA_MAX=2
 
 # Make sure that we use /dev/urandom
@@ -33,4 +26,11 @@ JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp -Djava.security.egd=file:/dev/
 # Enable GC logging for memory tracking
 JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 
-exec /usr/bin/tini -w -e 143 -- java $JAVA_OPTS -classpath $JAVA_CLASSPATH $JAVA_MAIN $@
+# Deny illegal access option is supported only on Java 9 and higher
+JAVA_MAJOR_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
+if [ "$JAVA_MAJOR_VERSION" -ge "9" ] ; then
+  JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
+fi
+
+# shellcheck disable=SC2086
+exec /usr/bin/tini -w -e 143 -- java $JAVA_OPTS -classpath "$JAVA_CLASSPATH" "$JAVA_MAIN" "$@"

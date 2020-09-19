@@ -69,5 +69,5 @@ spec:
       tasksMax: 2
       config:
         checkpoints.topic.replication.factor: 1
-    topics: my-topic
-    groups: my-group
+    topicsPattern: my-topic
+    groupsPattern: my-group

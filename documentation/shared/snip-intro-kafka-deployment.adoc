@@ -1,0 +1,15 @@
+//standard kafka deployment text
+Apache Kafka components are provided for deployment to Kubernetes with the Strimzi distribution.
+The Kafka components are generally run as clusters for availability.
+
+A typical deployment incorporating Kafka components might include:
+
+* *Kafka* cluster of broker nodes
+* *ZooKeeper* cluster of replicated ZooKeeper instances
+* *Kafka Connect* cluster for external data connections
+* *Kafka MirrorMaker* cluster to mirror the Kafka cluster in a secondary cluster
+* *Kafka Exporter* to extract additional Kafka metrics data for monitoring
+* *Kafka Bridge* to make HTTP-based requests to the Kafka cluster
+
+Not all of these components are mandatory, though you need Kafka and ZooKeeper as a minimum.
+Some components can be deployed without Kafka, such as MirrorMaker or Kafka Connect.

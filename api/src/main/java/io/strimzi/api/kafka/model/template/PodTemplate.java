@@ -7,12 +7,14 @@ package io.strimzi.api.kafka.model.template;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -32,9 +34,10 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds"})
+@JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
+        "tolerations", "priorityClassName", "schedulerName", "hostAliases"})
 @EqualsAndHashCode
+@DescriptionFile
 public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
@@ -46,6 +49,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private List<Toleration> tolerations;
     private String priorityClassName;
     private String schedulerName;
+    private List<HostAlias> hostAliases;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")
@@ -69,7 +73,8 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.securityContext = securityContext;
     }
 
-    @Description("List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.")
+    @Description("List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. " +
+            "When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.")
     @KubeLink(group = "core", version = "v1", kind = "localobjectreference")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<LocalObjectReference> getImagePullSecrets() {
@@ -80,10 +85,11 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.imagePullSecrets = imagePullSecrets;
     }
 
-    @Description("The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. " +
-            "Set this value longer than the expected cleanup time for your process." +
-            "Value must be non-negative integer. " +
-            "The value zero indicates delete immediately. " +
+    @Description("The grace period is the duration in seconds after the processes running in the pod are sent a termination signal, and the time when the processes are forcibly halted with a kill signal. " +
+            "Set this value to longer than the expected cleanup time for your process. " +
+            "Value must be a non-negative integer. " +
+            "A zero value indicates delete immediately. " +
+            "You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. " +
             "Defaults to 30 seconds.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DefaultValue("30")
@@ -118,7 +124,8 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.tolerations = tolerations;
     }
 
-    @Description("The name of the Priority Class to which these pods will be assigned.")
+    @Description("The name of the priority class used to assign priority to the pods. " +
+            "For more information about priority classes, see {K8sPriorityClass}.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getPriorityClassName() {
         return priorityClassName;
@@ -137,6 +144,18 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setSchedulerName(String schedulerName) {
         this.schedulerName = schedulerName;
+    }
+
+    @Description("The pod's HostAliases. " +
+            "HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.")
+    @KubeLink(group = "core", version = "v1", kind = "HostAlias")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<HostAlias> getHostAliases() {
+        return hostAliases;
+    }
+
+    public void setHostAliases(List<HostAlias> hostAliases) {
+        this.hostAliases = hostAliases;
     }
 
     @Override

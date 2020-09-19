@@ -11,8 +11,11 @@ The label is used by Kubernetes when scheduling the Kafka broker pods to nodes.
 
 If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
 If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-Usually, the nodes are labelled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as the `topologyKey` value.
+Usually, the nodes are labeled with `topology.kubernetes.io/zone` label (or `failure-domain.beta.kubernetes.io/zone` on older Kubernetes versions) that can be used as the `topologyKey` value.
 This will have the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
+
+In the following example, the `topology.kubernetes.io/zone` node label is used for scheduling Kafka broker Pods.
+Consult your Kubernetes administrator about the label which should be used.
 
 .Example of a `Kafka` resource with the `rack` feature enabled
 [source,yaml,subs=attributes+]
@@ -25,12 +28,9 @@ spec:
   kafka:
     # ...
     rack:
-      topologyKey: failure-domain.beta.kubernetes.io/zone
+      topologyKey: topology.kubernetes.io/zone
     # ...
 ----
-
-In the above example, the `failure-domain.beta.kubernetes.io/zone` node label will be used for scheduling Kafka broker Pods.
-Consult your Kubernetes administrator about the label which should be used.
 
 == Configuring init container image
 
@@ -42,9 +42,9 @@ When the `brokerRackInitImage` field is missing, the following images will be us
 . `{DockerKafkaInit}` container image.
 
 WARNING: Overriding container images is recommended only in situations where you need to use a different container registry.
-For example, because your network does not allow access to the container repository used by {ProductName}.
-In such case, you should either copy the {ProductName} images or build them from source.
-In case the configured image is not compatible with {ProductName} images, it might not work properly.
+For example, because your network does not allow access to the container repository used by Strimzi.
+In such case, you should either copy the Strimzi images or build them from source.
+In case the configured image is not compatible with Strimzi images, it might not work properly.
 
 .Example of `brokerRackInitImage` configuration
 [source,yaml,subs=attributes+]

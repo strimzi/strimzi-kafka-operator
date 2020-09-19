@@ -15,7 +15,7 @@ public abstract class ClientHandlerBase<T> extends AbstractVerticle {
 
     private static final Logger LOGGER = LogManager.getLogger(ClientHandlerBase.class);
     final CompletableFuture<T> resultPromise;
-    IntPredicate msgCntPredicate;
+    final IntPredicate msgCntPredicate;
 
     public ClientHandlerBase(CompletableFuture<T> resultPromise, IntPredicate msgCntPredicate) {
         this.resultPromise = resultPromise;
@@ -29,4 +29,7 @@ public abstract class ClientHandlerBase<T> extends AbstractVerticle {
 
     protected abstract void handleClient();
 
+    public CompletableFuture<T> getResultPromise() {
+        return resultPromise;
+    }
 }

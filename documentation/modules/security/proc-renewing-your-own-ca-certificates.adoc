@@ -5,66 +5,79 @@
 [id='renewing-your-own-ca-certificates-{context}']
 = Renewing your own CA certificates
 
-This procedure describes how to renew CA certificates and private keys that you previously installed.
-You will need to follow this procedure during the renewal period in order to replace CA certificates which will soon expire.
+This procedure describes how to renew CA certificates and keys that you previously installed.
+You need to follow this procedure during the renewal period in order to replace CA certificates which will soon expire.
+
+You can use this procedure to install your own cluster or client CA certificates.
+
+The procedure describes renewal of CA certificates in PEM format.
+You can also use certificates in PKCS #12 format.
 
 .Prerequisites
 
 * The Cluster Operator is running.
 * A Kafka cluster in which you previously installed your own CA certificates and private keys.
-* New cluster and clients X.509 certificates and keys in PEM format. These could be generated using `openssl` using a command such as:
-+
+* New cluster and clients X.509 certificates and keys in PEM format.
+
+These could be generated using an `openssl` command, such as:
+
 [source,shell,subs="+quotes"]
-openssl req -x509 -new -days _<validity>_ --nodes -out ca.crt -keyout ca.key
+openssl req -x509 -new -days _NUMBER-OF-DAYS-VALID_ --nodes -out ca.crt -keyout ca.key
 
 .Procedure
 
-. Establish what CA certificates already exist in the `Secret`:
-+
-Use the following commands:
+. Check the details of the current CA certificates in the `Secret`:
 +
 [source,shell,subs="+quotes"]
-kubectl describe secret _<ca-cert-secret>_
+kubectl describe secret _CA-CERTIFICATE-SECRET_
 +
+_CA-CERTIFICATE-SECRET_ is the name of the `Secret`, which is `_KAFKA-CLUSTER-NAME_-cluster-ca-cert` for the cluster CA certificate and `_KAFKA-CLUSTER-NAME_-clients-ca-cert` for the clients CA certificate.
 
-. Prepare a directory containing the existing CA certificates in the secret.
+. Create a directory to contain the existing CA certificates in the secret.
 +
 [source,shell,subs="+quotes"]
 ----
 mkdir new-ca-cert-secret
 cd new-ca-cert-secret
 ----
-For each certificate _<ca-certificate>_ from the previous step, run:
+
+. Fetch the secret for each CA certificate you wish to renew:
 +
 [source,shell,subs="+quotes"]
-----
-# Fetch the existing secret
-kubectl get secret _<ca-cert-secret>_ -o 'jsonpath={.data._<ca-certificate>_}' | base64 -d > _<ca-certificate>_
-----
+kubectl get secret _CA-CERTIFICATE-SECRET_ -o 'jsonpath={.data._CA-CERTIFICATE_}' | base64 -d > _CA-CERTIFICATE_
++
+Replace _CA-CERTIFICATE_ with the name of each CA certificate.
 
-. Rename the old `ca.crt` file to `ca_<date>_.crt`, where _<date>_ is the certificate expiry date in the format _<year>_-_<month>_-_<day>_T_<hour>_-_<minute>_-_<second>_Z, for example `ca-2018-09-27T17-32-00Z.crt`. 
+. Rename the old `ca.crt` file as `ca-__DATE__.crt`,
+where _DATE_ is the certificate expiry date in the format _YEAR-MONTH-DAYTHOUR-MINUTE-SECONDZ_.
++
+For example `ca-2018-09-27T17-32-00Z.crt`.
 +
 [source,shell,subs="+quotes"]
 mv ca.crt ca-$(date -u -d$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=//') +'%Y-%m-%dT%H-%M-%SZ').crt
 
-. Copy the new CA certificate into the directory, naming it `ca.crt`
+. Copy your new CA certificate into the directory, naming it `ca.crt`:
 +
 [source,shell,subs="+quotes"]
-cp _<path-to-new-cert>_ ca.crt
+cp _PATH-TO-NEW-CERTIFICATE_ ca.crt
 
-
-. Replace the CA certificate `Secret`  (`_<cluster>_-cluster-ca` or `_<cluster>_-clients-ca`).
-This can be done using the following commands:
+. Put your CA certificate in the corresponding `Secret`.
++
+.. Delete the existing secret:
 +
 [source,shell,subs="+quotes"]
-----
-# Delete the existing secret
-kubectl delete secret _<ca-cert-secret>_
-# Re-create the secret with the new private key
-kubectl create secret generic _<ca-cert-secret>_ --from-file=.
-----
+kubectl delete secret _CA-CERTIFICATE-SECRET_
 +
-You can now delete the directory you created:
+_CA-CERTIFICATE-SECRET_ is the name of the `Secret`, as returned in the first step.
++
+Ignore any "Not Exists" errors.
+
+.. Recreate the secret:
++
+[source,shell,subs="+quotes"]
+kubectl create secret generic _CA-CERTIFICATE-SECRET_ --from-file=.
+
+. Delete the directory you created:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -72,13 +85,24 @@ cd ..
 rm -r new-ca-cert-secret
 ----
 
-. Replace the CA key `Secret` (`_<cluster>_-cluster-ca` or `_<cluster>_-clients-ca`).
-This can be done using the following commands:
+. Put your CA key in the corresponding `Secret`.
+
+.. Delete the existing secret:
++
+[source,shell,subs="+quotes"]
+kubectl delete secret _CA-KEY-SECRET_
++
+_CA-KEY-SECRET_ is the name of CA key, which is `_KAFKA-CLUSTER-NAME_-cluster-ca` for the cluster CA key and `_KAFKA-CLUSTER-NAME_-clients-ca` for the clients CA key.
+
+.. Recreate the secret with the new CA key:
++
+[source,shell,subs="+quotes"]
+kubectl create secret generic _CA-KEY-SECRET_ --from-file=ca.key=_CA-KEY-SECRET-FILENAME_
+
+. Label the secrets with the labels `strimzi.io/kind=Kafka` and `strimzi.io/cluster=_KAFKA-CLUSTER-NAME_`:
 +
 [source,shell,subs="+quotes"]
 ----
-# Delete the existing secret
-kubectl delete secret _<ca-key-secret>_
-# Re-create the secret with the new private key
-kubectl create secret generic _<ca-key-secret>_ --from-file=ca.key=_<ca-key-file>_
+kubectl label secret _CA-CERTIFICATE-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_KAFKA-CLUSTER-NAME_
+kubectl label secret _CA-KEY-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_KAFKA-CLUSTER-NAME_
 ----

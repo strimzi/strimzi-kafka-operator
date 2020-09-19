@@ -1,11 +1,11 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-customizing-deployments.adoc
+// assembly-customizing-kubernetes-resources.adoc
 
 [id='con-customizing-image-pull-policy-{context}']
 = Customizing the image pull policy
 
-{ProductName} allows you to customize the image pull policy for containers in all pods deployed by the Cluster Operator.
+Strimzi allows you to customize the image pull policy for containers in all pods deployed by the Cluster Operator.
 The image pull policy is configured using the environment variable `STRIMZI_IMAGE_PULL_POLICY` in the Cluster Operator deployment.
 The `STRIMZI_IMAGE_PULL_POLICY` environment variable can be set to three different values:
 
@@ -23,5 +23,5 @@ Changing the policy will result in a rolling update of all your Kafka, Kafka Con
 
 .Additional resources
 
-* For more information about Cluster Operator configuration, see xref:assembly-operators-cluster-operator-{context}[].
+* For more information about Cluster Operator configuration, see xref:using-the-cluster-operator-{context}[].
 * For more information about Image Pull Policies, see {K8sImagePullPolicies}.

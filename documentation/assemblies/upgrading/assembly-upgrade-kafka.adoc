@@ -1,0 +1,22 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='assembly-upgrade-kafka-{context}']
+= Strimzi and Kafka upgrades
+
+Upgrading Strimzi is a two-stage process. To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
+
+. Update your Cluster Operator to the latest Strimzi version.
+** xref:assembly-upgrade-cluster-operator-{context}[]
+
+. Upgrade all Kafka brokers and client applications to the latest Kafka version.
+** xref:assembly-upgrading-kafka-versions-{context}[]
+
+include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
+
+include::assembly-upgrade-kafka-cluster-operator.adoc[leveloffset=+1]
+
+include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
+
+include::assembly-downgrade-kafka-versions.adoc[leveloffset=+1]

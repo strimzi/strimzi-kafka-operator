@@ -35,16 +35,23 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String clientId;
     private GenericSecretSource clientSecret;
     private String validIssuerUri;
+    private boolean checkIssuer = true;
     private String jwksEndpointUri;
     private Integer jwksRefreshSeconds;
+    private Integer jwksMinRefreshPauseSeconds;
     private Integer jwksExpirySeconds;
     private String introspectionEndpointUri;
     private String userNameClaim;
+    private String fallbackUserNameClaim;
+    private String fallbackUserNamePrefix;
+    private String userInfoEndpointUri;
     private boolean checkAccessTokenType = true;
+    private String validTokenType;
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
     private boolean enableECDSA = false;
+    private Integer maxSecondsWithoutReauthentication;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -82,6 +89,17 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.validIssuerUri = validIssuerUri;
     }
 
+    @Description("Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. " +
+            "Default value is `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isCheckIssuer() {
+        return checkIssuer;
+    }
+
+    public void setCheckIssuer(boolean checkIssuer) {
+        this.checkIssuer = checkIssuer;
+    }
+
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getJwksEndpointUri() {
@@ -104,6 +122,18 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setJwksRefreshSeconds(Integer jwksRefreshSeconds) {
         this.jwksRefreshSeconds = jwksRefreshSeconds;
+    }
+
+    @Description("The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.")
+    @Minimum(0)
+    @DefaultValue("1")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getJwksMinRefreshPauseSeconds() {
+        return jwksMinRefreshPauseSeconds;
+    }
+
+    public void setJwksMinRefreshPauseSeconds(Integer jwksMinRefreshPauseSeconds) {
+        this.jwksMinRefreshPauseSeconds = jwksMinRefreshPauseSeconds;
     }
 
     @Description("Configures how often are the JWKS certificates considered valid. " +
@@ -130,8 +160,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.introspectionEndpointUri = introspectionEndpointUri;
     }
 
-    @Description("Name of the claim from the authentication token which will be used as the user principal. " +
-            "Defaults to `sub`.")
+    @Description("Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response " +
+            "which will be used to extract the user id. Defaults to `sub`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getUserNameClaim() {
         return userNameClaim;
@@ -141,7 +171,29 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.userNameClaim = userNameClaim;
     }
 
-    @Description("Configure whether the access token type check should be performed or not. This should be set to `false` " +
+    @Description("The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. " +
+            "This is useful when `client_credentials` authentication only results in the client id being provided in another claim. " +
+            "It only takes effect if `userNameClaim` is set.")
+    public String getFallbackUserNameClaim() {
+        return fallbackUserNameClaim;
+    }
+
+    public void setFallbackUserNameClaim(String fallbackUserNameClaim) {
+        this.fallbackUserNameClaim = fallbackUserNameClaim;
+    }
+
+    @Description("The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. " +
+            "This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. " +
+            "Mapping usernames and client ids into the same user id space is useful in preventing name collisions.")
+    public String getFallbackUserNamePrefix() {
+        return fallbackUserNamePrefix;
+    }
+
+    public void setFallbackUserNamePrefix(String fallbackUserNamePrefix) {
+        this.fallbackUserNamePrefix = fallbackUserNamePrefix;
+    }
+
+    @Description("Configure whether the access token type check is performed or not. This should be set to `false` " +
             "if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isCheckAccessTokenType() {
@@ -152,7 +204,17 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.checkAccessTokenType = checkAccessTokenType;
     }
 
-    @Description("Configure whether the access token should be treated as JWT. This should be set to `false` if " +
+    @Description("Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getValidTokenType() {
+        return validTokenType;
+    }
+
+    public void setValidTokenType(String validTokenType) {
+        this.validTokenType = validTokenType;
+    }
+
+    @Description("Configure whether the access token is treated as JWT. This must be set to `false` if " +
             "the authorization server returns opaque tokens. Defaults to `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isAccessTokenIsJwt() {
@@ -193,5 +255,28 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setEnableECDSA(boolean enableECDSA) {
         this.enableECDSA = enableECDSA;
+    }
+
+    @Description("URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint " +
+            "does not return information that can be used for the user id. ")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getUserInfoEndpointUri() {
+        return userInfoEndpointUri;
+    }
+
+    public void setUserInfoEndpointUri(String userInfoEndpointUri) {
+        this.userInfoEndpointUri = userInfoEndpointUri;
+    }
+
+    @Description("Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. " +
+            "If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. " +
+            "Not set by default - the authenticated session does not expire when the access token expires.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getMaxSecondsWithoutReauthentication() {
+        return maxSecondsWithoutReauthentication;
+    }
+
+    public void setMaxSecondsWithoutReauthentication(Integer maxSecondsWithoutReauthentication) {
+        this.maxSecondsWithoutReauthentication = maxSecondsWithoutReauthentication;
     }
 }

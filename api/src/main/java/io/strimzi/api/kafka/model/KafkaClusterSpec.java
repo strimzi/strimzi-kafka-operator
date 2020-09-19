@@ -11,10 +11,11 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
-import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -28,6 +29,7 @@ import java.util.Map;
 /**
  * Representation of a Strimzi-managed Kafka "cluster".
  */
+@DescriptionFile 
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -48,8 +50,12 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
-            + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms";
+            + "zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, "
+            + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers";
+
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,"
+            + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,"
+            + "cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms";
 
     protected Storage storage;
 
@@ -74,7 +80,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
-    private KafkaListeners listeners;
+    private ArrayOrObjectKafkaListeners listeners;
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -89,7 +95,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.version = version;
     }
 
-    @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
@@ -140,6 +146,8 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.logging = logging;
     }
 
+    @DeprecatedProperty
+    @Deprecated
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public TlsSidecar getTlsSidecar() {
@@ -172,6 +180,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
@@ -263,11 +272,11 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     @Description("Configures listeners of Kafka brokers")
     @JsonProperty(required = true)
-    public KafkaListeners getListeners() {
+    public ArrayOrObjectKafkaListeners getListeners() {
         return listeners;
     }
 
-    public void setListeners(KafkaListeners listeners) {
+    public void setListeners(ArrayOrObjectKafkaListeners listeners) {
         this.listeners = listeners;
     }
 

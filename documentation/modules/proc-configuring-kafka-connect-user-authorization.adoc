@@ -1,0 +1,149 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect-configuration.adoc
+
+[id='proc-configuring-kafka-connect-user-authorization-{context}']
+= Configuring Kafka Connect user authorization
+
+This procedure describes how to authorize user access to Kafka Connect.
+
+When any type of authorization is being used in Kafka, a Kafka Connect user requires access rights to the consumer group
+and the internal topics of Kafka Connect.
+
+This procedure shows how access is provided when `simple` authorization is being used.
+
+Simple authorization uses ACL rules, handled by the Kafka `AclAuthorizer` plugin, to provide the right level of access.
+For more information on configuring a `KafkaUser` resource to use simple authorization, see the xref:type-AclRule-reference[`AclRule` schema reference].
+
+NOTE: The default values for the consumer group and topics will differ when xref:con-kafka-connect-multiple-instances-{context}[running multiple instances].
+
+.Prerequisites
+
+* A Kubernetes cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `authorization` property in the `KafkaUser` resource to provide access rights to the user.
++
+In the following example, access rights are configured for the Kafka Connect topics and consumer group using `literal` name values:
++
+[table,stripes=none]
+|===
+|Property |Name
+
+|`offset.storage.topic`
+|`connect-cluster-offsets`
+
+|`status.storage.topic`
+|`connect-cluster-status`
+
+|`config.storage.topic`
+|`connect-cluster-configs`
+
+|`group`
+|`connect-cluster`
+
+|===
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  authorization:
+    type: simple
+    acls:
+      # access to offset.storage.topic
+      - resource:
+          type: topic
+          name: connect-cluster-offsets
+          patternType: literal
+        operation: Write
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-offsets
+          patternType: literal
+        operation: Create
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-offsets
+          patternType: literal
+        operation: Describe
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-offsets
+          patternType: literal
+        operation: Read
+        host: "*"
+      # access to status.storage.topic
+      - resource:
+          type: topic
+          name: connect-cluster-status
+          patternType: literal
+        operation: Write
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-status
+          patternType: literal
+        operation: Create
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-status
+          patternType: literal
+        operation: Describe
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-status
+          patternType: literal
+        operation: Read
+        host: "*"
+      # access to config.storage.topic
+      - resource:
+          type: topic
+          name: connect-cluster-configs
+          patternType: literal
+        operation: Write
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-configs
+          patternType: literal
+        operation: Create
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-configs
+          patternType: literal
+        operation: Describe
+        host: "*"
+      - resource:
+          type: topic
+          name: connect-cluster-configs
+          patternType: literal
+        operation: Read
+        host: "*"
+      # consumer group
+      - resource:
+          type: group
+          name: connect-cluster
+          patternType: literal
+        operation: Read
+        host: "*"
+----
+
+. Create or update the resource.
++
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_

@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 
@@ -67,18 +68,18 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, String> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
+    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         final int replicas = sts.getSpec().getReplicas();
         log.debug("Considering rolling update of {}/{}", namespace, name);
 
         boolean zkRoll = false;
-        ArrayList<Pod> pods = new ArrayList<>();
+        ArrayList<Pod> pods = new ArrayList<>(replicas);
         String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         for (int i = 0; i < replicas; i++) {
             Pod pod = podOperations.get(sts.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));
-            String zkPodRestart = podRestart.apply(pod);
+            List<String> zkPodRestart = podRestart.apply(pod);
             zkRoll |= zkPodRestart != null && !zkPodRestart.isEmpty();
             pods.add(pod);
         }
@@ -114,7 +115,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                         return maybeRestartPod(sts, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
                     });
                 }
-            }).setHandler(rollFuture);
+            }).onComplete(rollFuture);
         } else {
             rollFuture = Future.succeededFuture();
         }

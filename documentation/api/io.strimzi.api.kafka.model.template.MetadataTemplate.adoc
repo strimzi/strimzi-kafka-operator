@@ -1,0 +1,21 @@
+`Labels` and `Annotations` are used to identify and organize resources, and are configured in the `metadata` property.
+
+For example:
+
+[source,yaml,subs=attributes+]
+----
+# ...
+template:
+    statefulset:
+        metadata:
+            labels:
+                label1: value1
+                label2: value2
+            annotations:
+                annotation1: value1
+                annotation2: value2
+# ...
+----
+
+The `labels` and `annotations` fields can contain any labels or annotations that do not contain the reserved string `strimzi.io`.
+Labels and annotations containing `strimzi.io` are used internally by Strimzi and cannot be configured.

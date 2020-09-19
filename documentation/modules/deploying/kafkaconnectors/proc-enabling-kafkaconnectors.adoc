@@ -1,0 +1,42 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka-connect.adoc
+
+[id='proc-enabling-kafkaconnectors-{context}']
+= Enabling `KafkaConnector` resources
+
+To enable `KafkaConnectors` for a Kafka Connect cluster, add the `strimzi.io/use-connector-resources` annotation to the `KafkaConnect` or `KafkaConnectS2I` custom resource.
+
+.Prerequisites
+
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `KafkaConnect` or `KafkaConnectS2I` resource. Add the `strimzi.io/use-connector-resources` annotation. For example:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  # ...
+----
+
+. Create or update the resource using `kubectl apply`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f kafka-connect.yaml
+----
+
+.Additional resources
+
+* link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^]
+* link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying a `KafkaConnector` resource to Kafka Connect^]
+* xref:type-KafkaConnect-reference[]
+* xref:type-KafkaConnectS2I-reference[]

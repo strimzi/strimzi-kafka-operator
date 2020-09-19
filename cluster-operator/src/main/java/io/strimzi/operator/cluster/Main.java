@@ -17,8 +17,10 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperato
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -65,17 +67,19 @@ public class Main {
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
+        
         KubernetesClient client = new DefaultKubernetesClient();
 
-        maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
+        maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
             if (crs.succeeded())    {
-                PlatformFeaturesAvailability.create(vertx, client).setHandler(pfa -> {
+                PlatformFeaturesAvailability.create(vertx, client).onComplete(pfa -> {
                     if (pfa.succeeded()) {
                         log.info("Environment facts gathered: {}", pfa.result());
 
-                        run(vertx, client, pfa.result(), config).setHandler(ar -> {
+                        run(vertx, client, pfa.result(), config).onComplete(ar -> {
                             if (ar.failed()) {
                                 log.error("Unable to start operator for 1 or more namespace", ar.cause());
                                 System.exit(1);
@@ -94,7 +98,7 @@ public class Main {
     }
 
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
-        printEnvInfo();
+        Util.printEnvInfo();
 
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.getOperationTimeoutMs());
 
@@ -126,7 +130,10 @@ public class Main {
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
                 new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
 
-        List<Future> futures = new ArrayList<>();
+        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator =
+                new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier);
+
+        List<Future> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
             futures.add(prom.future());
@@ -138,7 +145,9 @@ public class Main {
                     kafkaConnectS2IClusterOperations,
                     kafkaMirrorMakerAssemblyOperator,
                     kafkaMirrorMaker2AssemblyOperator,
-                    kafkaBridgeAssemblyOperator);
+                    kafkaBridgeAssemblyOperator,
+                    kafkaRebalanceAssemblyOperator,
+                    resourceOperatorSupplier.metricsProvider);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {
@@ -186,7 +195,7 @@ public class Main {
             }
 
             Promise<Void> returnPromise = Promise.promise();
-            CompositeFuture.all(futures).setHandler(res -> {
+            CompositeFuture.all(futures).onComplete(res -> {
                 if (res.succeeded())    {
                     returnPromise.complete();
                 } else  {
@@ -198,14 +207,5 @@ public class Main {
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    static void printEnvInfo() {
-        Map<String, String> m = new HashMap<>(System.getenv());
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry: m.entrySet()) {
-            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-        }
-        log.info("Using config:\n" + sb.toString());
     }
 }

@@ -8,10 +8,10 @@
 //standard introduction
 include::../../shared/snip-intro-text.adoc[leveloffset=+1]
 
-This guide is intended as a starting point for building an understanding of {ProductName}.
-The guide introduces some of the key concepts behind Kafka, which is central to {ProductName}, explaining briefly the purpose of Kafka components.
+This guide is intended as a starting point for building an understanding of Strimzi.
+The guide introduces some of the key concepts behind Kafka, which is central to Strimzi, explaining briefly the purpose of Kafka components.
 Configuration points are outlined, including options to secure and monitor Kafka.
-A {ProductName} distribution provides the files to deploy and manage a Kafka cluster, as well as example files for configuration and monitoring of your deployment.
+A distribution of Strimzi provides the files to deploy and manage a Kafka cluster, as well as example files for configuration and monitoring of your deployment.
 
 A typical Kafka deployment is described, as well as the tools used to deploy and manage Kafka.
 

@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +35,7 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class);
+        return new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, Crds.kafkaBridge());
     }
 
     @Override
@@ -47,11 +48,12 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
         return "bridge-crd-it-namespace";
     }
 
-    protected KafkaBridge getResource() {
+    @Override
+    protected KafkaBridge getResource(String resourceName) {
         return new KafkaBridgeBuilder()
                 .withApiVersion(KafkaBridge.RESOURCE_GROUP + "/" + KafkaBridge.V1ALPHA1)
                 .withNewMetadata()
-                .withName(RESOURCE_NAME)
+                .withName(resourceName)
                 .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

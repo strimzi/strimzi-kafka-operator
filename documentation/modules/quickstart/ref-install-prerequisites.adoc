@@ -5,5 +5,5 @@
 [id='ref-install-prerequisites-{context}']
 = Prerequisites
 
-* {Minikube} must be installed.
-* You need to be able to access {ProductName} {ReleaseDownload}. 
+* {Minikube}.
+* You need to be able to access Strimzi {ReleaseDownload}.

@@ -7,6 +7,7 @@ package io.strimzi.operator.user.operator;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -19,9 +20,12 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -56,7 +60,12 @@ public class KafkaUserOperatorTest {
 
     @BeforeAll
     public static void before() {
-        vertx = Vertx.vertx();
+        //Setup Micrometer metrics options
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true));
+        vertx = Vertx.vertx(options);
     }
 
     @AfterAll
@@ -95,7 +104,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -111,9 +120,9 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKind(KafkaUser.RESOURCE_KIND)
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
@@ -176,7 +185,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -251,7 +260,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
                 assertThat(capturedNames.get(0), is(ResourceUtils.NAME));
@@ -321,7 +330,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -370,7 +379,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.delete(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -425,7 +434,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -443,9 +452,9 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                                is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKind(KafkaUser.RESOURCE_KIND)
-                                .withKubernetesName()
+                                is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
@@ -509,7 +518,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -527,12 +536,12 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                                .withKind(KafkaUser.RESOURCE_KIND)
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
                                 .toMap()));
                 assertThat(captured.getData().get("ca.crt"), is(userCert.getData().get("ca.crt")));
                 assertThat(captured.getData().get("user.crt"), is(userCert.getData().get("user.crt")));
@@ -554,6 +563,7 @@ public class KafkaUserOperatorTest {
 
                 async.flag();
             })));
+
     }
 
     @Test
@@ -587,7 +597,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -628,9 +638,9 @@ public class KafkaUserOperatorTest {
         KafkaUser existingScramShaUser = ResourceUtils.createKafkaUserTls();
         existingScramShaUser.getMetadata().setName("existing-scram-sha-user");
 
-        when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.userLabels(ResourceUtils.LABELS).toMap()))))).thenReturn(
+        when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.fromMap(ResourceUtils.LABELS).toMap()))))).thenReturn(
                 Future.succeededFuture(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser)));
-        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
+        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.fromMap(ResourceUtils.LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
         when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user")));
         when(scramOps.list()).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
 
@@ -654,14 +664,14 @@ public class KafkaUserOperatorTest {
         KafkaUserOperator op = new KafkaUserOperator(vertx,
                 mockCertManager,
                 mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps,
                 aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE) {
 
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
+            public Future<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
                 createdOrUpdated.add(resource.getMetadata().getName());
-                return Future.succeededFuture();
+                return Future.succeededFuture(new KafkaUserStatus());
             }
             @Override
             public Future<Boolean> delete(Reconciliation reconciliation) {
@@ -714,7 +724,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -732,12 +742,12 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                                .withKind(KafkaUser.RESOURCE_KIND)
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
                                 .toMap()));
 
                 assertThat(scramPasswordCaptor.getValue(), is(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD)))));
@@ -770,7 +780,7 @@ public class KafkaUserOperatorTest {
         KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         Secret userCert = ResourceUtils.createUserSecretScramSha();
@@ -798,7 +808,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -816,12 +826,12 @@ public class KafkaUserOperatorTest {
                 assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
                 assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
                 assertThat(captured.getMetadata().getLabels(),
-                        is(Labels.userLabels(user.getMetadata().getLabels())
-                                .withKubernetesName()
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withKubernetesInstance(ResourceUtils.NAME)
                                 .withKubernetesPartOf(ResourceUtils.NAME)
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
-                                .withKind(KafkaUser.RESOURCE_KIND)
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
                                 .toMap()));
                 assertThat(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
                 assertThat(scramPasswordCaptor.getValue(), is(password));
@@ -842,6 +852,7 @@ public class KafkaUserOperatorTest {
 
                 async.flag();
             })));
+
     }
 
     @Test
@@ -853,7 +864,7 @@ public class KafkaUserOperatorTest {
         KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         Secret userCert = ResourceUtils.createUserSecretTls();
@@ -877,7 +888,7 @@ public class KafkaUserOperatorTest {
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
 
                 List<String> capturedNames = secretNameCaptor.getAllValues();
                 assertThat(capturedNames, hasSize(1));
@@ -913,8 +924,8 @@ public class KafkaUserOperatorTest {
         Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
         when(mockSecretOps.get(anyString(), eq("user-cert"))).thenReturn(clientsCa);
         when(mockSecretOps.get(anyString(), eq("user-key"))).thenReturn(clientsCaKey);
-
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.get(anyString(), anyString())).thenReturn(user);
 
         when(mockSecretOps.reconcile(anyString(), anyString(), any(Secret.class))).thenReturn(Future.failedFuture(failureMsg));
         when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
@@ -924,12 +935,12 @@ public class KafkaUserOperatorTest {
         when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.failing(e -> context.verify(() -> {
+        op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
+            .onComplete(context.failing(e -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
@@ -953,6 +964,7 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.get(anyString(), eq("user-cert"))).thenReturn(clientsCa);
         when(mockSecretOps.get(anyString(), eq("user-key"))).thenReturn(clientsCaKey);
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.get(anyString(), anyString())).thenReturn(user);
 
         when(mockSecretOps.reconcile(anyString(), anyString(), any(Secret.class))).thenReturn(Future.succeededFuture());
         when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
@@ -962,12 +974,12 @@ public class KafkaUserOperatorTest {
         when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
-                Labels.userLabels(ResourceUtils.LABELS),
+                Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
-            .setHandler(context.succeeding(v -> context.verify(() -> {
+        op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
+            .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));

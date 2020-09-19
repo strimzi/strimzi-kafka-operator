@@ -1,0 +1,16 @@
+// Module included in the following assemblies:
+//
+// assemblies/assembly-overview.adoc
+// deploying/assembly-deploy-intro.adoc
+
+[id='assembly-custom-resources-{context}']
+= Strimzi custom resources
+
+//Standard intro text to custom resources
+include::modules/snip-intro-custom-resources.adoc[leveloffset=+1]
+
+.Additional resources
+* {K8sCRDs}
+
+//Example custom resource showing configuration options
+include::modules/con-deploy-custom-resources-example.adoc[leveloffset=+1]

@@ -1,0 +1,31 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-prometheus-deploy.adoc/
+
+[id='con-metrics-prometheus-options-{context}']
+
+= Prometheus configuration
+
+Strimzi provides xref:ref-metrics-config-files-{context}[example configuration files for the Prometheus server].
+
+A Prometheus image is provided for deployment:
+
+* `prometheus.yaml`
+
+Additional Prometheus-related configuration is also provided in the following files:
+
+* `prometheus-additional.yaml`
+* `prometheus-rules.yaml`
+* `strimzi-pod-monitor.yaml`
+
+For Prometheus to obtain monitoring data:
+
+* xref:proc-metrics-deploying-prometheus-operator-{context}[Deploy the Prometheus Operator]
+
+Then use the configuration files to:
+
+* xref:proc-metrics-deploying-prometheus-operator-{context}[Deploy Prometheus]
+
+.Alerting rules
+
+The `prometheus-rules.yaml` file provides xref:ref-metrics-alertmanager-examples-{context}[example alerting rule examples for use with Alertmanager].

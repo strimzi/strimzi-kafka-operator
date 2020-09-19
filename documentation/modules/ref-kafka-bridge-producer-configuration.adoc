@@ -13,7 +13,7 @@ The values can be one of the following JSON types:
 * Number
 * Boolean
 
-Users can specify and configure the options listed in the {ApacheKafkaProducerConfig} with the exception of those options which are managed directly by {ProductName}.
+Users can specify and configure the options listed in the {ApacheKafkaProducerConfig} with the exception of those options which are managed directly by Strimzi.
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `ssl.`
@@ -24,6 +24,11 @@ Specifically, all configuration options with keys equal to or starting with one 
 IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object provided.
 When an invalid configuration is provided, the Kafka Bridge cluster might not start or might become unstable.
 In this circumstance, fix the configuration in the `KafkaBridge.spec.producer.config` object, then the Cluster Operator can roll out the new configuration to all Kafka Bridge nodes.
+
+There are exceptions to the forbidden options.
+You can use three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
+A cipher suite combines algorithms for secure connection and data transfer.
+You can also configure the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification.
 
 .Example Kafka Bridge producer configuration
 [source,yaml,subs="attributes+"]
@@ -38,5 +43,15 @@ spec:
     config:
       acks: 1
       delivery.timeout.ms: 300000
-  # ...
+      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <1>
+      ssl.enabled.protocols: "TLSv1.2" <2>
+      ssl.protocol: "TLSv1.2" <3>
+      ssl.endpoint.identification.algorithm: HTTPS <4>
+    # ...
 ----
+<1> The cipher suite for TLS using a combination of `ECDHE` key exchange mechanism, `RSA` authentication algorithm,
+`AES` bulk encyption algorithm and `SHA384` MAC algorithm.
+<2> The SSl protocol `TLSv1.2` is enabled.
+<3> Specifies the `TLSv1.2` protocol to generate the SSL context.
+Allowed values are `TLSv1.1` and `TLSv1.2`.
+<4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.

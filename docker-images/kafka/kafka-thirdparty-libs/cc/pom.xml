@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <groupId>io.strimzi</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>kafka-thirdparty-libs</artifactId>
+    <packaging>pom</packaging>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <cruise-control.version>2.5.11</cruise-control.version>
+    </properties>
+
+    <repositories>
+      <repository>
+        <id>jcenter</id>
+          <url>https://jcenter.bintray.com/</url>
+      </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.linkedin.cruisecontrol</groupId>
+            <artifactId>cruise-control</artifactId>
+            <version>${cruise-control.version}</version>
+        </dependency>
+    </dependencies>
+</project>

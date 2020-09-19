@@ -13,12 +13,14 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,18 +32,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
@@ -52,8 +55,7 @@ public class KafkaConnectApiTest {
     private static final int PORT = 18083;
 
     @BeforeEach
-    public void before() throws IOException, InterruptedException {
-        vertx = Vertx.vertx();
+    public void beforeEach() throws IOException, InterruptedException {
         // Start a 3 node Kafka cluster
         cluster = new KafkaCluster();
         cluster.addBrokers(3);
@@ -61,7 +63,6 @@ public class KafkaConnectApiTest {
         cluster.deleteDataUponShutdown(true);
         cluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
         cluster.startup();
-        cluster.createTopics(getClass().getSimpleName() + "-offsets", getClass().getSimpleName() + "-config", getClass().getSimpleName() + "-status");
 
         // Start a N node connect cluster
         Map<String, String> workerProps = new HashMap<>();
@@ -93,7 +94,7 @@ public class KafkaConnectApiTest {
     }
 
     @AfterEach
-    public void after() {
+    public void afterEach() {
         if (connect != null) {
             connect.stop();
             connect.awaitStop();
@@ -101,36 +102,42 @@ public class KafkaConnectApiTest {
         cluster.shutdown();
     }
 
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
     @AfterAll
-    public static void closeVertx() {
+    public static void after() {
         vertx.close();
     }
 
     @Test
     @SuppressWarnings({"unchecked", "checkstyle:MethodLength", "checkstyle:NPathComplexity"})
-    public void test(VertxTestContext context) throws InterruptedException {
+    public void test(VertxTestContext context) {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
-        CountDownLatch async = new CountDownLatch(1);
+        Checkpoint async = context.checkpoint();
         client.listConnectorPlugins("localhost", PORT)
-            .compose(connectorPlugins -> {
+            .onComplete(context.succeeding(connectorPlugins -> context.verify(() -> {
                 assertThat(connectorPlugins.size(), greaterThanOrEqualTo(2));
 
-                ConnectorPlugin fileSink = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSinkConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
+                ConnectorPlugin fileSink = connectorPlugins.stream()
+                        .filter(connector -> "org.apache.kafka.connect.file.FileStreamSinkConnector".equals(connector.getConnectorClass()))
+                        .findFirst().orElse(null);
                 assertNotNull(fileSink);
-                assertEquals(fileSink.getType(), "sink");
-                assertNotNull(fileSink.getVersion());
-                assertFalse(fileSink.getVersion().isEmpty());
+                assertThat(fileSink.getType(), is("sink"));
+                assertThat(fileSink.getVersion(), is(not(emptyString())));
 
                 ConnectorPlugin fileSource = connectorPlugins.stream().filter(connector -> "org.apache.kafka.connect.file.FileStreamSourceConnector".equals(connector.getConnectorClass())).findFirst().orElse(null);
                 assertNotNull(fileSource);
-                assertEquals(fileSource.getType(), "source");
-                assertNotNull(fileSource.getVersion());
-                assertFalse(fileSource.getVersion().isEmpty());
+                assertThat(fileSource.getType(), is("source"));
+                assertThat(fileSource.getVersion(), is(not(emptyString())));
+            })))
 
-                return client.list("localhost", PORT);
-            })
+            .compose(connectorPlugins -> client.list("localhost", PORT))
+            .onComplete(context.succeeding(connectorNames -> context.verify(() -> assertThat(connectorNames, is(empty())))))
+
             .compose(connectorNames -> {
-                assertEquals(emptyList(), connectorNames);
                 JsonObject o = new JsonObject()
                     .put("connector.class", "FileStreamSource")
                     .put("tasks.max", "1")
@@ -138,12 +145,15 @@ public class KafkaConnectApiTest {
                     .put("topic", "my-topic");
                 return client.createOrUpdatePutRequest("localhost", PORT, "test", o);
             })
+            .onComplete(context.succeeding())
             .compose(created -> {
+
                 Promise<Map<String, Object>> promise = Promise.promise();
+
                 Handler<Long> handler = new Handler<Long>() {
                     @Override
                     public void handle(Long timerId) {
-                        client.status("localhost", PORT, "test").setHandler(result -> {
+                        client.status("localhost", PORT, "test").onComplete(result -> {
                             if (result.succeeded()) {
                                 Map<String, Object> status = result.result();
                                 if ("RUNNING".equals(((Map) status.getOrDefault("connector", emptyMap())).get("state"))) {
@@ -162,119 +172,108 @@ public class KafkaConnectApiTest {
                 vertx.setTimer(1000, handler);
                 return promise.future();
             })
-            .compose(status -> {
-                try {
-                    assertEquals("test", status.get("name"));
-                    assertEquals("RUNNING", ((Map) status.getOrDefault("connector", emptyMap())).get("state"));
-                    assertEquals("localhost:18083", ((Map) status.getOrDefault("connector", emptyMap())).get("worker_id"));
-                    List<Map> tasks = (List<Map>) status.get("tasks");
-                    for (Map an : tasks) {
-                        assertEquals("RUNNING", an.get("state"));
-                        assertEquals("localhost:18083", an.get("worker_id"));
-                    }
-                    return client.getConnectorConfig(new BackOff(10), "localhost", PORT, "test");
-                } catch (Throwable e) {
-                    return Future.failedFuture(e);
+            .onComplete(context.succeeding(status -> context.verify(() -> {
+                assertThat(status.get("name"), is("test"));
+                Map<String, Object> connectorStatus = (Map<String, Object>) status.getOrDefault("connector", emptyMap());
+                assertThat(connectorStatus.get("state"), is("RUNNING"));
+                assertThat(connectorStatus.get("worker_id"), is("localhost:18083"));
+
+                System.out.println("help " + connectorStatus);
+                List<Map> tasks = (List<Map>) status.get("tasks");
+                for (Map an : tasks) {
+                    assertThat(an.get("state"), is("RUNNING"));
+                    assertThat(an.get("worker_id"), is("localhost:18083"));
                 }
-            })
-            .compose(config -> {
-                try {
-                    assertEquals(TestUtils.map("connector.class", "FileStreamSource",
-                            "file", "/dev/null",
-                            "tasks.max", "1",
-                            "name", "test",
-                            "topic", "my-topic"), config);
-                    return client.getConnectorConfig(new BackOff(10), "localhost", PORT, "does-not-exist");
-                } catch (Throwable e) {
-                    return Future.failedFuture(e);
-                }
-            })
-            .recover(error -> {
-                try {
-                    assertTrue(error instanceof ConnectRestException);
-                    assertEquals(404, ((ConnectRestException) error).getStatusCode());
-                    return Future.succeededFuture();
-                } catch (Throwable e) {
-                    return Future.failedFuture(e);
-                }
-            }).compose(ignored -> {
-                return client.pause("localhost", PORT, "test");
-            })
+            })))
+            .compose(status -> client.getConnectorConfig(new BackOff(10), "localhost", PORT, "test"))
+            .onComplete(context.succeeding(config -> context.verify(() -> {
+                assertThat(config, is(TestUtils.map("connector.class", "FileStreamSource",
+                        "file", "/dev/null",
+                        "tasks.max", "1",
+                        "name", "test",
+                        "topic", "my-topic")));
+            })))
+            .compose(config -> client.getConnectorConfig(new BackOff(10), "localhost", PORT, "does-not-exist"))
+            .onComplete(context.failing(error -> context.verify(() -> {
+                assertThat(error, instanceOf(ConnectRestException.class));
+                assertThat(((ConnectRestException) error).getStatusCode(), is(404));
+            })))
+            .recover(error -> Future.succeededFuture())
+
+            .compose(ignored -> client.pause("localhost", PORT, "test"))
+            .onComplete(context.succeeding())
+
+            .compose(ignored -> client.resume("localhost", PORT, "test"))
+            .onComplete(context.succeeding())
+
             .compose(ignored -> {
-                return client.resume("localhost", PORT, "test");
+                JsonObject o = new JsonObject()
+                        .put("connector.class", "ThisConnectorDoesNotExist")
+                        .put("tasks.max", "1")
+                        .put("file", "/dev/null")
+                        .put("topic", "my-topic");
+                return client.createOrUpdatePutRequest("localhost", PORT, "broken", o);
             })
-            .compose(ignored1 -> {
+            .onComplete(context.failing(error -> context.verify(() -> {
+                assertThat(error, instanceOf(ConnectRestException.class));
+
+                assertThat(error.getMessage(),
+                        containsString("Failed to find any class that implements Connector and which name matches ThisConnectorDoesNotExist"));
+            })))
+            .recover(e -> Future.succeededFuture())
+            .compose(ignored -> {
                 JsonObject o = new JsonObject()
-                    .put("connector.class", "ThisConnectorDoesNotExist")
-                    .put("tasks.max", "1")
-                    .put("file", "/dev/null")
-                    .put("topic", "my-topic");
-                return client.createOrUpdatePutRequest("localhost", PORT, "broken", o)
-                    .compose(ignored -> Future.failedFuture(new AssertionError("Should fail")))
-                    .recover(e -> {
-                        if (e instanceof ConnectRestException) {
-                            if (e.getMessage().contains("Failed to find any class that implements Connector and which name matches ThisConnectorDoesNotExist")) {
-                                return Future.succeededFuture();
-                            } else {
-                                return Future.failedFuture(e.getMessage());
-                            }
-                        } else {
-                            return Future.failedFuture(e);
-                        }
-                    });
-            }).compose(created -> {
-                JsonObject o = new JsonObject()
-                    .put("connector.class", "FileStreamSource")
-                    .put("tasks.max", "dog")
-                    .put("file", "/dev/null")
-                    .put("topic", "my-topic");
-                return client.createOrUpdatePutRequest("localhost", PORT, "broken2", o)
-                    .compose(ignored -> Future.failedFuture(new AssertionError("Should fail")))
-                    .recover(e -> {
-                        if (e instanceof ConnectRestException) {
-                            if (e.getMessage().contains("Invalid value dog for configuration tasks.max: Not a number of type INT")) {
-                                return Future.succeededFuture();
-                            } else {
-                                return Future.failedFuture(e.getMessage());
-                            }
-                        } else {
-                            return Future.failedFuture(e);
-                        }
-                    });
-            }).compose(createResponse -> {
-                return client.list("localhost", PORT);
-            }).compose(connectorNames -> {
-                assertEquals(singletonList("test"), connectorNames);
-                return client.delete("localhost", PORT, "test");
-            }).compose(deleteResponse -> {
-                return client.list("localhost", PORT);
-            }).compose(connectorNames -> {
-                assertEquals(emptyList(), connectorNames);
-                return client.delete("localhost", PORT, "never-existed")
-                    .compose(ignored -> Future.failedFuture(new AssertionError("Should fail")))
-                    .recover(e -> {
-                        if (e instanceof ConnectRestException) {
-                            if (e.getMessage().contains("Connector never-existed not found")) {
-                                return Future.succeededFuture();
-                            } else {
-                                return Future.failedFuture(e.getMessage());
-                            }
-                        } else {
-                            return Future.failedFuture(e);
-                        }
-                    });
-            }).compose(ignored -> {
-                async.countDown();
-                return Future.succeededFuture();
-            }).recover(e -> {
-                context.failNow(e);
-                async.countDown();
-                return Future.succeededFuture();
-            });
-        if (async.await(60, TimeUnit.SECONDS)) {
-            context.completeNow();
-        } else {
-            context.failNow(new TimeoutException("Timeout!"));
-        }
+                        .put("connector.class", "FileStreamSource")
+                        .put("tasks.max", "dog")
+                        .put("file", "/dev/null")
+                        .put("topic", "my-topic");
+                return client.createOrUpdatePutRequest("localhost", PORT, "broken2", o);
+            })
+            .onComplete(context.failing(error -> context.verify(() -> {
+                assertThat(error, instanceOf(ConnectRestException.class));
+                assertThat(error.getMessage(),
+                        containsString("Invalid value dog for configuration tasks.max: Not a number of type INT"));
+            })))
+            .recover(e -> Future.succeededFuture())
+            .compose(createResponse -> client.list("localhost", PORT))
+            .onComplete(context.succeeding(connectorNames -> context.verify(() ->
+                    assertThat(connectorNames, is(singletonList("test"))))))
+            .compose(connectorNames -> client.delete("localhost", PORT, "test"))
+            .onComplete(context.succeeding())
+            .compose(deletedConnector -> client.list("localhost", PORT))
+            .onComplete(context.succeeding(connectorNames -> assertThat(connectorNames, is(empty()))))
+            .compose(connectorNames -> client.delete("localhost", PORT, "never-existed"))
+            .onComplete(context.failing(error -> {
+                assertThat(error, instanceOf(ConnectRestException.class));
+                assertThat(error.getMessage(),
+                        containsString("Connector never-existed not found"));
+                async.flag();
+            }));
+    }
+
+    @Test
+    public void testChangeLoggers(VertxTestContext context) throws InterruptedException {
+        String desired = "log4j.rootLogger=INFO, CONSOLE\n" +
+                "log4j.logger.org.apache.zookeeper=WARN\n" +
+                "log4j.logger.org.I0Itec.zkclient=INFO\n" +
+                "log4j.logger.org.reflections.Reflection=INFO\n" +
+                "log4j.logger.org.reflections=FATAL";
+
+        KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
+        Checkpoint async = context.checkpoint();
+
+        client.updateConnectLoggers("localhost", PORT, desired)
+                .onComplete(context.succeeding())
+                .compose(a -> client.listConnectLoggers("localhost", PORT)
+                        .onComplete(context.succeeding(map -> context.verify(() -> {
+                            assertThat(map.get("org.apache.zookeeper").get("level"), is("WARN"));
+                            assertThat(map.get("org.I0Itec.zkclient").get("level"), is("INFO"));
+                            assertThat(map.get("org.reflections").get("level"), is("FATAL"));
+                            assertThat(map.get("org.reflections.Reflection").get("level"), is("INFO"));
+                            assertThat(map.get("root").get("level"), is("INFO"));
+                            assertThat(map.get("io.debezium").get("level"), is("OFF"));
+                            assertThat(map.get("unknown"), is(nullValue()));
+                            async.flag();
+                        }))));
     }
 }

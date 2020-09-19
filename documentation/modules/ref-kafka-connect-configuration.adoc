@@ -13,7 +13,7 @@ The values can be one of the following JSON types:
 * Number
 * Boolean
 
-You can specify and configure the options listed in the {ApacheKafkaConnectConfig} with the exception of those options that are managed directly by {ProductName}.
+You can specify and configure the options listed in the {ApacheKafkaConnectConfig} with the exception of those options that are managed directly by Strimzi.
 Specifically, configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `ssl.`
@@ -24,7 +24,7 @@ Specifically, configuration options with keys equal to or starting with one of t
 * `rest.`
 * `bootstrap.servers`
 
-When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Custer Operator log file.
+When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
 All other options are passed to Kafka Connect.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object provided.
@@ -41,6 +41,11 @@ Certain options have default values:
 * `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
 
 These options are automatically configured in case they are not present in the `KafkaConnect.spec.config` or `KafkaConnectS2I.spec.config` properties.
+
+There are exceptions to the forbidden options.
+You can use three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.
+A cipher suite combines algorithms for secure connection and data transfer.
+You can also configure the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification.
 
 .Example Kafka Connect configuration
 [source,yaml,subs="attributes+"]
@@ -63,5 +68,15 @@ spec:
     config.storage.replication.factor: 3
     offset.storage.replication.factor: 3
     status.storage.replication.factor: 3
+    ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <1>
+    ssl.enabled.protocols: "TLSv1.2" <2>
+    ssl.protocol: "TLSv1.2" <3>
+    ssl.endpoint.identification.algorithm: HTTPS <4>
   # ...
 ----
+<1> The cipher suite for TLS using a combination of `ECDHE` key exchange mechanism, `RSA` authentication algorithm,
+`AES` bulk encyption algorithm and `SHA384` MAC algorithm.
+<2> The SSl protocol `TLSv1.2` is enabled.
+<3> Specifies the `TLSv1.2` protocol to generate the SSL context.
+Allowed values are `TLSv1.1` and `TLSv1.2`.
+<4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.

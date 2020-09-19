@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -73,8 +74,18 @@ public class VolumeResizingTest {
                     .withNewKafka()
                         .withReplicas(3)
                         .withNewListeners()
-                            .withNewPlain()
-                            .endPlain()
+                            .addNewGenericKafkaListener()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endGenericKafkaListener()
                         .endListeners()
                         .withNewPersistentClaimStorage()
                             .withStorageClass("mysc")
@@ -132,7 +143,7 @@ public class VolumeResizingTest {
                 config);
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
-                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
+                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
                     assertThat(pvcCaptor.getAllValues().size(), is(3));
                     assertThat(pvcCaptor.getAllValues(), is(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage())));
@@ -180,7 +191,7 @@ public class VolumeResizingTest {
                 config);
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
-                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
+                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
                     assertThat(pvcCaptor.getAllValues().size(), is(3));
                     assertThat(pvcCaptor.getAllValues(), is(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage())));
@@ -237,7 +248,7 @@ public class VolumeResizingTest {
                 config);
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
-                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
+                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
                     assertThat(pvcCaptor.getAllValues().size(), is(3));
                     assertThat(pvcCaptor.getAllValues(), is(kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage())));
@@ -294,7 +305,7 @@ public class VolumeResizingTest {
                 config);
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
-                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
+                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
                     // Resizing is not supported, we do not reconcile
                     assertThat(pvcCaptor.getAllValues().size(), is(0));
@@ -354,7 +365,7 @@ public class VolumeResizingTest {
                 config);
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
-                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
+                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
                     // The volumes are resizing => no reconciliation
                     assertThat(pvcCaptor.getAllValues().size(), is(0));
@@ -414,7 +425,7 @@ public class VolumeResizingTest {
                 config);
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
-                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
+                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
                     // The volumes are waiting for pod restart => no reconciliation
@@ -476,7 +487,7 @@ public class VolumeResizingTest {
                 config);
 
         kao.resizeVolumes(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
-                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).setHandler(res -> {
+                kafka, kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage()), kafkaCluster).onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
                     assertThat(pvcCaptor.getAllValues().size(), is(3));

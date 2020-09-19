@@ -5,16 +5,16 @@
 [id="kafka-concepts-key_{context}"]
 = Kafka concepts
 
-Knowledge of the key concepts of Kafka is important in understanding how {ProductName} works.
+Knowledge of the key concepts of Kafka is important in understanding how Strimzi works.
 
-A Kafka cluster comprises multiple brokers
+A Kafka cluster comprises multiple brokers.
 Topics are used to receive and store data in a Kafka cluster.
 Topics are split by partitions, where the data is written.
 Partitions are replicated across topics for fault tolerance.
 
 .Kafka brokers and topics
 
-image:overview/kafka-concepts-key-concepts.png[Kafka brokers and topics]
+image:overview/kafka-concepts-key-concepts.png[Kafka brokers and topics inside a Kafka cluster, showing the partition leader of each topic]
 
 Broker:: A broker, sometimes referred to as a server or node, orchestrates the storage and passing of messages.
 Topic:: A topic provides a destination for the storage of data.

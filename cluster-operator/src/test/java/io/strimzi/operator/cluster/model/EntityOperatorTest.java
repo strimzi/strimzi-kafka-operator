@@ -8,6 +8,10 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -26,6 +30,7 @@ import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -33,16 +38,21 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasProperty;
 
 public class EntityOperatorTest {
 
@@ -77,7 +87,7 @@ public class EntityOperatorTest {
             .build();
 
     private final Kafka resource =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                     .withEntityOperator(entityOperatorSpec)
                     .endSpec()
@@ -94,7 +104,7 @@ public class EntityOperatorTest {
 
         assertThat(dep.getMetadata().getName(), is(entityOperator.entityOperatorName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        assertThat(dep.getSpec().getReplicas(), is(new Integer(EntityOperatorSpec.DEFAULT_REPLICAS)));
+        assertThat(dep.getSpec().getReplicas(), is(Integer.valueOf(EntityOperatorSpec.DEFAULT_REPLICAS)));
         assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(dep.getMetadata().getOwnerReferences().get(0), is(entityOperator.createOwnerReference()));
 
@@ -110,10 +120,10 @@ public class EntityOperatorTest {
         assertThat(EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()), is(map(
                         EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
                         EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT)));
-        assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(tlsHealthDelay)));
-        assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(new Integer(tlsHealthTimeout)));
-        assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(tlsHealthDelay)));
-        assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(new Integer(tlsHealthTimeout)));
+        assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));
+        assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
+        assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));
+        assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
     }
 
     @Test
@@ -127,7 +137,7 @@ public class EntityOperatorTest {
     public void testFromCrdNoTopicAndUserOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
@@ -139,27 +149,44 @@ public class EntityOperatorTest {
     }
 
     @Test
-    public void withOldAffinity() throws IOException {
-        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withOldAffinity");
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    public void withOldAffinityAndTolerations() throws IOException {
+        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withOldAffinityAndTolerations");
+        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
-    public void withAffinity() throws IOException {
-        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withAffinity");
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    public void withAffinityAndTolerations() throws IOException {
+        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withAffinityAndTolerations");
+        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
     public void testTemplate() {
-        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
+                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
+        Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
+        expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
         Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
 
+        Toleration toleration = new TolerationBuilder()
+                .withEffect("NoSchedule")
+                .withValue("")
+                .build();
+
+        Toleration assertToleration = new TolerationBuilder()
+                .withEffect("NoSchedule")
+                .withValue(null)
+                .build();
+
+
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .withNewEntityOperator()
                                 .withTopicOperator(entityTopicOperatorSpec)
@@ -178,6 +205,7 @@ public class EntityOperatorTest {
                                         .endMetadata()
                                         .withNewPriorityClassName("top-priority")
                                         .withNewSchedulerName("my-scheduler")
+                                        .withTolerations(singletonList(toleration))
                                     .endPod()
                                 .endTemplate()
                             .endEntityOperator()
@@ -187,7 +215,7 @@ public class EntityOperatorTest {
 
         // Check Deployment
         Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()), is(true));
+        assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
@@ -195,11 +223,13 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
     }
 
     @Test
     public void testGracePeriod() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                     .withTopicOperator(entityTopicOperatorSpec)
@@ -222,7 +252,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultGracePeriod() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -243,7 +273,7 @@ public class EntityOperatorTest {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                     .withTopicOperator(entityTopicOperatorSpec)
@@ -273,7 +303,7 @@ public class EntityOperatorTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -294,7 +324,7 @@ public class EntityOperatorTest {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                 .withNewEntityOperator()
                 .withTopicOperator(entityTopicOperatorSpec)
@@ -317,7 +347,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultImagePullSecrets() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -328,12 +358,12 @@ public class EntityOperatorTest {
         EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
     public void testSecurityContext() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -357,7 +387,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testDefaultSecurityContext() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -440,7 +470,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testImagePullPolicy() {
-        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -489,7 +519,7 @@ public class EntityOperatorTest {
         topicOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -534,7 +564,7 @@ public class EntityOperatorTest {
         topicOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -580,7 +610,7 @@ public class EntityOperatorTest {
         userOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -624,7 +654,7 @@ public class EntityOperatorTest {
         userOperatorContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -668,7 +698,7 @@ public class EntityOperatorTest {
         tlsContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                         .withNewEntityOperator()
                         .withTopicOperator(entityTopicOperatorSpec)
@@ -707,15 +737,15 @@ public class EntityOperatorTest {
         tlsContainer.setEnv(testEnvs);
 
         Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
-                        .withNewEntityOperator()
-                        .withTopicOperator(entityTopicOperatorSpec)
-                        .withUserOperator(entityUserOperatorSpec)
-                        .withNewTemplate()
-                        .withTlsSidecarContainer(tlsContainer)
-                        .endTemplate()
-                        .endEntityOperator()
+                            .withNewEntityOperator()
+                                .withTopicOperator(entityTopicOperatorSpec)
+                                .withUserOperator(entityUserOperatorSpec)
+                                .withNewTemplate()
+                                    .withTlsSidecarContainer(tlsContainer)
+                                .endTemplate()
+                            .endEntityOperator()
                         .endSpec()
                         .build();
 
@@ -725,5 +755,116 @@ public class EntityOperatorTest {
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
+    }
+
+    @Test
+    public void testUserOperatorContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editOrNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .editOrNewTemplate()
+                            .editOrNewUserOperatorContainer()
+                                .withSecurityContext(securityContext)
+                            .endUserOperatorContainer()
+                        .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+        Deployment deployment = eo.generateDeployment(false, null, null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
+    }
+
+    @Test
+    public void testTopicOperatorContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editOrNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .editOrNewTemplate()
+                            .editOrNewTopicOperatorContainer()
+                                .withSecurityContext(securityContext)
+                            .endTopicOperatorContainer()
+                        .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+        Deployment deployment = eo.generateDeployment(false, null, null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
+    }
+
+    @Test
+    public void testTlsSidecarContainerSecurityContext() {
+
+        SecurityContext securityContext = new SecurityContextBuilder()
+                .withPrivileged(false)
+                .withNewReadOnlyRootFilesystem(false)
+                .withAllowPrivilegeEscalation(false)
+                .withRunAsNonRoot(true)
+                .withNewCapabilities()
+                    .addNewDrop("ALL")
+                .endCapabilities()
+                .build();
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editOrNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .editOrNewTemplate()
+                            .editOrNewTlsSidecarContainer()
+                                .withSecurityContext(securityContext)
+                            .endTlsSidecarContainer()
+                        .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+        Deployment deployment = eo.generateDeployment(false, null, null, null);
+
+        assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
+                hasItem(allOf(
+                        hasProperty("name", equalTo(EntityOperator.TLS_SIDECAR_NAME)),
+                        hasProperty("securityContext", equalTo(securityContext))
+                )));
     }
 }

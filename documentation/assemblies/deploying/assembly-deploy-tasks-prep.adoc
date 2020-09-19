@@ -1,0 +1,32 @@
+// This assembly is included in:
+//
+// deploying/assembly-deploy-tasks.adoc
+// assembly-getting-started.adoc
+
+[id="deploy-tasks-prereqs_{context}"]
+= Preparing for your Strimzi deployment
+
+This section shows how you prepare for a Strimzi deployment, describing:
+
+* xref:deploy-prereqs-{context}[The prerequisites you need before you can deploy Strimzi]
+* xref:downloads-{context}[How to download the Strimzi release artifacts to use in your deployment]
+* xref:container-images-{context}[How to push the Strimzi container images into you own registry (if required)]
+* xref:adding-users-the-strimzi-admin-role-{context}[How to set up _admin_ roles for configuration of custom resources used in deployment]
+ifdef::InstallationAppendix[]
+* xref:deploy-alternatives_{context}[Alternative deployment options to Kubernetes using _Minikube_ or _Minishift_]
+endif::InstallationAppendix[]
+
+NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
+
+//Prereqs for a deployment
+include::modules/con-deploy-prereqs.adoc[leveloffset=+1]
+//How to access release artifacts
+include::modules/con-deploy-product-downloads.adoc[leveloffset=+1]
+//Container images
+include::modules/con-deploy-container-images.adoc[leveloffset=+1]
+//Designating administrators to manage the install process
+include::modules/proc-deploy-designating-strimzi-administrators.adoc[leveloffset=+1]
+//Alternatives to Kubernetes cluster
+ifdef::InstallationAppendix[]
+include::assembly-deploy-alternatives.adoc[leveloffset=+1]
+endif::InstallationAppendix[]

@@ -1,0 +1,1 @@
+../../shared/snip-intro-custom-resources.adoc

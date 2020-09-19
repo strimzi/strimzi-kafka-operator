@@ -13,7 +13,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -50,7 +49,12 @@ import static java.util.Collections.unmodifiableList;
                         )
                 },
                 subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
+                        status = @Crd.Spec.Subresources.Status(),
+                        scale = @Crd.Spec.Subresources.Scale(
+                                specReplicasPath = KafkaMirrorMaker2.SPEC_REPLICAS_PATH,
+                                statusReplicasPath = KafkaMirrorMaker2.STATUS_REPLICAS_PATH,
+                                labelSelectorPath = KafkaMirrorMaker2.LABEL_SELECTOR_PATH
+                        )
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
@@ -71,8 +75,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "apiVersion", "kind", "metadata", "spec", "status" })
 @EqualsAndHashCode
-public class KafkaMirrorMaker2 extends CustomResource implements UnknownPropertyPreserving, HasStatus<KafkaMirrorMaker2Status> {
-
+public class KafkaMirrorMaker2 extends CustomResource implements HasSpecAndStatus<KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status>, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
@@ -87,6 +90,9 @@ public class KafkaMirrorMaker2 extends CustomResource implements UnknownProperty
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kmm2";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
+    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
+    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
+    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
     private KafkaMirrorMaker2Spec spec;

@@ -27,18 +27,20 @@ image::mirrormaker.png[MirrorMaker 2.0 replication]
 
 You can use MirrorMaker 2.0 in _active/passive_ or _active/active_ cluster configurations.
 
-* In an _active/passive_ configuration, the data from an active cluster is replicated in a passive cluster, which remains on standby, for example, for data recovery in the event of system failure.
 * In an _active/active_ configuration, both clusters are active and provide the same data simultaneously, which is useful if you want to make the same data available locally in different geographical locations.
+* In an _active/passive_ configuration, the data from an active cluster is replicated in a passive cluster, which remains on standby, for example, for data recovery in the event of system failure.
 
 The expectation is that producers and consumers connect to active clusters only.
 
-== Bidirectional replication
+A MirrorMaker 2.0 cluster is required at each target destination.
+
+== Bidirectional replication (active/active)
 
 The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration.
-A MirrorMaker 2.0 cluster is required at each target destination.
 
 Each cluster replicates the data of the other cluster using the concept of _source_ and _remote_ topics.
 As the same topics are stored in each cluster, remote topics are automatically renamed by MirrorMaker 2.0 to represent the source cluster.
+The name of the originating cluster is prepended to the name of the topic.
 
 .Topic renaming
 image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]
@@ -47,6 +49,16 @@ By flagging the originating cluster, topics are not replicated back to that clus
 
 The concept of replication through _remote_ topics is useful when configuring an architecture that requires data aggregation.
 Consumers can subscribe to source and remote topics within the same cluster, without the need for a separate aggregation cluster.
+
+== Unidirectional replication (active/passive)
+
+The MirrorMaker 2.0 architecture supports unidirectional replication in an _active/passive_ cluster configuration.
+
+You can use an _active/passive_ cluster configuration to make backups or migrate data to another cluster.
+In this situation, you might not want automatic renaming of remote topics.
+
+You can override automatic renaming by adding `IdentityReplicationPolicy` to the source connector configuration of the `KafkaMirrorMaker2` resource.
+With this configuration applied, topics retain their original names.
 
 == Topic configuration synchronization
 

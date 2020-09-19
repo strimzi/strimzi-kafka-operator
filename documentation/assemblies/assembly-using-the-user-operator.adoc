@@ -1,30 +1,23 @@
 // This assembly is included in the following assemblies:
 //
-// getting-started.adoc
-
-:parent-context-using-uo: {context}
+// assembly-operators.adoc
 
 [id='assembly-using-the-user-operator-{context}']
 = Using the User Operator
 
-:context: using-uo
+When you create, modify or delete a user using the `KafkaUser` resource,
+the User Operator ensures those changes are reflected in the Kafka cluster.
 
-The User Operator provides a way of managing Kafka users via Kubernetes resources.
+The _Deploying Strimzi_ guide provides instructions to deploy the User Operator:
 
-include::../modules/overview/con-overview-components-user-operator.adoc[leveloffset=+1]
+* link:{BookURLDeploying}#deploying-the-user-operator-using-the-cluster-operator-{context}[Using the Cluster Operator (recommended)^]
+* link:{BookURLDeploying}#deploying-the-user-operator-standalone-{context}[Standalone to operate with Kafka clusters not managed by Strimzi^]
 
-include::../modules/con-mutual-tls-authentication.adoc[leveloffset=+1]
+For more information about the schema, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].
 
-include::../modules/proc-creating-kafka-user-tls.adoc[leveloffset=+1]
+.Authenticating and authorizing access to Kafka
+Use `KafkaUser` to enable the authentication and authorization mechanisms that a specific client uses to access Kafka.
 
-include::../modules/con-scram-sha-authentication.adoc[leveloffset=+1]
+For more information on using `KafkUser` to manage users and secure access to Kafka brokers, see xref:assembly-securing-kafka-{context}[Securing access to Kafka brokers].
 
-include::../modules/proc-creating-kafka-user-scram-sha.adoc[leveloffset=+1]
-
-include::../modules/proc-changing-kafka-user.adoc[leveloffset=+1]
-
-include::../modules/proc-deleting-kafka-user.adoc[leveloffset=+1]
-
-include::../modules/ref-kafka-user.adoc[leveloffset=+1]
-
-:context: {parent-context-using-uo}
+include::../modules/proc-user-operator-with-resource-requests-limits.adoc[leveloffset=+1]

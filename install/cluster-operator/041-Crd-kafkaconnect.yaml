@@ -32,6 +32,10 @@ spec:
     type: integer
   subresources:
     status: {}
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+      labelSelectorPath: .status.labelSelector
   validation:
     openAPIV3Schema:
       properties:
@@ -175,6 +179,13 @@ spec:
                   description: Link to Kubernetes Secret containing the refresh token
                     which can be used to obtain access token from the authorization
                     server.
+                scope:
+                  type: string
+                  description: OAuth scope to use when authenticating against the
+                    authorization server. Some authorization servers require this
+                    to be set. The possible values depend on how authorization server
+                    is configured. By default `scope` is not specified when doing
+                    the token endpoint request.
                 tlsTrustedCertificates:
                   type: array
                   items:
@@ -217,7 +228,9 @@ spec:
               type: object
               description: 'The Kafka Connect configuration. Properties with the following
                 prefixes cannot be set: ssl., sasl., security., listeners, plugin.path,
-                rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes.'
+                rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes
+                (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites,
+                ssl.protocol, ssl.enabled.protocols).'
             resources:
               type: object
               properties:
@@ -584,15 +597,15 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                      description: Metadata which should be applied to the resource.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
+                      description: Metadata applied to the resource.
                   description: Template for Kafka Connect `Deployment`.
                 pod:
                   type: object
@@ -602,14 +615,14 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                       description: Metadata applied to the resource.
                     imagePullSecrets:
                       type: array
@@ -619,12 +632,18 @@ spec:
                           name:
                             type: string
                       description: List of references to secrets in the same namespace
-                        to use for pulling any of the images used by this Pod.
+                        to use for pulling any of the images used by this Pod. When
+                        the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster
+                        Operator and the `imagePullSecrets` option are specified,
+                        only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
+                        variable is ignored.
                     securityContext:
                       type: object
                       properties:
                         fsGroup:
                           type: integer
+                        fsGroupChangePolicy:
+                          type: string
                         runAsGroup:
                           type: integer
                         runAsNonRoot:
@@ -662,18 +681,23 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            runAsUserName:
+                              type: string
                       description: Configures pod-level security attributes and common
                         container settings.
                     terminationGracePeriodSeconds:
                       type: integer
                       minimum: 0
                       description: The grace period is the duration in seconds after
-                        the processes running in the pod are sent a termination signal
+                        the processes running in the pod are sent a termination signal,
                         and the time when the processes are forcibly halted with a
-                        kill signal. Set this value longer than the expected cleanup
-                        time for your process.Value must be non-negative integer.
-                        The value zero indicates delete immediately. Defaults to 30
-                        seconds.
+                        kill signal. Set this value to longer than the expected cleanup
+                        time for your process. Value must be a non-negative integer.
+                        A zero value indicates delete immediately. You might need
+                        to increase the grace period for very large Kafka clusters,
+                        so that the Kafka brokers have enough time to transfer their
+                        work to another broker before they are terminated. Defaults
+                        to 30 seconds.
                     affinity:
                       type: object
                       properties:
@@ -883,14 +907,6 @@ spec:
                                   topologyKey:
                                     type: string
                       description: The pod's affinity rules.
-                    priorityClassName:
-                      type: string
-                      description: The name of the Priority Class to which these pods
-                        will be assigned.
-                    schedulerName:
-                      type: string
-                      description: The name of the scheduler used to dispatch this
-                        `Pod`. If not specified, the default scheduler will be used.
                     tolerations:
                       type: array
                       items:
@@ -907,6 +923,29 @@ spec:
                           value:
                             type: string
                       description: The pod's tolerations.
+                    priorityClassName:
+                      type: string
+                      description: The name of the priority class used to assign priority
+                        to the pods. For more information about priority classes,
+                        see {K8sPriorityClass}.
+                    schedulerName:
+                      type: string
+                      description: The name of the scheduler used to dispatch this
+                        `Pod`. If not specified, the default scheduler will be used.
+                    hostAliases:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          hostnames:
+                            type: array
+                            items:
+                              type: string
+                          ip:
+                            type: string
+                      description: The pod's HostAliases. HostAliases is an optional
+                        list of hosts and IPs that will be injected into the pod's
+                        hosts file if specified.
                   description: Template for Kafka Connect `Pods`.
                 apiService:
                   type: object
@@ -916,15 +955,15 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                      description: Metadata which should be applied to the resource.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
+                      description: Metadata applied to the resource.
                   description: Template for Kafka Connect API `Service`.
                 connectContainer:
                   type: object
@@ -942,7 +981,122 @@ spec:
                             description: The environment variable value.
                       description: Environment variables which should be applied to
                         the container.
+                    securityContext:
+                      type: object
+                      properties:
+                        allowPrivilegeEscalation:
+                          type: boolean
+                        capabilities:
+                          type: object
+                          properties:
+                            add:
+                              type: array
+                              items:
+                                type: string
+                            drop:
+                              type: array
+                              items:
+                                type: string
+                        privileged:
+                          type: boolean
+                        procMount:
+                          type: string
+                        readOnlyRootFilesystem:
+                          type: boolean
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        windowsOptions:
+                          type: object
+                          properties:
+                            gmsaCredentialSpec:
+                              type: string
+                            gmsaCredentialSpecName:
+                              type: string
+                            runAsUserName:
+                              type: string
+                      description: Security context for the container.
                   description: Template for the Kafka Connect container.
+                initContainer:
+                  type: object
+                  properties:
+                    env:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            description: The environment variable key.
+                          value:
+                            type: string
+                            description: The environment variable value.
+                      description: Environment variables which should be applied to
+                        the container.
+                    securityContext:
+                      type: object
+                      properties:
+                        allowPrivilegeEscalation:
+                          type: boolean
+                        capabilities:
+                          type: object
+                          properties:
+                            add:
+                              type: array
+                              items:
+                                type: string
+                            drop:
+                              type: array
+                              items:
+                                type: string
+                        privileged:
+                          type: boolean
+                        procMount:
+                          type: string
+                        readOnlyRootFilesystem:
+                          type: boolean
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        windowsOptions:
+                          type: object
+                          properties:
+                            gmsaCredentialSpec:
+                              type: string
+                            gmsaCredentialSpecName:
+                              type: string
+                            runAsUserName:
+                              type: string
+                      description: Security context for the container.
+                  description: Template for the Kafka init container.
                 podDisruptionBudget:
                   type: object
                   properties:
@@ -951,14 +1105,14 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Labels added to the resource template. Can
+                            be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations which should be added to the resource
-                            template. Can be applied to different resources such as
-                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Annotations added to the resource template.
+                            Can be applied to different resources such as `StatefulSets`,
+                            `Deployments`, `Pods`, and `Services`.
                       description: Metadata to apply to the `PodDistruptionBugetTemplate`
                         resource.
                     maxUnavailable:
@@ -1077,6 +1231,23 @@ spec:
                     Kafka Connect pods as volumes.
               description: Pass data from Secrets or ConfigMaps to the Kafka Connect
                 pods and use them to configure connectors.
+            clientRackInitImage:
+              type: string
+              description: The image of the init container used for initializing the
+                `client.rack`.
+            rack:
+              type: object
+              properties:
+                topologyKey:
+                  type: string
+                  example: topology.kubernetes.io/zone
+                  description: A key that matches labels assigned to the Kubernetes
+                    cluster nodes. The value of the label is used to set the broker's
+                    `broker.rack` config.
+              required:
+              - topologyKey
+              description: Configuration of the node label which will be used as the
+                client.rack consumer configuration.
           required:
           - bootstrapServers
           description: The specification of the Kafka Connect cluster.
@@ -1135,4 +1306,10 @@ spec:
                     description: The class of the connector plugin.
               description: The list of connector plugins available in this Kafka Connect
                 deployment.
+            labelSelector:
+              type: string
+              description: Label selector for pods providing this resource.
+            replicas:
+              type: integer
+              description: The current number of pods being used to provide this resource.
           description: The status of the Kafka Connect cluster.

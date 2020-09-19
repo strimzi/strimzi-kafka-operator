@@ -1,0 +1,21 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-prometheus-alertmanager.adoc
+
+[id='con-metrics-alertmanager-options-{context}']
+
+= Alertmanager configuration
+
+Strimzi provides xref:ref-metrics-config-files-{context}[example configuration files for Prometheus Alertmanager].
+
+A configuration file defines the resources for deploying Alertmanager:
+
+* `alert-manager.yaml`
+
+An additional configuration file provides the hook definitions for sending notifications from your Kafka cluster.
+
+* `alert-manager-config.yaml`
+
+For Alertmanger to handle Prometheus alerts, use the configuration files to:
+
+* xref:proc-metrics-deploying-prometheus-alertmanager-{context}[Deploy Alertmanager]

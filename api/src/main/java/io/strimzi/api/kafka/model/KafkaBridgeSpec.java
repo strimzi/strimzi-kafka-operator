@@ -12,14 +12,11 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 @Buildable(
         editableEnabled = false,
@@ -29,13 +26,13 @@ import java.util.Map;
 @JsonPropertyOrder({
         "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "consumer",
         "producer", "resources", "jvmOptions", "logging",
-        "metrics", "livenessProbe", "readinessProbe", "template", "tracing"})
+        "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
-public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
-
+public class KafkaBridgeSpec extends Spec {
     private static final long serialVersionUID = 1L;
+    private static final int DEFAULT_REPLICAS = 1;
 
-    private int replicas;
+    private int replicas = DEFAULT_REPLICAS;
 
     private String image;
     private KafkaBridgeHttpConfig http;
@@ -47,10 +44,9 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private Map<String, Object> metrics;
+    private boolean enableMetrics;
     private Probe livenessProbe;
     private Probe readinessProbe;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaBridgeTemplate template;
     private Tracing tracing;
 
@@ -66,14 +62,13 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("**Currently not supported** The Prometheus JMX Exporter configuration. " +
-            "See {JMXExporter} for details of the structure of this configuration.")
-    public Map<String, Object> getMetrics() {
-        return metrics;
+    @Description("Enable the metrics for the Kafka Bridge. Default is false.")
+    public boolean getEnableMetrics() {
+        return enableMetrics;
     }
 
-    public void setMetrics(Map<String, Object> metrics) {
-        this.metrics = metrics;
+    public void setEnableMetrics(boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
     }
 
     @Description("Logging configuration for Kafka Bridge.")
@@ -98,6 +93,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
     public ResourceRequirements getResources() {
         return resources;
@@ -216,15 +212,5 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     public void setTracing(Tracing tracing) {
         this.tracing = tracing;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
     }
 }

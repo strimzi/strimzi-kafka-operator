@@ -4,13 +4,19 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
-import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TolerationBuilder;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -20,19 +26,18 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ModelUtilsTest {
 
@@ -72,6 +77,13 @@ public class ModelUtilsTest {
 
     @Test
     public void testParsePodDisruptionBudgetTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
         PodDisruptionBudgetTemplate template = new PodDisruptionBudgetTemplateBuilder()
                 .withNewMetadata()
                 .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
@@ -80,7 +92,7 @@ public class ModelUtilsTest {
                 .withMaxUnavailable(2)
                 .build();
 
-        Model model = new Model();
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, template);
         assertThat(model.templatePodDisruptionBudgetLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -90,7 +102,14 @@ public class ModelUtilsTest {
 
     @Test
     public void testParseNullPodDisruptionBudgetTemplate()  {
-        Model model = new Model();
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, null);
         assertThat(model.templatePodDisruptionBudgetLabels, is(nullValue()));
@@ -100,8 +119,36 @@ public class ModelUtilsTest {
 
     @Test
     public void testParsePodTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withNewKey("key1")
+                                    .withNewOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        List<Toleration> tolerations = singletonList(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
 
         PodTemplate template = new PodTemplateBuilder()
                 .withNewMetadata()
@@ -111,9 +158,11 @@ public class ModelUtilsTest {
                 .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                 .withImagePullSecrets(secret1, secret2)
                 .withTerminationGracePeriodSeconds(123)
+                .withAffinity(affinity)
+                .withTolerations(tolerations)
                 .build();
 
-        Model model = new Model();
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodTemplate(model, template);
         assertThat(model.templatePodLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -126,11 +175,20 @@ public class ModelUtilsTest {
         assertThat(model.templateSecurityContext.getFsGroup(), is(Long.valueOf(123)));
         assertThat(model.templateSecurityContext.getRunAsGroup(), is(Long.valueOf(456)));
         assertThat(model.templateSecurityContext.getRunAsUser(), is(Long.valueOf(789)));
+        assertThat(model.getUserAffinity(), is(affinity));
+        assertThat(model.getTolerations(), is(tolerations));
     }
 
     @Test
     public void testParseNullPodTemplate()  {
-        Model model = new Model();
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        Model model = new Model(kafka);
 
         ModelUtils.parsePodTemplate(model, null);
         assertThat(model.templatePodLabels, is(nullValue()));
@@ -141,8 +199,8 @@ public class ModelUtilsTest {
     }
 
     private class Model extends AbstractModel   {
-        public Model()  {
-            super("", "", Labels.EMPTY);
+        public Model(HasMetadata resource) {
+            super(resource, "model-app");
         }
 
         @Override
@@ -170,14 +228,6 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(jbod)), is(jbod));
         assertThat(ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(ephemeral)), is(ephemeral));
         assertThat(ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(persistent)), is(persistent));
-    }
-
-    @Test
-    public void testCreateTcpSocketProbe()  {
-        Probe probe = ModelUtils.createTcpSocketProbe(1234, new ProbeBuilder().withInitialDelaySeconds(10).withTimeoutSeconds(20).build());
-        assertThat(probe.getTcpSocket().getPort().getIntVal(), is(new Integer(1234)));
-        assertThat(probe.getInitialDelaySeconds(), is(new Integer(10)));
-        assertThat(probe.getTimeoutSeconds(), is(new Integer(20)));
     }
 
     @Test
@@ -273,5 +323,26 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
+    }
+
+    @Test
+    public void testEmptyTolerations() {
+        Toleration t1 = new TolerationBuilder()
+                .withValue("")
+                .withEffect("NoExecute")
+                .build();
+
+        Toleration t2 = new TolerationBuilder()
+                .withValue(null)
+                .withEffect("NoExecute")
+                .build();
+
+        PodTemplate pt1 = new PodTemplate();
+        pt1.setTolerations(singletonList(t1));
+        PodTemplate pt2 = new PodTemplate();
+        pt2.setTolerations(singletonList(t2));
+
+        assertThat(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt1),
+                is(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt2)));
     }
 }

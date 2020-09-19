@@ -13,8 +13,8 @@ When the `brokerRackInitImage` field is missing, the following images will be us
 . `{DockerKafkaInit}` container image.
 
 WARNING: Overriding container images is recommended only in situations where you need to use a different container registry.
-For example, if your network does not allow access to the container repository used by {ProductName}, you should either copy the {ProductName} images or build them from source.
-In situations where the configured image is not compatible with {ProductName} images, this might not work properly.
+For example, if your network does not allow access to the container repository used by Strimzi, you should either copy the Strimzi images or build them from source.
+In situations where the configured image is not compatible with Strimzi images, this might not work properly.
 
 .Prerequisites
 

@@ -1,0 +1,64 @@
+Configures a Kafka Connect cluster.
+
+[id='property-kafka-connect-logging-{context}']
+=== `logging`
+Kafka Connect has its own configurable loggers:
+
+* `log4j.rootLogger`
+* `log4j.logger.org.reflections`
+
+Further loggers are added depending on the Kafka Connect plugins running.
+
+Use a curl request to get a complete list of Kafka Connect loggers running from any Kafka broker pod:
+
+[source,curl,subs=attributes+]
+----
+curl -s http://<connect-cluster-name>-connect-api:8083/admin/loggers/
+----
+
+Kafka Connect uses the Apache `log4j` logger implementation.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+For more information about log levels, see {ApacheLoggers}.
+
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      log4j.rootLogger: "INFO"
+  # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+spec:
+  # ...
+  logging:
+    type: external
+    name: customConfigMap
+  # ...
+----
+
+Any available loggers that are not configured have their level set to `OFF`.
+
+Changes to Kafka Connect logging levels are applied dynamically.
+
+If you use external logging, a rolling update is triggered when logging appenders are changed.
+
+.Garbage collector (GC)
+
+Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].

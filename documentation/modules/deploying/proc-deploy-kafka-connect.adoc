@@ -1,0 +1,40 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-kafka-connect.adoc
+
+[id='deploying-kafka-connect-{context}']
+= Deploying Kafka Connect to your Kubernetes cluster
+
+This procedure shows how to deploy a Kafka Connect cluster to your Kubernetes cluster using the Cluster Operator.
+
+A Kafka Connect cluster is implemented as a `Deployment` with a configurable number of nodes (also called _workers_) that distribute the workload of connectors as _tasks_ so that the message flow is highly scalable and reliable.
+
+The deployment uses a YAML file to provide the specification to create a `KafkaConnect` resource.
+
+In this procedure, we use the example file provided with Strimzi:
+
+* `examples/connect/kafka-connect.yaml`
+
+See the _Using Strimzi_ guide for more information about configuring the `KafkaConnect` resource:
+
+* link:{BookURLUsing}#assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration^]
+* link:{BookURLUsing}#assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster configuration with Source2Image support^]
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Deploy Kafka Connect to your Kubernetes cluster.
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f examples/connect/kafka-connect.yaml
+----
+. Verify that Kafka Connect was successfully deployed:
++
+[source,shell,subs="attributes+"]
+----
+kubectl get deployments
+----

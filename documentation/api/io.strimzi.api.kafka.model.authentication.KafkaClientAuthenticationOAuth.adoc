@@ -1,14 +1,13 @@
 To use OAuth client authentication, set the `type` property to the value `oauth`.
-OAuth authentication can be configured using:
+
+OAuth authentication can be configured using one of the following options:
 
 * Client ID and secret
 * Client ID and refresh token
 * Access token
 * TLS
 
-
 .Client ID and secret
-
 You can configure the address of your authorization server in the `tokenEndpointUri` property together with the client ID and client secret used in authentication.
 The OAuth client will connect to the OAuth server, authenticate using the client ID and secret and get an access token which it will use to authenticate with the Kafka broker.
 In the `clientSecret` property, specify a link to a `Secret` containing the client secret.
@@ -26,11 +25,10 @@ authentication:
 ----
 
 .Client ID and refresh token
-
 You can configure the address of your OAuth server in the `tokenEndpointUri` property together with the OAuth client ID and refresh token.
 The OAuth client will connect to the OAuth server, authenticate using the client ID and refresh token and get an access token which it will use to authenticate with the Kafka broker.
 In the `refreshToken` property, specify a link to a `Secret` containing the refresh token.
-
++
 .An example of OAuth client authentication using client ID and refresh token
 [source,yaml,subs=attributes+]
 ----
@@ -44,7 +42,6 @@ authentication:
 ----
 
 .Access token
-
 You can configure the access token used for authentication with the Kafka broker directly.
 In this case, you do not specify the `tokenEndpointUri`.
 In the `accessToken` property, specify a link to a `Secret` containing the access token.
@@ -60,7 +57,6 @@ authentication:
 ----
 
 .TLS
-
 Accessing the OAuth server using the HTTPS protocol does not require any additional configuration as long as the TLS certificates used by it are signed by a trusted certification authority and its hostname is listed in the certificate.
 
 If your OAuth server is using certificates which are self-signed or are signed by a certification authority which is not trusted, you can configure a list of trusted certificates in the custom resoruce.

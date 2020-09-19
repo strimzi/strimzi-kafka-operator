@@ -1,0 +1,103 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='con-optimization-proposals-{context}']
+
+= Optimization proposals overview
+
+An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers. 
+Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:capacity-configuration[capacity limits on broker resources].
+
+An optimization proposal is contained in the `Status.Optimization Result` property of a `KafkaRebalance` custom resource. 
+The information provided is a summary of the full optimization proposal. 
+Use the summary to decide whether to:
+
+* Approve the optimization proposal. This instructs Cruise Control to apply the proposal to the Kafka cluster and start a cluster rebalance operation.
+
+* Reject the optimization proposal. You can change the optimization goals and then generate another proposal.
+
+All optimization proposals are _dry runs_: you cannot approve a cluster rebalance without first generating an optimization proposal. 
+There is no limit to the number of optimization proposals that can be generated.
+
+[discrete]
+== Cached optimization proposal
+
+Cruise Control maintains a _cached optimization proposal_ based on the configured default optimization goals.
+Generated from the workload model, the cached optimization proposal is updated every 15 minutes to reflect the current state of the Kafka cluster.
+If you generate an optimization proposal using the default optimization goals, Cruise Control returns the most recent cached proposal.
+
+To change the cached optimization proposal refresh interval, edit the `proposal.expiration.ms` setting in the Cruise Control deployment configuration.
+Consider a shorter interval for fast changing clusters, although this increases the load on the Cruise Control server.
+
+[[contents-optimization-proposals]]
+[discrete]
+== Contents of optimization proposals
+
+The following table describes the properties contained in an optimization proposal:
+
+.Properties contained in an optimization proposal
+[cols="35,65",options="header",stripes="none",separator=¦]
+|===
+
+m¦JSON property
+¦Description
+
+m¦numIntraBrokerReplicaMovements
+¦The total number of partition replicas that will be transferred between the disks of the cluster's brokers.
+
+*Performance impact during rebalance operation*: Relatively high, but lower than `numReplicaMovements`.
+
+m¦excludedBrokersForLeadership
+¦Not yet supported. An empty list is returned.
+
+m¦numReplicaMovements
+¦The number of partition replicas that will be moved between separate brokers.
+
+*Performance impact during rebalance operation*: Relatively high.
+
+m¦onDemandBalancednessScoreBefore, onDemandBalancednessScoreAfter
+¦A measurement of the overall _balancedness_ of a Kafka Cluster, before and after the optimization proposal was generated.
+
+The score is calculated by subtracting the sum of the `BalancednessScore` of each violated soft goal from 100. Cruise Control assigns a `BalancednessScore` to every optimization goal based on several factors, including priority--the goal's position in the list of `default.goals` or user-provided goals.
+
+The `Before` score is based on the current configuration of the Kafka cluster.
+The `After` score is based on the generated optimization proposal.
+
+m¦intraBrokerDataToMoveMB
+¦The sum of the size of each partition replica that will be moved between disks on the same broker (see also `numIntraBrokerReplicaMovements`).
+
+*Performance impact during rebalance operation*: Variable. The larger the number, the longer the cluster rebalance will take to complete. Moving a large amount of data between disks on the same broker has less impact than between separate brokers (see `dataToMoveMB`).
+
+m¦recentWindows
+¦The number of metrics windows upon which the optimization proposal is based.
+
+m¦dataToMoveMB
+¦The sum of the size of each partition replica that will be moved to a separate broker (see also `numReplicaMovements`).
+
+*Performance impact during rebalance operation*: Variable. The larger the number, the longer the cluster rebalance will take to complete.
+
+m¦monitoredPartitionsPercentage
+¦The percentage of partitions in the Kafka cluster covered by the optimization proposal. Affected by the number of `excludedTopics`.
+
+m¦excludedTopics
+¦If you specified a regular expression in the `spec.excludedTopicsRegex` property in the `KafkaRebalance` resource, all topic names matching that expression are listed here. 
+These topics are excluded from the calculation of partition replica/leader movements in the optimization proposal.
+
+m¦numLeaderMovements
+¦The number of partitions whose leaders will be switched to different replicas. This involves a change to ZooKeeper configuration.
+
+*Performance impact during rebalance operation*: Relatively low.
+
+m¦excludedBrokersForReplicaMove
+¦Not yet supported. An empty list is returned.
+
+|===
+
+.Additional resources
+
+* xref:con-optimization-goals-{context}[] 
+
+* xref:proc-generating-optimization-proposals-{context}[] 
+
+* xref:proc-approving-optimization-proposal-{context}[] 

@@ -41,4 +41,4 @@ This can be done using `kubectl apply`:
 kubectl apply -f _your-file_
 
 .Additional resources
-* For more information about the schema, see xref:type-ResourceRequirements-reference[`Resources` schema reference].
+* For more information about the schema, see {K8sResourceRequirementsAPI}.

@@ -10,7 +10,7 @@ spec:
   - name: kafka
     rules:
     - alert: KafkaRunningOutOfSpace
-      expr: kubelet_volume_stats_available_bytes{kubernetes_pod_name=~"([a-z]+-)+kafka-[0-9]+"} < 5368709120
+      expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data-([0-9]+)?-(.+)-kafka-[0-9]+"} < 5368709120
       for: 10s
       labels:
         severity: warning
@@ -58,7 +58,7 @@ spec:
         summary: 'Kafka offline log directories'
         description: 'There are {{ $value }} offline log directories on {{ $labels.kubernetes_pod_name }}'
     - alert: ScrapeProblem
-      expr: up{job="kubernetes-services",kubernetes_namespace!~"openshift-.+",kubernetes_pod_name=~".+-kafka-[0-9]+"} == 0
+      expr: up{kubernetes_namespace!~"openshift-.+",kubernetes_pod_name=~".+-kafka-[0-9]+"} == 0
       for: 3m
       labels:
         severity: major
@@ -66,7 +66,7 @@ spec:
         summary: 'Prometheus unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}'
         description: 'Prometheus was unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }} for more than 3 minutes'
     - alert: ClusterOperatorContainerDown
-      expr: count((container_last_seen{container_name="strimzi-cluster-operator"} > (time() - 90))) < 1 or absent(container_last_seen{container_name="strimzi-cluster-operator"})
+      expr: count((container_last_seen{container="strimzi-cluster-operator"} > (time() - 90))) < 1 or absent(container_last_seen{container="strimzi-cluster-operator"})
       for: 1m
       labels:
         severity: major
@@ -74,23 +74,15 @@ spec:
         summary: 'Cluster Operator down'
         description: 'The Cluster Operator has been down for longer than 90 seconds'
     - alert: KafkaBrokerContainersDown
-      expr: absent(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      expr: absent(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
       for: 3m
       labels:
         severity: major
       annotations:
         summary: 'All `kafka` containers down or in CrashLookBackOff status'
         description: 'All `kafka` containers have been down or in CrashLookBackOff status for 3 minutes'
-    - alert: KafkaTlsSidecarContainersDown
-      expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-kafka-[0-9]+"})
-      for: 3m
-      labels:
-        severity: major
-      annotations:
-        summary: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status'
-        description: 'All `tls-sidecar` containers in the Kafka pods are down or in CrashLookBackOff status for 3 minutes'
     - alert: KafkaContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container_name="kafka"}[5m])) > 2 * count(container_last_seen{container_name="kafka",kubernetes_pod_name=~".+-kafka-[0-9]+"})
+      expr: count(count_over_time(container_last_seen{container="kafka"}[5m])) > 2 * count(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
       for: 5m
       labels:
         severity: warning
@@ -116,7 +108,7 @@ spec:
         summary: 'Zookeeper outstanding requests'
         description: 'There are {{ $value }} outstanding requests on {{ $labels.kubernetes_pod_name }}'
     - alert: ZookeeperRunningOutOfSpace
-      expr: kubelet_volume_stats_available_bytes{kubernetes_pod_name=~"([a-z]+-)+zookeeper-[0-9]+"} < 5368709120
+      expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data-(.+)-zookeeper-[0-9]+"} < 5368709120
       for: 10s
       labels:
         severity: warning
@@ -124,7 +116,7 @@ spec:
         summary: 'Zookeeper is running out of free disk space'
         description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
     - alert: ZookeeperContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container_name="zookeeper"}[5m])) > 2 * count(container_last_seen{container_name="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      expr: count(count_over_time(container_last_seen{container="zookeeper"}[5m])) > 2 * count(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
       for: 5m
       labels:
         severity: warning
@@ -132,25 +124,17 @@ spec:
         summary: 'One or more Zookeeper containers were restarted too often'
         description: 'One or more Zookeeper containers were restarted too often within the last 5 minutes. This alert can be ignored when the Zookeeper cluster is scaling up'
     - alert: ZookeeperContainersDown
-      expr: absent(container_last_seen{container_name="zookeeper",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
+      expr: absent(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
       for: 3m
       labels:
         severity: major
       annotations:
         summary: 'All `zookeeper` containers in the Zookeeper pods down or in CrashLookBackOff status'
         description: 'All `zookeeper` containers in the Zookeeper pods have been down or in CrashLookBackOff status for 3 minutes'
-    - alert: ZookeeperTlsSidecarContainersDown
-      expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-zookeeper-[0-9]+"})
-      for: 3m
-      labels:
-        severity: major
-      annotations:
-        summary: 'All `tls-sidecar` containers in the Zookeeper pods down or in CrashLookBackOff status'
-        description: 'All `tls-sidecar` containers in the Zookeeper pods have been down or in CrashLookBackOff status for 3 minutes'
   - name: entityOperator
     rules:
     - alert: TopicOperatorContainerDown
-      expr: absent(container_last_seen{container_name="topic-operator",kubernetes_pod_name=~".+-entity-operator-.+"})
+      expr: absent(container_last_seen{container="topic-operator",pod=~".+-entity-operator-.+"})
       for: 3m
       labels:
         severity: major
@@ -158,7 +142,7 @@ spec:
         summary: 'Container topic-operator in Entity Operator pod down or in CrashLookBackOff status'
         description: 'Container topic-operator in Entity Operator pod has been or in CrashLookBackOff status for 3 minutes'
     - alert: UserOperatorContainerDown
-      expr: absent(container_last_seen{container_name="user-operator",kubernetes_pod_name=~".+-entity-operator-.+"})
+      expr: absent(container_last_seen{container="user-operator",pod=~".+-entity-operator-.+"})
       for: 3m
       labels:
         severity: major
@@ -166,7 +150,7 @@ spec:
         summary: 'Container user-operator in Entity Operator pod down or in CrashLookBackOff status'
         description: 'Container user-operator in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes'
     - alert: EntityOperatorTlsSidecarContainerDown
-      expr: absent(container_last_seen{container_name="tls-sidecar",kubernetes_pod_name=~".+-entity-operator-.+"})
+      expr: absent(container_last_seen{container="tls-sidecar",pod=~".+-entity-operator-.+"})
       for: 3m
       labels:
         severity: major
@@ -176,7 +160,7 @@ spec:
   - name: connect
     rules:
     - alert: ConnectContainersDown
-      expr: absent(container_last_seen{container_name=~".+-connect",kubernetes_pod_name=~".+-connect-.+"})
+      expr: absent(container_last_seen{container=~".+-connect",pod=~".+-connect-.+"})
       for: 3m
       labels:
         severity: major
@@ -186,17 +170,57 @@ spec:
   - name: bridge
     rules:
     - alert: BridgeContainersDown
-      expr: absent(container_last_seen{container_name=~".+-bridge",kubernetes_pod_name=~".+-bridge-.+"})
+      expr: absent(container_last_seen{container=~".+-bridge",pod=~".+-bridge-.+"})
       for: 3m
       labels:
         severity: major
       annotations:
         summary: 'All Kafka Bridge containers down or in CrashLookBackOff status'
         description: 'All Kafka Bridge containers have been down or in CrashLookBackOff status for 3 minutes'
+    - alert: AvgProducerLatency
+      expr: strimzi_bridge_kafka_producer_request_latency_avg > 10
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge average consumer fetch latency'
+        description: 'The average fetch latency is {{ $value }} on {{ $labels.clientId }}'
+    - alert: AvgConsumerFetchLatency
+      expr: strimzi_bridge_kafka_consumer_fetch_latency_avg > 500
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge consumer average fetch latency'
+        description: 'The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}'
+    - alert: AvgConsumerCommitLatency
+      expr: strimzi_bridge_kafka_consumer_commit_latency_avg > 200
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge consumer average commit latency'
+        description: 'The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}'
+    - alert: Http4xxErrorRate
+      expr: strimzi_bridge_http_server_requestCount_total{code=~"^4..$", container=~"^.+-bridge", path !="/favicon.ico"} > 10
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge returns code 4xx too often'
+        description: 'Kafka Bridge returns code 4xx too much ({{ $value }}) for the path {{ $labels.path }}'
+    - alert: Http5xxErrorRate
+      expr: strimzi_bridge_http_server_requestCount_total{code=~"^5..$", container=~"^.+-bridge"} > 10
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka Bridge returns code 5xx too often'
+        description: 'Kafka Bridge returns code 5xx too much ({{ $value }}) for the path {{ $labels.path }}'
   - name: mirrorMaker
     rules:
     - alert: MirrorMakerContainerDown
-      expr: absent(container_last_seen{container_name=~".+-mirror-maker",kubernetes_pod_name=~".+-mirror-maker-.+"})
+      expr: absent(container_last_seen{container=~".+-mirror-maker",pod=~".+-mirror-maker-.+"})
       for: 3m
       labels:
         severity: major

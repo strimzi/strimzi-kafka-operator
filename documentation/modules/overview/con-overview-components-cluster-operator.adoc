@@ -1,15 +1,14 @@
 // Module included in the following assemblies:
 //
 // overview/assembly-overview-components.adoc
-// assembly-operators-cluster-operator.adoc
-// assembly-cluster-operator.adoc
+// assembly-using-the-cluster-operator.adoc
 
 [id='overview-components-cluster-operator-{context}']
 = Cluster Operator
 
-{ProductName} uses the Cluster Operator to deploy and manage clusters for:
+Strimzi uses the Cluster Operator to deploy and manage clusters for:
 
-* Kafka (including ZooKeeper, Entity Operator and Kafka Exporter)
+* Kafka (including ZooKeeper, Entity Operator, Kafka Exporter, and Cruise Control)
 * Kafka Connect
 * Kafka MirrorMaker
 * Kafka Bridge
@@ -30,4 +29,4 @@ The Topic Operator and User Operator function within the Entity Operator on depl
 
 .Example architecture for the Cluster Operator
 
-image:cluster-operator.png[Cluster Operator]
+image:cluster-operator.png[The Cluster Operator creates and deploys Kafka and ZooKeeper clusters]

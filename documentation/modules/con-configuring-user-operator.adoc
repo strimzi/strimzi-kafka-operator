@@ -9,7 +9,7 @@ User Operator deployment can be configured using additional options inside the `
 The following properties are supported:
 
 `watchedNamespace`::
-The Kubernetes namespace in which the topic operator watches for `KafkaUsers`.
+The Kubernetes namespace in which the user operator watches for `KafkaUsers`.
 Default is the namespace where the Kafka cluster is deployed.
 
 `reconciliationIntervalSeconds`::

@@ -7,15 +7,14 @@ package io.strimzi.operator;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
-import io.strimzi.operator.common.Util;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -31,15 +30,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
 public class PlatformFeaturesAvailabilityTest {
-    protected Vertx vertx;
+    protected static Vertx vertx;
 
-    @BeforeEach
-    public void before() {
+    @BeforeAll
+    public static void before() {
         vertx = Vertx.vertx();
     }
 
-    @AfterEach
-    public void after() {
+    @AfterAll
+    public static void after() {
         vertx.close();
     }
 
@@ -75,7 +74,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint a = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_9));
             stopMockApi(context, mockHttp);
             a.flag();
@@ -102,7 +101,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_14));
             stopMockApi(context, mockHttp);
             async.flag();
@@ -121,7 +120,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat(pfa.hasRoutes(), is(true));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(false));
@@ -145,7 +144,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat(pfa.hasRoutes(), is(true));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(true));
@@ -163,7 +162,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         Checkpoint async = context.checkpoint();
 
-        PlatformFeaturesAvailability.create(vertx, client).setHandler(context.succeeding(pfa -> context.verify(() -> {
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat(pfa.hasRoutes(), is(false));
             assertThat(pfa.hasBuilds(), is(false));
             assertThat(pfa.hasImages(), is(false));
@@ -185,7 +184,7 @@ public class PlatformFeaturesAvailabilityTest {
                 "compiler=gc\n" +
                 "platform=linux/amd64";
 
-        VersionInfo vi = new VersionInfo(Util.parseMap(version));
+        VersionInfo vi = PlatformFeaturesAvailability.parseVersionInfo(version);
 
         context.verify(() -> {
             assertThat(vi.getMajor(), is("1"));

@@ -4,7 +4,6 @@ include ./Makefile.os
 
 GITHUB_VERSION ?= master
 RELEASE_VERSION ?= latest
-CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
 BRIDGE_VERSION ?= $(shell cat ./bridge.version | tr A-Z a-z)
 DOCKER_CMD ?= docker
@@ -13,11 +12,11 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples
+SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images helm-charts/helm2 helm-charts/helm3 install examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
-all: prerequisites_check $(SUBDIRS)
-clean: $(SUBDIRS) docu_clean
+all: prerequisites_check $(SUBDIRS) crd_install helm_install
+clean: prerequisites_check $(SUBDIRS) docu_clean
 $(DOCKER_TARGETS): prerequisites_check $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
 
@@ -29,15 +28,22 @@ next_version:
 bridge_version:
 	# Set Kafka Bridge version to its own version
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
-	# Update Kafka Bridge image tag in chart values.yaml to BRIDGE_VERSION
-	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $(CHART_PATH)values.yaml
-	# Update Kafka Bridge image tag in chart README.md config grid with BRIDGE_VERSION
-	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $(CHART_PATH)README.md
+	for HELM_VERSION in 2 3; do	\
+		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator;	\
+		$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md;	\
+	done
 
 release_prepare:
 	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
+	rm -f ./strimzi-$(RELEASE_VERSION).zip
+	rm -f ./strimzi-kafka-operator-helm-2-chart-$(RELEASE_VERSION).tgz
+	rm -f ./strimzi-kafka-operator-helm-3-chart-$(RELEASE_VERSION).tgz
+	rm -f ./strimzi-topic-operator-$(RELEASE_VERSION).yaml
+	rm -f ./strimzi-cluster-operator-$(RELEASE_VERSION).yaml
+	rm -f ./strimzi-user-operator-$(RELEASE_VERSION).yaml
 	mkdir ./strimzi-$(RELEASE_VERSION)
 
 release_version:
@@ -64,23 +70,21 @@ release_pkg: helm_pkg
 
 release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
-	# Update default image tag in chart values.yaml to RELEASE_VERSION
-	$(SED) -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
-	# Update default image tagPrefix in chart values.yaml to RELEASE_VERSION
-	$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
-	# Update default image tag in chart README.md config grid with RELEASE_VERSION
-	$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
-	# Update default image tag in chart README.md config grid with RELEASE_VERSION
-	$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
-	# Update Kafka Bridge image tag in chart values.yaml to BRIDGE_VERSION
-	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $(CHART_PATH)values.yaml
-	# Update Kafka Bridge image tag in chart README.md config grid with BRIDGE_VERSION
-	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $(CHART_PATH)README.md
+	for HELM_VERSION in 2 3; do	\
+		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator;	\
+		$(SED) -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md;	\
+		$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md;	\
+		$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml;	\
+		$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md;	\
+	done
 
 release_helm_repo:
 	echo "Updating Helm Repository index.yaml"
-	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
-	mv ./index.yaml ./helm-charts/index.yaml
+	helm3 repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
+	$(CP) ./index.yaml ./helm-charts/index.yaml
+	rm ./index.yaml
 
 release_single_file:
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-cluster-operator-$(RELEASE_VERSION).yaml
@@ -89,12 +93,14 @@ release_single_file:
 
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory
-	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
-	$(CP) -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
-	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
-	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
-	mv strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
-	rm -rf strimzi-$(RELEASE_VERSION)/charts/
+	for HELM_VERSION in 2 3; do	\
+		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator/;	\
+		mkdir -p strimzi-$(RELEASE_VERSION)/helm$$HELM_VERSION-charts/;	\
+		helm$$HELM_VERSION package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $$CHART_PATH;	\
+		$(CP) strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-$$HELM_VERSION-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz;	\
+		rm -rf strimzi-$(RELEASE_VERSION)/helm$$HELM_VERSION-charts/;	\
+	done
+	rm strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
 
 docu_versions:
 	documentation/snip-kafka-versions.sh > documentation/modules/snip-kafka-versions.adoc
@@ -104,7 +110,8 @@ docu_versions:
 docu_html: docu_htmlclean docu_versions docu_check
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/shared/images documentation/html/images
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/using/master.adoc -o documentation/html/index.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/deploying/master.adoc -o documentation/html/deploying.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/using/master.adoc -o documentation/html/using.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/overview/master.adoc -o documentation/html/overview.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/quickstart/master.adoc -o documentation/html/quickstart.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
@@ -113,13 +120,17 @@ docu_html: docu_htmlclean docu_versions docu_check
 docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	mkdir -p documentation/htmlnoheader
 	$(CP) -vrL documentation/shared/images documentation/htmlnoheader/images
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/using/master.adoc -o documentation/htmlnoheader/master.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/overview/master.adoc -o documentation/htmlnoheader/overview.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/quickstart/master.adoc -o documentation/htmlnoheader/quickstart.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/deploying/master.adoc -o documentation/htmlnoheader/deploying-book.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/using/master.adoc -o documentation/htmlnoheader/using-book.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/overview/master.adoc -o documentation/htmlnoheader/overview-book.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/quickstart/master.adoc -o documentation/htmlnoheader/quickstart-book.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing-book.html
 
 docu_check:
 	./.travis/check_docs.sh
+
+shellcheck:
+	./.travis/shellcheck.sh
 
 spotbugs: $(SUBDIRS) systemtest_make
 
@@ -131,9 +142,10 @@ pushtonexus:
 
 release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
-	$(CP) -rv documentation/html/index.html strimzi-$(RELEASE_VERSION)/docs/
 	$(CP) -rv documentation/html/overview.html strimzi-$(RELEASE_VERSION)/docs/
 	$(CP) -rv documentation/html/quickstart.html strimzi-$(RELEASE_VERSION)/docs/
+	$(CP) -rv documentation/html/deploying.html strimzi-$(RELEASE_VERSION)/docs/
+	$(CP) -rv documentation/html/using.html strimzi-$(RELEASE_VERSION)/docs/
 	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/images/
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean
@@ -147,7 +159,7 @@ docu_htmlnoheaderclean:
 systemtests:
 	./systemtest/scripts/run_tests.sh $(SYSTEMTEST_ARGS)
 
-helm_install: helm-charts
+helm_install: helm-charts/helm3
 
 crd_install: install
 

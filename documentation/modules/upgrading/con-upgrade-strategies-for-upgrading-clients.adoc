@@ -1,0 +1,64 @@
+// Module included in the following assemblies:
+//
+// upgrade/assembly_upgrade-kafka-versions.adoc
+
+[id='con-strategies-for-upgrading-clients-{context}']
+
+= Strategies for upgrading clients
+
+The best approach to upgrading your client applications (including Kafka Connect connectors) depends on your particular circumstances.
+
+Consuming applications need to receive messages in a message format that they understand. You can ensure that this is the case in one of two ways:
+
+* By upgrading all the consumers for a topic _before_ upgrading any of the producers.
+* By having the brokers down-convert messages to an older format.
+
+Using broker down-conversion puts extra load on the brokers, so it is not ideal to rely on down-conversion for all topics for a prolonged period of time.
+For brokers to perform optimally they should not be down converting messages at all.
+
+Broker down-conversion is configured in two ways:
+
+* The topic-level `message.format.version` configures it for a single topic.
+
+* The broker-level `log.message.format.version` is the default for topics that do not have the topic-level `message.format.version` configured.
+
+Messages published to a topic in a new-version format will be visible to consumers, because brokers perform down-conversion when they receive messages from producers, not when they are sent to consumers.
+
+There are a number of strategies you can use to upgrade your clients:
+
+Consumers first::
+. Upgrade all the consuming applications.
+. Change the broker-level `log.message.format.version` to the new version.
+. Upgrade all the producing applications.
++
+This strategy is straightforward, and avoids any broker down-conversion.
+However, it assumes that all consumers in your organization can be upgraded in a coordinated way, and it does not work for applications that are both consumers and producers.
+There is also a risk that, if there is a problem with the upgraded clients, new-format messages might get added to the message log so that you cannot revert to the previous consumer version.
+
+Per-topic consumers first::
+For each topic:
+. Upgrade all the consuming applications.
+. Change the topic-level `message.format.version` to the new version.
+. Upgrade all the producing applications.
++
+This strategy avoids any broker down-conversion, and means you can proceed on a topic-by-topic basis. It does not work for applications that are both consumers and producers of the same topic. Again, it has the risk that, if there is a problem with the upgraded clients, new-format messages might get added to the message log.
+
+Per-topic consumers first, with down conversion::
+For each topic:
++
+. Change the topic-level `message.format.version` to the old version
+(or rely on the topic defaulting to the broker-level `log.message.format.version`).
+. Upgrade all the consuming and producing applications.
+. Verify that the upgraded applications function correctly.
+. Change the topic-level `message.format.version` to the new version.
++
+This strategy requires broker down-conversion, but the load on the brokers is minimized because it is only required for a single topic (or small group of topics) at a time. It also works for applications that are both consumers and producers of the same topic. This approach ensures that the upgraded producers and consumers are working correctly before you commit to using the new message format version.
++
+The main drawback of this approach is that it can be complicated to manage in a cluster with many topics and applications.
+
+Other strategies for upgrading client applications are also possible.
+
+NOTE: It is also possible to apply multiple strategies.
+For example, for the first few applications and topics the
+"per-topic consumers first, with down conversion" strategy can be used.
+When this has proved successful another, more efficient strategy can be considered acceptable to use instead.

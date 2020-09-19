@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -37,7 +38,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,7 +63,7 @@ public class PartialRollingUpdateTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
-    private Vertx vertx;
+    private static Vertx vertx;
     private Kafka cluster;
     private StatefulSet kafkaSts;
     private StatefulSet zkSts;
@@ -81,10 +82,18 @@ public class PartialRollingUpdateTest {
     private Secret clientsCaCert;
     private Secret clientsCaKey;
 
-    @BeforeEach
-    public void before(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
-        this.vertx = Vertx.vertx();
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
 
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
+
+    @BeforeEach
+    public void beforeEach(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         this.cluster = new KafkaBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
@@ -92,6 +101,20 @@ public class PartialRollingUpdateTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(5)
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                            .endGenericKafkaListener()
+                        .endListeners()
                         .withNewPersistentClaimStorage()
                             .withSize("123")
                             .withStorageClass("foo")
@@ -127,7 +150,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("bootstrap reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);
-        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             createAsync.countDown();
         });
@@ -154,16 +177,12 @@ public class PartialRollingUpdateTest {
         context.completeNow();
     }
 
-    @AfterEach
-    public void afterEach() {
-        vertx.close();
-    }
-
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
         return new ResourceOperatorSupplier(vertx, bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 60_000L);
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
+                60_000L);
     }
 
     private void startKube() {
@@ -199,7 +218,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
-        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 4; i++) {
                 Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, i)).get();
@@ -223,7 +242,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
-        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 2; i++) {
@@ -253,7 +272,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
-        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 2; i++) {
@@ -286,7 +305,7 @@ public class PartialRollingUpdateTest {
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
-        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).setHandler(ar -> {
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 4; i++) {
