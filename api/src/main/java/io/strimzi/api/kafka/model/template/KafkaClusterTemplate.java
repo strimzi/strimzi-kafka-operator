@@ -203,7 +203,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
         this.initContainer = initContainer;
     }
 
-    @Description("Template for Kafka Cluster certificate")
+    @Description("Template for Secret with Kafka Cluster certificate public key")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getClusterCaCert() {
         return clusterCaCert;
