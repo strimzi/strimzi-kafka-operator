@@ -46,6 +46,8 @@ import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.template.MetadataTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -108,6 +110,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import jdk.jfr.MetadataDefinition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
@@ -595,7 +598,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         CertificateAuthority clusterCaConfig = kafkaAssembly.getSpec().getClusterCa();
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
-                        ResourceTemplate ClusterCaCertTemplate = kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert();
+                        KafkaClusterTemplate kafkaClusterTemplate = kafkaAssembly.getSpec().getKafka().getTemplate();
+                        MetadataTemplate clusterCaMetadata = null;
+                        if (kafkaClusterTemplate != null) {
+                            ResourceTemplate clusterCaTemplate = kafkaClusterTemplate.getClusterCaCert();
+                            if (clusterCaTemplate != null) {
+                                clusterCaMetadata = clusterCaTemplate.getMetadata();
+                            }
+                        }
 
                         this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
@@ -604,7 +614,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
-                                ClusterCaCertTemplate.getMetadata().getLabels() != null ? ClusterCaCertTemplate.getMetadata().getLabels() : null,
+                                clusterCaMetadata != null ? clusterCaMetadata.getLabels() : emptyMap(),
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
