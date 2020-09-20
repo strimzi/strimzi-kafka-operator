@@ -58,9 +58,9 @@ fi
 # Push artifatcs (Docker containers, JARs, docs)
 if [ "$BUILD_REASON" == "PullRequest" ] ; then
     echo "Building Pull Request - nothing to push"
-# elif [ "$BRANCH" != "refs/tags/*" ] && [ "$BRANCH" != "refs/heads/master" ]; then
-#     echo "Not in master branch and not in release tag - nothing to push"
-# else
+elif [ "$BRANCH" != "refs/tags/*" ] && [ "$BRANCH" != "refs/heads/master" ]; then
+    echo "Not in master branch and not in release tag - nothing to push"
+else
     echo "Build of the images and push docu and artifacts to nexus is curently disabled until migration to Azure will be finished"
  
     if [ "${MAIN_BUILD}" = "TRUE" ] ; then
