@@ -1252,44 +1252,6 @@ public abstract class AbstractModel {
         return KafkaResources.clusterCaKeySecretName(cluster);
     }
 
-    @SafeVarargs
-    protected static Map<String, String> mergeLabelsOrAnnotations(Map<String, String> internal, Map<String, String>... templates) {
-        
-        Map<String, String> merged = new HashMap<>();
-
-        if (internal != null) {
-            merged.putAll(internal);
-        }
-
-        if (templates != null) {
-            for (Map<String, String> template : templates) {
-
-                if (template == null) {
-                    continue;
-                }
-                List<String> invalidAnnotations = template
-                    .keySet()
-                    .stream()
-                    .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
-                    .collect(Collectors.toList());
-                if (invalidAnnotations.size() > 0) {
-                    throw new InvalidResourceException("User labels or annotations includes a Strimzi annotation: " + invalidAnnotations.toString());
-                }
-
-                // Remove Kubernetes Domain specific labels
-                Map<String, String> filteredTemplate = template
-                    .entrySet()
-                    .stream()
-                    .filter(entryset -> !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-                merged.putAll(filteredTemplate);
-            }
-        }
-
-        return merged;
-    }
-
     /**
      * @return The service account.
      */

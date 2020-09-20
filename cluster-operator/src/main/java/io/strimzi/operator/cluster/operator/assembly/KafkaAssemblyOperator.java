@@ -110,7 +110,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import jdk.jfr.MetadataDefinition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
@@ -599,13 +598,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
                         KafkaClusterTemplate kafkaClusterTemplate = kafkaAssembly.getSpec().getKafka().getTemplate();
-                        MetadataTemplate clusterCaMetadata = null;
-                        if (kafkaClusterTemplate != null) {
-                            ResourceTemplate clusterCaTemplate = kafkaClusterTemplate.getClusterCaCert();
-                            if (clusterCaTemplate != null) {
-                                clusterCaMetadata = clusterCaTemplate.getMetadata();
-                            }
-                        }
 
                         this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
@@ -614,7 +606,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
-                                clusterCaMetadata != null ? clusterCaMetadata.getLabels() : emptyMap(),
+                                kafkaClusterTemplate != null && kafkaClusterTemplate.getClusterCaCert() != null && kafkaClusterTemplate.getClusterCaCert().getMetadata() != null
+                                        ? kafkaClusterTemplate.getClusterCaCert().getMetadata().getLabels() : emptyMap(),
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
