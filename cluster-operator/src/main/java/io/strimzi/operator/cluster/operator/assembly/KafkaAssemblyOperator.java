@@ -625,7 +625,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                                 clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
                         clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
-                                caLabels.toMap(), emptyMap(),ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
+                                caLabels.toMap(), emptyMap(), ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         List<Future> secretReconciliations = new ArrayList<>(2);
 
