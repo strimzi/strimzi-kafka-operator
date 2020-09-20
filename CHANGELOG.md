@@ -3,6 +3,7 @@
 
 ## 0.23.0
 
+* Make it possible to configure maximum number of connections maximum connection creation rate in listener configuration
 * Add support for configuring finalizers for `loadbalancer` type listeners
 * Remove support for Kafka 2.5.x
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
