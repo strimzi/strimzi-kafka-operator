@@ -598,6 +598,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
                         KafkaClusterTemplate kafkaClusterTemplate = kafkaAssembly.getSpec().getKafka().getTemplate();
+                        Map<String,String> ClusterCaCertLabels = null;
+                        if (kafkaClusterTemplate != null && kafkaClusterTemplate.getClusterCaCert() != null
+                                && kafkaClusterTemplate.getClusterCaCert().getMetadata() != null) {
+                            ClusterCaCertLabels = kafkaClusterTemplate.getClusterCaCert().getMetadata().getLabels();
+                        }
 
                         this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
@@ -606,8 +611,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
-                                kafkaClusterTemplate != null && kafkaClusterTemplate.getClusterCaCert() != null && kafkaClusterTemplate.getClusterCaCert().getMetadata() != null
-                                        ? kafkaClusterTemplate.getClusterCaCert().getMetadata().getLabels() : emptyMap(),
+                                ClusterCaCertLabels != null ? ClusterCaCertLabels : emptyMap(),
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
