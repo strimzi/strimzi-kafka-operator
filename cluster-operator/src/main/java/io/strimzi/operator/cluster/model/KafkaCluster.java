@@ -214,7 +214,7 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
     protected Map<String, String> templateClusterCACertLabels;
-    protected Map<String, String> templateClusterCAAnnotations;
+    protected Map<String, String> templateClusterCACertAnnotations;
     protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
     protected List<ContainerEnvVar> templateInitContainerEnvVars;
 
