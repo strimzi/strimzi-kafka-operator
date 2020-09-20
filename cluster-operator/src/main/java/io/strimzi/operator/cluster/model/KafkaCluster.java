@@ -627,6 +627,14 @@ public class KafkaCluster extends AbstractModel {
                 result.templateInitContainerEnvVars = template.getInitContainer().getEnv();
             }
 
+            if (template.getKafkaContainer() != null && template.getKafkaContainer().getSecurityContext() != null) {
+                result.templateKafkaContainerSecurityContext = template.getKafkaContainer().getSecurityContext();
+            }
+
+            if (template.getInitContainer() != null && template.getInitContainer().getSecurityContext() != null) {
+                result.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
+            }
+
             if (template.getClusterCaCert() != null && template.getClusterCaCert().getMetadata() != null) {
                 result.templateClusterCALabels = template.getClusterCaCert().getMetadata().getLabels();
                 result.templateClusterCAAnnotations = template.getClusterCaCert().getMetadata().getAnnotations();
