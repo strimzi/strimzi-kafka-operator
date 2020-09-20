@@ -636,8 +636,8 @@ public class KafkaCluster extends AbstractModel {
             }
 
             if (template.getClusterCaCert() != null && template.getClusterCaCert().getMetadata() != null) {
-                result.templateClusterCALabels = template.getClusterCaCert().getMetadata().getLabels();
-                result.templateClusterCAAnnotations = template.getClusterCaCert().getMetadata().getAnnotations();
+                result.templateClusterCaLabels = template.getClusterCaCert().getMetadata().getLabels();
+                result.templateClusterCaAnnotations = template.getClusterCaCert().getMetadata().getAnnotations();
             }
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
