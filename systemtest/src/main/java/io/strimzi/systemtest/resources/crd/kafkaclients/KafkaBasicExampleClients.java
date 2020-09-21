@@ -80,7 +80,7 @@ public class KafkaBasicExampleClients {
             return self();
         }
 
-        protected KafkaBasicExampleClients build() {
+        public KafkaBasicExampleClients build() {
             return new KafkaBasicExampleClients(this);
         }
 
