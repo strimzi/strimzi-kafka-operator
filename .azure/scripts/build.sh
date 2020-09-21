@@ -11,9 +11,6 @@ if [ ${JAVA_MAJOR_VERSION} -eq 11 ] ; then
     export MAIN_BUILD="TRUE"
 fi
 
-export PULL_REQUEST=${PULL_REQUEST:-true}
-export BRANCH=${BRANCH:-master}
-export TAG=${TAG:-latest}
 export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
@@ -66,8 +63,14 @@ else
     if [ "${MAIN_BUILD}" = "TRUE" ] ; then
         echo "Login into Docker Hub ..."
         docker login -u $DOCKER_USER -p $DOCKER_PASS
+
         export DOCKER_ORG=strimzi
-        export DOCKER_TAG=$TAG
+        
+        if [ "$BRANCH" == "refs/heads/master" ]; then
+            export DOCKER_TAG="latest"
+        elif
+            export DOCKER_TAG="${BRANCH#refs/tags/}"
+        fi
  
         echo "Pushing to docker org $DOCKER_ORG"
         make docker_push
