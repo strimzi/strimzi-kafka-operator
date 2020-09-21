@@ -118,7 +118,7 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
             .withOAuthClientId(getOauthClientId())
             .withOAuthClientSecret(getOauthClientSecret())
             .withOAuthTokenEndpointUri(getOauthTokenEndpointUri())
-            .withUserName(getUserName());
+            .withUserName(getClientUserName());
     }
 
     @Override
@@ -138,7 +138,7 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         return oauthTokenEndpointUri;
     }
 
-    public String getUserName() {
+    public String getClientUserName() {
         return userName;
     }
 
