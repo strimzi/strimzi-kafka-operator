@@ -68,7 +68,7 @@ else
         
         if [ "$BRANCH" == "refs/heads/master" ]; then
             export DOCKER_TAG="latest"
-        elif
+        else
             export DOCKER_TAG="${BRANCH#refs/tags/}"
         fi
  
