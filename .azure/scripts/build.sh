@@ -58,9 +58,9 @@ if [ "$BUILD_REASON" == "PullRequest" ] ; then
 elif [ "$BRANCH" != "refs/tags/*" ] && [ "$BRANCH" != "refs/heads/master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else
-    echo "Build of the images and push docu and artifacts to nexus is curently disabled until migration to Azure will be finished"
- 
-    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
+    if [ "${MAIN_BUILD}" == "TRUE" ] ; then
+        echo "Main build on master branch or release tag - going to push to Docker Hub, Nexus and website"
+        
         echo "Login into Docker Hub ..."
         docker login -u $DOCKER_USER -p $DOCKER_PASS
 
@@ -75,10 +75,12 @@ else
         echo "Pushing to docker org $DOCKER_ORG"
         make docker_push
 
-        if [ "$BRANCH" = "master" ]; then
+        if [ "$BRANCH" == "refs/heads/master" ]; then
             make docu_pushtowebsite
         fi
 
         make pushtonexus
+    else
+        echo "Not in main build - nothing to do"
     fi
 fi
