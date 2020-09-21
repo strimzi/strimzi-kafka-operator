@@ -34,7 +34,7 @@ import java.util.Map;
 
 import static io.strimzi.test.TestUtils.toYamlString;
 
-public abstract class KafkaClientsResource {
+public class KafkaClientsResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientsResource.class);
 
@@ -142,17 +142,21 @@ public abstract class KafkaClientsResource {
                     String userSecretVolumeName = "tls-cert-" + kafkaUserName;
                     String userSecretMountPoint = "/opt/kafka/user-secret-" + kafkaUserName;
 
-                    containerBuilder.addNewVolumeMount()
-                        .withName(userSecretVolumeName)
-                        .withMountPath(userSecretMountPoint)
+                    containerBuilder
+                        .addNewVolumeMount()
+                            .withName(userSecretVolumeName)
+                            .withMountPath(userSecretMountPoint)
                         .endVolumeMount()
-                        .addNewEnv().withName("USER_LOCATION" + envVariablesSuffix).withValue(userSecretMountPoint).endEnv();
+                        .addNewEnv()
+                            .withName("USER_LOCATION" + envVariablesSuffix).withValue(userSecretMountPoint)
+                        .endEnv();
 
-                    podSpecBuilder.addNewVolume()
-                        .withName(userSecretVolumeName)
-                        .withNewSecret()
-                        .withSecretName(kafkaUserName)
-                        .endSecret()
+                    podSpecBuilder
+                        .addNewVolume()
+                            .withName(userSecretVolumeName)
+                            .withNewSecret()
+                                .withSecretName(kafkaUserName)
+                            .endSecret()
                         .endVolume();
                 }
 
@@ -165,13 +169,21 @@ public abstract class KafkaClientsResource {
 
                     containerBuilder
                         .addNewVolumeMount()
-                        .withName(clusterCaSecretVolumeName)
-                        .withMountPath(caSecretMountPoint)
+                            .withName(clusterCaSecretVolumeName)
+                            .withMountPath(caSecretMountPoint)
                         .endVolumeMount()
-                        .addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
-                        .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
-                        .addNewEnv().withName("CA_LOCATION" + envVariablesSuffix).withValue(caSecretMountPoint).endEnv()
-                        .addNewEnv().withName("TRUSTSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/" + kafkaUserName + "-truststore.p12").endEnv();
+                        .addNewEnv()
+                            .withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE")
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE")
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("CA_LOCATION" + envVariablesSuffix).withValue(caSecretMountPoint)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("TRUSTSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/" + kafkaUserName + "-truststore.p12")
+                        .endEnv();
 
                     if (tlsUser) {
                         containerBuilder.addNewEnv().withName("KEYSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/" + kafkaUserName + "-keystore.p12").endEnv();
@@ -179,10 +191,10 @@ public abstract class KafkaClientsResource {
 
                     podSpecBuilder
                         .addNewVolume()
-                        .withName(clusterCaSecretVolumeName)
-                        .withNewSecret()
-                        .withSecretName(clusterCaSecretName)
-                        .endSecret()
+                            .withName(clusterCaSecretVolumeName)
+                            .withNewSecret()
+                                .withSecretName(clusterCaSecretName)
+                            .endSecret()
                         .endVolume();
                 }
 

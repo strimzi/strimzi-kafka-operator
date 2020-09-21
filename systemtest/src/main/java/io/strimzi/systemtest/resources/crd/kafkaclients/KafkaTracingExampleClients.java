@@ -12,7 +12,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KafkaTracingExampleClients extends KafkaBasicExampleClients<KafkaTracingExampleClients> {
+public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
 
     private static final String JAEGER_AGENT_HOST =  "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE =  "const";
@@ -22,7 +22,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients<KafkaTr
     private final String jaegerServiceConsumerName;
     private final String jaegerServiceStreamsName;
 
-    public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
+    public static class Builder extends KafkaBasicExampleClients.Builder {
         private String jaegerServiceProducerName;
         private String jaegerServiceConsumerName;
         private String jaegerServiceStreamsName;
@@ -43,33 +43,54 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients<KafkaTr
         }
 
         @Override
+        public Builder withProducerName(String producerName) {
+            return (Builder) super.withProducerName(producerName);
+        }
+
+        @Override
+        public Builder withConsumerName(String consumerName) {
+            return (Builder) super.withConsumerName(consumerName);
+        }
+
+        @Override
+        public Builder withBootstrapAddress(String bootstrapAddress) {
+            return (Builder) super.withBootstrapAddress(bootstrapAddress);
+        }
+
+        @Override
+        public Builder withTopicName(String topicName) {
+            return (Builder) super.withTopicName(topicName);
+        }
+
+        @Override
+        public Builder withMessageCount(int messageCount) {
+            return (Builder) super.withMessageCount(messageCount);
+        }
+
+        @Override
+        public Builder withAdditionalConfig(String additionalConfig) {
+            return (Builder) super.withAdditionalConfig(additionalConfig);
+        }
+
+        @Override
+        public Builder withConsumerGroup(String consumerGroup) {
+            return (Builder) super.withConsumerGroup(consumerGroup);
+        }
+
+        @Override
+        public Builder withDelayMs(long delayMs) {
+            return (Builder) super.withDelayMs(delayMs);
+        }
+
+        @Override
         public KafkaTracingExampleClients build() {
             return new KafkaTracingExampleClients(this);
         }
 
         @Override
-        protected KafkaTracingExampleClients.Builder self() {
+        protected Builder self() {
             return this;
         }
-    }
-
-    @Override
-    public KafkaBasicExampleClients.Builder<KafkaTracingExampleClients.Builder> toBuilder(KafkaTracingExampleClients tracingExampleClients) {
-        KafkaTracingExampleClients.Builder builder = new KafkaTracingExampleClients.Builder();
-
-        builder.withProducerName(tracingExampleClients.getProducerName());
-        builder.withConsumerName(tracingExampleClients.getConsumerName());
-        builder.withBootstrapAddress(tracingExampleClients.getBootstrapAddress());
-        builder.withTopicName(tracingExampleClients.getTopicName());
-        builder.withMessageCount(tracingExampleClients.getMessageCount());
-        builder.withAdditionalConfig(tracingExampleClients.getAdditionalConfig());
-        builder.withConsumerGroup(tracingExampleClients.getConsumerGroup());
-        builder.withDelayMs(tracingExampleClients.getDelayMs());
-        builder.withJaegerServiceProducerName(tracingExampleClients.getJaegerServiceProducerName());
-        builder.withJaegerServiceConsumerName(tracingExampleClients.getJaegerServiceConsumerName());
-        builder.withJaegerServiceStreamsName(tracingExampleClients.getJaegerServiceStreamsName());
-
-        return builder;
     }
 
     public String getJaegerServiceConsumerName() {
@@ -82,6 +103,22 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients<KafkaTr
 
     public String getJaegerServiceStreamsName() {
         return jaegerServiceStreamsName;
+    }
+
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    protected Builder updateBuilder(Builder builder) {
+        super.updateBuilder(builder);
+        return builder
+            .withJaegerServiceProducerName(getJaegerServiceProducerName())
+            .withJaegerServiceConsumerName(getJaegerServiceConsumerName())
+            .withJaegerServiceStreamsName(getJaegerServiceStreamsName());
+    }
+
+    public Builder toBuilder() {
+        return updateBuilder(newBuilder());
     }
 
     public KafkaTracingExampleClients(KafkaTracingExampleClients.Builder builder) {

@@ -17,7 +17,7 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class KafkaBasicExampleClients<J extends KafkaBasicExampleClients<J>> {
+public class KafkaBasicExampleClients {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaBasicExampleClients.class);
 
@@ -30,7 +30,7 @@ public abstract class KafkaBasicExampleClients<J extends KafkaBasicExampleClient
     protected String consumerGroup;
     protected long delayMs;
 
-    public static abstract class Builder<T extends Builder<T>> {
+    public static class Builder {
         private String producerName;
         private String consumerName;
         private String bootstrapAddress;
@@ -40,52 +40,56 @@ public abstract class KafkaBasicExampleClients<J extends KafkaBasicExampleClient
         private String consumerGroup;
         private long delayMs;
 
-        public T withProducerName(String producerName) {
+        public Builder withProducerName(String producerName) {
             this.producerName = producerName;
             return self();
         }
 
-        public T withConsumerName(String consumerName) {
+        public Builder withConsumerName(String consumerName) {
             this.consumerName = consumerName;
             return self();
         }
 
-        public T withBootstrapAddress(String bootstrapAddress) {
+        public Builder withBootstrapAddress(String bootstrapAddress) {
             this.bootstrapAddress = bootstrapAddress;
             return self();
         }
 
-        public T withTopicName(String topicName) {
+        public Builder withTopicName(String topicName) {
             this.topicName = topicName;
             return self();
         }
 
-        public T withMessageCount(int messageCount) {
+        public Builder withMessageCount(int messageCount) {
             this.messageCount = messageCount;
             return self();
         }
 
-        public T withAdditionalConfig(String additionalConfig) {
+        public Builder withAdditionalConfig(String additionalConfig) {
             this.additionalConfig = additionalConfig;
             return self();
         }
 
-        public T withConsumerGroup(String consumerGroup) {
+        public Builder withConsumerGroup(String consumerGroup) {
             this.consumerGroup = consumerGroup;
             return self();
         }
 
-        public T withDelayMs(long delayMs) {
+        public Builder withDelayMs(long delayMs) {
             this.delayMs = delayMs;
             return self();
         }
 
-        protected abstract KafkaBasicExampleClients build();
+        protected KafkaBasicExampleClients build() {
+            return new KafkaBasicExampleClients(this);
+        }
 
-        protected abstract T self();
+        protected Builder self() {
+            return this;
+        };
     }
 
-    protected KafkaBasicExampleClients(Builder<?> builder) {
+    protected KafkaBasicExampleClients(Builder builder) {
         if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
         if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
         if (builder.messageCount == 0) throw  new InvalidParameterException("Message count is less than 1");
@@ -136,7 +140,25 @@ public abstract class KafkaBasicExampleClients<J extends KafkaBasicExampleClient
         return delayMs;
     }
 
-    protected abstract Builder<?> toBuilder(J client);
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    protected Builder updateBuilder(Builder builder) {
+        return builder
+            .withConsumerGroup(getConsumerGroup())
+            .withAdditionalConfig(getAdditionalConfig())
+            .withBootstrapAddress(getBootstrapAddress())
+            .withConsumerName(getConsumerName())
+            .withDelayMs(getDelayMs())
+            .withMessageCount(getMessageCount())
+            .withProducerName(getProducerName())
+            .withTopicName(getTopicName());
+    }
+
+    public Builder toBuilder() {
+        return updateBuilder(newBuilder());
+    }
 
     public DoneableJob producerStrimzi() {
         if (producerName == null || producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");

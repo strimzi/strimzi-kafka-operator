@@ -457,7 +457,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
-        KafkaTracingExampleClients sourceKafkaTracingClient = kafkaTracingClient.toBuilder(kafkaTracingClient)
+        KafkaTracingExampleClients sourceKafkaTracingClient = kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
@@ -465,7 +465,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
-        KafkaTracingExampleClients targetKafkaTracingClient = kafkaTracingClient.toBuilder(kafkaTracingClient)
+        KafkaTracingExampleClients targetKafkaTracingClient = kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .withTopicName(kafkaClusterSourceName + "." + TOPIC_NAME)
             .build();
@@ -566,7 +566,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
-        KafkaTracingExampleClients sourceKafkaTracingClient = kafkaTracingClient.toBuilder(kafkaTracingClient)
+        KafkaTracingExampleClients sourceKafkaTracingClient = kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
@@ -574,7 +574,7 @@ public class TracingST extends AbstractST {
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
-        KafkaTracingExampleClients targetKafkaTracingClient =  kafkaTracingClient.toBuilder(kafkaTracingClient)
+        KafkaTracingExampleClients targetKafkaTracingClient =  kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .build();
 
@@ -660,13 +660,13 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTracingExampleClients sourceKafkaTracingClient = kafkaTracingClient.toBuilder(kafkaTracingClient)
+        KafkaTracingExampleClients sourceKafkaTracingClient = kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
         sourceKafkaTracingClient.producerWithTracing().done();
 
-        KafkaTracingExampleClients targetKafkaTracingClient = kafkaTracingClient.toBuilder(kafkaTracingClient)
+        KafkaTracingExampleClients targetKafkaTracingClient = kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .build();
 

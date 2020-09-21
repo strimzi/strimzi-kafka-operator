@@ -14,12 +14,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 // HTTP Bridge clients
-public class KafkaBridgeExampleClients extends KafkaBasicExampleClients<KafkaBridgeExampleClients> {
+public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
     private final int port;
     private final int pollInterval;
 
-    public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
+    public static class Builder extends KafkaBasicExampleClients.Builder {
         private int port;
         private int pollInterval;
 
@@ -34,6 +34,46 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients<KafkaBri
         }
 
         @Override
+        public Builder withProducerName(String producerName) {
+            return (Builder) super.withProducerName(producerName);
+        }
+
+        @Override
+        public Builder withConsumerName(String consumerName) {
+            return (Builder) super.withConsumerName(consumerName);
+        }
+
+        @Override
+        public Builder withBootstrapAddress(String bootstrapAddress) {
+            return (Builder) super.withBootstrapAddress(bootstrapAddress);
+        }
+
+        @Override
+        public Builder withTopicName(String topicName) {
+            return (Builder) super.withTopicName(topicName);
+        }
+
+        @Override
+        public Builder withMessageCount(int messageCount) {
+            return (Builder) super.withMessageCount(messageCount);
+        }
+
+        @Override
+        public Builder withAdditionalConfig(String additionalConfig) {
+            return (Builder) super.withAdditionalConfig(additionalConfig);
+        }
+
+        @Override
+        public Builder withConsumerGroup(String consumerGroup) {
+            return (Builder) super.withConsumerGroup(consumerGroup);
+        }
+
+        @Override
+        public Builder withDelayMs(long delayMs) {
+            return (Builder) super.withDelayMs(delayMs);
+        }
+
+        @Override
         public KafkaBridgeExampleClients build() {
             return new KafkaBridgeExampleClients(this);
         }
@@ -44,30 +84,27 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients<KafkaBri
         }
     }
 
-    @Override
-    public KafkaBasicExampleClients.Builder<KafkaBridgeExampleClients.Builder> toBuilder(KafkaBridgeExampleClients bridgeExampleClients) {
-        KafkaBridgeExampleClients.Builder builder = new KafkaBridgeExampleClients.Builder();
-
-        builder.withProducerName(bridgeExampleClients.getProducerName());
-        builder.withConsumerName(bridgeExampleClients.getConsumerName());
-        builder.withBootstrapAddress(bridgeExampleClients.getBootstrapAddress());
-        builder.withTopicName(bridgeExampleClients.getTopicName());
-        builder.withMessageCount(bridgeExampleClients.getMessageCount());
-        builder.withAdditionalConfig(bridgeExampleClients.getAdditionalConfig());
-        builder.withConsumerGroup(bridgeExampleClients.getConsumerGroup());
-        builder.withDelayMs(bridgeExampleClients.getDelayMs());
-        builder.withPollInterval(bridgeExampleClients.getPollInterval());
-        builder.withPort(bridgeExampleClients.getPort());
-
-        return builder;
-    }
-
     public int getPollInterval() {
         return pollInterval;
     }
 
     public int getPort() {
         return port;
+    }
+
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    protected Builder updateBuilder(Builder builder) {
+        super.updateBuilder(builder);
+        return builder
+            .withPort(getPort())
+            .withPollInterval(getPollInterval());
+    }
+
+    public Builder toBuilder() {
+        return updateBuilder(newBuilder());
     }
 
     private KafkaBridgeExampleClients(KafkaBridgeExampleClients.Builder builder) {
