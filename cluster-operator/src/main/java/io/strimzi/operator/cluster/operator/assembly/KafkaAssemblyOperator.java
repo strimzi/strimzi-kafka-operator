@@ -599,9 +599,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
                         KafkaClusterTemplate kafkaClusterTemplate = kafkaAssembly.getSpec().getKafka().getTemplate();
                         Map<String,String> ClusterCaCertLabels = null;
+                        Map<String,String> ClusterCaCertAnnotations = null;
                         if (kafkaClusterTemplate != null && kafkaClusterTemplate.getClusterCaCert() != null
                                 && kafkaClusterTemplate.getClusterCaCert().getMetadata() != null) {
                             ClusterCaCertLabels = kafkaClusterTemplate.getClusterCaCert().getMetadata().getLabels();
+                            ClusterCaCertAnnotations = kafkaClusterTemplate.getClusterCaCert().getMetadata().getAnnotations();
                         }
 
                         this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
@@ -612,6 +614,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
                                 ClusterCaCertLabels != null ? ClusterCaCertLabels : emptyMap(),
+                                ClusterCaCertAnnotations != null ? ClusterCaCertAnnotations : emptyMap(),
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
@@ -629,7 +632,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                                 clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
                         clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
-                                caLabels.toMap(), emptyMap(), ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
+                                caLabels.toMap(), emptyMap(), emptyMap(), ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         List<Future> secretReconciliations = new ArrayList<>(2);
 

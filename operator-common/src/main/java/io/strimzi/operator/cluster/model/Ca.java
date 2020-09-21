@@ -497,10 +497,11 @@ public abstract class Ca {
      * @param clusterName The name of the cluster.
      * @param labels The labels of the {@code Secrets} created.
      * @param additonalLabels Additional labels for ClusterCaCert {@code Secrets} created.
+     * @param additonalAnnotations Additional annotations for ClusterCaCert {@code Secrets} created.
      * @param ownerRef The owner of the {@code Secrets} created.
      * @param maintenanceWindowSatisfied Flag indicating whether we are in the maintenance window
      */
-    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels,Map<String, String> additonalLabels, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
+    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels,Map<String, String> additonalLabels,Map<String, String> additonalAnnotations, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
@@ -575,7 +576,7 @@ public abstract class Ca {
         }
 
         caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels,additonalLabels),
-                certAnnotations, ownerRef);
+                Util.mergeLabelsOrAnnotations(additonalAnnotations,certAnnotations), ownerRef);
 
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels,
                 keyAnnotations, ownerRef);
@@ -718,7 +719,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in expired certificates being removed from the CA {@code Secret}.
      * @return Whether any expired certificates were removed.
      */
@@ -727,7 +728,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in a renewed CA certificate.
      * @return Whether the certificate was renewed.
      */
@@ -736,7 +737,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in a replaced CA key.
      * @return Whether the key was replaced.
      */
