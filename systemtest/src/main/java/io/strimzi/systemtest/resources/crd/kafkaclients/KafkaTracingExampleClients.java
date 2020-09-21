@@ -12,15 +12,15 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
+public class KafkaTracingExampleClients extends KafkaBasicExampleClients<KafkaTracingExampleClients> {
 
     private static final String JAEGER_AGENT_HOST =  "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE =  "const";
     private static final String JAEGER_SAMPLER_PARAM =  "1";
 
-    private String jaegerServiceProducerName;
-    private String jaegerServiceConsumerName;
-    private String jaegerServiceStreamsName;
+    private final String jaegerServiceProducerName;
+    private final String jaegerServiceConsumerName;
+    private final String jaegerServiceStreamsName;
 
     public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
         private String jaegerServiceProducerName;
@@ -53,19 +53,42 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
         }
     }
 
+    @Override
+    public KafkaBasicExampleClients.Builder<KafkaTracingExampleClients.Builder> toBuilder(KafkaTracingExampleClients tracingExampleClients) {
+        KafkaTracingExampleClients.Builder builder = new KafkaTracingExampleClients.Builder();
+
+        builder.withProducerName(tracingExampleClients.getProducerName());
+        builder.withConsumerName(tracingExampleClients.getConsumerName());
+        builder.withBootstrapAddress(tracingExampleClients.getBootstrapAddress());
+        builder.withTopicName(tracingExampleClients.getTopicName());
+        builder.withMessageCount(tracingExampleClients.getMessageCount());
+        builder.withAdditionalConfig(tracingExampleClients.getAdditionalConfig());
+        builder.withConsumerGroup(tracingExampleClients.getConsumerGroup());
+        builder.withDelayMs(tracingExampleClients.getDelayMs());
+        builder.withJaegerServiceProducerName(tracingExampleClients.getJaegerServiceProducerName());
+        builder.withJaegerServiceConsumerName(tracingExampleClients.getJaegerServiceConsumerName());
+        builder.withJaegerServiceStreamsName(tracingExampleClients.getJaegerServiceStreamsName());
+
+        return builder;
+    }
+
+    public String getJaegerServiceConsumerName() {
+        return jaegerServiceConsumerName;
+    }
+
+    public String getJaegerServiceProducerName() {
+        return jaegerServiceProducerName;
+    }
+
+    public String getJaegerServiceStreamsName() {
+        return jaegerServiceStreamsName;
+    }
+
     public KafkaTracingExampleClients(KafkaTracingExampleClients.Builder builder) {
         super(builder);
         jaegerServiceProducerName = builder.jaegerServiceProducerName;
         jaegerServiceConsumerName = builder.jaegerServiceConsumerName;
         jaegerServiceStreamsName = builder.jaegerServiceStreamsName;
-    }
-
-    public void setBootstrapServer(String bootstrapServer) {
-        this.bootstrapServer = bootstrapServer;
-    }
-
-    public void setTopicName(String topicName) {
-        this.topicName = topicName;
     }
 
     public DoneableDeployment consumerWithTracing() {
@@ -96,7 +119,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                                     .withImage("strimzi/" + consumerName + ":latest")
                                     .addNewEnv()
                                         .withName("BOOTSTRAP_SERVERS")
-                                        .withValue(bootstrapServer)
+                                        .withValue(bootstrapAddress)
                                       .endEnv()
                                     .addNewEnv()
                                         .withName("TOPIC")
@@ -169,7 +192,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                             .withImage("strimzi/" + producerName + ":latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrapServer)
+                                .withValue(bootstrapAddress)
                               .endEnv()
                             .addNewEnv()
                                 .withName("TOPIC")
@@ -238,7 +261,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                             .withImage("strimzi/" + kafkaStreamsName + ":latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrapServer)
+                                .withValue(bootstrapAddress)
                               .endEnv()
                             .addNewEnv()
                                 .withName("APPLICATION_ID")

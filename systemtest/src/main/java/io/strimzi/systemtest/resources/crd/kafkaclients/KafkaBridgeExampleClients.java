@@ -14,10 +14,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 // HTTP Bridge clients
-public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
+public class KafkaBridgeExampleClients extends KafkaBasicExampleClients<KafkaBridgeExampleClients> {
 
-    private int port;
-    private int pollInterval;
+    private final int port;
+    private final int pollInterval;
 
     public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
         private int port;
@@ -42,6 +42,32 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
         protected KafkaBridgeExampleClients.Builder self() {
             return this;
         }
+    }
+
+    @Override
+    public KafkaBasicExampleClients.Builder<KafkaBridgeExampleClients.Builder> toBuilder(KafkaBridgeExampleClients bridgeExampleClients) {
+        KafkaBridgeExampleClients.Builder builder = new KafkaBridgeExampleClients.Builder();
+
+        builder.withProducerName(bridgeExampleClients.getProducerName());
+        builder.withConsumerName(bridgeExampleClients.getConsumerName());
+        builder.withBootstrapAddress(bridgeExampleClients.getBootstrapAddress());
+        builder.withTopicName(bridgeExampleClients.getTopicName());
+        builder.withMessageCount(bridgeExampleClients.getMessageCount());
+        builder.withAdditionalConfig(bridgeExampleClients.getAdditionalConfig());
+        builder.withConsumerGroup(bridgeExampleClients.getConsumerGroup());
+        builder.withDelayMs(bridgeExampleClients.getDelayMs());
+        builder.withPollInterval(bridgeExampleClients.getPollInterval());
+        builder.withPort(bridgeExampleClients.getPort());
+
+        return builder;
+    }
+
+    public int getPollInterval() {
+        return pollInterval;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     private KafkaBridgeExampleClients(KafkaBridgeExampleClients.Builder builder) {
@@ -76,7 +102,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                                 .withImage("strimzi/kafka-http-producer:latest")
                                 .addNewEnv()
                                     .withName("HOSTNAME")
-                                    .withValue(bootstrapServer)
+                                    .withValue(bootstrapAddress)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("PORT")
@@ -126,7 +152,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                                 .withImage("strimzi/kafka-http-consumer:latest")
                                 .addNewEnv()
                                     .withName("HOSTNAME")
-                                    .withValue(bootstrapServer)
+                                    .withValue(bootstrapAddress)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("PORT")

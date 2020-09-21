@@ -316,7 +316,7 @@ public class MetricsST extends AbstractST {
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withBootstrapServer(KafkaBridgeResources.serviceName(BRIDGE_CLUSTER))
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(BRIDGE_CLUSTER))
             .withTopicName(bridgeTopic)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)

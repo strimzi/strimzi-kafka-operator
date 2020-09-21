@@ -282,7 +282,7 @@ public class StrimziUpgradeST extends AbstractST {
             KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
                 .withProducerName(producerName)
                 .withConsumerGroup(consumerName)
-                .withBootstrapServer(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
                 .withTopicName(continuousTopicName)
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)

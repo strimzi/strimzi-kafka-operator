@@ -66,7 +66,7 @@ public class ClusterOperationST extends AbstractST {
             kafkaBasicClientResource = new KafkaBridgeExampleClients.Builder()
                 .withProducerName(producerNames.get(i))
                 .withConsumerName(consumerNames.get(i))
-                .withBootstrapServer(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
                 .withTopicName(topicNames.get(producerNames.indexOf(i)))
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)

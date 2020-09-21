@@ -39,7 +39,7 @@ public class HttpBridgeAbstractST extends AbstractST {
         kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withBootstrapServer(KafkaBridgeResources.serviceName(CLUSTER_NAME))
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(CLUSTER_NAME))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(bridgePort)

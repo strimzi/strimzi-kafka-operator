@@ -108,7 +108,7 @@ public abstract class AbstractKafkaClient {
         if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
         if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
-        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.messageCount == 0) throw  new InvalidParameterException("Message count is less than 1");
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one.");
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();

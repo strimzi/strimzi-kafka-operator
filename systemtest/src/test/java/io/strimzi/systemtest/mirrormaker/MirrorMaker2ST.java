@@ -653,7 +653,7 @@ class MirrorMaker2ST extends AbstractST {
 
         KafkaBridgeExampleClients targetKafkaClientsJob = new KafkaBridgeExampleClients.Builder()
             .withConsumerName(targetConsumerName)
-            .withBootstrapServer(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .withTopicName(targetExampleTopic)
             .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(0)
@@ -663,7 +663,7 @@ class MirrorMaker2ST extends AbstractST {
 
         KafkaBridgeExampleClients sourceKafkaClientsJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(sourceProducerName)
-            .withBootstrapServer(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .withTopicName(sourceExampleTopic)
             .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(0)

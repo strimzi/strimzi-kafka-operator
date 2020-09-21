@@ -10,12 +10,12 @@ import io.strimzi.systemtest.keycloak.KeycloakInstance;
 
 import java.security.InvalidParameterException;
 
-public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
+public class KafkaOauthExampleClients extends KafkaBasicExampleClients<KafkaOauthExampleClients> {
 
-    private String oauthClientId;
-    private String oauthClientSecret;
-    private String oauthTokenEndpointUri;
-    private String userName;
+    private final String oauthClientId;
+    private final String oauthClientSecret;
+    private final String oauthTokenEndpointUri;
+    private final String userName;
 
     public static class Builder extends KafkaBasicExampleClients.Builder<Builder> {
         private String oauthClientId;
@@ -54,6 +54,42 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         }
     }
 
+    @Override
+    public KafkaBasicExampleClients.Builder<KafkaOauthExampleClients.Builder> toBuilder(KafkaOauthExampleClients oauthExampleClients) {
+        KafkaOauthExampleClients.Builder builder = new KafkaOauthExampleClients.Builder();
+
+        builder.withProducerName(oauthExampleClients.getProducerName());
+        builder.withConsumerName(oauthExampleClients.getConsumerName());
+        builder.withBootstrapAddress(oauthExampleClients.getBootstrapAddress());
+        builder.withTopicName(oauthExampleClients.getTopicName());
+        builder.withMessageCount(oauthExampleClients.getMessageCount());
+        builder.withAdditionalConfig(oauthExampleClients.getAdditionalConfig());
+        builder.withConsumerGroup(oauthExampleClients.getConsumerGroup());
+        builder.withDelayMs(oauthExampleClients.getDelayMs());
+        builder.withOAuthClientId(oauthExampleClients.getOauthClientId());
+        builder.withOAuthClientSecret(oauthExampleClients.getOauthClientSecret());
+        builder.withOAuthTokenEndpointUri(oauthExampleClients.getOauthTokenEndpointUri());
+        builder.withUserName(oauthExampleClients.getUserName());
+
+        return builder;
+    }
+
+    public String getOauthClientId() {
+        return oauthClientId;
+    }
+
+    public String getOauthClientSecret() {
+        return oauthClientSecret;
+    }
+
+    public String getOauthTokenEndpointUri() {
+        return oauthTokenEndpointUri;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
     private KafkaOauthExampleClients(KafkaOauthExampleClients.Builder builder) {
         super(builder);
         if (builder.oauthClientId == null || builder.oauthClientId.isEmpty()) throw new InvalidParameterException("OAuth client id is not set.");
@@ -65,18 +101,6 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         oauthClientSecret = builder.oauthClientSecret;
         oauthTokenEndpointUri = builder.oauthTokenEndpointUri;
         userName = builder.userName;
-    }
-
-    public void setTopicName(String topicName) {
-        this.topicName = topicName;
-    }
-
-    public void setConsumerGroup(String consumerGroup) {
-        this.consumerGroup = consumerGroup;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
     }
 
     public DoneableJob producerStrimziOauthPlain() {

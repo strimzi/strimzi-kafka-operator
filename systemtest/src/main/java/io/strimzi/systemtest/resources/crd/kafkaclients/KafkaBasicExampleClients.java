@@ -17,23 +17,23 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class KafkaBasicExampleClients {
+public abstract class KafkaBasicExampleClients<J extends KafkaBasicExampleClients<J>> {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaBasicExampleClients.class);
 
     protected String producerName;
     protected String consumerName;
-    protected String bootstrapServer;
+    protected String bootstrapAddress;
     protected String topicName;
     protected int messageCount;
     protected String additionalConfig;
     protected String consumerGroup;
     protected long delayMs;
 
-    public abstract static class Builder<T extends Builder<T>> {
+    public static abstract class Builder<T extends Builder<T>> {
         private String producerName;
         private String consumerName;
-        private String bootstrapServer;
+        private String bootstrapAddress;
         private String topicName;
         private int messageCount;
         private String additionalConfig;
@@ -50,8 +50,8 @@ public abstract class KafkaBasicExampleClients {
             return self();
         }
 
-        public T withBootstrapServer(String bootstrapServer) {
-            this.bootstrapServer = bootstrapServer;
+        public T withBootstrapAddress(String bootstrapAddress) {
+            this.bootstrapAddress = bootstrapAddress;
             return self();
         }
 
@@ -87,8 +87,8 @@ public abstract class KafkaBasicExampleClients {
 
     protected KafkaBasicExampleClients(Builder<?> builder) {
         if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
-        if (builder.bootstrapServer == null || builder.bootstrapServer.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
-        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
+        if (builder.messageCount == 0) throw  new InvalidParameterException("Message count is less than 1");
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one.");
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
@@ -96,7 +96,7 @@ public abstract class KafkaBasicExampleClients {
 
         producerName = builder.producerName;
         consumerName = builder.consumerName;
-        bootstrapServer = builder.bootstrapServer;
+        bootstrapAddress = builder.bootstrapAddress;
         topicName = builder.topicName;
         messageCount = builder.messageCount;
         additionalConfig = builder.additionalConfig;
@@ -104,14 +104,39 @@ public abstract class KafkaBasicExampleClients {
         delayMs = builder.delayMs;
     }
 
-    public void setTopicName(String topicName) {
-        this.topicName = topicName;
+    public String getProducerName() {
+        return producerName;
     }
 
-    public void setConsumerGroup(String consumerGroup) {
-        this.consumerGroup = consumerGroup;
+    public String getConsumerName() {
+        return consumerName;
     }
 
+    public String getBootstrapAddress() {
+        return bootstrapAddress;
+    }
+
+    public String getTopicName() {
+        return topicName;
+    }
+
+    public int getMessageCount() {
+        return messageCount;
+    }
+
+    public String getAdditionalConfig() {
+        return additionalConfig;
+    }
+
+    public String getConsumerGroup() {
+        return consumerGroup;
+    }
+
+    public long getDelayMs() {
+        return delayMs;
+    }
+
+    protected abstract Builder<?> toBuilder(J client);
 
     public DoneableJob producerStrimzi() {
         if (producerName == null || producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
@@ -140,7 +165,7 @@ public abstract class KafkaBasicExampleClients {
                                 .withImage("strimzi/hello-world-producer:latest")
                                 .addNewEnv()
                                     .withName("BOOTSTRAP_SERVERS")
-                                    .withValue(bootstrapServer)
+                                    .withValue(bootstrapAddress)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TOPIC")
@@ -208,7 +233,7 @@ public abstract class KafkaBasicExampleClients {
                             .withImage("strimzi/hello-world-consumer:latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrapServer)
+                                .withValue(bootstrapAddress)
                             .endEnv()
                             .addNewEnv()
                                 .withName("TOPIC")
