@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
+echo "Build reason: ${BUILD_REASON}"
+echo "Source branch: ${BRANCH}"
+
 # The first segment of the version number is '1' for releases < 9; then '9', '10', '11', ...
 JAVA_MAJOR_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
 if [ ${JAVA_MAJOR_VERSION} -eq 11 ] ; then
-  # some parts of the workflow should be done only one on the main build which is currently Java 11
-  export MAIN_BUILD="TRUE"
+    # some parts of the workflow should be done only one on the main build which is currently Java 11
+    export MAIN_BUILD="TRUE"
 fi
 
 export PULL_REQUEST=${PULL_REQUEST:-true}
@@ -22,60 +25,57 @@ make shellcheck
 make crd_install
 make helm_install
 make docker_build
+make docu_html
+make docu_htmlnoheader
 
 if [ ! -e documentation/modules/appendix_crds.adoc ] ; then
-  echo "ERROR: documentation/modules/appendix_crds.adoc does not exist!"
-  exit 1
+    echo "ERROR: documentation/modules/appendix_crds.adoc does not exist!"
+    exit 1
 fi
 
 CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
 GENERATED_FILES=$(git ls-files --other --exclude-standard -- install/ helm-charts/ cluster-operator/src/main/resources/cluster-roles)
 if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
-  if [ -n "$CHANGED_DERIVED" ] ; then
-    echo "ERROR: Uncommitted changes in derived resources:"
-    echo "$CHANGED_DERIVED"
-  fi
-  if [ -n "$GENERATED_FILES" ] ; then
-    echo "ERROR: Uncommitted changes in generated resources:"
-    echo "$GENERATED_FILES"
-  fi
-  echo "Run the following to add up-to-date resources:"
-  echo "  mvn clean verify -DskipTests -DskipITs \\"
-  echo "    && make crd_install \\"
-  echo "    && make helm_install \\"
-  echo "    && git add install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles \\"
-  echo "    && git commit -s -m 'Update derived resources'"
-  exit 1
+    if [ -n "$CHANGED_DERIVED" ] ; then
+        echo "ERROR: Uncommitted changes in derived resources:"
+        echo "$CHANGED_DERIVED"
+    fi
+  
+    if [ -n "$GENERATED_FILES" ] ; then
+        echo "ERROR: Uncommitted changes in generated resources:"
+        echo "$GENERATED_FILES"
+    fi
+  
+    echo "Run the following to add up-to-date resources:"
+    echo "  mvn clean verify -DskipTests -DskipITs \\"
+    echo "    && make crd_install \\"
+    echo "    && make helm_install \\"
+    echo "    && git add install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles \\"
+    echo "    && git commit -s -m 'Update derived resources'"
+    exit 1
 fi
 
-# Push to the real docker org
-if [ "$PULL_REQUEST" != "false" ] ; then
-    make docu_html
-    make docu_htmlnoheader
+# Push artifatcs (Docker containers, JARs, docs)
+if [ "$BUILD_REASON" == "PullRequest" ] ; then
     echo "Building Pull Request - nothing to push"
-# TRAVIS_REPO_SLUG change to REPO_SLUG for Azure
-# TRAVIS_REPO_SLUG should be removed when we will finish the migration
-elif [ "${TRAVIS_REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ] || [ "${REPO_SLUG}" != "strimzi/strimzi-kafka-operator" ]; then
-    make docu_html
-    make docu_htmlnoheader
-    echo "Building in a fork and not in a Strimzi repository. Will not attempt to push anything."
-elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
-    make docu_html
-    make docu_htmlnoheader
+elif [ "$BRANCH" != "refs/tags/*" ] && [ "$BRANCH" != "refs/heads/master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else
     echo "Build of the images and push docu and artifacts to nexus is curently disabled until migration to Azure will be finished"
-#    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
-#        echo "Login into Docker Hub ..."
-#        docker login -u $DOCKER_USER -p $DOCKER_PASS
-#
-#        export DOCKER_ORG=strimzi
-#        export DOCKER_TAG=$TAG
-#        echo "Pushing to docker org $DOCKER_ORG"
-#        make docker_push
-#        if [ "$BRANCH" = "master" ]; then
-#            make docu_pushtowebsite
-#        fi
-#        make pushtonexus
-#    fi
+ 
+    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
+        echo "Login into Docker Hub ..."
+        docker login -u $DOCKER_USER -p $DOCKER_PASS
+        export DOCKER_ORG=strimzi
+        export DOCKER_TAG=$TAG
+ 
+        echo "Pushing to docker org $DOCKER_ORG"
+        make docker_push
+
+        if [ "$BRANCH" = "master" ]; then
+            make docu_pushtowebsite
+        fi
+
+        make pushtonexus
+    fi
 fi

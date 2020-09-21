@@ -156,11 +156,11 @@ def clearImages() {
 }
 
 def installHelm(String workspace) {
-    sh(script: "${workspace}/.travis/setup-helm.sh")
+    sh(script: "${workspace}/.azure/scripts/setup-helm.sh")
 }
 
 def installYq(String workspace) {
-    sh(script: "${workspace}/.travis/install_yq.sh")
+    sh(script: "${workspace}/.azure/scripts/install_yq.sh")
 }
 
 def buildStrimziImages() {
