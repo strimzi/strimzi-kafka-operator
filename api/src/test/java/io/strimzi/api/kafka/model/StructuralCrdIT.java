@@ -12,14 +12,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionCondition;
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionVersion;
-import io.strimzi.crdgenerator.ApiVersion;
-import io.strimzi.crdgenerator.VersionRange;
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionCondition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionVersion;
+import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.annotations.VersionRange;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -30,7 +29,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         assumeKube1_16Plus();
         assertApiVersionsAreStructural("kafkas.kafka.strimzi.io",
                 ApiVersion.V1BETA1,
-                "040-Crd-kafka-v1beta1-v1beta2-store-v1beta1.yaml",
+                "040-Crd-kafka-crdApi-v1beta1.yaml",
                 ApiVersion.parseRange("v1beta2+"));
     }
 
@@ -39,7 +38,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         assumeKube1_16Plus();
         assertApiVersionsAreStructural("kafkas.kafka.strimzi.io",
                 ApiVersion.V1,
-                "040-Crd-kafka-v1beta2-store-v1beta2.yaml",
+                "040-Crd-kafka-crdApi-v1.yaml",
                 ApiVersion.parseRange("v1beta2+"));
     }
 

@@ -277,6 +277,10 @@ public class Crds {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1BETA2)), Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
+    public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaV1Operation(KubernetesClient client) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1)), Kafka.class, KafkaList.class, DoneableKafka.class);
+    }
+
     public static CustomResourceDefinition kafkaConnect() {
         return crd(KafkaConnect.class);
     }

@@ -6,8 +6,10 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
+import io.strimzi.api.annotations.VersionRange;
 import io.strimzi.crdgenerator.annotations.Alternation;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;

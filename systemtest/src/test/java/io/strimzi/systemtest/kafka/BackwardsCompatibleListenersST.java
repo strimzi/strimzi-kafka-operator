@@ -71,7 +71,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                     .endKafka()
                 .endSpec()
                 .done();
@@ -121,7 +121,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                     .endKafka()
                 .endSpec()
                 .done();
@@ -169,7 +169,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                 .endKafka()
             .endSpec()
             .done();
@@ -208,7 +208,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
-                    .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                 .endKafka()
             .endSpec()
             .done();
@@ -249,7 +249,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                     .endKafka()
                 .endSpec()
                 .done();
@@ -299,7 +299,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .withListeners(new ArrayOrObjectKafkaListeners(null, listeners))
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                 .endKafka()
             .endSpec()
             .done();
@@ -353,7 +353,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                                     .withTls(true)
                                     .withAuth(new KafkaListenerAuthenticationTls())
                                     .build()
-                    ), null));
+                    )));
         });
 
         KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);

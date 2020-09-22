@@ -11,8 +11,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.annotations.KubeVersion;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.emptyList;
@@ -23,8 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CrdGeneratorTest {
     @Test
     public void simpleTest() throws IOException {
-        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1,
-                new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1);
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
@@ -33,8 +32,7 @@ public class CrdGeneratorTest {
 
     @Test
     public void simpleTestWithSubresources() throws IOException {
-        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1,
-                new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1);
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleWithSubresourcesCrd.class, w);
         String s = w.toString();
@@ -49,7 +47,9 @@ public class CrdGeneratorTest {
         labels.put("component", "%plural%.%group%-crd");
         labels.put("release", "{{ .Release.Name }}");
         labels.put("heritage", "{{ .Release.Service }}");
-        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1, new CrdGenerator.DefaultReporter(), new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false), labels, emptyList(), null);
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1,
+                CrdGenerator.YAML_MAPPER, labels,
+                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy());
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
@@ -58,7 +58,7 @@ public class CrdGeneratorTest {
 
     @Test
     public void versionedTest() throws IOException {
-        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.parseRange("1.16+"), ApiVersion.V1BETA1, new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.parseRange("1.16+"), ApiVersion.V1BETA1);
         StringWriter w = new StringWriter();
         crdGenerator.generate(VersionedExampleCrd.class, w);
         String s = w.toString();
@@ -69,7 +69,7 @@ public class CrdGeneratorTest {
     public void kubeV1_11ErrorWithMultiVersions() throws IOException {
         Set<String> errors = new HashSet<>();
         CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.parseRange("1.11+"), ApiVersion.V1BETA1,
-                new CrdGenerator.Reporter() {
+                CrdGenerator.YAML_MAPPER, emptyMap(), new CrdGenerator.Reporter() {
                     @Override
                     public void warn(String s) {
                     }
@@ -79,8 +79,7 @@ public class CrdGeneratorTest {
                         errors.add(s);
                     }
                 },
-                new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false),
-                emptyMap(), emptyList(), null);
+                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy());
         StringWriter w = new StringWriter();
         crdGenerator.generate(VersionedExampleCrd.class, w);
         assertTrue(errors.contains("Multiple scales specified but 1.11 doesn't support schema per version"), errors.toString());

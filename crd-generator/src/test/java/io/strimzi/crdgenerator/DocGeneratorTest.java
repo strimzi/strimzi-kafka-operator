@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import io.strimzi.api.annotations.ApiVersion;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

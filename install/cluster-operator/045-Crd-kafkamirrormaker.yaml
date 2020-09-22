@@ -7,6 +7,8 @@ metadata:
     strimzi.io/crd-install: "true"
 spec:
   group: kafka.strimzi.io
+  conversion:
+    strategy: None
   versions:
   - name: v1beta1
     served: true

@@ -58,7 +58,7 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kuberne
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withListeners(new ArrayOrObjectKafkaListeners(null, new KafkaListenersBuilder()
+                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
                                 .withNewPlain()
                                 .endPlain()
                                 .build()))

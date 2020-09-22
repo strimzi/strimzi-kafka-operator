@@ -997,7 +997,7 @@ class KafkaST extends AbstractST {
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .build()
-            ), null);
+            ));
             kafka.getSpec().getKafka().setListeners(lst);
         });
 

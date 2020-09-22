@@ -6,6 +6,8 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.annotations.KubeVersion;
 import io.strimzi.crdgenerator.annotations.Crd;
 
 import java.io.IOException;
@@ -28,7 +30,7 @@ public class TopicCrd extends CustomResource {
     public Map<Integer, List<Integer>> replicas;
 
     public static void main(String[] a) throws IOException {
-        YAMLMapper m = new YAMLMapper();
+        YAMLMapper m = CrdGenerator.YAML_MAPPER;
         TopicCrd x = new TopicCrd();
         x.name = "my-topic";
         x.partitions = 12;
@@ -38,6 +40,8 @@ public class TopicCrd extends CustomResource {
         }
         System.out.println(m.writeValueAsString(x));
 
-        new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1, new CrdGenerator.DefaultReporter(), m, emptyMap(), emptyList(), null).generate(TopicCrd.class, new OutputStreamWriter(System.out));
+        new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1, m, emptyMap(), new CrdGenerator.DefaultReporter(),
+                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy())
+            .generate(TopicCrd.class, new OutputStreamWriter(System.out));
     }
 }

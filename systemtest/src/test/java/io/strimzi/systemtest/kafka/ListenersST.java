@@ -1127,7 +1127,7 @@ public class ListenersST extends AbstractST {
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
                             .build()
-            ), null));
+            )));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1241,7 +1241,7 @@ public class ListenersST extends AbstractST {
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1368,7 +1368,7 @@ public class ListenersST extends AbstractST {
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
                             .build()
-            ), null));
+            )));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1479,7 +1479,7 @@ public class ListenersST extends AbstractST {
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1605,7 +1605,7 @@ public class ListenersST extends AbstractST {
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
                             .build()
-            ), null));
+            )));
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
@@ -1709,7 +1709,7 @@ public class ListenersST extends AbstractST {
                             .withType(KafkaListenerType.ROUTE)
                             .withTls(true)
                             .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);

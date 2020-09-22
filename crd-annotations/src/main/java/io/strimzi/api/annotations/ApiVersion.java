@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.crdgenerator;
+package io.strimzi.api.annotations;
 
 
 import java.util.Objects;
@@ -26,7 +26,11 @@ public class ApiVersion implements Comparable<ApiVersion> {
     public static final Pattern PATTERN = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
     public static final ApiVersion V1ALPHA1 = parse("v1alpha1");
     public static final ApiVersion V1BETA1 = parse("v1beta1");
+    public static final ApiVersion V1BETA2 = parse("v1beta2");
     public static final ApiVersion V1 = parse("v1");
+
+    public static final VersionRange<ApiVersion> V1BETA2_PLUS = parseRange("v1beta2+");
+    public static final VersionRange<ApiVersion> V1BETA1_PLUS = parseRange("v1beta1+");
 
     private final short major;
     private final Stability stability;
