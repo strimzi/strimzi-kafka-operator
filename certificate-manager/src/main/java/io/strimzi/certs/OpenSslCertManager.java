@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
@@ -26,6 +27,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -348,7 +350,10 @@ public class OpenSslCertManager implements CertManager {
         }
 
         // We need to remove CA serial file
-        Files.deleteIfExists(Paths.get(caCert.getPath().replace(".crt", ".srl")));
+        Path path = Paths.get(caCert.getPath().replaceAll(".[a-zA-Z0-9]+$", ".srl"));
+        if (Files.exists(path)) {
+            Files.delete(path);
+        }
     }
 
     @Override
@@ -402,5 +407,35 @@ public class OpenSslCertManager implements CertManager {
                 }
             }
         }
+    }
+
+    public static void main(String[] a) throws IOException {
+        // openssl req -x509 -new -days $DAYS -batch -nodes
+        //                -out $certFile -keyout $keyFile
+        OpenSslCertManager m = new OpenSslCertManager();
+        File caKey = new File("ca-key.pem");
+        File caCert = new File("ca.pem");
+        Subject caSubj = new Subject();
+        caSubj.setCommonName("Strimzi CRD Conversion Webhook CA");
+        System.out.println(caCert.exists());
+        m.generateSelfSignedCert(caKey, caCert, caSubj, 365 * 100);
+        System.out.println(caCert.exists());
+
+        File serverKey = new File("server-key.pem");
+        File csr = new File("server.csr");
+        Subject serverSubj = new Subject();
+        serverSubj.setCommonName("strimzi-convert-webhook");
+        Map<String, String> sbjAltNames = new HashMap<>(6);
+        sbjAltNames.put("DNS.1", "strimzi-convert-webhook.myproject");
+        sbjAltNames.put("DNS.2", "strimzi-convert-webhook.myproject.svc");
+        sbjAltNames.put("DNS.3", "strimzi-convert-webhook.myproject.svc.cluster.local");
+        serverSubj.setSubjectAltNames(sbjAltNames);
+        m.generateCsr(serverKey, csr, serverSubj);
+
+        System.out.println(caCert.exists());
+        File serverCert = new File("server.pem");
+        m.generateCert(csr, caKey, caCert, serverCert, serverSubj, 365 * 100);
+        System.out.println(caCert.getAbsolutePath());
+        System.out.println(caCert.exists());
     }
 }
