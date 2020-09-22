@@ -7,20 +7,18 @@ metadata:
     strimzi.io/crd-install: "true"
 spec:
   group: kafka.strimzi.io
+  names:
+    kind: Kafka
+    listKind: KafkaList
+    singular: kafka
+    plural: kafkas
+    shortNames:
+    - k
+    categories:
+    - strimzi
+  scope: Namespaced
   conversion:
-    strategy: Webhook
-    webhook:
-      conversionReviewVersions:
-      - v1
-      - v1beta1
-      clientConfig:
-        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCekNDQWUrZ0F3SUJBZ0lVTU9mZXlZcnhoblNNalZZR2Q1YmVyTWVvalNNd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0VqRVFNQTRHQTFVRUF3d0hVM1J5YVcxNmFUQWdGdzB5TURBNU1qRXhNRE00TlRSYUdBOHlNVEl3TURneQpPREV3TXpnMU5Gb3dFakVRTUE0R0ExVUVBd3dIVTNSeWFXMTZhVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFECmdnRVBBRENDQVFvQ2dnRUJBT0NQcFVMbm1mcFVPL2RDYU9GcS9PZ0c1MGh4T0xxVkJXcUVBc09nOVp2NEljVVgKcTJvNjhCdHBhRjBXZm5jYkpiQWZmeWVYVm9ndUlOZ0tkQVNGTWJGdWhXTFZBZ1VHUEs2anNJQlI2ZEU3VzcyWgpRd1d0RS9ZSEdQNk5kWHJKeTZRWFlCbmNzbWlVQ1J5V29icE1NWmN5WlorRkRnYmZPNUxYWmpaTzZLNUN1ZVd1CmlmUDkyUEVRckhBM3VTb2VaNEdyTHJhbXA4N29KODRab1dsVWVRc0g0YVBvK0IwSmRDeWNkOWpCWmVaSEprSncKTEpOS0loQ0pMTDZhTXdzVThuVUpHR2dRMStaaXFwTDV2Wmd2WFAwL0xlU09xREgveVlrdWExRzhFbWJSNlFWQgo2K2lJUjAvbHJLMk15bG9BU1hybTczOEhwc3dzUmlob0dLZDAwV2tDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFCkZCeWhHeTkyS0ZldHZKZC9sK2FWeGJsMDc3NDhNQjhHQTFVZEl3UVlNQmFBRkJ5aEd5OTJLRmV0dkpkL2wrYVYKeGJsMDc3NDhNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQVZwK2s5OApKOFg3M3lLdHlBNmhQeGYrUEk4aElCRDhuMXh0dFZzRnMrY1dSR3hMNlBOaU9EOGVJOHJBMDNYbTRlcnBTeUc0CkdXYVdyMU82ekNNSmY4U3RaSEJUK2d3L1JHeDFGVy8vTG5lcDk3djh2QVVRQUo2bS9pRXNKbzVjcjhQd3RzNGEKZ0tjZ1NyZDVBbUZkK2I4TkhWZXFhSFJsKy9oUTlUbjV2bUJnaVdxL1hmSXFkaEFwUDdPN2tURUtHUmUyaTYvRQpZbndwbnRBYWxkZ0NQSklOeGhKdVhsNlZ5TW5IRGkweEFmNTVQTE83ME9OUHVrMWp1ZDAzdzUvOWFDQjZ5ZDBMCnQ1Wld0YUxubVBENmZLdE5yVVVXa1JqaXF2c0haNXFTWG9EeUJET2ROMGdsdmVrUTlkekNiaGQvdnFJN0FSN1YKWHlVOGJlT01Pbk1hU25FPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
-        service:
-          name: crd-convert
-          namespace: myproject
-          path: /convert
-          port: 8443
-  preserveUnknownFields: false
+    strategy: None
   versions:
   - name: v1beta2
     served: true
@@ -5497,13 +5495,3 @@ spec:
                 description: Addresses of the internal and external listeners.
             description: The status of the Kafka and ZooKeeper clusters, and Topic
               Operator.
-  scope: Namespaced
-  names:
-    kind: Kafka
-    listKind: KafkaList
-    singular: kafka
-    plural: kafkas
-    shortNames:
-    - k
-    categories:
-    - strimzi

@@ -6,9 +6,10 @@ package io.strimzi.api.kafka.model;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Arrays;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.V1ApiextensionsAPIGroupClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -38,12 +39,12 @@ import static io.strimzi.api.annotations.ApiVersion.V1ALPHA1;
 import static io.strimzi.api.annotations.ApiVersion.V1BETA1;
 import static io.strimzi.api.annotations.ApiVersion.V1BETA1_PLUS;
 import static io.strimzi.api.annotations.ApiVersion.V1BETA2;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ApiEvolutionCrdIT extends AbstractCrdIT {
     private static final Logger LOGGER = LogManager.getLogger(ApiEvolutionCrdIT.class);
@@ -55,128 +56,128 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
     public void kafkaApiEvolution() throws IOException, InterruptedException {
         assumeKube1_16Plus();
         try {
-            // Strimzi 0.20: v1alpha1 exists but is no longer served, there is no v1beta2
+            /* Strimzi 0.20
+             * v1alpha1 exists but is no longer served, there is no v1beta2
+             * users upgrade their instances
+             */
 
             // Create CRD with v1beta1 having map-or-list listeners (and no v1beta2)
-            LOGGER.info("Create CRD");
-            long crdGeneration = createOrReplaceCrd(V1BETA1)
+            LOGGER.info("Phase 1 : Create CRD");
+            CustomResourceDefinition crdPhase1 = new CrdV1Beta1Builder()
                     .withVersions(V1ALPHA1, V1BETA1)
                     .withServedVersions(V1BETA1_PLUS)
                     .withStorageVersion(V1BETA1)
                     .createOrReplace();
             Thread.sleep(5_000);
-            waitForCrdUpdate(crdGeneration);
+            waitForCrdUpdate(crdPhase1.getMetadata().getGeneration());
 
             // Create one CR instance with a list listener and one with a map listeners
-            LOGGER.info("Create instances");
-            v1beta1Create(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1), mapListener(), null);
-            v1beta1Create(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1), null, listListener());
+            LOGGER.info("Phase 1 : Create instances");
+            final String nameA = "instance.a";
+            final String nameB = "instance.b";
+            Kafka instanceA = v1beta1Create(nameA, mapListener(), null);
+            Kafka instanceB = v1beta1Create(nameB, null, listListener());
 
             // Check we can consume these via v1beta1 endpoint
-            LOGGER.info("Assert instances via v1beta1");
-            assertIsMapListener(v1beta1Get(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta1Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
+            LOGGER.info("Phase 1 : Assert instances via v1beta1");
+            assertIsMapListener(v1beta1Get(nameA));
+            assertIsListListener(v1beta1Get(nameB));
 
-            // Strimzi 0.21: v1beta2 gets added, but v1beta1 is stored
-            // If we're assuming the None strategy what would the upgrade process be?
-            // Stop the operator
-            // Install a CRD with beta1(served,stored) and beta2(served)
-            // Convert CR instances to v1beta2 form
-            // Update the CRD so beta1(served) and beta2(served,stored)
-            // Convert CR instances to v1beta2 apiVersion
-            // Update the CRD so beta1(not served) and beta2(served,stored)
-            // Start the operator
+            // Upgrade instance A to use a list listener
+            v1beta1Op().withName(nameA).replace(new KafkaBuilder(instanceA).editSpec().editKafka().withListeners(
+                    new ArrayOrObjectKafkaListeners(instanceA.getSpec().getKafka().getListeners().newOrConverted()))
+                    .endKafka().endSpec().build());
 
-            // this is safe for clients of v1beta1 API because every v1beta2 instance is a valid v1beta1
-            // it's not safe for clients of v1beta2 API because v1beta1 instances might not be valid v1beta2
+            /* Strimzi 0.21
+             * v1beta2 gets added, and v1beta2 is stored
+             * users touch all instances, so there's nothing stored at v1beta1
+             */
 
             // Replace CRD with one having v1beta2 which is served but not stored (v1beta1 is stored)
-            LOGGER.info("Replace CRD, removing v1alpha1, adding v1beta2");
-            long crdGeneration2 = createOrReplaceCrd(V1BETA1)
+            LOGGER.info("Phase 2 : Replace CRD, removing v1alpha1, adding v1beta2");
+            CustomResourceDefinition crdPhase2 = new CrdV1Beta1Builder()
                     .withVersions(V1BETA1, V1BETA2)
                     .withServedVersions(V1BETA1_PLUS)
-                    .withStorageVersion(V1BETA1)
+                    .withStorageVersion(V1BETA2)
                     .createOrReplace();
-            waitForCrdUpdate(crdGeneration2);
+            waitForCrdUpdate(crdPhase2.getMetadata().getGeneration());
+            assertEquals("v1beta2", crdPhase2.getSpec().getVersions().stream()
+                    .filter(v -> v.getStorage()).map(v -> v.getName()).findFirst().get());
 
             // Check we can't create a v1beta2 with a map via the v1beta2 endpoint
-            assertV1beta2CreateFailure(name(V1BETA1, V1BETA2, false, V1BETA1, V1BETA2));
+            assertV1beta2CreateFailure("not.valid");
 
+            // Check we can still create a v1beta1 with list via the v1beta1 endpoint
+            final String nameC = "instance.c";
+            Kafka instanceC = v1beta2Create(nameC, null, listListener());
 
-            // Check we can still create a v1beta1 with map via the v1beta1 endpoint
-            v1beta2Create(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1) + ".v2", null, listListener());
+            LOGGER.info("Phase 2 : Upgrading all instances to new stored version");
+            instanceA = touchV1Beta2(nameA);
+            instanceB = touchV1Beta2(nameB);
+            instanceC = touchV1Beta2(nameC);
 
-            // Check we can create a v1beta2 with list via the v1beta2 endpoint
-            LOGGER.info("Create 3rd instance via v1beta2 endpoint");
-            v1beta2Create(name(V1BETA1, V1BETA2, true, V1BETA1, V1BETA2), null, listListener());
+            Thread.sleep(5_000);
+            LOGGER.info("Phase 2 : Assert instances via both endpoints");
+            assertIsListListener(v1beta1Get(nameA));
+            assertIsListListener(v1beta1Get(nameB));
+            assertIsListListener(v1beta1Get(nameC));
+            assertIsListListener(v1beta2Get(nameA));
+            assertIsListListener(v1beta2Get(nameB));
+            assertIsListListener(v1beta2Get(nameC));
 
-            // Check we can still consume all CRs via both endpoints
-            LOGGER.info("Assert instances via both endpoints");
-            assertIsMapListener(v1beta1Get(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta1Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta1Get(name(V1BETA1, V1BETA2, true, V1BETA1, V1BETA2)));
-            assertIsMapListener(v1beta2Get(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta2Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta2Get(name(V1BETA1, V1BETA2, true, V1BETA1, V1BETA2)));
+            LOGGER.info("Phase 2 : Updating CRD so v1beta1 has served=false");
+            CustomResourceDefinition crdPhase2Part2 = cluster.client().getClient().customResourceDefinitions()
+                    .createOrReplace(new CustomResourceDefinitionBuilder(crdPhase2).editSpec()
+                            .editLastVersion().withServed(false).endVersion().endSpec().build());
+
+            CustomResourceDefinition crdPhase2Part3 = waitForCrdUpdate(crdPhase2Part2.getMetadata().getGeneration());
+
+            LOGGER.info("Phase 2 : Updating CRD status.stored versions = v1beta2");
+            CustomResourceDefinition crdPhase2Part4 = cluster.client().getClient().customResourceDefinitions()
+                    .updateStatus(new CustomResourceDefinitionBuilder(crdPhase2Part3).editStatus().withStoredVersions(asList("v1beta2")).endStatus().build());
+
+            assertEquals(asList("v1beta2"), crdPhase2Part4.getStatus().getStoredVersions());
+            Thread.sleep(5_000);
+            assertIsListListener(v1beta2Get(nameA));
+            assertIsListListener(v1beta2Get(nameB));
+            assertIsListListener(v1beta2Get(nameC));
 
             // Strimzi 0.22
 
             // Upgrade CRD so v1beta2 is stored, and v1beta1 is not served
-            LOGGER.info("Update CRD so v1beta2 is stored");
-            long crdGeneration3 = createOrReplaceCrd(V1BETA1)
-                    .withVersions(V1BETA1, V1BETA2)
-                    .withServedVersions(ApiVersion.V1BETA2_PLUS)
-                    .withStorageVersion(V1BETA2)
-                    .createOrReplace();
-            waitForCrdUpdate(crdGeneration3);
-
-            // Check we can still consume all CRs via both endpoints
-            LOGGER.info("Assert instances via both endpoints");
-            assertIsMapListener(v1beta1Get(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta1Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta1Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            assertIsMapListener(v1beta2Get(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta2Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta2Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-
-            // Check we can still create/update v1beta1 endpoint with a map listeners
-            v1beta1Create("v1beta1.map.v1beta2.stored.via.v1beta1.endpoint", mapListener(), null);
-            // But we can't via the v1beta2 endpoint
-            assertV1beta2CreateFailure("v1beta2.map.v1beta2.stored.via.v1beta2.endpoint");
-            // But lists are still OK
-            v1beta1Create("v1beta1.list.v1beta2.stored.via.v1beta1.endpoint", null, listListener());
-            v1beta2Create("v1beta2.list.v1beta2.stored.via.v1beta2.endpoint", null, listListener());
-
-            // Strimzi 0.23
-            LOGGER.info("Update CRD to use CRDv1");
-            long crdGeneration4 = createOrReplaceCrd(V1)
+            LOGGER.info("Phase 3 : Update CRD so v1beta2 is stored");
+            io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition crdPhase3 = new CrdV1Builder()
                     .withVersions(V1BETA2)
                     .withServedVersions(ApiVersion.V1BETA2_PLUS)
                     .withStorageVersion(V1BETA2)
                     .createOrReplace();
-            waitForCrdUpdate(crdGeneration4);
-            // Can't get via endpoint which doesn't exist
-            assertThrows(IllegalArgumentException.class, () -> v1beta1Get(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1)));
-            assertThrows(IllegalArgumentException.class, () -> v1beta1Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            assertThrows(IllegalArgumentException.class, () -> v1beta1Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            // Can get via v1beta2 endpoint, even though the stored version for the map one is not schema valid
-            assertIsMapListener(v1beta2Get(name(V1BETA1, V1BETA1, false, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta2Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            assertIsListListener(v1beta2Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
-            // Can't create via endpoint which doesn't exist
-            assertThrows(IllegalArgumentException.class, () -> v1beta1Create("v1beta1.list.v1beta2.stored.via.v1beta1.endpoint", null, listListener()));
-            assertThrows(IllegalArgumentException.class, () -> v1beta2Create("v1beta1.list.v1beta2.stored.via.v1beta1.endpoint", null, listListener()));
-            v1Create("v1beta1.list.v1beta2.stored.via.v1beta1.endpoint", null, listListener());
-            assertIsListListener(v1Get(name(V1BETA1, V1BETA1, true, V1BETA1, V1BETA1)));
+            waitForCrdUpdate(crdPhase3.getMetadata().getGeneration());
+            assertEquals("v1beta2", crdPhase3.getSpec().getVersions().stream()
+                    .filter(v -> v.getStorage()).map(v -> v.getName()).findFirst().get());
+            assertEquals(asList("v1beta2"), crdPhase3.getStatus().getStoredVersions());
+
+            // Check we can still consume all CRs via v1beta2 endpoint
+            LOGGER.info("Assert instances via v1beta2 endpoint");
+            assertIsListListener(v1beta2Get(nameA));
+            assertIsListListener(v1beta2Get(nameB));
+            assertIsListListener(v1beta2Get(nameC));
         } finally {
             deleteCrd();
         }
 
     }
 
-    private String name(ApiVersion crdApi, ApiVersion crVersion, boolean list, ApiVersion stored, ApiVersion endpoint) {
-        return String.format("crd.%s.cr.%s.%s.stored.%s.via.%s",
-                crdApi, crVersion, list ? "list" : "map", stored, endpoint);
+    public Kafka touchV1Beta2(String name) {
+        Kafka build = new KafkaBuilder(v1beta2Get(name))
+                .withApiVersion("kafka.strimzi.io/v1beta2")
+                .editMetadata().addToAnnotations("bother", "yes").endMetadata()
+                .build();
+        build = v1beta2Op().withName(name).replace(build);
+        build = new KafkaBuilder(build)
+                .editMetadata().removeFromAnnotations("bother").endMetadata()
+                .build();
+        build = v1beta2Op().withName(name).replace(build);
+        return build;
     }
 
     private void assertV1beta2CreateFailure(String name) {
@@ -189,12 +190,12 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
                 "spec.kafka.listeners in body must be of type array:"));
     }
 
-    private void v1beta1Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
-        v1beta1Op().create(buildKafkaCr(Kafka.V1BETA1, name, kafkaListeners, o));
+    private Kafka v1beta1Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
+        return v1beta1Op().create(buildKafkaCr(Kafka.V1BETA1, name, kafkaListeners, o));
     }
 
-    private void v1beta2Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
-        v1beta2Op().create(buildKafkaCr(Kafka.V1BETA2, name, kafkaListeners, o));
+    private Kafka v1beta2Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
+        return v1beta2Op().create(buildKafkaCr(Kafka.V1BETA2, name, kafkaListeners, o));
     }
 
     private void v1Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
@@ -213,76 +214,84 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
         return v1Op().withName(s).get();
     }
 
-    private void waitForCrdUpdate(long crdGeneration2) {
+    private CustomResourceDefinition waitForCrdUpdate(long crdGeneration2) {
         TestUtils.waitFor("CRD update", 1000, 30000, () ->
                 crdGeneration2 == cluster.client().getClient().customResourceDefinitions()
                         .withName("kafkas.kafka.strimzi.io").get()
                         .getMetadata().getGeneration());
+        return cluster.client().getClient().customResourceDefinitions()
+                .withName("kafkas.kafka.strimzi.io").get();
     }
 
-    private Builder createOrReplaceCrd(ApiVersion expectedCrdApiVersion) throws IOException {
-        if (expectedCrdApiVersion.equals(V1)) {
-            return new CrdV1Builder();
-        } else {
-            return new CrdV1Beta1Builder();
-        }
-    }
-
-    abstract class Builder {
+    abstract class Builder<Crd extends HasMetadata, Self extends Builder<Crd, Self>> {
         protected VersionRange<ApiVersion> servedVersions;
         protected ApiVersion storageVersion;
         protected ApiVersion[] versions;
 
-        public Builder withServedVersions(VersionRange<ApiVersion> apiVersions) {
+        public Self withServedVersions(VersionRange<ApiVersion> apiVersions) {
             this.servedVersions = apiVersions;
-            return this;
+            return self();
         }
 
-        public Builder withStorageVersion(ApiVersion apiVersion) {
+        public Self withStorageVersion(ApiVersion apiVersion) {
             this.storageVersion = apiVersion;
-            return this;
+            return self();
         }
 
-        public Builder withVersions(ApiVersion... apiVersions) {
+        public Self withVersions(ApiVersion... apiVersions) {
             this.versions = apiVersions;
-            return this;
+            return self();
         }
 
-        abstract Long createOrReplace() throws IOException;
+        protected abstract Self self();
+
+        abstract Crd createOrReplace() throws IOException;
     }
 
-    class CrdV1Beta1Builder extends Builder {
+    class CrdV1Beta1Builder extends Builder<CustomResourceDefinition, CrdV1Beta1Builder> {
 
         private CustomResourceDefinition build() throws IOException {
             StringWriter sw = new StringWriter();
             new CrdGenerator(KubeVersion.V1_16_PLUS, V1BETA1, CrdGenerator.YAML_MAPPER, emptyMap(),
-                    new CrdGenerator.DefaultReporter(), Arrays.asList(versions), storageVersion,
+                    new CrdGenerator.DefaultReporter(), asList(versions), storageVersion,
                     servedVersions,
                     new CrdGenerator.NoneConversionStrategy()).generate(Kafka.class, sw);
             return CrdGenerator.YAML_MAPPER.readValue(sw.toString(), CustomResourceDefinition.class);
         }
 
-        public Long createOrReplace() throws IOException {
+        @Override
+        protected CrdV1Beta1Builder self() {
+            return this;
+        }
+
+        @Override
+        public CustomResourceDefinition createOrReplace() throws IOException {
             CustomResourceDefinition build = build();
             return cluster.client().getClient().customResourceDefinitions()
-                    .createOrReplace(build).getMetadata().getGeneration();
+                    .createOrReplace(build);
         }
 
     }
 
-    class CrdV1Builder extends Builder {
+    class CrdV1Builder extends Builder<io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition, CrdV1Builder> {
 
         private io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition build() throws IOException {
             StringWriter sw = new StringWriter();
             new CrdGenerator(KubeVersion.V1_16_PLUS, V1, CrdGenerator.YAML_MAPPER, emptyMap(),
-                    new CrdGenerator.DefaultReporter(), Arrays.asList(versions), storageVersion, servedVersions,
+                    new CrdGenerator.DefaultReporter(), asList(versions), storageVersion, servedVersions,
                     new CrdGenerator.NoneConversionStrategy()).generate(Kafka.class, sw);
             return CrdGenerator.YAML_MAPPER.readValue(sw.toString(), io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition.class);
         }
 
-        public Long createOrReplace() throws IOException {
+        @Override
+        protected CrdV1Builder self() {
+            return this;
+        }
+
+        @Override
+        public io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition createOrReplace() throws IOException {
             return cluster.client().getClient().adapt(V1ApiextensionsAPIGroupClient.class).customResourceDefinitions()
-                    .createOrReplace(build()).getMetadata().getGeneration();
+                    .createOrReplace(build());
         }
     }
 
@@ -314,9 +323,10 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
         assertNotNull(kafka.getSpec());
         KafkaClusterSpec kafkaSpec = kafka.getSpec().getKafka();
         assertNotNull(kafkaSpec);
-        assertNotNull(kafkaSpec.getListeners());
-        assertNotNull(kafkaSpec.getListeners().getKafkaListeners());
-        assertNull(kafkaSpec.getListeners().getGenericKafkaListeners());
+        ArrayOrObjectKafkaListeners listeners = kafkaSpec.getListeners();
+        assertNotNull(listeners);
+        assertNotNull(listeners.getKafkaListeners());
+        assertNull(listeners.getGenericKafkaListeners());
         assertNotNull(kafkaSpec.getConfig());
         assertEquals("someValue", kafkaSpec.getConfig().get("some.kafka.config"));
     }
@@ -326,9 +336,10 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
         assertNotNull(kafka.getSpec());
         KafkaClusterSpec kafkaSpec = kafka.getSpec().getKafka();
         assertNotNull(kafkaSpec);
-        assertNotNull(kafkaSpec.getListeners());
-        assertNull(kafkaSpec.getListeners().getKafkaListeners());
-        assertNotNull(kafkaSpec.getListeners().getGenericKafkaListeners());
+        ArrayOrObjectKafkaListeners listeners = kafkaSpec.getListeners();
+        assertNotNull(listeners);
+        assertNull(listeners.getKafkaListeners());
+        assertNotNull(listeners.getGenericKafkaListeners());
         assertNotNull(kafkaSpec.getConfig());
         assertEquals("someValue", kafkaSpec.getConfig().get("some.kafka.config"));
     }
@@ -366,7 +377,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
                     .withNewKafka()
                         .withReplicas(1)
                         .withNewEphemeralStorage().endEphemeralStorage()
-                        .withListeners(listListeners == null ? new ArrayOrObjectKafkaListeners(singletonList(listListeners)) : new ArrayOrObjectKafkaListeners(mapListeners))
+                        .withListeners(listListeners != null ? new ArrayOrObjectKafkaListeners(singletonList(listListeners)) : new ArrayOrObjectKafkaListeners(mapListeners))
                         .addToConfig("some.kafka.config", "someValue")
                     .endKafka()
                     .withNewZookeeper()

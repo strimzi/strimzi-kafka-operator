@@ -165,7 +165,7 @@ import static java.util.Collections.emptyMap;
  */
 @SuppressWarnings("ClassFanOutComplexity")
 public class CrdGenerator {
-    public static final YAMLMapper YAML_MAPPER = new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true)
+    public static final YAMLMapper YAML_MAPPER = new YAMLMapper()
             .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false);
     public static final ObjectMapper JSON_MATTER = new ObjectMapper();
     private final ApiVersion crdApiVersion;
@@ -342,8 +342,6 @@ public class CrdGenerator {
         ObjectNode result = nf.objectNode();
         result.put("group", crd.group());
 
-        buildConversion(crdApiVersion, result);
-
         ArrayNode versions = nf.arrayNode();
 
         // Kube apiserver with CRD v1beta1 is picky about only using per-version subresources, schemas and printercolumns
@@ -356,6 +354,27 @@ public class CrdGenerator {
         boolean perVersionSchemas = needsPerVersion("schemas", schemas);
         Map<ApiVersion, ArrayNode> printerColumns = buildPrinterColumns(crd);
         boolean perVersionPrinterColumns = needsPerVersion("additionalPrinterColumns", printerColumns);
+
+        result.set("names", buildNames(crd.names()));
+        result.put("scope", crd.scope());
+
+        if (!perVersionPrinterColumns) {
+            ArrayNode cols = printerColumns.values().iterator().next();
+            if (!cols.isEmpty()) {
+                result.set("additionalPrinterColumns", cols);
+            }
+        }
+        if (!perVersionSubResources) {
+            ObjectNode subresource = subresources.values().iterator().next();
+            if (!subresource.isEmpty()) {
+                result.set("subresources", subresource);
+            }
+        }
+        if (conversionStrategy instanceof WebhookConversionStrategy) {
+            // "Webhook": must be None if spec.preserveUnknownFields is true
+            result.put("preserveUnknownFields", false);
+        }
+        result.set("conversion", buildConversion(crdApiVersion));
 
         for (Crd.Spec.Version version : crd.versions()) {
             ApiVersion crApiVersion = ApiVersion.parse(version.name());
@@ -392,34 +411,19 @@ public class CrdGenerator {
                     .filter(this::shouldIncludeVersion)
                     .findFirst().map(v -> v.toString()).get());
         }
-        result.put("scope", crd.scope());
-        result.set("names", buildNames(crd.names()));
 
-        if (!perVersionPrinterColumns) {
-            ArrayNode cols = printerColumns.values().iterator().next();
-            if (!cols.isEmpty()) {
-                result.set("additionalPrinterColumns", cols);
-            }
-        }
-        if (!perVersionSubResources) {
-            ObjectNode subresource = subresources.values().iterator().next();
-            if (!subresource.isEmpty()) {
-                result.set("subresources", subresource);
-            }
-        }
         if (!perVersionSchemas) {
             result.set("validation", schemas.values().iterator().next());
         }
+
         return result;
     }
 
-    private void buildConversion(ApiVersion crdApiVersion, ObjectNode result) {
-        ObjectNode conversion = result.putObject("conversion");
+    private ObjectNode buildConversion(ApiVersion crdApiVersion) {
+        ObjectNode conversion = nf.objectNode();
         if (conversionStrategy instanceof NoneConversionStrategy) {
             conversion.put("strategy", "None");
         } else if (conversionStrategy instanceof WebhookConversionStrategy) {
-            // "Webhook": must be None if spec.preserveUnknownFields is true
-            result.put("preserveUnknownFields", false);
             boolean v1Beta1CrdApi = crdApiVersion.compareTo(V1) < 0;
             conversion.put("strategy", "Webhook");
             WebhookConversionStrategy webhookStrategy = (WebhookConversionStrategy) conversionStrategy;
@@ -439,6 +443,7 @@ public class CrdGenerator {
         } else {
             throw new IllegalStateException();
         }
+        return conversion;
     }
 
     private Map<ApiVersion, ObjectNode> buildSchemas(Crd.Spec crd, Class<? extends CustomResource> crdClass) {
@@ -1178,7 +1183,7 @@ public class CrdGenerator {
         CommandOptions opts = new CommandOptions(args);
 
         CrdGenerator generator = new CrdGenerator(opts.targetKubeVersions, opts.crdApiVersion,
-                opts.yaml ? YAML_MAPPER : JSON_MATTER,
+                opts.yaml ? YAML_MAPPER.configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) : JSON_MATTER,
                 opts.labels, new DefaultReporter(),
                 opts.apiVersions, opts.storageVersion, null, opts.conversionStrategy);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : opts.classes.entrySet()) {

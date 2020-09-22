@@ -7,14 +7,6 @@ metadata:
     strimzi.io/crd-install: "true"
 spec:
   group: kafka.strimzi.io
-  conversion:
-    strategy: None
-  versions:
-  - name: v1alpha1
-    served: true
-    storage: true
-  version: v1alpha1
-  scope: Namespaced
   names:
     kind: KafkaConnector
     listKind: KafkaConnectorList
@@ -24,6 +16,7 @@ spec:
     - kctr
     categories:
     - strimzi
+  scope: Namespaced
   additionalPrinterColumns:
   - name: Cluster
     description: The name of the Kafka Connect cluster this connector belongs to
@@ -42,6 +35,13 @@ spec:
     scale:
       specReplicasPath: .spec.tasksMax
       statusReplicasPath: .status.tasksMax
+  conversion:
+    strategy: None
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+  version: v1alpha1
   validation:
     openAPIV3Schema:
       properties:

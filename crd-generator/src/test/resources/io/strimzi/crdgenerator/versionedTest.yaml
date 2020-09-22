@@ -4,6 +4,16 @@ metadata:
   name: "examples.crdgenerator.strimzi.io"
 spec:
   group: "crdgenerator.strimzi.io"
+  names:
+    kind: "Example"
+    listKind: "ExampleList"
+    singular: "example"
+    plural: "examples"
+    categories:
+    - "strimzi"
+  scope: "Namespaced"
+  conversion:
+    strategy: "None"
   versions:
   - name: "v1"
     served: true
@@ -78,11 +88,3 @@ spec:
             type: "array"
             items:
               type: "string"
-  scope: "Namespaced"
-  names:
-    kind: "Example"
-    listKind: "ExampleList"
-    singular: "example"
-    plural: "examples"
-    categories:
-    - "strimzi"
