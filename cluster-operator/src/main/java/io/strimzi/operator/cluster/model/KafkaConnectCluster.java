@@ -817,4 +817,9 @@ public class KafkaConnectCluster extends AbstractModel {
 
         return getClusterRoleBinding(subject, roleRef);
     }
+
+    @Override
+    protected boolean shouldPatchLoggerAppender() {
+        return true;
+    }
 }
