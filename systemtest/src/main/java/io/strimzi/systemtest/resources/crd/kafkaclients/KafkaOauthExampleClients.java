@@ -25,22 +25,22 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
 
         public Builder withOAuthClientId(String oauthClientId) {
             this.oauthClientId = oauthClientId;
-            return self();
+            return this;
         }
 
         public Builder withOAuthClientSecret(String oauthClientSecret) {
             this.oauthClientSecret = oauthClientSecret;
-            return self();
+            return this;
         }
 
         public Builder withOAuthTokenEndpointUri(String oauthTokenEndpointUri) {
             this.oauthTokenEndpointUri = oauthTokenEndpointUri;
-            return self();
+            return this;
         }
 
         public Builder withUserName(String userName) {
             this.userName = userName;
-            return self();
+            return this;
         }
 
         @Override
@@ -86,11 +86,6 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         @Override
         public KafkaOauthExampleClients build() {
             return new KafkaOauthExampleClients(this);
-        }
-
-        @Override
-        protected KafkaOauthExampleClients.Builder self() {
-            return this;
         }
     }
 

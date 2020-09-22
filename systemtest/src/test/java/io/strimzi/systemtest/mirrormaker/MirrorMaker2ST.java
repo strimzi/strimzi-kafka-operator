@@ -656,7 +656,7 @@ class MirrorMaker2ST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .withTopicName(targetExampleTopic)
             .withMessageCount(MESSAGE_COUNT)
-            .withDelayMs(0)
+            .withDelayMs(1000)
             .build();
 
         targetKafkaClientsJob.consumerStrimzi().done();
@@ -666,9 +666,8 @@ class MirrorMaker2ST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .withTopicName(sourceExampleTopic)
             .withMessageCount(MESSAGE_COUNT)
-            .withDelayMs(0)
+            .withDelayMs(1000)
             .build();
-
 
         sourceKafkaClientsJob.producerStrimzi()
             .editSpec()

@@ -42,57 +42,53 @@ public class KafkaBasicExampleClients {
 
         public Builder withProducerName(String producerName) {
             this.producerName = producerName;
-            return self();
+            return this;
         }
 
         public Builder withConsumerName(String consumerName) {
             this.consumerName = consumerName;
-            return self();
+            return this;
         }
 
         public Builder withBootstrapAddress(String bootstrapAddress) {
             this.bootstrapAddress = bootstrapAddress;
-            return self();
+            return this;
         }
 
         public Builder withTopicName(String topicName) {
             this.topicName = topicName;
-            return self();
+            return this;
         }
 
         public Builder withMessageCount(int messageCount) {
             this.messageCount = messageCount;
-            return self();
+            return this;
         }
 
         public Builder withAdditionalConfig(String additionalConfig) {
             this.additionalConfig = additionalConfig;
-            return self();
+            return this;
         }
 
         public Builder withConsumerGroup(String consumerGroup) {
             this.consumerGroup = consumerGroup;
-            return self();
+            return this;
         }
 
         public Builder withDelayMs(long delayMs) {
             this.delayMs = delayMs;
-            return self();
+            return this;
         }
 
         public KafkaBasicExampleClients build() {
             return new KafkaBasicExampleClients(this);
         }
-
-        protected Builder self() {
-            return this;
-        };
     }
 
     protected KafkaBasicExampleClients(Builder builder) {
         if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
         if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
-        if (builder.messageCount == 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one.");
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();

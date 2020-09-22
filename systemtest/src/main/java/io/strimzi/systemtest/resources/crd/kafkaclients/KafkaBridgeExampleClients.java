@@ -25,12 +25,12 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
         public Builder withPort(int port) {
             this.port = port;
-            return self();
+            return this;
         }
 
         public Builder withPollInterval(int pollInterval) {
             this.pollInterval = pollInterval;
-            return self();
+            return this;
         }
 
         @Override
@@ -76,11 +76,6 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
         @Override
         public KafkaBridgeExampleClients build() {
             return new KafkaBridgeExampleClients(this);
-        }
-
-        @Override
-        protected KafkaBridgeExampleClients.Builder self() {
-            return this;
         }
     }
 

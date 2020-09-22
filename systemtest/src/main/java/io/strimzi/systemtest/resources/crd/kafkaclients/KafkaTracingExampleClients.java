@@ -29,17 +29,17 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
 
         public Builder withJaegerServiceProducerName(String jaegerServiceProducerName) {
             this.jaegerServiceProducerName = jaegerServiceProducerName;
-            return self();
+            return this;
         }
 
         public Builder withJaegerServiceConsumerName(String jaegerServiceConsumerName) {
             this.jaegerServiceConsumerName = jaegerServiceConsumerName;
-            return self();
+            return this;
         }
 
         public Builder withJaegerServiceStreamsName(String jaegerServiceStreamsName) {
             this.jaegerServiceStreamsName = jaegerServiceStreamsName;
-            return self();
+            return this;
         }
 
         @Override
@@ -85,11 +85,6 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
         @Override
         public KafkaTracingExampleClients build() {
             return new KafkaTracingExampleClients(this);
-        }
-
-        @Override
-        protected Builder self() {
-            return this;
         }
     }
 
