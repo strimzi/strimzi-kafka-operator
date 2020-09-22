@@ -9,23 +9,105 @@ import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 
 import java.util.HashMap;
 import java.util.Map;
 
 // HTTP Bridge clients
-public class KafkaBridgeClientsResource extends KafkaClientsResource {
+public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
     private final int port;
     private final int pollInterval;
 
-    public KafkaBridgeClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
-                                      int messageCount, String additionalConfig, String consumerGroup, int port, int sendInterval, int pollInterval) {
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, sendInterval);
-        this.port = port;
-        this.pollInterval = pollInterval;
+    public static class Builder extends KafkaBasicExampleClients.Builder {
+        private int port;
+        private int pollInterval;
+
+        public Builder withPort(int port) {
+            this.port = port;
+            return this;
+        }
+
+        public Builder withPollInterval(int pollInterval) {
+            this.pollInterval = pollInterval;
+            return this;
+        }
+
+        @Override
+        public Builder withProducerName(String producerName) {
+            return (Builder) super.withProducerName(producerName);
+        }
+
+        @Override
+        public Builder withConsumerName(String consumerName) {
+            return (Builder) super.withConsumerName(consumerName);
+        }
+
+        @Override
+        public Builder withBootstrapAddress(String bootstrapAddress) {
+            return (Builder) super.withBootstrapAddress(bootstrapAddress);
+        }
+
+        @Override
+        public Builder withTopicName(String topicName) {
+            return (Builder) super.withTopicName(topicName);
+        }
+
+        @Override
+        public Builder withMessageCount(int messageCount) {
+            return (Builder) super.withMessageCount(messageCount);
+        }
+
+        @Override
+        public Builder withAdditionalConfig(String additionalConfig) {
+            return (Builder) super.withAdditionalConfig(additionalConfig);
+        }
+
+        @Override
+        public Builder withConsumerGroup(String consumerGroup) {
+            return (Builder) super.withConsumerGroup(consumerGroup);
+        }
+
+        @Override
+        public Builder withDelayMs(long delayMs) {
+            return (Builder) super.withDelayMs(delayMs);
+        }
+
+        @Override
+        public KafkaBridgeExampleClients build() {
+            return new KafkaBridgeExampleClients(this);
+        }
     }
+
+    public int getPollInterval() {
+        return pollInterval;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    protected Builder updateBuilder(Builder builder) {
+        super.updateBuilder(builder);
+        return builder
+            .withPort(getPort())
+            .withPollInterval(getPollInterval());
+    }
+
+    public Builder toBuilder() {
+        return updateBuilder(newBuilder());
+    }
+
+    private KafkaBridgeExampleClients(KafkaBridgeExampleClients.Builder builder) {
+        super(builder);
+        port = builder.port;
+        pollInterval = builder.pollInterval;
+    }
+
 
     public DoneableJob producerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();
@@ -52,7 +134,7 @@ public class KafkaBridgeClientsResource extends KafkaClientsResource {
                                 .withImage("strimzi/kafka-http-producer:latest")
                                 .addNewEnv()
                                     .withName("HOSTNAME")
-                                    .withValue(bootstrapServer)
+                                    .withValue(bootstrapAddress)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("PORT")
@@ -102,7 +184,7 @@ public class KafkaBridgeClientsResource extends KafkaClientsResource {
                                 .withImage("strimzi/kafka-http-consumer:latest")
                                 .addNewEnv()
                                     .withName("HOSTNAME")
-                                    .withValue(bootstrapServer)
+                                    .withValue(bootstrapAddress)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("PORT")

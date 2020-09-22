@@ -28,12 +28,12 @@ import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -639,7 +639,6 @@ class MirrorMaker2ST extends AbstractST {
         String targetConsumerName = "target-consumer";
         String sourceExampleTopic = "source-example-topic";
         String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
-        int messageCount = 30;
 
         // Deploy source kafka
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
@@ -652,12 +651,23 @@ class MirrorMaker2ST extends AbstractST {
 
         //deploying example clients for checking if mm2 will mirror messages with headers
 
-        KafkaBasicClientResource targetKafkaClientsJob = new KafkaBasicClientResource("", targetConsumerName,
-            KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, messageCount, "", ClientUtils.generateRandomConsumerGroup(), 1000);
+        KafkaBasicExampleClients targetKafkaClientsJob = new KafkaBasicExampleClients.Builder()
+            .withConsumerName(targetConsumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .withTopicName(targetExampleTopic)
+            .withMessageCount(MESSAGE_COUNT)
+            .withDelayMs(1000)
+            .build();
+
         targetKafkaClientsJob.consumerStrimzi().done();
 
-        KafkaBasicClientResource sourceKafkaClientsJob = new KafkaBasicClientResource(sourceProducerName, "",
-            KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, messageCount, "", ClientUtils.generateRandomConsumerGroup(), 1000);
+        KafkaBasicExampleClients sourceKafkaClientsJob = new KafkaBasicExampleClients.Builder()
+            .withProducerName(sourceProducerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withTopicName(sourceExampleTopic)
+            .withMessageCount(MESSAGE_COUNT)
+            .withDelayMs(1000)
+            .build();
 
         sourceKafkaClientsJob.producerStrimzi()
             .editSpec()

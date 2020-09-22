@@ -8,12 +8,11 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class KafkaTracingClientsResource extends KafkaClientsResource {
+public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
 
     private static final String JAEGER_AGENT_HOST =  "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE =  "const";
@@ -23,36 +22,105 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
     private final String jaegerServiceConsumerName;
     private final String jaegerServiceStreamsName;
 
-    public KafkaTracingClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
-                                       int messageCount, String additionalConfig, String consumerGroup, String jaegerServiceProducerName,
-                                       String jaegerServiceConsumerName, String jaegerServiceStreamsName) {
+    public static class Builder extends KafkaBasicExampleClients.Builder {
+        private String jaegerServiceProducerName;
+        private String jaegerServiceConsumerName;
+        private String jaegerServiceStreamsName;
 
-        super(producerName, consumerName, bootstrapServer, topicName, messageCount, additionalConfig, consumerGroup, 0);
-        this.jaegerServiceProducerName =  jaegerServiceProducerName;
-        this.jaegerServiceConsumerName =  jaegerServiceConsumerName;
-        this.jaegerServiceStreamsName = jaegerServiceStreamsName;
+        public Builder withJaegerServiceProducerName(String jaegerServiceProducerName) {
+            this.jaegerServiceProducerName = jaegerServiceProducerName;
+            return this;
+        }
+
+        public Builder withJaegerServiceConsumerName(String jaegerServiceConsumerName) {
+            this.jaegerServiceConsumerName = jaegerServiceConsumerName;
+            return this;
+        }
+
+        public Builder withJaegerServiceStreamsName(String jaegerServiceStreamsName) {
+            this.jaegerServiceStreamsName = jaegerServiceStreamsName;
+            return this;
+        }
+
+        @Override
+        public Builder withProducerName(String producerName) {
+            return (Builder) super.withProducerName(producerName);
+        }
+
+        @Override
+        public Builder withConsumerName(String consumerName) {
+            return (Builder) super.withConsumerName(consumerName);
+        }
+
+        @Override
+        public Builder withBootstrapAddress(String bootstrapAddress) {
+            return (Builder) super.withBootstrapAddress(bootstrapAddress);
+        }
+
+        @Override
+        public Builder withTopicName(String topicName) {
+            return (Builder) super.withTopicName(topicName);
+        }
+
+        @Override
+        public Builder withMessageCount(int messageCount) {
+            return (Builder) super.withMessageCount(messageCount);
+        }
+
+        @Override
+        public Builder withAdditionalConfig(String additionalConfig) {
+            return (Builder) super.withAdditionalConfig(additionalConfig);
+        }
+
+        @Override
+        public Builder withConsumerGroup(String consumerGroup) {
+            return (Builder) super.withConsumerGroup(consumerGroup);
+        }
+
+        @Override
+        public Builder withDelayMs(long delayMs) {
+            return (Builder) super.withDelayMs(delayMs);
+        }
+
+        @Override
+        public KafkaTracingExampleClients build() {
+            return new KafkaTracingExampleClients(this);
+        }
     }
 
-    // from existing client create new client with different bootstrapServer + topicName (immutability)
-    public KafkaTracingClientsResource(KafkaTracingClientsResource kafkaTracingClientsResource, String bootstrapServer,
-                                       String topicName) {
-
-        super(kafkaTracingClientsResource.producerName, kafkaTracingClientsResource.consumerName, bootstrapServer, topicName,
-            kafkaTracingClientsResource.messageCount, kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup, 0);
-        this.jaegerServiceProducerName =  kafkaTracingClientsResource.jaegerServiceProducerName;
-        this.jaegerServiceConsumerName =  kafkaTracingClientsResource.jaegerServiceConsumerName;
-        this.jaegerServiceStreamsName = kafkaTracingClientsResource.jaegerServiceStreamsName;
+    public String getJaegerServiceConsumerName() {
+        return jaegerServiceConsumerName;
     }
 
-    // from existing client create new client with different bootstrapServer (immutability)
-    public KafkaTracingClientsResource(KafkaTracingClientsResource kafkaTracingClientsResource, String bootstrapServer) {
+    public String getJaegerServiceProducerName() {
+        return jaegerServiceProducerName;
+    }
 
-        super(kafkaTracingClientsResource.producerName, kafkaTracingClientsResource.consumerName, bootstrapServer,
-            kafkaTracingClientsResource.topicName, kafkaTracingClientsResource.messageCount,
-            kafkaTracingClientsResource.additionalConfig, kafkaTracingClientsResource.consumerGroup, 0);
-        this.jaegerServiceProducerName =  kafkaTracingClientsResource.jaegerServiceProducerName;
-        this.jaegerServiceConsumerName =  kafkaTracingClientsResource.jaegerServiceConsumerName;
-        this.jaegerServiceStreamsName = kafkaTracingClientsResource.jaegerServiceStreamsName;
+    public String getJaegerServiceStreamsName() {
+        return jaegerServiceStreamsName;
+    }
+
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    protected Builder updateBuilder(Builder builder) {
+        super.updateBuilder(builder);
+        return builder
+            .withJaegerServiceProducerName(getJaegerServiceProducerName())
+            .withJaegerServiceConsumerName(getJaegerServiceConsumerName())
+            .withJaegerServiceStreamsName(getJaegerServiceStreamsName());
+    }
+
+    public Builder toBuilder() {
+        return updateBuilder(newBuilder());
+    }
+
+    public KafkaTracingExampleClients(KafkaTracingExampleClients.Builder builder) {
+        super(builder);
+        jaegerServiceProducerName = builder.jaegerServiceProducerName;
+        jaegerServiceConsumerName = builder.jaegerServiceConsumerName;
+        jaegerServiceStreamsName = builder.jaegerServiceStreamsName;
     }
 
     public DoneableDeployment consumerWithTracing() {
@@ -83,7 +151,7 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
                                     .withImage("strimzi/" + consumerName + ":latest")
                                     .addNewEnv()
                                         .withName("BOOTSTRAP_SERVERS")
-                                        .withValue(bootstrapServer)
+                                        .withValue(bootstrapAddress)
                                       .endEnv()
                                     .addNewEnv()
                                         .withName("TOPIC")
@@ -156,7 +224,7 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
                             .withImage("strimzi/" + producerName + ":latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrapServer)
+                                .withValue(bootstrapAddress)
                               .endEnv()
                             .addNewEnv()
                                 .withName("TOPIC")
@@ -225,7 +293,7 @@ public class KafkaTracingClientsResource extends KafkaClientsResource {
                             .withImage("strimzi/" + kafkaStreamsName + ":latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrapServer)
+                                .withValue(bootstrapAddress)
                               .endEnv()
                             .addNewEnv()
                                 .withName("APPLICATION_ID")

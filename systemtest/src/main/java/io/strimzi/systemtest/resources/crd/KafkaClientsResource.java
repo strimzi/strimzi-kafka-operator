@@ -32,66 +32,21 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
 
-import static io.strimzi.systemtest.utils.ClientUtils.generateRandomConsumerGroup;
 import static io.strimzi.test.TestUtils.toYamlString;
 
-public abstract class KafkaClientsResource {
+public class KafkaClientsResource {
+
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientsResource.class);
-
-    protected final String producerName;
-    protected final String consumerName;
-    protected final String bootstrapServer;
-    protected final String topicName;
-    protected final int messageCount;
-    protected final String additionalConfig;
-    protected final String consumerGroup;
-    protected final long delayMs;
-
-    public KafkaClientsResource(String producerName, String consumerName, String bootstrapServer, String topicName,
-                                int messageCount, String additionalConfig, String consumerGroup, long delayMs) {
-        this.producerName = producerName;
-        this.consumerName = consumerName;
-        this.bootstrapServer = bootstrapServer;
-        this.topicName = topicName;
-        this.messageCount = messageCount;
-        this.additionalConfig = additionalConfig;
-        this.consumerGroup = consumerGroup;
-        this.delayMs = delayMs;
-    }
-
-    // from existing client create new client with different consumer group (immutability)
-    public KafkaClientsResource(KafkaClientsResource kafkaClientsResource) {
-        this.producerName = kafkaClientsResource.producerName;
-        this.consumerName = kafkaClientsResource.consumerName;
-        this.bootstrapServer = kafkaClientsResource.bootstrapServer;
-        this.topicName = kafkaClientsResource.topicName;
-        this.messageCount = kafkaClientsResource.messageCount;
-        this.additionalConfig = kafkaClientsResource.additionalConfig;
-        this.delayMs = kafkaClientsResource.delayMs;
-        this.consumerGroup = generateRandomConsumerGroup();
-    }
-
-    // from existing client create new client with specific consumer group and topicName (immutability)
-    public KafkaClientsResource(KafkaClientsResource kafkaClientsResource, String topicName, String consumerGroup) {
-        this.producerName = kafkaClientsResource.producerName;
-        this.consumerName = kafkaClientsResource.consumerName;
-        this.bootstrapServer = kafkaClientsResource.bootstrapServer;
-        this.topicName = topicName;
-        this.messageCount = kafkaClientsResource.messageCount;
-        this.additionalConfig = kafkaClientsResource.additionalConfig;
-        this.delayMs = kafkaClientsResource.delayMs;
-        this.consumerGroup = consumerGroup;
-    }
 
     public static DoneableDeployment deployKafkaClients(String kafkaClusterName) {
         return deployKafkaClients(false, kafkaClusterName, null);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName,  KafkaUser... kafkaUsers) {
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
         return deployKafkaClients(tlsListener, kafkaClientsName, true, kafkaUsers);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser...kafkaUsers) {
         Map<String, String> label = Collections.singletonMap(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
@@ -156,14 +111,14 @@ public abstract class KafkaClientsResource {
                         consumerConfiguration += "security.protocol=SSL\n";
                     }
                     producerConfiguration +=
-                            SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                        SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
                             SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG + "=pkcs12\n";
                     consumerConfiguration +=
-                            SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                        SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-truststore.p12\n" +
                             SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG + "=pkcs12\n";
                 } else {
                     if (scramShaUser) {
-                        producerConfiguration +=  "security.protocol=SASL_PLAINTEXT\n";
+                        producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
                         producerConfiguration += saslConfigs(kafkaUser);
                         consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
                         consumerConfiguration += saslConfigs(kafkaUser);
@@ -175,30 +130,34 @@ public abstract class KafkaClientsResource {
 
                 if (tlsUser) {
                     producerConfiguration +=
-                            SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                        SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
                             SslConfigs.SSL_KEYSTORE_TYPE_CONFIG + "=pkcs12\n";
                     consumerConfiguration +=
-                            SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                        SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG + "=/tmp/" + kafkaUserName + "-keystore.p12\n" +
                             SslConfigs.SSL_KEYSTORE_TYPE_CONFIG + "=pkcs12\n";
 
                     containerBuilder.addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
-                            .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv();
+                        .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv();
 
                     String userSecretVolumeName = "tls-cert-" + kafkaUserName;
                     String userSecretMountPoint = "/opt/kafka/user-secret-" + kafkaUserName;
 
-                    containerBuilder.addNewVolumeMount()
+                    containerBuilder
+                        .addNewVolumeMount()
                             .withName(userSecretVolumeName)
                             .withMountPath(userSecretMountPoint)
-                            .endVolumeMount()
-                            .addNewEnv().withName("USER_LOCATION" + envVariablesSuffix).withValue(userSecretMountPoint).endEnv();
+                        .endVolumeMount()
+                        .addNewEnv()
+                            .withName("USER_LOCATION" + envVariablesSuffix).withValue(userSecretMountPoint)
+                        .endEnv();
 
-                    podSpecBuilder.addNewVolume()
+                    podSpecBuilder
+                        .addNewVolume()
                             .withName(userSecretVolumeName)
                             .withNewSecret()
-                            .withSecretName(kafkaUserName)
+                                .withSecretName(kafkaUserName)
                             .endSecret()
-                            .endVolume();
+                        .endVolume();
                 }
 
                 if (tlsListener) {
@@ -213,10 +172,18 @@ public abstract class KafkaClientsResource {
                             .withName(clusterCaSecretVolumeName)
                             .withMountPath(caSecretMountPoint)
                         .endVolumeMount()
-                        .addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
-                        .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
-                        .addNewEnv().withName("CA_LOCATION" + envVariablesSuffix).withValue(caSecretMountPoint).endEnv()
-                        .addNewEnv().withName("TRUSTSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/"  + kafkaUserName + "-truststore.p12").endEnv();
+                        .addNewEnv()
+                            .withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE")
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE")
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("CA_LOCATION" + envVariablesSuffix).withValue(caSecretMountPoint)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("TRUSTSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/" + kafkaUserName + "-truststore.p12")
+                        .endEnv();
 
                     if (tlsUser) {
                         containerBuilder.addNewEnv().withName("KEYSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/" + kafkaUserName + "-keystore.p12").endEnv();
@@ -238,11 +205,11 @@ public abstract class KafkaClientsResource {
 
 
                 containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION" + envVariablesSuffix).withValue(producerConfiguration).endEnv();
-                containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION"  + envVariablesSuffix).withValue(consumerConfiguration).endEnv();
+                containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION" + envVariablesSuffix).withValue(consumerConfiguration).endEnv();
 
                 containerBuilder.withResources(new ResourceRequirementsBuilder()
-                        .addToRequests("memory", new Quantity("200M"))
-                        .build());
+                    .addToRequests("memory", new Quantity("200M"))
+                    .build());
             }
         }
         return podSpecBuilder.withContainers(containerBuilder.build()).build();
@@ -257,8 +224,8 @@ public abstract class KafkaClientsResource {
             throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
         }
         return "sasl.mechanism=SCRAM-SHA-512\n" +
-                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
-                "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
-                "password=\"" + password + "\";\n";
+            "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
+            "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
+            "password=\"" + password + "\";\n";
     }
 }

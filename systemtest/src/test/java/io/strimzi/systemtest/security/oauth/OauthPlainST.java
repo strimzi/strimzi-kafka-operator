@@ -19,8 +19,8 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -33,7 +33,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +53,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class OauthPlainST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthPlainST.class);
 
-    private KafkaOauthClientsResource oauthInternalClientJob;
+    private KafkaOauthExampleClients oauthInternalClientJob;
 
     @Description(
             "As an oauth producer, I should be able to produce messages to the kafka broker\n" +
@@ -197,9 +196,16 @@ public class OauthPlainST extends OauthAbstractST {
                 JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
-                KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
-                    KafkaResources.plainBootstrapAddress(targetKafkaCluster), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(),
-                    OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
+                KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
+                    .withProducerName(OAUTH_PRODUCER_NAME)
+                    .withConsumerName(OAUTH_CONSUMER_NAME)
+                    .withBootstrapAddress(KafkaResources.plainBootstrapAddress(targetKafkaCluster))
+                    .withTopicName(TOPIC_NAME)
+                    .withMessageCount(MESSAGE_COUNT)
+                    .withOAuthClientId(OAUTH_CLIENT_NAME)
+                    .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+                    .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .build();
 
                 kafkaOauthClientJob.consumerStrimziOauthPlain().done();
 
@@ -306,9 +312,17 @@ public class OauthPlainST extends OauthAbstractST {
                 JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
-                KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
-                    KafkaResources.plainBootstrapAddress(kafkaTargetClusterName), kafkaTargetClusterTopicName, MESSAGE_COUNT, "",
-                    ClientUtils.generateRandomConsumerGroup(), OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
+
+                KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
+                    .withProducerName(OAUTH_PRODUCER_NAME)
+                    .withConsumerName(OAUTH_CONSUMER_NAME)
+                    .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
+                    .withTopicName(kafkaTargetClusterTopicName)
+                    .withMessageCount(MESSAGE_COUNT)
+                    .withOAuthClientId(OAUTH_CLIENT_NAME)
+                    .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+                    .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .build();
 
                 kafkaOauthClientJob.consumerStrimziOauthPlain().done();
 
@@ -349,8 +363,15 @@ public class OauthPlainST extends OauthAbstractST {
 
         String producerName = "bridge-producer";
 
-        KafkaBridgeClientsResource kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, "", KafkaBridgeResources.serviceName(CLUSTER_NAME),
-            TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), HTTP_BRIDGE_DEFAULT_PORT, 1000, 1000);
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
+            .withProducerName(producerName)
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(CLUSTER_NAME))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withPort(HTTP_BRIDGE_DEFAULT_PORT)
+            .withDelayMs(1000)
+            .withPollInterval(1000)
+            .build();
 
         kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
@@ -411,20 +432,22 @@ public class OauthPlainST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @BeforeEach
-    void setUpEach() {
-        oauthInternalClientJob = new KafkaOauthClientsResource(oauthInternalClientJob);
-    }
-
     @BeforeAll
     void setUp() {
         keycloakInstance.setRealm("internal", false);
 
         LOGGER.info("Setting producer and consumer properties");
 
-        oauthInternalClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
-            KafkaResources.plainBootstrapAddress(CLUSTER_NAME), TOPIC_NAME, MESSAGE_COUNT, "",
-            ClientUtils.generateRandomConsumerGroup(), OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
+        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(OAUTH_PRODUCER_NAME)
+            .withConsumerName(OAUTH_CONSUMER_NAME)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
