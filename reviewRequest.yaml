@@ -1,0 +1,43 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: ConversionReview
+request: 
+  # Random uid uniquely identifying this conversion call
+  uid: 705ab4f5-6393-11e8-b7cc-42010a800002
+  # The API group and version the objects should be converted to
+  desiredAPIVersion: kafka.strimzi.io/v1beta2
+  
+  # The list of objects to convert.
+  # May contain one or more objects, in one or more versions.
+  objects: 
+  - apiVersion: kafka.strimzi.io/v1beta1
+    kind: Kafka
+    metadata:
+      name: my-cluster
+    spec:
+      kafka:
+        version: 2.6.0
+        replicas: 3
+        listeners:
+          - name: plain
+            port: 9092
+            type: internal
+            tls: false
+          - name: tls
+            port: 9093
+            type: internal
+            tls: true
+        config:
+          offsets.topic.replication.factor: 3
+          transaction.state.log.replication.factor: 3
+          transaction.state.log.min.isr: 2
+          log.message.format.version: "2.6"
+        storage:
+          type: ephemeral
+      zookeeper:
+        replicas: 3
+        storage:
+          type: ephemeral
+      entityOperator:
+        userOperator: {}
+      topicOperator: {}
+      
