@@ -77,7 +77,7 @@ public class KafkaConnectResource {
                 .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(kafkaClusterName))
                 .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(kafkaClusterName))
                 .withNewInlineLogging()
-                    .addToLoggers("log4j.rootLogger", "DEBUG")
+                    .addToLoggers("log4j.rootLogger", "DEBUG, CONSOLE")
                 .endInlineLogging()
             .endSpec();
     }
