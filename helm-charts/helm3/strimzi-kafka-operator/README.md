@@ -56,7 +56,7 @@ $ helm repo add strimzi https://strimzi.io/charts/
 To install the chart with the release name `my-release`:
 
 ```bash
-$ helm install --name my-release strimzi/strimzi-kafka-operator
+$ helm install my-release strimzi/strimzi-kafka-operator
 ```
 
 The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration.
