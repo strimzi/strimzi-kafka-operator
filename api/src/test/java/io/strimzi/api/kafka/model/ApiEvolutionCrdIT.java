@@ -116,7 +116,6 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
             instanceB = touchV1Beta2(nameB);
             instanceC = touchV1Beta2(nameC);
 
-            Thread.sleep(5_000);
             LOGGER.info("Phase 2 : Assert instances via both endpoints");
             assertIsListListener(v1beta1Get(nameA));
             assertIsListListener(v1beta1Get(nameB));
@@ -137,7 +136,6 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
                     .updateStatus(new CustomResourceDefinitionBuilder(crdPhase2Part3).editStatus().withStoredVersions(asList("v1beta2")).endStatus().build());
 
             assertEquals(asList("v1beta2"), crdPhase2Part4.getStatus().getStoredVersions());
-            Thread.sleep(5_000);
             assertIsListListener(v1beta2Get(nameA));
             assertIsListListener(v1beta2Get(nameB));
             assertIsListListener(v1beta2Get(nameC));
@@ -170,11 +168,6 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
     public Kafka touchV1Beta2(String name) {
         Kafka build = new KafkaBuilder(v1beta2Get(name))
                 .withApiVersion("kafka.strimzi.io/v1beta2")
-                .editMetadata().addToAnnotations("bother", "yes").endMetadata()
-                .build();
-        build = v1beta2Op().withName(name).replace(build);
-        build = new KafkaBuilder(build)
-                .editMetadata().removeFromAnnotations("bother").endMetadata()
                 .build();
         build = v1beta2Op().withName(name).replace(build);
         return build;
