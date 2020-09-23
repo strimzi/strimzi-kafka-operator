@@ -27,6 +27,7 @@ fi
 
 usage() {
 	echo "Usage: $0 --namespace=<string> --cluster=<string> --secrets=(off|hidden|all)" 1>&2;
+	echo "Default level of secret verbosity is 'hidden' (only secret key will be reported)."
 	exit 1; 
 }
 
