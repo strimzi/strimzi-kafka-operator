@@ -131,13 +131,6 @@
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1078</url>
-        </repository>
-    </repositories>
-
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
