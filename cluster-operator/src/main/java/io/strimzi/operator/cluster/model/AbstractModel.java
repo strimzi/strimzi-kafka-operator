@@ -446,7 +446,7 @@ public abstract class AbstractModel {
                     String newRootLogger = inlineLogging.getLoggers().get("log4j.rootLogger");
                     newSettings.addMapPairs(inlineLogging.getLoggers());
 
-                    if (!rootAppenderName.isEmpty() && !newRootLogger.contains(",")) {
+                    if (newRootLogger != null && !rootAppenderName.isEmpty() && !newRootLogger.contains(",")) {
                         log.warn("Newly set rootLogger does not contain appender. Setting appender to {}.", rootAppenderName);
                         String level = newSettings.asMap().get("log4j.rootLogger");
                         newSettings.addPair("log4j.rootLogger", level + ", " + rootAppenderName);
