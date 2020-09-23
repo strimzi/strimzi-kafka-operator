@@ -1172,7 +1172,7 @@ public class CrdGenerator {
             if (conversionServiceName != null) {
                 conversionStrategy = new WebhookConversionStrategy(conversionServiceName, conversionServiceNamespace, conversionServicePath, conversionServicePort, conversionServiceCaBundle);
             } else if (conversionServiceUrl != null) {
-                conversionStrategy = new WebhookConversionStrategy(conversionServiceName, conversionServiceCaBundle);
+                conversionStrategy = new WebhookConversionStrategy(conversionServiceUrl, conversionServiceCaBundle);
             } else {
                 conversionStrategy = new NoneConversionStrategy();
             }
