@@ -83,6 +83,7 @@ spec:
                           field allows to specify a different configuration for different
                           brokers.
                       selector:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
@@ -141,6 +142,7 @@ spec:
                                 field allows to specify a different configuration
                                 for different brokers.
                             selector:
+                              x-kubernetes-preserve-unknown-fields: true
                               type: object
                               description: Specifies a specific persistent volume
                                 to use. It contains key:value pairs representing labels
@@ -458,6 +460,7 @@ spec:
                                     field can be used only with `loadbalancer` type
                                     listener.
                                 annotations:
+                                  x-kubernetes-preserve-unknown-fields: true
                                   type: object
                                   description: Annotations that will be added to the
                                     `Ingress` or `Service` resource. You can use this
@@ -506,6 +509,7 @@ spec:
                                       the feature.This field can be used only with
                                       `loadbalancer` type listener.
                                   annotations:
+                                    x-kubernetes-preserve-unknown-fields: true
                                     type: object
                                     description: Annotations that will be added to
                                       the `Ingress` or `Service` resource. You can
@@ -580,6 +584,7 @@ spec:
                                           items:
                                             type: string
                                   matchLabels:
+                                    x-kubernetes-preserve-unknown-fields: true
                                     type: object
                               podSelector:
                                 type: object
@@ -598,6 +603,7 @@ spec:
                                           items:
                                             type: string
                                   matchLabels:
+                                    x-kubernetes-preserve-unknown-fields: true
                                     type: object
                           description: List of peers which should be able to connect
                             to this listener. Peers in this list are combined using
@@ -713,6 +719,7 @@ spec:
                     - type
                     description: Authorization configuration for Kafka brokers.
                   config:
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                     description: 'Kafka broker config properties with the following
                       prefixes cannot be set: listeners, advertised., broker., listener.,
@@ -798,6 +805,7 @@ spec:
                     type: object
                     properties:
                       "-XX":
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A map of -XX options to the JVM.
                       "-Xms":
@@ -848,11 +856,14 @@ spec:
                     type: object
                     properties:
                       limits:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                       requests:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
                   metrics:
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
@@ -860,6 +871,7 @@ spec:
                     type: object
                     properties:
                       loggers:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A Map from logger name to logger level.
                       name:
@@ -885,11 +897,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -911,11 +925,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1100,6 +1116,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -1131,6 +1148,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -1166,6 +1184,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -1197,6 +1216,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -1253,11 +1273,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1271,11 +1293,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1289,11 +1313,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1332,11 +1358,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1376,11 +1404,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1394,11 +1424,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1413,11 +1445,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1431,11 +1465,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1450,11 +1486,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1468,11 +1506,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1675,6 +1715,7 @@ spec:
                           field allows to specify a different configuration for different
                           brokers.
                       selector:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
@@ -1700,6 +1741,7 @@ spec:
                     - type
                     description: Storage configuration (disk). Cannot be updated.
                   config:
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                     description: 'The ZooKeeper broker config. Properties with the
                       following prefixes cannot be set: server., dataDir, dataLogDir,
@@ -1767,6 +1809,7 @@ spec:
                     type: object
                     properties:
                       "-XX":
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A map of -XX options to the JVM.
                       "-Xms":
@@ -1799,11 +1842,14 @@ spec:
                     type: object
                     properties:
                       limits:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                       requests:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
                   metrics:
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
@@ -1811,6 +1857,7 @@ spec:
                     type: object
                     properties:
                       loggers:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A Map from logger name to logger level.
                       name:
@@ -1836,11 +1883,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -1862,11 +1911,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -2051,6 +2102,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -2082,6 +2134,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -2117,6 +2170,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -2148,6 +2202,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -2204,11 +2259,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -2222,11 +2279,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -2240,11 +2299,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -2258,11 +2319,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -2430,8 +2493,10 @@ spec:
                         type: object
                         properties:
                           limits:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                           requests:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                         description: CPU and memory resources to reserve.
                       topicMetadataMaxAttempts:
@@ -2442,6 +2507,7 @@ spec:
                         type: object
                         properties:
                           loggers:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: A Map from logger name to logger level.
                           name:
@@ -2462,6 +2528,7 @@ spec:
                         type: object
                         properties:
                           "-XX":
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: A map of -XX options to the JVM.
                           "-Xms":
@@ -2566,14 +2633,17 @@ spec:
                         type: object
                         properties:
                           limits:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                           requests:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                         description: CPU and memory resources to reserve.
                       logging:
                         type: object
                         properties:
                           loggers:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: A Map from logger name to logger level.
                           name:
@@ -2594,6 +2664,7 @@ spec:
                         type: object
                         properties:
                           "-XX":
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: A map of -XX options to the JVM.
                           "-Xms":
@@ -2727,6 +2798,7 @@ spec:
                                                 items:
                                                   type: string
                                         matchLabels:
+                                          x-kubernetes-preserve-unknown-fields: true
                                           type: object
                                     namespaces:
                                       type: array
@@ -2758,6 +2830,7 @@ spec:
                                             items:
                                               type: string
                                     matchLabels:
+                                      x-kubernetes-preserve-unknown-fields: true
                                       type: object
                                 namespaces:
                                   type: array
@@ -2793,6 +2866,7 @@ spec:
                                                 items:
                                                   type: string
                                         matchLabels:
+                                          x-kubernetes-preserve-unknown-fields: true
                                           type: object
                                     namespaces:
                                       type: array
@@ -2824,6 +2898,7 @@ spec:
                                             items:
                                               type: string
                                     matchLabels:
+                                      x-kubernetes-preserve-unknown-fields: true
                                       type: object
                                 namespaces:
                                   type: array
@@ -2925,8 +3000,10 @@ spec:
                         type: object
                         properties:
                           limits:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                           requests:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                         description: CPU and memory resources to reserve.
                     description: TLS sidecar configuration.
@@ -2940,11 +3017,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -2958,11 +3037,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -3147,6 +3228,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -3178,6 +3260,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -3213,6 +3296,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -3244,6 +3328,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -3644,8 +3729,10 @@ spec:
                         type: object
                         properties:
                           limits:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                           requests:
+                            x-kubernetes-preserve-unknown-fields: true
                             type: object
                         description: CPU and memory resources to reserve.
                     description: TLS sidecar configuration.
@@ -3653,8 +3740,10 @@ spec:
                     type: object
                     properties:
                       limits:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                       requests:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve for the Cruise
                       Control container.
@@ -3716,6 +3805,7 @@ spec:
                     type: object
                     properties:
                       "-XX":
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A map of -XX options to the JVM.
                       "-Xms":
@@ -3748,6 +3838,7 @@ spec:
                     type: object
                     properties:
                       loggers:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A Map from logger name to logger level.
                       name:
@@ -3773,11 +3864,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -3791,11 +3884,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -3980,6 +4075,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -4011,6 +4107,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -4046,6 +4143,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -4077,6 +4175,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -4133,11 +4232,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -4151,11 +4252,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -4332,6 +4435,7 @@ spec:
                           in bytes per second, for example 10000KB/s.
                     description: The Cruise Control `brokerCapacity` configuration.
                   config:
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                     description: 'The Cruise Control configuration. For a full list
                       of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations.
@@ -4343,6 +4447,7 @@ spec:
                       broker.metric.sample.store.topic,capacity.config.file, self.healing.,
                       anomaly.detection., ssl.'
                   metrics:
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
@@ -4437,8 +4542,10 @@ spec:
                     type: object
                     properties:
                       limits:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                       requests:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
                   template:
@@ -4451,11 +4558,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -4469,11 +4578,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -4658,6 +4769,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -4689,6 +4801,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -4724,6 +4837,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -4755,6 +4869,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -4896,8 +5011,10 @@ spec:
                     type: object
                     properties:
                       limits:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                       requests:
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
                   logging:
@@ -4919,11 +5036,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -4937,11 +5056,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
@@ -5126,6 +5247,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -5157,6 +5279,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -5192,6 +5315,7 @@ spec:
                                                         items:
                                                           type: string
                                                 matchLabels:
+                                                  x-kubernetes-preserve-unknown-fields: true
                                                   type: object
                                             namespaces:
                                               type: array
@@ -5223,6 +5347,7 @@ spec:
                                                     items:
                                                       type: string
                                             matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
                                               type: object
                                         namespaces:
                                           type: array
@@ -5279,11 +5404,13 @@ spec:
                             type: object
                             properties:
                               labels:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Labels added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                               annotations:
+                                x-kubernetes-preserve-unknown-fields: true
                                 type: object
                                 description: Annotations added to the resource template.
                                   Can be applied to different resources such as `StatefulSets`,
