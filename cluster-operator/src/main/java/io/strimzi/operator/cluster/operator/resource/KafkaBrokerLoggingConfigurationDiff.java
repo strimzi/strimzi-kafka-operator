@@ -126,19 +126,21 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                 // we ignore appenders (log4j.appender.*)
                 // and only handle loggers (log4j.logger.*)
                 if (line.startsWith("log4j.logger.")) {
-                    int p = line.indexOf("=", 13);
+                    int startat = "log4j.logger.".length();
+                    int p = line.indexOf("=", startat);
                     if (p == -1) {
                         log.debug("Skipping log4j.logger.* declaration without level: {}", line);
                         continue;
                     }
-                    String name = line.substring(13, p).trim();
+                    String name = line.substring(startat, p).trim();
                     String value = line.substring(p + 1).trim();
 
                     value = Util.expandVar(value, env);
                     parsed.put(name, value);
 
                 } else if (line.startsWith("log4j.rootLogger=")) {
-                    parsed.put("root", Util.expandVar(line.substring(17).trim(), env));
+                    int startat = "log4j.rootLogger=".length();
+                    parsed.put("root", Util.expandVar(line.substring(startat).trim(), env));
 
                 } else {
                     log.debug("Skipping log4j line: {}", line);
