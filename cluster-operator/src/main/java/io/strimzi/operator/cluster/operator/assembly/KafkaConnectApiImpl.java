@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -408,6 +409,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers) {
+        desiredLogging = Util.expandVars(desiredLogging);
         Map<String, String> updateLoggers = new LinkedHashMap<>();
         fetchedLoggers.entrySet().forEach(entry -> {
             // set all logger levels to OFF

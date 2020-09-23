@@ -411,4 +411,34 @@ public class Util {
         return result.toString();
     }
 
+    public static String expandVars(String env) {
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(env);
+        Map<String, String> map = ops.asMap();
+        StringBuilder resultBuilder = new StringBuilder();
+        for (Map.Entry<String, String> entry: map.entrySet()) {
+            resultBuilder.append(entry.getKey() + "=" + expandVar(entry.getValue(), ops.asMap()) + "\n");
+        }
+        return resultBuilder.toString();
+    }
+
+    public static String expandVar(String value, Map<String, String> env) {
+        StringBuilder sb = new StringBuilder();
+        int e = -1;
+        int b;
+        while ((b = value.indexOf("${", e + 1)) != -1) {
+            sb.append(value.substring(e + 1, b));
+            e = value.indexOf("}", b + 2);
+            if (e != -1) {
+                String key = value.substring(b + 2, e);
+                String r = env.get(key);
+                sb.append(r != null ? r : "");
+            } else {
+                break;
+            }
+        }
+        sb.append(value.substring(e + 1));
+        return sb.toString();
+    }
+
 }

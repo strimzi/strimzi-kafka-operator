@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
@@ -133,11 +134,11 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                     String name = line.substring(13, p).trim();
                     String value = line.substring(p + 1).trim();
 
-                    value = expandVars(value, env);
+                    value = Util.expandVar(value, env);
                     parsed.put(name, value);
 
                 } else if (line.startsWith("log4j.rootLogger=")) {
-                    parsed.put("root", expandVars(line.substring(17).trim(), env));
+                    parsed.put("root", Util.expandVar(line.substring(17).trim(), env));
 
                 } else {
                     log.debug("Skipping log4j line: {}", line);
@@ -148,25 +149,6 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
             return Collections.emptyMap();
         }
         return parsed;
-    }
-
-    private static String expandVars(String value, Map<String, String> env) {
-        StringBuilder sb = new StringBuilder();
-        int e = -1;
-        int b;
-        while ((b = value.indexOf("${", e + 1)) != -1) {
-            sb.append(value.substring(e + 1, b));
-            e = value.indexOf("}", b + 2);
-            if (e != -1) {
-                String key = value.substring(b + 2, e);
-                String r = env.get(key);
-                sb.append(r != null ? r : "");
-            } else {
-                break;
-            }
-        }
-        sb.append(value.substring(e + 1));
-        return sb.toString();
     }
 
     /**
