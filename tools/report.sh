@@ -3,7 +3,7 @@
 oc_installed=false
 kubectl_installed=false
 platform="kubectl"
-secrets="all"
+secrets="hidden"
 
 oc &>/dev/null
 
@@ -58,14 +58,15 @@ if [ -z $cluster ] && [ -z $namespace ]; then
 fi
 
 if [ -z $secrets ]; then
-  secrets="all"
+  secrets="hidden"
 fi
 
 if [ "$secrets" != "all" ] && [ "$secrets" != "off" ] && [ "$secrets" != "hidden" ]; then
   echo "Unknown secrets verbosity level. Use one of 'off', 'hidden' or 'all'."
   echo " 'all' - secret keys and data values are reported"
-  echo " 'hidden' - secrets with only data keys"
-  echo " 'off' - secrets are not reported"
+  echo " 'hidden' - secrets with only data keys are reported"
+  echo " 'off' - secrets are not reported at all"
+  echo "Default value is 'hidden'"
   usage
 fi
 
