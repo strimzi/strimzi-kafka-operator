@@ -868,11 +868,13 @@ public class CrdGenerator {
         Type typeAnno = element.getAnnotation(Type.class);
         if (typeAnno == null) {
             typeName = typeName(type);
+            if (crdApiVersion.compareTo(V1) >= 0 && Map.class.equals(type)) {
+                result.put("x-kubernetes-preserve-unknown-fields", true);
+            }
         } else {
             typeName = typeAnno.value();
         }
         result.put("type", typeName);
-
 
         return result;
     }
