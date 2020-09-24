@@ -90,6 +90,7 @@ public class StrimziUpgradeST extends AbstractST {
     private File kafkaYaml = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
+    private File kafkaVersions = null;
 
     private final String kafkaClusterName = "my-cluster";
     private final String topicName = "my-topic";
@@ -183,11 +184,12 @@ public class StrimziUpgradeST extends AbstractST {
     @Test
     @Disabled("Disabled because of bug https://github.com/strimzi/strimzi-kafka-operator/issues/3685")
     void testUpgradeKafkaWithoutVersion() throws IOException {
-        String latestKafkaVersion = "2.6.0";
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
-
         File kafkaPersistent = new File(dir, "strimzi-" + latestReleasedVersion + "/examples/kafka/kafka-persistent.yaml");
         coDir = new File(dir, "strimzi-" + latestReleasedVersion + "/install/cluster-operator/");
+        kafkaVersions = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + latestReleasedVersion + "/kafka-versions.yaml");
+
+        String latestKafkaVersion = getValueForLastKafkaVersionInFile("version");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
@@ -216,6 +218,14 @@ public class StrimziUpgradeST extends AbstractST {
                 .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString(latestKafkaVersion));
     }
 
+    String getValueForLastKafkaVersionInFile(String field) throws IOException {
+        YAMLMapper mapper = new YAMLMapper();
+        JsonNode node = mapper.readTree(kafkaVersions);
+        ObjectNode kafkaVersionNode = (ObjectNode) node.get(node.size() - 1);
+
+        return kafkaVersionNode.get(field).asText();
+    }
+
     void applyKafkaWithoutVersion(File kafka, String clusterName) throws IOException {
         YAMLMapper mapper = new YAMLMapper();
         JsonNode node = mapper.readTree(kafka);
@@ -223,7 +233,7 @@ public class StrimziUpgradeST extends AbstractST {
         kafkaNode.remove("version");
 
         ObjectNode kafkaConfigNode = (ObjectNode) kafkaNode.at("/config");
-        kafkaConfigNode.put("log.message.format.version", "2.5");
+        kafkaConfigNode.put("log.message.format.version", getValueForLastKafkaVersionInFile("format"));
 
         ObjectNode metadataNode = (ObjectNode) node.at("/metadata");
         metadataNode.remove("name");
