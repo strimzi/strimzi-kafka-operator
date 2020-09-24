@@ -188,7 +188,7 @@ public class StrimziUpgradeST extends AbstractST {
         // Modify + apply installation files
         copyModifyApply(coDir);
         // Apply Kafka Persistent without version
-        applyKafkaWithoutVersion(kafkaPersistent);
+        applyKafkaWithoutVersion(kafkaPersistent, CLUSTER_NAME);
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
 
         assertNull(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion());
@@ -212,11 +212,15 @@ public class StrimziUpgradeST extends AbstractST {
                 .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.6.0"));
     }
 
-    void applyKafkaWithoutVersion(File kafka) throws IOException {
+    void applyKafkaWithoutVersion(File kafka, String clusterName) throws IOException {
         YAMLMapper mapper = new YAMLMapper();
         JsonNode node = mapper.readTree(kafka);
         ObjectNode kafkaNode = (ObjectNode) node.at("/spec/kafka");
         kafkaNode.remove("version");
+
+        ObjectNode metadataNode = (ObjectNode) node.at("/metadata");
+        metadataNode.remove("name");
+        metadataNode.put("name", clusterName);
 
         cmdKubeClient().applyContent(mapper.writeValueAsString(node));
     }
