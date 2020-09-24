@@ -183,6 +183,7 @@ public class StrimziUpgradeST extends AbstractST {
     @Test
     @Disabled("Disabled because of bug https://github.com/strimzi/strimzi-kafka-operator/issues/3685")
     void testUpgradeKafkaWithoutVersion() throws IOException {
+        String latestKafkaVersion = "2.6.0";
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
         File kafkaPersistent = new File(dir, "strimzi-" + latestReleasedVersion + "/examples/kafka/kafka-persistent.yaml");
@@ -212,7 +213,7 @@ public class StrimziUpgradeST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.6.0"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString(latestKafkaVersion));
     }
 
     void applyKafkaWithoutVersion(File kafka, String clusterName) throws IOException {
@@ -220,6 +221,9 @@ public class StrimziUpgradeST extends AbstractST {
         JsonNode node = mapper.readTree(kafka);
         ObjectNode kafkaNode = (ObjectNode) node.at("/spec/kafka");
         kafkaNode.remove("version");
+
+        ObjectNode kafkaConfigNode = (ObjectNode) kafkaNode.at("/config");
+        kafkaConfigNode.put("log.message.format.version", "2.5");
 
         ObjectNode metadataNode = (ObjectNode) node.at("/metadata");
         metadataNode.remove("name");
