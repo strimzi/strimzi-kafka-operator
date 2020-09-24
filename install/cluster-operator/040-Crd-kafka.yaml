@@ -178,12 +178,12 @@ spec:
                       properties:
                         name:
                           type: string
-                          pattern: ^[a-z0-9]{1,25}$
+                          pattern: ^[a-z0-9]{1,11}$
                           description: Name of the listener. The name will be used
                             to identify the listener and the related Kubernetes objects.
                             The name has to be unique within given a Kafka cluster.
                             The name can consist of lowercase characters and numbers
-                            and be up to 25 characters long.
+                            and be up to 11 characters long.
                         port:
                           type: integer
                           description: Port number used by the listener. The port
