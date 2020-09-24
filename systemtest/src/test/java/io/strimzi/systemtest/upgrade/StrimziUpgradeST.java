@@ -35,6 +35,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -178,7 +179,9 @@ public class StrimziUpgradeST extends AbstractST {
         }
     }
 
+    // TODO: remove disabled tag after fix of issue #3685
     @Test
+    @Disabled("Disabled because of bug https://github.com/strimzi/strimzi-kafka-operator/issues/3685")
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
@@ -221,6 +224,7 @@ public class StrimziUpgradeST extends AbstractST {
         ObjectNode metadataNode = (ObjectNode) node.at("/metadata");
         metadataNode.remove("name");
         metadataNode.put("name", clusterName);
+        metadataNode.put("namespace", NAMESPACE);
 
         cmdKubeClient().applyContent(mapper.writeValueAsString(node));
     }
