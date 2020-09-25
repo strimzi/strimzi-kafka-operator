@@ -1148,7 +1148,7 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
-        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder(basicExternalKafkaClientBuilder)
+        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
@@ -1383,13 +1383,7 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
-        basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(userName)
-            .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.SSL)
+        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
@@ -1494,13 +1488,7 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
-        basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(userName)
-            .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.SSL)
+        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(null)
             .build();
 

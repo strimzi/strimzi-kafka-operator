@@ -45,7 +45,8 @@ public abstract class AbstractKafkaClient {
     protected ProducerProperties producerProperties;
     protected ConsumerProperties consumerProperties;
 
-    public static abstract class Builder<T extends Builder<T>> {
+    @SuppressWarnings("unchecked")
+    public static class Builder<SELF extends Builder<SELF>> {
 
         private String topicName;
         protected Integer partition;
@@ -60,89 +61,89 @@ public abstract class AbstractKafkaClient {
         private ProducerProperties producerProperties;
         private ConsumerProperties consumerProperties;
 
-        public T withTopicName(String topicName) {
+        public SELF withTopicName(String topicName) {
             this.topicName = topicName;
-            return self();
+            return (SELF) this;
         }
 
-        public T withPartition(Integer partition) {
+        public SELF withPartition(Integer partition) {
             this.partition = partition;
-            return self();
+            return (SELF) this;
         }
 
-        public T withNamespaceName(String namespaceName) {
+        public SELF withNamespaceName(String namespaceName) {
             this.namespaceName = namespaceName;
-            return self();
+            return (SELF) this;
         }
 
-        public T withClusterName(String clusterName) {
+        public SELF withClusterName(String clusterName) {
             this.clusterName = clusterName;
-            return self();
+            return (SELF) this;
         }
 
-        public T withMessageCount(int messageCount) {
+        public SELF withMessageCount(int messageCount) {
             this.messageCount = messageCount;
-            return self();
+            return (SELF) this;
         }
 
-        public T withConsumerGroupName(String consumerGroup) {
+        public SELF withConsumerGroupName(String consumerGroup) {
             this.consumerGroup = consumerGroup;
-            return self();
+            return (SELF) this;
         }
 
-        public T withKafkaUsername(String kafkaUsername) {
+        public SELF withKafkaUsername(String kafkaUsername) {
             this.kafkaUsername = kafkaUsername;
-            return self();
+            return (SELF) this;
         }
 
-        public T withSecurityProtocol(SecurityProtocol securityProtocol) {
+        public SELF withSecurityProtocol(SecurityProtocol securityProtocol) {
             this.securityProtocol = securityProtocol;
-            return self();
+            return (SELF) this;
         }
 
-        public T withCertificateAuthorityCertificateName(String caCertName) {
+        public SELF withCertificateAuthorityCertificateName(String caCertName) {
             this.caCertName = caCertName;
-            return self();
+            return (SELF) this;
         }
 
-        public T withListenerName(String listenerName) {
+        public SELF withListenerName(String listenerName) {
             this.listenerName = listenerName;
-            return self();
+            return (SELF) this;
         }
 
-        public T withProducerProperties(ProducerProperties producerProperties) {
+        public SELF withProducerProperties(ProducerProperties producerProperties) {
             this.producerProperties = producerProperties;
-            return self();
+            return (SELF) this;
         }
 
-        public T withConsumerProperties(ConsumerProperties consumerProperties) {
+        public SELF withConsumerProperties(ConsumerProperties consumerProperties) {
             this.consumerProperties =  consumerProperties;
-            return self();
+            return (SELF) this;
         }
 
-        protected abstract AbstractKafkaClient build();
-
-        // Subclasses must override this method to return "this" protected abstract T self();
-        // for not explicit casting..
-        protected abstract T self();
+        protected AbstractKafkaClient build() throws InstantiationException {
+            // ensure that build() can be only invoked in sub-classes
+            throw new InstantiationException();
+        };
     }
 
-    protected Builder<?> toBuilder(Builder<?> builder) {
-        verifyEssentialAttributes(builder);
+    protected Builder<?> toBuilder() {
+        verifyEssentialInstanceAttributes();
 
-        return builder
-            .withTopicName(builder.topicName)
-            .withPartition(builder.partition)
-            .withNamespaceName(builder.namespaceName)
-            .withClusterName(builder.clusterName)
-            .withMessageCount(builder.messageCount)
-            .withConsumerGroupName(builder.consumerGroup)
-            .withKafkaUsername(builder.kafkaUsername)
-            .withSecurityProtocol(builder.securityProtocol)
-            .withCertificateAuthorityCertificateName(builder.caCertName)
-            .withListenerName(builder.listenerName)
-            .withProducerProperties(builder.producerProperties)
-            .withConsumerProperties(builder.consumerProperties);
+        return new Builder<>()
+            .withTopicName(topicName)
+            .withPartition(partition)
+            .withNamespaceName(namespaceName)
+            .withClusterName(clusterName)
+            .withMessageCount(messageCount)
+            .withConsumerGroupName(consumerGroup)
+            .withKafkaUsername(kafkaUsername)
+            .withSecurityProtocol(securityProtocol)
+            .withCertificateAuthorityCertificateName(caCertName)
+            .withListenerName(listenerName)
+            .withProducerProperties(producerProperties)
+            .withConsumerProperties(consumerProperties);
+
     }
 
     protected AbstractKafkaClient(Builder<?> builder) {
@@ -160,6 +161,17 @@ public abstract class AbstractKafkaClient {
         listenerName = builder.listenerName;
         producerProperties = builder.producerProperties;
         consumerProperties = builder.consumerProperties;
+    }
+
+    private void verifyEssentialInstanceAttributes() {
+        if (topicName == null || topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
+        if (namespaceName == null || namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
+        if (clusterName == null  || clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
+        if (messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (consumerGroup == null || consumerGroup.isEmpty()) {
+            LOGGER.info("Consumer group were not specified going to create the random one.");
+            consumerGroup = ClientUtils.generateRandomConsumerGroup();
+        }
     }
 
     private void verifyEssentialAttributes(Builder<?> builder) {

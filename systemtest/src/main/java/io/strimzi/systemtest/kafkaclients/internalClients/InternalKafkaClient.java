@@ -23,7 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * The InternalKafkaClient for sending and receiving messages using basic properties.
  * The client is using an internal listeners and communicate from the pod.
  */
-public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient> implements KafkaClientOperations {
+public class InternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
@@ -37,22 +37,17 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
 
         public Builder withUsingPodName(String podName) {
             this.podName = podName;
-            return self();
+            return this;
         }
 
         public Builder withBootstrapServer(String bootstrapServer) {
             this.bootstrapServer = bootstrapServer;
-            return self();
+            return this;
         }
 
         @Override
         public InternalKafkaClient build() {
             return new InternalKafkaClient(this);
-        }
-
-        @Override
-        protected Builder self() {
-            return this;
         }
     }
 
@@ -63,11 +58,11 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     @Override
-    protected AbstractKafkaClient.Builder<?> toBuilder(AbstractKafkaClient.Builder<?> builder) {
-        super.toBuilder(builder);
+    protected Builder toBuilder() {
+        Builder builder = (Builder) super.toBuilder();
 
-        ((Builder) builder).withUsingPodName(getPodName());
-        ((Builder) builder).withBootstrapServer(getBootstrapServer());
+        builder.withUsingPodName(getPodName());
+        builder.withBootstrapServer(getBootstrapServer());
 
         return builder;
     }

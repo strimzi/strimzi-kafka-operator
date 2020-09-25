@@ -38,11 +38,6 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         public BasicExternalKafkaClient build() {
             return new BasicExternalKafkaClient(this);
         }
-
-        @Override
-        protected Builder self() {
-            return this;
-        }
     }
 
     private BasicExternalKafkaClient(Builder builder) {
@@ -50,10 +45,8 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
     }
 
     @Override
-    public Builder toBuilder(AbstractKafkaClient.Builder<?> builder) {
-        super.toBuilder(builder);
-
-        return (Builder) builder;
+    public Builder toBuilder() {
+        return (Builder) super.toBuilder();
     }
 
     public int sendMessagesPlain() {

@@ -18,39 +18,32 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient implements K
     private static final Logger LOGGER = LogManager.getLogger(TracingExternalKafkaClient.class);
     private String serviceName;
 
-    public static class Builder extends AbstractKafkaClient.Builder<TracingExternalKafkaClient.Builder> {
+    public static class Builder extends AbstractKafkaClient.Builder<Builder> {
 
         private String serviceName;
 
         public Builder withServiceName(String serviceName) {
 
             this.serviceName = serviceName;
-            return self();
+            return this;
         }
 
         @Override
         public TracingExternalKafkaClient build() {
-
             return new TracingExternalKafkaClient(this);
-        }
-
-        @Override
-        protected TracingExternalKafkaClient.Builder self() {
-            return this;
         }
     }
 
     @Override
-    public Builder toBuilder(AbstractKafkaClient.Builder<?> builder) {
-        super.toBuilder(builder);
+    public Builder toBuilder() {
+        Builder builder = (Builder) super.toBuilder();
 
-        ((Builder) builder).withServiceName(getServiceName());
+        builder.withServiceName(serviceName);
 
-        return (Builder) builder;
+        return builder;
     }
 
     private TracingExternalKafkaClient(TracingExternalKafkaClient.Builder builder) {
-
         super(builder);
         serviceName = builder.serviceName;
     }

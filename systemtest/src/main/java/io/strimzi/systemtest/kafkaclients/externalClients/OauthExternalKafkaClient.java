@@ -48,51 +48,43 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
         public Builder withOauthClientId(String oauthClientId) {
 
             this.clientId = oauthClientId;
-            return self();
+            return this;
         }
 
         public Builder withClientSecretName(String clientSecretName) {
 
             this.clientSecretName = clientSecretName;
-            return self();
+            return this;
         }
 
         public Builder withOauthTokenEndpointUri(String oauthTokenEndpointUri) {
 
             this.oauthTokenEndpointUri = oauthTokenEndpointUri;
-            return self();
+            return this;
         }
 
         public Builder withIntrospectionEndpointUri(String introspectionEndpointUri) {
 
             this.introspectionEndpointUri = introspectionEndpointUri;
-            return self();
+            return this;
         }
 
         @Override
         public OauthExternalKafkaClient build() {
-
             return new OauthExternalKafkaClient(this);
-        }
-
-        @Override
-        protected Builder self() {
-
-            return this;
         }
     }
 
     @Override
-    public Builder toBuilder(AbstractKafkaClient.Builder<?> builder) {
-        super.toBuilder(builder);
+    public Builder toBuilder() {
+        Builder builder = (Builder) super.toBuilder();
 
-        ((Builder) builder).withOauthClientId(getClientId());
-        ((Builder) builder).withClientSecretName(getClientSecretName());
-        ((Builder) builder).withOauthTokenEndpointUri(getOauthTokenEndpointUri());
-        ((Builder) builder).withIntrospectionEndpointUri(getIntrospectionEndpointUri());
+        builder.withOauthClientId(clientId);
+        builder.withClientSecretName(clientSecretName);
+        builder.withOauthTokenEndpointUri(oauthTokenEndpointUri);
+        builder.withIntrospectionEndpointUri(introspectionEndpointUri);
 
-        return (Builder) builder;
-
+        return builder;
     }
 
     private OauthExternalKafkaClient(Builder builder) {
