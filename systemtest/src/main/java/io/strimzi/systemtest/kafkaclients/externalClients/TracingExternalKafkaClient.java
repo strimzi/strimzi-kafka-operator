@@ -41,24 +41,14 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient<TracingExter
     }
 
     @Override
-    protected AbstractKafkaClient.Builder<TracingExternalKafkaClient.Builder> toBuilder(TracingExternalKafkaClient tracingExternalKafkaClient) {
-        TracingExternalKafkaClient.Builder builder = new TracingExternalKafkaClient.Builder();
+    public Builder toBuilder(AbstractKafkaClient.Builder<?> builder) {
+        super.toBuilder(builder);
 
-        builder.withTopicName(tracingExternalKafkaClient.getTopicName());
-        builder.withPartition(tracingExternalKafkaClient.getPartition());
-        builder.withMessageCount(tracingExternalKafkaClient.getMessageCount());
-        builder.withNamespaceName(tracingExternalKafkaClient.getNamespaceName());
-        builder.withClusterName(tracingExternalKafkaClient.getClusterName());
-        builder.withConsumerGroupName(tracingExternalKafkaClient.getConsumerGroup());
-        builder.withKafkaUsername(tracingExternalKafkaClient.getKafkaUsername());
-        builder.withSecurityProtocol(tracingExternalKafkaClient.getSecurityProtocol());
-        builder.withCertificateAuthorityCertificateName(tracingExternalKafkaClient.getCaCertName());
-        builder.withProducerProperties(tracingExternalKafkaClient.getProducerProperties());
-        builder.withConsumerProperties(tracingExternalKafkaClient.getConsumerProperties());
-        builder.withServiceName(tracingExternalKafkaClient.getServiceName());
+        ((Builder) builder).withServiceName(getServiceName());
 
-        return builder;
+        return (Builder) builder;
     }
+
     private TracingExternalKafkaClient(TracingExternalKafkaClient.Builder builder) {
 
         super(builder);

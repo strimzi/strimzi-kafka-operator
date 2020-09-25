@@ -254,7 +254,7 @@ public class MultipleListenersST extends AbstractST {
 
             LOGGER.info("Generating {} listener", kafkaListenerType.name());
 
-            List<GenericKafkaListener> testCase = new ArrayList<>(5);
+            List<GenericKafkaListener> testCaseListeners = new ArrayList<>(5);
 
             switch (kafkaListenerType) {
                 case NODEPORT:
@@ -264,7 +264,7 @@ public class MultipleListenersST extends AbstractST {
 
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
-                        testCase.add(new GenericKafkaListenerBuilder()
+                        testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
                             .withPort(6090 + j)
                             .withType(KafkaListenerType.NODEPORT)
@@ -279,7 +279,7 @@ public class MultipleListenersST extends AbstractST {
 
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
-                        testCase.add(new GenericKafkaListenerBuilder()
+                        testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
                             .withPort(7090 + j)
                             .withType(KafkaListenerType.LOADBALANCER)
@@ -288,7 +288,7 @@ public class MultipleListenersST extends AbstractST {
                     }
                     break;
                 case ROUTE:
-                    testCase.add(new GenericKafkaListenerBuilder()
+                    testCaseListeners.add(new GenericKafkaListenerBuilder()
                         .withName(generateRandomListenerName())
                         .withPort(8091)
                         .withType(KafkaListenerType.ROUTE)
@@ -303,7 +303,7 @@ public class MultipleListenersST extends AbstractST {
 
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
-                        testCase.add(new GenericKafkaListenerBuilder()
+                        testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
                             .withPort(10090 + j)
                             .withType(KafkaListenerType.INTERNAL)
@@ -311,7 +311,7 @@ public class MultipleListenersST extends AbstractST {
                             .build());
                     }
             }
-            testCases.put(kafkaListenerType, testCase);
+            testCases.put(kafkaListenerType, testCaseListeners);
         }
 
         LOGGER.info("Finished will generation of test cases for multiple listeners");

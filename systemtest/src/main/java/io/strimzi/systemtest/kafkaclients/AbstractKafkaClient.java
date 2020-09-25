@@ -127,18 +127,26 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
         protected abstract T self();
     }
 
-    protected abstract Builder<?> toBuilder(C client);
+    protected Builder<?> toBuilder(Builder<?> builder) {
+        verifyEssentialAttributes(builder);
+
+        return builder
+            .withTopicName(builder.topicName)
+            .withPartition(builder.partition)
+            .withNamespaceName(builder.namespaceName)
+            .withClusterName(builder.clusterName)
+            .withMessageCount(builder.messageCount)
+            .withConsumerGroupName(builder.consumerGroup)
+            .withKafkaUsername(builder.kafkaUsername)
+            .withSecurityProtocol(builder.securityProtocol)
+            .withCertificateAuthorityCertificateName(builder.caCertName)
+            .withListenerName(builder.listenerName)
+            .withProducerProperties(builder.producerProperties)
+            .withConsumerProperties(builder.consumerProperties);
+    }
 
     protected AbstractKafkaClient(Builder<?> builder) {
-
-        if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
-        if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
-        if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
-        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
-        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
-            LOGGER.info("Consumer group were not specified going to create the random one.");
-            builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
-        }
+        verifyEssentialAttributes(builder);
 
         topicName = builder.topicName;
         partition = builder.partition;
@@ -152,6 +160,17 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
         listenerName = builder.listenerName;
         producerProperties = builder.producerProperties;
         consumerProperties = builder.consumerProperties;
+    }
+
+    private void verifyEssentialAttributes(Builder<?> builder) {
+        if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
+        if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
+        if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
+        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
+            LOGGER.info("Consumer group were not specified going to create the random one.");
+            builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
+        }
     }
 
     public void setMessageCount(int messageCount) {

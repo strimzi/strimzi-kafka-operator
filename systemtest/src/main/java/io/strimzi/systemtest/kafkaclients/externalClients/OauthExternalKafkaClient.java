@@ -83,26 +83,16 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
     }
 
     @Override
-    public AbstractKafkaClient.Builder<OauthExternalKafkaClient.Builder> toBuilder(OauthExternalKafkaClient oauthExternalKafkaClient) {
-        OauthExternalKafkaClient.Builder builder = new OauthExternalKafkaClient.Builder();
+    public Builder toBuilder(AbstractKafkaClient.Builder<?> builder) {
+        super.toBuilder(builder);
 
-        builder.withTopicName(oauthExternalKafkaClient.getTopicName());
-        builder.withPartition(oauthExternalKafkaClient.getPartition());
-        builder.withMessageCount(oauthExternalKafkaClient.getMessageCount());
-        builder.withNamespaceName(oauthExternalKafkaClient.getNamespaceName());
-        builder.withClusterName(oauthExternalKafkaClient.getClusterName());
-        builder.withConsumerGroupName(oauthExternalKafkaClient.getConsumerGroup());
-        builder.withKafkaUsername(oauthExternalKafkaClient.getKafkaUsername());
-        builder.withSecurityProtocol(oauthExternalKafkaClient.getSecurityProtocol());
-        builder.withCertificateAuthorityCertificateName(oauthExternalKafkaClient.getCaCertName());
-        builder.withProducerProperties(oauthExternalKafkaClient.getProducerProperties());
-        builder.withConsumerProperties(oauthExternalKafkaClient.getConsumerProperties());
-        builder.withOauthClientId(oauthExternalKafkaClient.getClientId());
-        builder.withClientSecretName(oauthExternalKafkaClient.getClientSecretName());
-        builder.withOauthTokenEndpointUri(oauthExternalKafkaClient.getOauthTokenEndpointUri());
-        builder.withIntrospectionEndpointUri(oauthExternalKafkaClient.getIntrospectionEndpointUri());
+        ((Builder) builder).withOauthClientId(getClientId());
+        ((Builder) builder).withClientSecretName(getClientSecretName());
+        ((Builder) builder).withOauthTokenEndpointUri(getOauthTokenEndpointUri());
+        ((Builder) builder).withIntrospectionEndpointUri(getIntrospectionEndpointUri());
 
-        return builder;
+        return (Builder) builder;
+
     }
 
     private OauthExternalKafkaClient(Builder builder) {

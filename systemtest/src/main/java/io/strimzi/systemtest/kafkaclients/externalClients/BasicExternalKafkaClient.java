@@ -50,22 +50,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
     }
 
     @Override
-    public AbstractKafkaClient.Builder<BasicExternalKafkaClient.Builder> toBuilder(BasicExternalKafkaClient basicExternalKafkaClient) {
-        BasicExternalKafkaClient.Builder builder = new BasicExternalKafkaClient.Builder();
+    public Builder toBuilder(AbstractKafkaClient.Builder<?> builder) {
+        super.toBuilder(builder);
 
-        builder.withTopicName(basicExternalKafkaClient.getTopicName());
-        builder.withPartition(basicExternalKafkaClient.getPartition());
-        builder.withMessageCount(basicExternalKafkaClient.getMessageCount());
-        builder.withNamespaceName(basicExternalKafkaClient.getNamespaceName());
-        builder.withClusterName(basicExternalKafkaClient.getClusterName());
-        builder.withConsumerGroupName(basicExternalKafkaClient.getConsumerGroup());
-        builder.withKafkaUsername(basicExternalKafkaClient.getKafkaUsername());
-        builder.withSecurityProtocol(basicExternalKafkaClient.getSecurityProtocol());
-        builder.withCertificateAuthorityCertificateName(basicExternalKafkaClient.getCaCertName());
-        builder.withProducerProperties(basicExternalKafkaClient.getProducerProperties());
-        builder.withConsumerProperties(basicExternalKafkaClient.getConsumerProperties());
-
-        return builder;
+        return ((Builder) builder);
     }
 
     public int sendMessagesPlain() {

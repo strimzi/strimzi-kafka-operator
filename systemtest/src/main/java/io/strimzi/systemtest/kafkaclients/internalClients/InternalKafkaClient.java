@@ -63,24 +63,15 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     @Override
-    protected AbstractKafkaClient.Builder<InternalKafkaClient.Builder> toBuilder(InternalKafkaClient internalKafkaClient) {
-        InternalKafkaClient.Builder builder = new InternalKafkaClient.Builder();
+    protected AbstractKafkaClient.Builder<?> toBuilder(AbstractKafkaClient.Builder<?> builder) {
+        super.toBuilder(builder);
 
-        builder.withTopicName(internalKafkaClient.getTopicName());
-        builder.withPartition(internalKafkaClient.getPartition());
-        builder.withMessageCount(internalKafkaClient.getMessageCount());
-        builder.withNamespaceName(internalKafkaClient.getNamespaceName());
-        builder.withClusterName(internalKafkaClient.getClusterName());
-        builder.withConsumerGroupName(internalKafkaClient.getConsumerGroup());
-        builder.withKafkaUsername(internalKafkaClient.getKafkaUsername());
-        builder.withSecurityProtocol(internalKafkaClient.getSecurityProtocol());
-        builder.withCertificateAuthorityCertificateName(internalKafkaClient.getCaCertName());
-        builder.withProducerProperties(internalKafkaClient.getProducerProperties());
-        builder.withConsumerProperties(internalKafkaClient.getConsumerProperties());
-        builder.withUsingPodName(internalKafkaClient.getPodName());
+        ((Builder) builder).withUsingPodName(getPodName());
+        ((Builder) builder).withBootstrapServer(getBootstrapServer());
 
         return builder;
     }
+
     public int sendMessagesPlain() {
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
@@ -279,5 +270,8 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
 
     public String getPodName() {
         return podName;
+    }
+    public String getBootstrapServer() {
+        return bootstrapServer;
     }
 }

@@ -1083,15 +1083,16 @@ public class ListenersST extends AbstractST {
         //External secret cert is same as internal in this case
         assertThat(externalSecretCerts, is(internalCerts));
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        BasicExternalKafkaClient.Builder basicExternalKafkaClientBuilder = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withCertificateAuthorityCertificateName(null)
-            .build();
+            .withCertificateAuthorityCertificateName(null);
+
+        BasicExternalKafkaClient basicExternalKafkaClient = basicExternalKafkaClientBuilder.build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
@@ -1147,7 +1148,7 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
-        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder(basicExternalKafkaClient)
+        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder(basicExternalKafkaClientBuilder)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
