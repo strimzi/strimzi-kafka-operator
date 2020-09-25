@@ -37,7 +37,8 @@ import java.util.Map;
 public class GenericKafkaListener implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
-    public final static String LISTENER_NAME_REGEX = "^[a-z0-9]{1,25}$";
+    // maximal port name length is 15. The prefix of generic port name is 'tcp-'
+    public final static String LISTENER_NAME_REGEX = "^[a-z0-9]{1,11}$";
 
     private String name;
     private int port;
@@ -51,7 +52,7 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
     @Description("Name of the listener. " +
             "The name will be used to identify the listener and the related Kubernetes objects. " +
             "The name has to be unique within given a Kafka cluster. " +
-            "The name can consist of lowercase characters and numbers and be up to 25 characters long.")
+            "The name can consist of lowercase characters and numbers and be up to 11 characters long.")
     @JsonProperty(required = true)
     @Pattern(LISTENER_NAME_REGEX)
     public String getName() {
