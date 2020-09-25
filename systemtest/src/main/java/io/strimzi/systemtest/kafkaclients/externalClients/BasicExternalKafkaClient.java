@@ -46,7 +46,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
     @Override
     public Builder toBuilder() {
-        return (Builder) super.toBuilder();
+        return super.toBuilder();
     }
 
     public int sendMessagesPlain() {

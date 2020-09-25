@@ -36,7 +36,7 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient implements K
 
     @Override
     public Builder toBuilder() {
-        Builder builder = (Builder) super.toBuilder();
+        Builder builder = super.toBuilder();
 
         builder.withServiceName(serviceName);
 

@@ -77,7 +77,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
     @Override
     public Builder toBuilder() {
-        Builder builder = (Builder) super.toBuilder();
+        Builder builder = super.toBuilder();
 
         builder.withOauthClientId(clientId);
         builder.withClientSecretName(clientSecretName);

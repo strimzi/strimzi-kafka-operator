@@ -127,7 +127,7 @@ public abstract class AbstractKafkaClient {
         };
     }
 
-    protected <SELF extends Builder<SELF>> SELF toBuilder() {
+    protected <SELF extends AbstractKafkaClient.Builder<SELF>> SELF toBuilder() {
         verifyEssentialInstanceAttributes();
 
         return (SELF) new AbstractKafkaClient.Builder<>()

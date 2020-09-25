@@ -59,7 +59,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
 
     @Override
     protected Builder toBuilder() {
-        Builder builder = (Builder) super.toBuilder();
+        Builder builder = super.toBuilder();
 
         builder.withUsingPodName(getPodName());
         builder.withBootstrapServer(getBootstrapServer());
