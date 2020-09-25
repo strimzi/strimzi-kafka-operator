@@ -45,6 +45,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Builder toBuilder() {
         return super.toBuilder();
     }

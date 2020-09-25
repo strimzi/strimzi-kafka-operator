@@ -76,6 +76,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Builder toBuilder() {
         Builder builder = super.toBuilder();
 

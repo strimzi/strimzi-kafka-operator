@@ -58,6 +58,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected Builder toBuilder() {
         Builder builder = super.toBuilder();
 

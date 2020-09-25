@@ -35,6 +35,7 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient implements K
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Builder toBuilder() {
         Builder builder = super.toBuilder();
 
