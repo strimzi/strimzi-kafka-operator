@@ -25,6 +25,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -129,7 +130,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -226,7 +227,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -334,7 +335,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -479,7 +480,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -536,7 +537,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -689,7 +690,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
