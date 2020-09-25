@@ -176,10 +176,10 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
     @SuppressWarnings("Regexp") // because of extBootstrapService.getSpec().getType().toLowerCase()
     @SuppressFBWarnings("DM_CONVERT_CASE")
     public static String getExternalBootstrapConnect(String namespace, String clusterName, String listenerName) {
-        if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
 
+        if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
             Route route = listenerName != null ?
-                kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-" + listenerName + "bootstrap").get() :
+                kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-" + listenerName + "-bootstrap").get() :
                 kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
 
             if (route != null && !route.getStatus().getIngress().isEmpty()) {
@@ -203,7 +203,6 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
             case KafkaListenerExternalNodePort.TYPE_NODEPORT:
                 return kubeClient().getNodeAddress() + ":" + extBootstrapService.getSpec().getPorts().get(0).getNodePort();
             case KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER:
-                // TODO: here change the way of specifying load-balancers...
                 LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
                 String result = loadBalancerIngress.getHostname();
 

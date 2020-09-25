@@ -84,8 +84,6 @@ public class MultipleListenersST extends AbstractST {
         runTestCase(testCases.get(KafkaListenerType.LOADBALANCER));
     }
 
-    // DONE
-
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
     @Test
