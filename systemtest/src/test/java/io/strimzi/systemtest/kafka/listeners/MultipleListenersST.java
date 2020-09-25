@@ -5,186 +5,260 @@
 package io.strimzi.systemtest.kafka.listeners;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
-import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
-import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
     public static final String NAMESPACE = "multiple-listeners-cluster-test";
 
-    private ProducerProperties producerProperties;
-    private ConsumerProperties consumerProperties;
+    // only 4 type of listeners
+    private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
 
-    @TestFactory
-    Iterator<DynamicTest> testMultipleListeners() {
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Test
+    void testMultipleNodePorts() {
+        runTestCase(testCases.get(KafkaListenerType.NODEPORT));
+    }
 
-        List<DynamicTest> dynamicTests = new ArrayList<>(10);
-        List<List<GenericKafkaListener>> testCases = generateTestCases();
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Test
+    void testMultipleInternal() {
+        runTestCase(testCases.get(KafkaListenerType.INTERNAL));
+    }
 
-        testCases.forEach(listener -> dynamicTests.add(DynamicTest.dynamicTest("Test " + listener.get(0).getType() + " with count of " + listener.size(), () -> {
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Test
+    void testCombinationOfInternalAndExternalListeners() {
+        List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
-            String excludedGroups = System.getProperty("excludedGroups");
-            String[] excludedGroupsArray = excludedGroups.split(",");
+        List<GenericKafkaListener> internalListeners = testCases.get(KafkaListenerType.INTERNAL);
+        List<GenericKafkaListener> nodeportListeners = testCases.get(KafkaListenerType.NODEPORT);
 
-            LOGGER.info("This is excluded groups {} and listener type is {}", Arrays.toString(excludedGroupsArray), listener.get(0).getType());
+        multipleDifferentListeners.addAll(internalListeners);
+        multipleDifferentListeners.addAll(nodeportListeners);
 
-            for (String excludedGroup : excludedGroupsArray) {
-                // if the excludedGroups do not matched with generated listener type then we will skip the test case
-                Assumptions.assumeFalse(excludedGroup.equals(listener.get(0).getType().toValue()));
-            }
+        // run INTERNAL + NODEPORT listeners
+        runTestCase(multipleDifferentListeners);
+    }
 
-            // exercise phase
-            KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
-                .editSpec()
+    @Tag(LOADBALANCER_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Test
+    void testMultipleLoadBalancers() {
+        runTestCase(testCases.get(KafkaListenerType.LOADBALANCER));
+    }
+
+    // DONE
+
+    @OpenShiftOnly
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Test
+    void testMultipleRoutes() {
+        runTestCase(testCases.get(KafkaListenerType.ROUTE));
+    }
+
+    @Tag(NODEPORT_SUPPORTED)
+    @OpenShiftOnly
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Test
+    void testMixtureOfExternalListeners() {
+        List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
+
+        List<GenericKafkaListener> routeListeners = testCases.get(KafkaListenerType.ROUTE);
+        List<GenericKafkaListener> nodeportListeners = testCases.get(KafkaListenerType.NODEPORT);
+
+        multipleDifferentListeners.addAll(routeListeners);
+        multipleDifferentListeners.addAll(nodeportListeners);
+
+        // run ROUTE + NODEPORT listeners
+        runTestCase(multipleDifferentListeners);
+    }
+
+    @Tag(NODEPORT_SUPPORTED)
+    @Tag(LOADBALANCER_SUPPORTED)
+    @OpenShiftOnly
+    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Test
+    void testCombinationOfEveryKindOfListener() {
+        List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
+
+        List<GenericKafkaListener> internalListeners = testCases.get(KafkaListenerType.INTERNAL);
+        List<GenericKafkaListener> nodeportListeners = testCases.get(KafkaListenerType.NODEPORT);
+        List<GenericKafkaListener> routeListeners = testCases.get(KafkaListenerType.ROUTE);
+        List<GenericKafkaListener> loadbalancersListeners = testCases.get(KafkaListenerType.LOADBALANCER);
+
+        multipleDifferentListeners.addAll(internalListeners);
+        multipleDifferentListeners.addAll(nodeportListeners);
+        multipleDifferentListeners.addAll(routeListeners);
+        multipleDifferentListeners.addAll(loadbalancersListeners);
+
+        // run INTERNAL + NODEPORT + ROUTE + LOADBALANCER listeners
+        runTestCase(multipleDifferentListeners);
+    }
+
+    private void runTestCase(List<GenericKafkaListener> listeners) {
+
+        LOGGER.info("This is listeners {}, which will verified.", listeners);
+
+        // exercise phase
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
                 .editKafka()
-                .withNewListeners()
-                .withGenericKafkaListeners(listener)
-                .endListeners()
+                    .withNewListeners()
+                        .withGenericKafkaListeners(listeners)
+                    .endListeners()
                 .endKafka()
-                .endSpec()
-                .done();
+            .endSpec()
+            .done();
 
-            KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        KafkaUser kafkaUserInstance = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
-            if (listener.get(0).getType() != KafkaListenerType.INTERNAL) {
-                // using external clients
-                producerProperties = new ProducerProperties.ProducerPropertiesBuilder()
-                    .withNamespaceName(NAMESPACE)
-                    .withClusterName(CLUSTER_NAME)
-                    .withBootstrapServerConfig(AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, CLUSTER_NAME))
-                    .withKeySerializerConfig(StringSerializer.class)
-                    .withValueSerializerConfig(StringSerializer.class)
-                    .withClientIdConfig("producer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
-                    .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-                    .withSharedProperties()
-                    .build();
+        for (GenericKafkaListener listener : listeners) {
 
-                consumerProperties = new ConsumerProperties.ConsumerPropertiesBuilder()
-                    .withNamespaceName(NAMESPACE)
-                    .withClusterName(CLUSTER_NAME)
-                    .withBootstrapServerConfig(AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, CLUSTER_NAME))
-                    .withKeyDeserializerConfig(StringDeserializer.class)
-                    .withValueDeserializerConfig(StringDeserializer.class)
-                    .withClientIdConfig("consumer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
-                    .withGroupIdConfig("consumer-group-test")
-                    .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
-                    .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-                    .withSharedProperties()
-                    .build();
+            String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+            KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-                // verify phase
+            boolean isTlsEnabled = listener.isTls();
 
-                for (int i = 0; i < listener.size() - 1; i++) {
+            if (listener.getType() != KafkaListenerType.INTERNAL) {
 
-                    BasicExternalKafkaClient clientForExternal1 = new BasicExternalKafkaClient.Builder()
-                        .withTopicName(TOPIC_NAME)
+                if (isTlsEnabled) {
+                    BasicExternalKafkaClient externalTlsKafkaClient = new BasicExternalKafkaClient.Builder()
+                        .withTopicName(topicName)
                         .withNamespaceName(NAMESPACE)
                         .withClusterName(CLUSTER_NAME)
                         .withMessageCount(MESSAGE_COUNT)
-                        .withProducerProperties(producerProperties)
-                        .withConsumerProperties(consumerProperties)
+                        .withKafkaUsername(kafkaUsername)
+                        .withListenerName(listener.getName())
+                        .withSecurityProtocol(SecurityProtocol.SSL)
                         .build();
 
                     // verify phase
-                    clientForExternal1.verifyProducedAndConsumedMessages(
-                        clientForExternal1.sendMessagesPlain(),
-                        clientForExternal1.receiveMessagesPlain()
+                    externalTlsKafkaClient.verifyProducedAndConsumedMessages(
+                        externalTlsKafkaClient.sendMessagesTls(),
+                        externalTlsKafkaClient.receiveMessagesTls()
                     );
-
-                    BasicExternalKafkaClient clientForExternal2 = clientForExternal1.toBuilder(clientForExternal1)
-                        .withProducerProperties(
-                            producerProperties.toBuilder(producerProperties)
-                                .withBootstrapServerConfig(AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, CLUSTER_NAME, listener.get(i + 1).getName()))
-                                .build())
-                        .withConsumerProperties(
-                            consumerProperties.toBuilder(consumerProperties)
-                                .withBootstrapServerConfig(AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, CLUSTER_NAME, listener.get(i + 1).getName()))
-                                .build())
+                } else {
+                    BasicExternalKafkaClient externalPlainKafkaClient = new BasicExternalKafkaClient.Builder()
+                        .withTopicName(topicName)
+                        .withNamespaceName(NAMESPACE)
+                        .withClusterName(CLUSTER_NAME)
+                        .withMessageCount(MESSAGE_COUNT)
+                        .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
+                        .withListenerName(listener.getName())
                         .build();
 
                     // verify phase
-                    clientForExternal2.verifyProducedAndConsumedMessages(
-                        clientForExternal2.sendMessagesPlain(),
-                        clientForExternal2.receiveMessagesPlain()
+                    externalPlainKafkaClient.verifyProducedAndConsumedMessages(
+                        externalPlainKafkaClient.sendMessagesPlain(),
+                        externalPlainKafkaClient.receiveMessagesPlain()
                     );
                 }
             } else {
                 // using internal clients
-                for (int i = 0; i < listener.size() - 1; i++) {
+                if (isTlsEnabled) {
+                    KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME + "-tls",
+                        listener.getName(), kafkaUserInstance).done();
 
-                    // exercise phase
-                    final String producerName =  "producer-name";
-                    final String consumerName  = "consumer-name";
+                    final String kafkaClientsTlsPodName =
+                        ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-tls").get(0).getMetadata().getName();
 
-                    // tls or plain
-                    KafkaBasicClientResource kafkaBasicClientJob = listener.get(i).isTls() ? new KafkaBasicClientResource(producerName, consumerName,
-                        KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 1000) :
-                        new KafkaBasicClientResource(producerName, consumerName,
-                            KafkaResources.plainBootstrapAddress(CLUSTER_NAME), TOPIC_NAME, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 1000);
+                    InternalKafkaClient internalTlsKafkaClient = new InternalKafkaClient.Builder()
+                            .withUsingPodName(kafkaClientsTlsPodName)
+                            .withBootstrapServer(KafkaResources.bootstrapAddressOnSpecificPort(CLUSTER_NAME, listener.getPort()))
+                            .withTopicName(topicName)
+                            .withNamespaceName(NAMESPACE)
+                            .withClusterName(CLUSTER_NAME)
+                            .withKafkaUsername(kafkaUsername)
+                            .withMessageCount(MESSAGE_COUNT)
+                            .build();
 
-                    kafkaBasicClientJob.producerStrimzi().done();
-                    kafkaBasicClientJob.consumerStrimzi().done();
+                    LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsTlsPodName);
 
                     // verify phase
-                    ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
-                    ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+                    internalTlsKafkaClient.checkProducedAndConsumedMessages(
+                        internalTlsKafkaClient.sendMessagesTls(),
+                        internalTlsKafkaClient.receiveMessagesTls()
+                    );
+                } else {
+                    KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME + "-plain").done();
 
+                    final String kafkaClientsPlainPodName =
+                        ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-plain").get(0).getMetadata().getName();
 
-                    LOGGER.info("Deleting the Jobs");
-                    // teardown (for clients)
-                    JobUtils.deleteJobWithWait(NAMESPACE, producerName);
-                    JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
+                    InternalKafkaClient internalPlainKafkaClient = new InternalKafkaClient.Builder()
+                        .withUsingPodName(kafkaClientsPlainPodName)
+                        .withBootstrapServer(KafkaResources.bootstrapAddressOnSpecificPort(CLUSTER_NAME, listener.getPort()))
+                        .withTopicName(topicName)
+                        .withNamespaceName(NAMESPACE)
+                        .withClusterName(CLUSTER_NAME)
+                        .withMessageCount(MESSAGE_COUNT)
+                        .build();
+
+                    LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPlainPodName);
+
+                    // verify phase
+                    internalPlainKafkaClient.checkProducedAndConsumedMessages(
+                        internalPlainKafkaClient.sendMessagesPlain(),
+                        internalPlainKafkaClient.receiveMessagesPlain()
+                    );
                 }
             }
-        })));
-        return dynamicTests.iterator();
+        }
     }
 
-    private List<List<GenericKafkaListener>> generateTestCases() {
-
-        List<List<GenericKafkaListener>> testCases = new ArrayList<>(10);
+    private Map<KafkaListenerType, List<GenericKafkaListener>> generateTestCases() {
 
         LOGGER.info("Starting to generate test cases for multiple listeners");
 
-        for (int i = 0; i < 10; i++) {
+        int stochasticCount;
 
-            KafkaListenerType stochasticChosenListener = KafkaListenerType.values()[ThreadLocalRandom.current().nextInt(0, KafkaListenerType.values().length - 1)];
+        for (KafkaListenerType kafkaListenerType : KafkaListenerType.values()) {
+
+            LOGGER.info("Generating {} listener", kafkaListenerType.name());
+
             List<GenericKafkaListener> testCase = new ArrayList<>(5);
-            int stochasticCount;
 
-            switch (stochasticChosenListener) {
+            switch (kafkaListenerType) {
                 case NODEPORT:
                     stochasticCount = ThreadLocalRandom.current().nextInt(2, 5);
 
@@ -216,18 +290,13 @@ public class MultipleListenersST extends AbstractST {
                     }
                     break;
                 case ROUTE:
-                    stochasticCount = ThreadLocalRandom.current().nextInt(2, 3);
-
-                    for (int j = 0; j < stochasticCount; j++) {
-
-                        testCase.add(new GenericKafkaListenerBuilder()
-                            .withName(generateRandomListenerName())
-                            .withPort(8090 + j)
-                            // Route or Ingress type listener and requires enabled TLS encryption
-                            .withType(KafkaListenerType.ROUTE)
-                            .withTls(true)
-                            .build());
-                    }
+                    testCase.add(new GenericKafkaListenerBuilder()
+                        .withName(generateRandomListenerName())
+                        .withPort(8091)
+                        .withType(KafkaListenerType.ROUTE)
+                        // Route or Ingress type listener and requires enabled TLS encryption
+                        .withTls(true)
+                        .build());
                     break;
                 case INTERNAL:
                     stochasticCount = ThreadLocalRandom.current().nextInt(2, 4);
@@ -243,10 +312,8 @@ public class MultipleListenersST extends AbstractST {
                             .withTls(stochasticCommunication)
                             .build());
                     }
-                    break;
-                default:
             }
-            testCases.add(testCase);
+            testCases.put(kafkaListenerType, testCase);
         }
 
         LOGGER.info("Finished will generation of test cases for multiple listeners");
@@ -260,7 +327,8 @@ public class MultipleListenersST extends AbstractST {
         StringBuilder builder = new StringBuilder();
 
         while (builder.toString().length() == 0) {
-            int length = new Random().nextInt(10) + 15;
+            // spec.containers[j].ports[i].name = "tcp-[generated-name]": must be no more than 15 characters
+            int length = new Random().nextInt(5) + 5;
             for (int i = 0; i < length; i++) {
                 builder.append(lexicon.charAt(new Random().nextInt(lexicon.length())));
             }
@@ -268,60 +336,11 @@ public class MultipleListenersST extends AbstractST {
         return builder.toString();
     }
 
-    // TODO: mixture test...
-    @Test
-    void  testMixtureOfExternalListeners() {
-
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
-            .editSpec()
-            .editKafka()
-            .withNewListeners()
-                .addNewGenericKafkaListener()
-                    .withName(generateRandomListenerName())
-                    .withPort(9191)
-                    .withType(KafkaListenerType.INTERNAL)
-                    .withTls(true)
-                .endGenericKafkaListener()
-                .addNewGenericKafkaListener()
-                    .withName(generateRandomListenerName())
-                    .withPort(9190)
-                    .withType(KafkaListenerType.INTERNAL)
-                    .withTls(true)
-                .endGenericKafkaListener()
-            .endListeners()
-            .endKafka()
-            .endSpec()
-            .done();
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        BasicExternalKafkaClient clientForExternal1 = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withSecurityProtocol(SecurityProtocol.SSL)
-            .withProducerProperties(producerProperties)
-            .withConsumerProperties(consumerProperties)
-            .build();
-
-        // verify phase
-        clientForExternal1.verifyProducedAndConsumedMessages(
-            clientForExternal1.sendMessagesPlain(),
-            clientForExternal1.receiveMessagesPlain()
-        );
-    }
-
-    // TODO: mixture test...
-    @Test
-    void testCombinationOfInternalAndExternalListeners() {
-
-    }
-
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
+
+        generateTestCases();
     }
 }

@@ -92,7 +92,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
             properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName, listenerName))
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
                 .withClientIdConfig("producer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
@@ -127,7 +127,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, clusterName) : this.caCertName;
+                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ProducerProperties properties = this.producerProperties;
@@ -136,7 +136,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
             properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName, listenerName))
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
                 .withClientIdConfig("producer-tls-" + new Random().nextInt(Integer.MAX_VALUE))
@@ -179,7 +179,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
             properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName, listenerName))
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig("consumer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
@@ -216,7 +216,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, this.clusterName) : this.caCertName;
+                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ConsumerProperties properties = this.consumerProperties;
@@ -225,7 +225,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
             properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName, listenerName))
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig("consumer-tls-" + new Random().nextInt(Integer.MAX_VALUE))

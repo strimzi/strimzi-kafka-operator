@@ -41,6 +41,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
     protected String kafkaUsername;
     protected SecurityProtocol securityProtocol;
     protected String caCertName;
+    protected String listenerName;
     protected ProducerProperties producerProperties;
     protected ConsumerProperties consumerProperties;
 
@@ -55,6 +56,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
         private String kafkaUsername;
         private SecurityProtocol securityProtocol;
         private String caCertName;
+        protected String listenerName;
         private ProducerProperties producerProperties;
         private ConsumerProperties consumerProperties;
 
@@ -103,6 +105,11 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
             return self();
         }
 
+        public T withListenerName(String listenerName) {
+            this.listenerName = listenerName;
+            return self();
+        }
+
         public T withProducerProperties(ProducerProperties producerProperties) {
             this.producerProperties = producerProperties;
             return self();
@@ -142,6 +149,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
         kafkaUsername = builder.kafkaUsername;
         securityProtocol = builder.securityProtocol;
         caCertName = builder.caCertName;
+        listenerName = builder.listenerName;
         producerProperties = builder.producerProperties;
         consumerProperties = builder.consumerProperties;
     }
@@ -271,6 +279,9 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
     public String getCaCertName() {
         return caCertName;
     }
+    public String getListenerName() {
+        return listenerName;
+    }
 
     @Override
     public String toString() {
@@ -284,6 +295,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
             ", kafkaUsername='" + kafkaUsername + '\'' +
             ", securityProtocol=" + securityProtocol +
             ", caCertName='" + caCertName + '\'' +
+            ", listenerName='" + listenerName + '\'' +
             ", producerProperties=" + producerProperties +
             ", consumerProperties=" + consumerProperties +
             '}';

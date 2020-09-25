@@ -171,7 +171,7 @@ public class KafkaResource {
                         .endGenericKafkaListener()
                     .endListeners()
                     .withNewInlineLogging()
-                        .addToLoggers("log4j.rootLogger", "DEBUG")
+                        .addToLoggers("log4j.rootLogger", "DEBUG, CONSOLE")
                     .endInlineLogging()
                 .endKafka()
                 .editZookeeper()
@@ -183,12 +183,12 @@ public class KafkaResource {
                 .editEntityOperator()
                     .editUserOperator()
                         .withNewInlineLogging()
-                            .addToLoggers("rootLogger.level", "DEBUG")
+                            .addToLoggers("rootLogger.level", "DEBUG, CONSOLE")
                         .endInlineLogging()
                     .endUserOperator()
                     .editTopicOperator()
                         .withNewInlineLogging()
-                            .addToLoggers("rootLogger.level", "DEBUG")
+                            .addToLoggers("rootLogger.level", "DEBUG, CONSOLE")
                         .endInlineLogging()
                     .endTopicOperator()
                 .endEntityOperator()
@@ -292,18 +292,24 @@ public class KafkaResource {
         ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, DoneableKafka.class, resourceName, editor);
     }
 
-    public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName) {
+    public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName, String listenerName) {
         List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
-        GenericKafkaListener tlsListener = listeners.stream().filter(listener -> "tls".equals(listener.getName())).findFirst().orElseThrow(() -> new RuntimeException());
+
+        GenericKafkaListener tlsListener = listenerName == null || listenerName.isEmpty() ?
+            listeners.stream().filter(listener -> "tls".equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
         return tlsListener.getConfiguration() == null ?
                 KafkaResources.clusterCaCertificateSecretName(clusterName) : tlsListener.getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
-    public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName) {
+    public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName, String listenerName) {
         List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
-        GenericKafkaListener external = listeners.stream().filter(listener -> "external".equals(listener.getName())).findFirst().orElseThrow(() -> new RuntimeException());
+
+        GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
+            listeners.stream().filter(listener -> "external".equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
         return external.getConfiguration() == null ?
-                KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+            KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
     }
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {

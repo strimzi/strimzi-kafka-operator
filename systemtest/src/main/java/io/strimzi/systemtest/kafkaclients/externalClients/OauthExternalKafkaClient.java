@@ -131,7 +131,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName, listenerName))
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
                 .withClientIdConfig(kafkaUsername + "-producer")
@@ -164,7 +164,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
+                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ProducerProperties properties = this.producerProperties;
@@ -175,7 +175,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
             properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName,  listenerName))
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
                 .withCaSecretName(caCertName)
@@ -218,7 +218,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
                 .withClusterName(clusterName)
                 .withGroupIdConfig(consumerGroup)
                 .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName, listenerName))
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig(kafkaUsername + "-consumer")
@@ -253,7 +253,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName) : this.caCertName;
+                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ConsumerProperties properties = this.consumerProperties;
@@ -263,7 +263,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withCaSecretName(caCertName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName, listenerName))
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withKafkaUsername(kafkaUsername)
