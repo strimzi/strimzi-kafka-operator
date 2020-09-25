@@ -171,7 +171,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<GenericKafkaListener> listeners = asList(listener1, listener2, listener3);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder("listener names [listener 1, LISTENER2, listener12345678901234567890] are invalid and do not match the pattern ^[a-z0-9]{1,25}$"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder("listener names [listener 1, LISTENER2, listener12345678901234567890] are invalid and do not match the pattern ^[a-z0-9]{1,11}$"));
     }
 
     @Test
