@@ -28,7 +28,7 @@ import java.security.InvalidParameterException;
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public abstract class AbstractKafkaClient<C extends AbstractKafkaClient<C>> {
+public abstract class AbstractKafkaClient {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 

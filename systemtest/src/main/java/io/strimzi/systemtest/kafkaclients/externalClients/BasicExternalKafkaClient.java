@@ -28,7 +28,7 @@ import java.util.function.IntPredicate;
 /**
  * The BasicExternalKafkaClient for sending and receiving messages with basic properties. The client is using an external listeners.
  */
-public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalKafkaClient> implements KafkaClientOperations {
+public class BasicExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
 
@@ -53,7 +53,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
     public Builder toBuilder(AbstractKafkaClient.Builder<?> builder) {
         super.toBuilder(builder);
 
-        return ((Builder) builder);
+        return (Builder) builder;
     }
 
     public int sendMessagesPlain() {

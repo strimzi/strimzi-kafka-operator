@@ -29,7 +29,7 @@ import java.util.function.IntPredicate;
  * The OauthExternalKafkaClient for sending and receiving messages using access token provided by authorization server.
  * The client is using an external listeners.
  */
-public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalKafkaClient> implements KafkaClientOperations {
+public class OauthExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(OauthExternalKafkaClient.class);
 
