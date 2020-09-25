@@ -202,7 +202,7 @@ public class MultipleListenersST extends AbstractST {
 
                     InternalKafkaClient internalTlsKafkaClient = new InternalKafkaClient.Builder()
                             .withUsingPodName(kafkaClientsTlsPodName)
-                            .withBootstrapServer(KafkaResources.bootstrapAddressOnSpecificPort(CLUSTER_NAME, listener.getPort()))
+                            .withBootstrapServer(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + listener.getPort())
                             .withTopicName(topicName)
                             .withNamespaceName(NAMESPACE)
                             .withClusterName(CLUSTER_NAME)
@@ -225,7 +225,7 @@ public class MultipleListenersST extends AbstractST {
 
                     InternalKafkaClient internalPlainKafkaClient = new InternalKafkaClient.Builder()
                         .withUsingPodName(kafkaClientsPlainPodName)
-                        .withBootstrapServer(KafkaResources.bootstrapAddressOnSpecificPort(CLUSTER_NAME, listener.getPort()))
+                        .withBootstrapServer(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + listener.getPort())
                         .withTopicName(topicName)
                         .withNamespaceName(NAMESPACE)
                         .withClusterName(CLUSTER_NAME)

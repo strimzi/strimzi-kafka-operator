@@ -121,16 +121,16 @@ public abstract class AbstractKafkaClient {
             return (SELF) this;
         }
 
-        protected AbstractKafkaClient build() throws InstantiationException {
+        public AbstractKafkaClient build() throws InstantiationException {
             // ensure that build() can be only invoked in sub-classes
             throw new InstantiationException();
         };
     }
 
-    protected Builder<?> toBuilder() {
+    protected <SELF extends Builder<SELF>> SELF toBuilder() {
         verifyEssentialInstanceAttributes();
 
-        return new Builder<>()
+        return (SELF) new AbstractKafkaClient.Builder<>()
             .withTopicName(topicName)
             .withPartition(partition)
             .withNamespaceName(namespaceName)
@@ -143,7 +143,6 @@ public abstract class AbstractKafkaClient {
             .withListenerName(listenerName)
             .withProducerProperties(producerProperties)
             .withConsumerProperties(consumerProperties);
-
     }
 
     protected AbstractKafkaClient(Builder<?> builder) {
