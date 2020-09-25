@@ -63,7 +63,7 @@ for LISTENER in $LISTENERS ; do
 
   # If OAuth is used, add the environment variables to the list for the envsubst command
   VAR_NAME="STRIMZI_${LISTENER}_OAUTH_CLIENT_SECRET"
-  if [ -z "${!VAR_NAME}" ]; then
+  if [ -n "${!VAR_NAME}" ]; then
     SUBSTITUTIONS="$SUBSTITUTIONS,\${STRIMZI_${LISTENER}_OAUTH_CLIENT_SECRET}"
   fi
 done
