@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.debezium.kafka.KafkaCluster;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -262,7 +263,10 @@ public class KafkaConnectApiTest {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         Checkpoint async = context.checkpoint();
 
-        client.updateConnectLoggers("localhost", PORT, desired)
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(desired);
+
+        client.updateConnectLoggers("localhost", PORT, desired, ops)
                 .onComplete(context.succeeding())
                 .compose(a -> client.listConnectLoggers("localhost", PORT)
                         .onComplete(context.succeeding(map -> context.verify(() -> {

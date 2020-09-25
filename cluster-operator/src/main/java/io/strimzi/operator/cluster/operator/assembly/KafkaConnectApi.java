@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
@@ -120,11 +121,11 @@ public interface KafkaConnectApi {
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param desiredLogging Desired logging.
+     * @param defaultLogging Default logging.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connector loggers.
      */
-    Future<Void> updateConnectLoggers(String host, int port, String desiredLogging);
-
+    Future<Void> updateConnectLoggers(String host, int port, String desiredLogging, OrderedProperties defaultLogging);
 
     /**
      * Make a {@code GET} request to {@code /admin/loggers}.

@@ -37,6 +37,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
@@ -172,7 +173,7 @@ public class ConnectorMockTest {
                     .build();
             return Future.succeededFuture(Collections.singletonList(connectorPlugin));
         });
-        when(api.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(api.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
         when(api.getConnectorConfig(any(), any(), anyInt(), any())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
             String connectorName = invocation.getArgument(3);

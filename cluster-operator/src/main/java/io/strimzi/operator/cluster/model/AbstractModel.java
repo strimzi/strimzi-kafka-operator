@@ -361,7 +361,7 @@ public abstract class AbstractModel {
     /**
      * @return OrderedProperties map with all available loggers for current pod and default values.
      */
-    protected OrderedProperties getDefaultLogConfig() {
+    public OrderedProperties getDefaultLogConfig() {
         String logConfigFileName = getDefaultLogConfigFileName();
         if (logConfigFileName == null || logConfigFileName.isEmpty()) {
             return new OrderedProperties();
