@@ -459,7 +459,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @Override
     public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging, OrderedProperties defaultLogging) {
-        log.info("proc se mi toto deje?");
         return listConnectLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers, defaultLogging));
     }
 

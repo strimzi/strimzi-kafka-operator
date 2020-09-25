@@ -411,6 +411,13 @@ public class Util {
         return result.toString();
     }
 
+    /**
+     * Load the properties and expand any variables of format ${NAME} inside values with resolved values.
+     * Variables are resolved by looking up the property names only within the loaded map.
+     *
+     * @param env Multiline properties file as String
+     * @return Multiline properties file as String with variables resolved
+     */
     public static String expandVars(String env) {
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(env);
@@ -422,22 +429,31 @@ public class Util {
         return resultBuilder.toString();
     }
 
+    /**
+     * Search for occurrences of ${NAME} in the 'value' parameter and replace them with
+     * the value for the NAME key in the 'env' map.
+     *
+     * @param value String value possibly containing variables of format: ${NAME}
+     * @param env Var map with name:value pairs
+     * @return Input string with variable references resolved
+     */
     public static String expandVar(String value, Map<String, String> env) {
         StringBuilder sb = new StringBuilder();
-        int e = -1;
-        int b;
-        while ((b = value.indexOf("${", e + 1)) != -1) {
-            sb.append(value.substring(e + 1, b));
-            e = value.indexOf("}", b + 2);
-            if (e != -1) {
-                String key = value.substring(b + 2, e);
-                String r = env.get(key);
-                sb.append(r != null ? r : "");
+        int endIdx = -1;
+        int startIdx;
+        int prefixLen = "${".length();
+        while ((startIdx = value.indexOf("${", endIdx + 1)) != -1) {
+            sb.append(value.substring(endIdx + 1, startIdx));
+            endIdx = value.indexOf("}", startIdx + prefixLen);
+            if (endIdx != -1) {
+                String key = value.substring(startIdx + prefixLen, endIdx);
+                String resolved = env.get(key);
+                sb.append(resolved != null ? resolved : "");
             } else {
                 break;
             }
         }
-        sb.append(value.substring(e + 1));
+        sb.append(value.substring(endIdx + 1));
         return sb.toString();
     }
 
