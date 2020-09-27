@@ -275,7 +275,7 @@ public class KafkaConnectApiTest {
                             assertThat(map.get("org.reflections").get("level"), is("FATAL"));
                             assertThat(map.get("org.reflections.Reflection").get("level"), is("INFO"));
                             assertThat(map.get("root").get("level"), is("INFO"));
-                            assertThat(map.get("io.debezium").get("level"), is("OFF"));
+                            assertThat(map.get("io.debezium").get("level"), is("INFO"));
                             assertThat(map.get("unknown"), is(nullValue()));
                             async.flag();
                         }))));
