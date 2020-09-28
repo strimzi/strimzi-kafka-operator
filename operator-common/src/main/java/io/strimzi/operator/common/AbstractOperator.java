@@ -214,7 +214,7 @@ public abstract class AbstractOperator<
 
                 Set<Condition> unknownAndDeprecatedConditions = validate(cr);
 
-                log.info("{}: {} {} should be checked for creation or update", reconciliation, kind, name);
+                log.info("{}: {} {} will be checked for creation or modification", reconciliation, kind, name);
 
                 createOrUpdate(reconciliation, cr)
                         .onComplete(res -> {
