@@ -349,7 +349,7 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (restartContext.backOff.done() || e.forceNow) {
-                if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
+                if (isCrashlooping(pod) || canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
                     log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
@@ -360,6 +360,10 @@ public class KafkaRoller {
                 throw e;
             }
         }
+    }
+
+    private boolean isCrashlooping(Pod pod) {
+        return "CrashLoopBackOff".equals(pod.getStatus().getContainerStatuses().stream().filter(containerStatus -> containerStatus.getName().equals("kafka")).collect(Collectors.toList()).get(0).getState().getWaiting().getReason());
     }
 
     /**
