@@ -25,6 +25,7 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaResource {
     private static final String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-metrics.yaml";
@@ -193,6 +195,24 @@ public class KafkaResource {
             .endSpec();
     }
 
+    public static DoneableKafka kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = getKafkaFromYaml(yamlFile);
+        return deployKafka(new KafkaBuilder(kafka)
+            .withNewMetadata()
+                .withName(clusterName)
+                .withNamespace(kubeClient().getNamespace())
+            .endMetadata()
+            .editOrNewSpec()
+                .editKafka()
+                    .withReplicas(kafkaReplicas)
+                .endKafka()
+                .editZookeeper()
+                    .withReplicas(zookeeperReplicas)
+                .endZookeeper()
+            .endSpec()
+            .build());
+    }
+
     static DoneableKafka deployKafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
             TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
@@ -241,6 +261,10 @@ public class KafkaResource {
 
     private static Kafka getKafkaFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Kafka.class);
+    }
+
+    private static Kafka getKafkaFromYaml(File yamlFile) {
+        return TestUtils.configFromYaml(yamlFile, Kafka.class);
     }
 
     /**

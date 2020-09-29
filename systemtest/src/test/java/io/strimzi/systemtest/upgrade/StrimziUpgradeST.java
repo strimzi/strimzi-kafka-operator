@@ -27,7 +27,6 @@ import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -90,7 +89,6 @@ public class StrimziUpgradeST extends AbstractST {
     private File kafkaYaml = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
-    private File kafkaVersions = null;
 
     private final String kafkaClusterName = "my-cluster";
     private final String topicName = "my-topic";
@@ -186,16 +184,23 @@ public class StrimziUpgradeST extends AbstractST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
         File kafkaPersistent = new File(dir, "strimzi-" + latestReleasedVersion + "/examples/kafka/kafka-persistent.yaml");
-        coDir = new File(dir, "strimzi-" + latestReleasedVersion + "/install/cluster-operator/");
-        kafkaVersions = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + latestReleasedVersion + "/kafka-versions.yaml");
+        File kafkaVersions = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + latestReleasedVersion + "/kafka-versions.yaml");
 
-        String latestKafkaVersion = getValueForLastKafkaVersionInFile("version");
+        coDir = new File(dir, "strimzi-" + latestReleasedVersion + "/install/cluster-operator/");
+
+        String latestKafkaVersion = getValueForLastKafkaVersionInFile(kafkaVersions, "version");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
         // Apply Kafka Persistent without version
-        applyKafkaWithoutVersion(kafkaPersistent, CLUSTER_NAME);
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaResource.kafkaFromYaml(kafkaPersistent, CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .withVersion(null)
+                    .addToConfig("log.message.format.version", getValueForLastKafkaVersionInFile(kafkaVersions, "format"))
+                .endKafka()
+            .endSpec()
+            .done();
 
         assertNull(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion());
 
@@ -218,29 +223,12 @@ public class StrimziUpgradeST extends AbstractST {
                 .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString(latestKafkaVersion));
     }
 
-    String getValueForLastKafkaVersionInFile(String field) throws IOException {
+    String getValueForLastKafkaVersionInFile(File kafkaVersions, String field) throws IOException {
         YAMLMapper mapper = new YAMLMapper();
         JsonNode node = mapper.readTree(kafkaVersions);
         ObjectNode kafkaVersionNode = (ObjectNode) node.get(node.size() - 1);
 
         return kafkaVersionNode.get(field).asText();
-    }
-
-    void applyKafkaWithoutVersion(File kafka, String clusterName) throws IOException {
-        YAMLMapper mapper = new YAMLMapper();
-        JsonNode node = mapper.readTree(kafka);
-        ObjectNode kafkaNode = (ObjectNode) node.at("/spec/kafka");
-        kafkaNode.remove("version");
-
-        ObjectNode kafkaConfigNode = (ObjectNode) kafkaNode.at("/config");
-        kafkaConfigNode.put("log.message.format.version", getValueForLastKafkaVersionInFile("format"));
-
-        ObjectNode metadataNode = (ObjectNode) node.at("/metadata");
-        metadataNode.remove("name");
-        metadataNode.put("name", clusterName);
-        metadataNode.put("namespace", NAMESPACE);
-
-        cmdKubeClient().applyContent(mapper.writeValueAsString(node));
     }
 
     @SuppressWarnings("MethodLength")

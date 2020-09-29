@@ -283,9 +283,13 @@ public final class TestUtils {
     }
 
     public static <T> T configFromYaml(String yamlPath, Class<T> c) {
+        return configFromYaml(new File(yamlPath), c);
+    }
+
+    public static <T> T configFromYaml(File yamlFile, Class<T> c) {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            return mapper.readValue(new File(yamlPath), c);
+            return mapper.readValue(yamlFile, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
