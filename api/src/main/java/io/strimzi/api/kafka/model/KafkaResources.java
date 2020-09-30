@@ -139,19 +139,6 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the address (<em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>)
-     * of the generic bootstrap {@code Service} for a {@code Kafka} cluster, and {@code port} of the given.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @param port The {@code spec.kafka.listeners.port} of the {@code Kafka} resource.
-     * @return The address of the corresponding bootstrap {@code Service}.
-     * @see #plainBootstrapAddress(String)
-     * @see #tlsBootstrapAddress(String)
-     */
-    public static String bootstrapAddressOnSpecificPort(String clusterName, int port) {
-        return bootstrapServiceName(clusterName) + ":" + port;
-    }
-
-    /**
      * Returns the name of the (headless) brokers {@code Service} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding brokers {@code Service}.
