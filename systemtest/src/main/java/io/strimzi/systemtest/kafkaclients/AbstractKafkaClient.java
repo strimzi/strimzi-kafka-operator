@@ -29,7 +29,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapService
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @SuppressWarnings("unchecked")
-public abstract class AbstractKafkaClient {
+public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<C>> {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 
@@ -121,16 +121,18 @@ public abstract class AbstractKafkaClient {
             return (SELF) this;
         }
 
-        public AbstractKafkaClient build() throws InstantiationException {
+        public AbstractKafkaClient<?> build() throws InstantiationException {
             // ensure that build() can be only invoked in sub-classes
             throw new InstantiationException();
         };
     }
 
-    protected <SELF extends AbstractKafkaClient.Builder<SELF>> SELF toBuilder() {
+    protected abstract C newBuilder();
+
+    protected AbstractKafkaClient.Builder<C> toBuilder() {
         verifyEssentialInstanceAttributes();
 
-        return (SELF) new AbstractKafkaClient.Builder<>()
+        return newBuilder()
             .withTopicName(topicName)
             .withPartition(partition)
             .withNamespaceName(namespaceName)

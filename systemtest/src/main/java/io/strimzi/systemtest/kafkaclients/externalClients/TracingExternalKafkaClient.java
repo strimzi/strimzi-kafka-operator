@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
  * The TracingKafkaClient for sending and receiving messages using tracing properties.
  * The client is using an external listeners.
  */
-public class TracingExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class TracingExternalKafkaClient extends AbstractKafkaClient<TracingExternalKafkaClient.Builder> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingExternalKafkaClient.class);
     private String serviceName;
@@ -35,13 +35,14 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient implements K
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    @Override
     public Builder toBuilder() {
-        Builder builder = super.toBuilder();
-
-        builder.withServiceName(serviceName);
-
-        return builder;
+        return ((Builder) super.toBuilder())
+            .withServiceName(serviceName);
     }
 
     private TracingExternalKafkaClient(TracingExternalKafkaClient.Builder builder) {

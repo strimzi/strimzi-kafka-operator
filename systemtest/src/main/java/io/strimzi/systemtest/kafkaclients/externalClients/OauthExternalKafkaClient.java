@@ -29,7 +29,7 @@ import java.util.function.IntPredicate;
  * The OauthExternalKafkaClient for sending and receiving messages using access token provided by authorization server.
  * The client is using an external listeners.
  */
-public class OauthExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalKafkaClient.Builder> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(OauthExternalKafkaClient.class);
 
@@ -76,16 +76,17 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    @Override
     public Builder toBuilder() {
-        Builder builder = super.toBuilder();
-
-        builder.withOauthClientId(clientId);
-        builder.withClientSecretName(clientSecretName);
-        builder.withOauthTokenEndpointUri(oauthTokenEndpointUri);
-        builder.withIntrospectionEndpointUri(introspectionEndpointUri);
-
-        return builder;
+        return newBuilder()
+            .withOauthClientId(clientId)
+            .withClientSecretName(clientSecretName)
+            .withOauthTokenEndpointUri(oauthTokenEndpointUri)
+            .withIntrospectionEndpointUri(introspectionEndpointUri);
     }
 
     private OauthExternalKafkaClient(Builder builder) {
