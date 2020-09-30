@@ -97,6 +97,8 @@ public class StrimziUpgradeST extends AbstractST {
     // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
     private final int expectedTopicCount = upgradeTopicCount + 3;
 
+    // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.json
+    // main idea of the test and usage of latestReleasedVersion: upgrade CO from version X, kafka Y, to CO version Z and kafka Y + 1 at the end
     private final String latestReleasedVersion = "0.19.0";
     private final String latestReleasedOperator = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip", latestReleasedVersion, latestReleasedVersion);
 
