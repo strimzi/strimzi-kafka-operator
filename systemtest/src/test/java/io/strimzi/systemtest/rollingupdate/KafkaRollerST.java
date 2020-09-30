@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -119,6 +120,29 @@ class KafkaRollerST extends AbstractST {
             .done();
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
+    }
+
+    @Test
+    void testKafkaPodCrashLooping() throws InterruptedException {
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .withNewJvmOptions()
+                        .withXx(Collections.singletonMap("UseParNewGC", "true"))
+                    .endJvmOptions()
+                .endKafka()
+            .endSpec()
+            .build());
+
+        // wait for the kafka STS to be created
+        Thread.sleep(60_000);
+
+        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
+
+        // wait for one of the pods to be rolled
+        Thread.sleep(120_000);
         assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
     }
 
