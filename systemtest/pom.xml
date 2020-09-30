@@ -140,6 +140,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.opentest4j</groupId>
+            <artifactId>opentest4j</artifactId>
+            <version>${opentest4j.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>javax.json</groupId>
             <artifactId>javax.json-api</artifactId>
             <version>${javax.json-api.version}</version>
