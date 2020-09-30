@@ -53,13 +53,13 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Test
     void testMultipleNodePorts() {
-        runTestCase(testCases.get(KafkaListenerType.NODEPORT));
+        runListenersTest(testCases.get(KafkaListenerType.NODEPORT));
     }
 
     @Tag(INTERNAL_CLIENTS_USED)
     @Test
     void testMultipleInternal() {
-        runTestCase(testCases.get(KafkaListenerType.INTERNAL));
+        runListenersTest(testCases.get(KafkaListenerType.INTERNAL));
     }
 
     @Tag(NODEPORT_SUPPORTED)
@@ -76,21 +76,21 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(nodeportListeners);
 
         // run INTERNAL + NODEPORT listeners
-        runTestCase(multipleDifferentListeners);
+        runListenersTest(multipleDifferentListeners);
     }
 
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Test
     void testMultipleLoadBalancers() {
-        runTestCase(testCases.get(KafkaListenerType.LOADBALANCER));
+        runListenersTest(testCases.get(KafkaListenerType.LOADBALANCER));
     }
 
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
     @Test
     void testMultipleRoutes() {
-        runTestCase(testCases.get(KafkaListenerType.ROUTE));
+        runListenersTest(testCases.get(KafkaListenerType.ROUTE));
     }
 
     @Tag(NODEPORT_SUPPORTED)
@@ -108,7 +108,7 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(nodeportListeners);
 
         // run ROUTE + NODEPORT listeners
-        runTestCase(multipleDifferentListeners);
+        runListenersTest(multipleDifferentListeners);
     }
 
     @Tag(NODEPORT_SUPPORTED)
@@ -131,16 +131,12 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(loadbalancersListeners);
 
         // run INTERNAL + NODEPORT + ROUTE + LOADBALANCER listeners
-        runTestCase(multipleDifferentListeners);
+        runListenersTest(multipleDifferentListeners);
     }
 
-    private void runTestCase(List<GenericKafkaListener> listeners) {
+    private void runListenersTest(List<GenericKafkaListener> listeners) {
 
         LOGGER.info("This is listeners {}, which will verified.", listeners);
-
-        if (listeners.get(0).getType().equals(KafkaListenerType.ROUTE)) {
-            listeners.get(0).setName("external1");
-        }
 
         // exercise phase
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)

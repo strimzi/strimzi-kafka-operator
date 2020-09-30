@@ -4,29 +4,15 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.fabric8.kubernetes.api.model.DoneableService;
-import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceList;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.InvalidParameterException;
-
-import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<C>> {
@@ -198,65 +184,6 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         }
     }
 
-    /**
-     * Get external bootstrap connection
-     * @param namespace kafka namespace
-     * @param clusterName kafka cluster name
-     * @param listenerName name of the listener
-     * @return bootstrap url as string
-     */
-    @SuppressWarnings("Regexp") // because of extBootstrapService.getSpec().getType().toLowerCase()
-    @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String getExternalBootstrapConnect(String namespace, String clusterName, String listenerName) {
-
-        if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
-            Route route = listenerName != null ?
-                kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-" + listenerName + "-bootstrap").get() :
-                kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
-
-            if (route != null && !route.getStatus().getIngress().isEmpty()) {
-                return route.getStatus().getIngress().get(0).getHost() + ":443";
-            }
-        }
-
-        NonNamespaceOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> services = kubeClient(namespace).getClient().services().inNamespace(namespace);
-
-        Service extBootstrapService = listenerName != null ?
-            services.withName(KafkaResources.kafkaStatefulSetName(clusterName) + "-" + listenerName + "-bootstrap").get() :
-            services.withName(externalBootstrapServiceName(clusterName)).get();
-
-        if (extBootstrapService == null) {
-            throw new RuntimeException("Kafka cluster " + clusterName + " doesn't have an external bootstrap service");
-        }
-
-        LOGGER.info("Using {}, is equal to {}", extBootstrapService.getSpec().getType(),  KafkaListenerExternalNodePort.TYPE_NODEPORT);
-
-        switch (extBootstrapService.getSpec().getType().toLowerCase()) {
-            case KafkaListenerExternalNodePort.TYPE_NODEPORT:
-                return kubeClient().getNodeAddress() + ":" + extBootstrapService.getSpec().getPorts().get(0).getNodePort();
-            case KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER:
-                LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
-                String result = loadBalancerIngress.getHostname();
-
-                if (result == null) {
-                    result = loadBalancerIngress.getIp();
-                }
-                return result + ":" + extBootstrapService.getSpec().getPorts().get(0).getPort();
-            default:
-                throw new RuntimeException("Unexpected external bootstrap service" + extBootstrapService.getSpec().getType() + " for Kafka cluster " + clusterName);
-        }
-    }
-
-    /**
-     * Get external bootstrap connection
-     * @param namespace kafka namespace
-     * @param clusterName kafka cluster name
-     * @return bootstrap url as string
-     */
-    public static String getExternalBootstrapConnect(String namespace, String clusterName) {
-        return getExternalBootstrapConnect(namespace, clusterName, null);
-    }
-
     public ProducerProperties getProducerProperties() {
         return producerProperties;
     }
@@ -281,6 +208,14 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
 
     public void setCaCertName(String caCertName) {
         this.caCertName = caCertName;
+    }
+
+    public String getBootstrapServerFromStatus() {
+        return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().stream()
+            .filter(listener -> listener.getType().equals(listenerName))
+            .findFirst()
+            .orElseThrow()
+            .getBootstrapServers();
     }
 
     public String getTopicName() {
