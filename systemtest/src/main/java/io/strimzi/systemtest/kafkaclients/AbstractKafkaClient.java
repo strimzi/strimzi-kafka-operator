@@ -214,7 +214,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().stream()
             .filter(listener -> listener.getType().equals(listenerName))
             .findFirst()
-            .orElseThrow()
+            .orElseThrow(RuntimeException::new)
             .getBootstrapServers();
     }
 

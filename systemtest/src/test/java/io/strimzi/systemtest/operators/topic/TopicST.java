@@ -140,7 +140,7 @@ public class TopicST extends AbstractST {
             .withName(clusterName).get().getStatus().getListeners().stream()
             .filter(listener -> listener.getType().equals("external"))
             .findFirst()
-            .orElseThrow()
+            .orElseThrow(RuntimeException::new)
             .getBootstrapServers());
 
         try (AdminClient adminClient = AdminClient.create(properties)) {
