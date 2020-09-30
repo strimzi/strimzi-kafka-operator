@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
+import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -363,7 +365,14 @@ public class KafkaRoller {
     }
 
     private boolean isCrashlooping(Pod pod) {
-        return "CrashLoopBackOff".equals(pod.getStatus().getContainerStatuses().stream().filter(containerStatus -> containerStatus.getName().equals("kafka")).collect(Collectors.toList()).get(0).getState().getWaiting().getReason());
+        List<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream().filter(containerStatus -> containerStatus.getName().equals("kafkaaa")).collect(Collectors.toList());
+        if (kafkaContainerStatus.size() > 0) {
+            ContainerStateWaiting waiting = kafkaContainerStatus.get(0).getState().getWaiting();
+            if (waiting != null) {
+                return "CrashLoopBackOff".equals(waiting.getReason());
+            }
+        }
+        return false;
     }
 
     /**
