@@ -4,6 +4,9 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -31,6 +34,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,6 +65,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -80,6 +85,7 @@ public class StrimziUpgradeST extends AbstractST {
     private Map<String, String> coPods;
 
     private File coDir = null;
+    private File kafkaDir = null;
     private File kafkaYaml = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
@@ -91,8 +97,10 @@ public class StrimziUpgradeST extends AbstractST {
     // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
     private final int expectedTopicCount = upgradeTopicCount + 3;
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip";
-
+    // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.json
+    // main idea of the test and usage of latestReleasedVersion: upgrade CO from version X, kafka Y, to CO version Z and kafka Y + 1 at the end
+    private final String latestReleasedVersion = "0.19.0";
+    private final String latestReleasedOperator = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip", latestReleasedVersion, latestReleasedVersion);
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
     @MethodSource("loadJsonUpgradeData")
@@ -172,22 +180,31 @@ public class StrimziUpgradeST extends AbstractST {
         }
     }
 
+    // TODO: remove disabled tag after fix of issue #3685
     @Test
+    @Disabled("Disabled because of bug https://github.com/strimzi/strimzi-kafka-operator/issues/3685")
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
+        File kafkaPersistent = new File(dir, "strimzi-" + latestReleasedVersion + "/examples/kafka/kafka-persistent.yaml");
+        File kafkaVersions = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + latestReleasedVersion + "/kafka-versions.yaml");
 
-        coDir = new File(dir, "strimzi-0.19.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-" + latestReleasedVersion + "/install/cluster-operator/");
+
+        String latestKafkaVersion = getValueForLastKafkaVersionInFile(kafkaVersions, "version");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
-
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        // Apply Kafka Persistent without version
+        KafkaResource.kafkaFromYaml(kafkaPersistent, CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withVersion(null)
-                    .addToConfig("log.message.format.version", "2.5")
+                    .addToConfig("log.message.format.version", getValueForLastKafkaVersionInFile(kafkaVersions, "format"))
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .done();
+
+        assertNull(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion());
 
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -205,7 +222,15 @@ public class StrimziUpgradeST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.6.0"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString(latestKafkaVersion));
+    }
+
+    String getValueForLastKafkaVersionInFile(File kafkaVersions, String field) throws IOException {
+        YAMLMapper mapper = new YAMLMapper();
+        JsonNode node = mapper.readTree(kafkaVersions);
+        ObjectNode kafkaVersionNode = (ObjectNode) node.get(node.size() - 1);
+
+        return kafkaVersionNode.get(field).asText();
     }
 
     @SuppressWarnings("MethodLength")
