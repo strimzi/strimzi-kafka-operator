@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import org.apache.logging.log4j.LogManager;
@@ -40,6 +41,7 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient<TracingExter
     }
 
     @Override
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public Builder toBuilder() {
         return ((Builder) super.toBuilder())
             .withServiceName(serviceName);

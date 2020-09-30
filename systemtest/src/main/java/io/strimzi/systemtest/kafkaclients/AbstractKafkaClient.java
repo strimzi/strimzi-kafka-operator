@@ -32,7 +32,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     protected ProducerProperties producerProperties;
     protected ConsumerProperties consumerProperties;
 
-    public static class Builder<SELF extends Builder<SELF>> {
+    public abstract static class Builder<SELF extends Builder<SELF>> {
 
         private String topicName;
         protected Integer partition;

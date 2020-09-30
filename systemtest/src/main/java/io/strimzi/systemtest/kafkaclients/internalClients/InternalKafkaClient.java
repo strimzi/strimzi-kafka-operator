@@ -63,7 +63,6 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected Builder toBuilder() {
         return ((Builder) super.toBuilder())
             .withUsingPodName(podName)

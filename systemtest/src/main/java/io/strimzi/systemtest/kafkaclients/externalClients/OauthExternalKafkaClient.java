@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
@@ -81,8 +82,9 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
     }
 
     @Override
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public Builder toBuilder() {
-        return newBuilder()
+        return ((Builder) super.toBuilder())
             .withOauthClientId(clientId)
             .withClientSecretName(clientSecretName)
             .withOauthTokenEndpointUri(oauthTokenEndpointUri)
