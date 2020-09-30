@@ -202,13 +202,6 @@ spec:
         labels:
           replicaId: "$2"
           memberType: "$3"
-      # standalone Zookeeper
-      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
-        type: GAUGE
-        name: "zookeeper_$2"
-      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=InMemoryDataTree><>(\\w+)"
-        type: GAUGE
-        name: "zookeeper_$2"
   entityOperator:
     topicOperator: {}
     userOperator: {}
