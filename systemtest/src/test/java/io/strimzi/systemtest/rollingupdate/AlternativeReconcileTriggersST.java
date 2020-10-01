@@ -78,7 +78,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
-            .withConsumerGroup(consumerName)
+            .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(continuousTopicName)
             .withMessageCount(continuousClientsMessageCount)
