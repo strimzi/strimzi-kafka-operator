@@ -221,11 +221,10 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             throw new RuntimeException("There is no Kafka external listener specified in the Kafka CR Status");
         } else if (listenerName == null) {
             LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status.");
-            return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().get(0).getBootstrapServers();
+            return listenerStatusList.get(0).getBootstrapServers();
         }
 
-        return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().stream()
-            .filter(listener -> listener.getType().equals(listenerName))
+        return listenerStatusList.stream().filter(listener -> listener.getType().equals(listenerName))
             .findFirst()
             .orElseThrow(RuntimeException::new)
             .getBootstrapServers();
