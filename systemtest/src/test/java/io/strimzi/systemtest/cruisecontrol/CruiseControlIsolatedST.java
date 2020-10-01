@@ -205,8 +205,6 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @Test
     void testHostAliases() {
-        String aliasIp = "34.89.152.196";
-        String aliasHostname = "strimzi";
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp(aliasIp)
             .withHostnames(aliasHostname)
@@ -228,7 +226,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString("# Entries added by HostAliases.\n" + aliasIp + "\t" + aliasHostname));
+        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll

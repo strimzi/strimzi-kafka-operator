@@ -1118,8 +1118,6 @@ class ConnectST extends AbstractST {
     void testHostAliases() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        String aliasIp = "34.89.152.196";
-        String aliasHostname = "strimzi";
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp(aliasIp)
             .withHostnames(aliasHostname)
@@ -1139,7 +1137,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(connectPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString("# Entries added by HostAliases.\n" + aliasIp + "\t" + aliasHostname));
+        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll

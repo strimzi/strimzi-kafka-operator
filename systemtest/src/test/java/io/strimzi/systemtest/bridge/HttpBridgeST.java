@@ -259,8 +259,6 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void testHostAliases() {
         String bridgeName = "bridge-with-hosts";
 
-        String aliasIp = "34.89.152.196";
-        String aliasHostname = "strimzi";
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp(aliasIp)
             .withHostnames(aliasHostname)
@@ -280,7 +278,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(bridgePodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString("# Entries added by HostAliases.\n" + aliasIp + "\t" + aliasHostname));
+        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll
