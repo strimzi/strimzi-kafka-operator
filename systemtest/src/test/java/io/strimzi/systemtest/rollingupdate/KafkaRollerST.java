@@ -16,6 +16,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -135,15 +137,16 @@ class KafkaRollerST extends AbstractST {
             .endSpec()
             .build());
 
-        // wait for the kafka STS to be created
-        Thread.sleep(60_000);
+        TestUtils.waitFor("kafka STS to be created", Constants.GLOBAL_POLL_INTERVAL, 60_000, () ->
+            kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)) != null
+        );
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
-        // wait for one of the pods to be rolled
-        Thread.sleep(120_000);
-        assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
+        TestUtils.waitFor("one of the pods to be rolled", Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(20).toMillis(), () ->
+            !StatefulSetUtils.ssSnapshot(kafkaName).equals(kafkaPods)
+        );
     }
 
     @BeforeAll
