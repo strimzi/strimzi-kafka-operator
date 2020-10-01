@@ -96,11 +96,6 @@ import static java.util.Collections.emptyMap;
  *     This gets added to the {@code maximum}
  *     of {@code property}s within the corresponding Schema Object.</dd>
  *
- *     <dt>@{@link MinimumItems}</dt>
- *     <dd>A inclusive minimum for size of the array.
- *     This gets added to the {@code minItems}
- *     of {@code property}s within the corresponding Schema Object.</dd>
- *
  *     <dt>{@code @Deprecated}</dt>
  *     <dd>When present on a JavaBean property this marks the property as being deprecated within
  *     the corresponding Schema Object.
