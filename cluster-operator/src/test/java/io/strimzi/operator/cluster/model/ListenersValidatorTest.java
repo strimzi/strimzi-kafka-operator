@@ -115,7 +115,7 @@ public class ListenersValidatorTest {
     }
 
     @Test
-    public void testValidateForbiddenPorts() {
+    public void testValidateForbiddenPortByRange() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
                 .withPort(9000)
@@ -124,6 +124,18 @@ public class ListenersValidatorTest {
 
         List<GenericKafkaListener> listeners = asList(listener1);
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder("port 9000 is forbidden and cannot be used"));
+    }
+
+    @Test
+    public void testValidateForbiddenPortByException() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9404)
+                .withType(KafkaListenerType.INTERNAL)
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener1);
+        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder("port 9404 is forbidden and cannot be used"));
     }
 
     @Test
