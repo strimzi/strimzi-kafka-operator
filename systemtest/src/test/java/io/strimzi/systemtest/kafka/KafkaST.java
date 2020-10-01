@@ -80,7 +80,6 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
-import static io.strimzi.systemtest.Constants.NOT_AZP_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
@@ -1523,12 +1522,12 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    // AZP VMs don't support ping to external networks
-    @Tag(NOT_AZP_SUPPORTED)
     void testHostAliases() {
+        String aliasIp = "34.89.152.196";
+        String aliasHostname = "strimzi";
         HostAlias hostAlias = new HostAliasBuilder()
-            .withIp("34.89.152.196")
-            .withHostnames("strimzi")
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
             .build();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -1555,18 +1554,9 @@ class KafkaST extends AbstractST {
         for (String podName : pods) {
             if (!podName.contains("entity-operator")) {
                 String containerName = podName.contains("kafka") ? "kafka" : "zookeeper";
-                LOGGER.info("Checking host alias settings in {}, {} container", podName, containerName);
-
-                LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
-                String output = cmdKubeClient().execInPodContainer(false, podName, containerName, "ping", "-c", "5", "strimzi").out();
-
-                LOGGER.info("Checking output of ping");
-                assertThat(output, containsString("PING strimzi (34.89.152.196)"));
-                assertThat(output, containsString("5 packets transmitted, 5 received"));
-
                 LOGGER.info("Checking the /etc/hosts file");
-                output = cmdKubeClient().execInPodContainer(false, podName, containerName, "cat", "/etc/hosts").out();
-                assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+                String output = cmdKubeClient().execInPodContainer(false, podName, containerName, "cat", "/etc/hosts").out();
+                assertThat(output, containsString("# Entries added by HostAliases.\n" + aliasIp + "\t" + aliasHostname));
             }
         }
     }

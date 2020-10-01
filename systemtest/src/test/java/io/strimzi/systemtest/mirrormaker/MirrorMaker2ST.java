@@ -54,7 +54,6 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.NOT_AZP_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -780,12 +779,12 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @Test
-    // AZP VMs don't support ping to external networks
-    @Tag(NOT_AZP_SUPPORTED)
     void testHostAliases() {
+        String aliasIp = "34.89.152.196";
+        String aliasHostname = "strimzi";
         HostAlias hostAlias = new HostAliasBuilder()
-            .withIp("34.89.152.196")
-            .withHostnames("strimzi")
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
             .build();
 
         // Deploy source kafka
@@ -805,16 +804,9 @@ class MirrorMaker2ST extends AbstractST {
 
         String mm2PodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
-        String output = cmdKubeClient().execInPod(mm2PodName, "ping", "-c", "5", "strimzi").out();
-
-        LOGGER.info("Checking output of ping");
-        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
-        assertThat(output, containsString("5 packets transmitted, 5 received"));
-
         LOGGER.info("Checking the /etc/hosts file");
-        output = cmdKubeClient().execInPod(mm2PodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+        String output = cmdKubeClient().execInPod(mm2PodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString("# Entries added by HostAliases.\n" + aliasIp + "\t" + aliasHostname));
     }
 
     @BeforeAll
