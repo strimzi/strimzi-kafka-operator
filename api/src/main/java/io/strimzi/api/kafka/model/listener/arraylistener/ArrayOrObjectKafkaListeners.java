@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.crdgenerator.annotations.Alternation;
 import io.strimzi.crdgenerator.annotations.Alternative;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.IOException;
@@ -45,6 +46,7 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
     }
 
     @Alternative()
+    @MinimumItems(1)
     public List<GenericKafkaListener> getGenericKafkaListeners() {
         return genericKafkaListeners;
     }
