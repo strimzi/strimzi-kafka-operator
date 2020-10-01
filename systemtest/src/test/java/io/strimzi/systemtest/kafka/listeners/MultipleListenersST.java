@@ -273,7 +273,7 @@ public class MultipleListenersST extends AbstractST {
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
-                            .withPort(6090 + j)
+                            .withPort(1090 + j)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(stochasticCommunication)
                             .build());
@@ -288,7 +288,7 @@ public class MultipleListenersST extends AbstractST {
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
-                            .withPort(7090 + j)
+                            .withPort(1190 + j)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(stochasticCommunication)
                             .build());
@@ -297,7 +297,7 @@ public class MultipleListenersST extends AbstractST {
                 case ROUTE:
                     testCaseListeners.add(new GenericKafkaListenerBuilder()
                         .withName(generateRandomListenerName())
-                        .withPort(8091)
+                        .withPort(12091)
                         .withType(KafkaListenerType.ROUTE)
                         // Route or Ingress type listener and requires enabled TLS encryption
                         .withTls(true)
@@ -312,7 +312,7 @@ public class MultipleListenersST extends AbstractST {
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
-                            .withPort(10090 + j)
+                            .withPort(1390 + j)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(stochasticCommunication)
                             .build());
