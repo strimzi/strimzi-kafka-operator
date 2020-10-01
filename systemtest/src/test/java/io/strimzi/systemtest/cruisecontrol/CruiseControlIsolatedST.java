@@ -35,6 +35,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.NOT_AZP_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -204,6 +205,8 @@ public class CruiseControlIsolatedST extends AbstractST {
     }
 
     @Test
+    // AZP VMs don't support ping to external networks
+    @Tag(NOT_AZP_SUPPORTED)
     void testHostAliases() {
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp("34.89.152.196")

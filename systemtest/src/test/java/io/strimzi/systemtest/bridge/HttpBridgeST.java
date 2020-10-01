@@ -37,6 +37,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.NOT_AZP_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -256,6 +257,8 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     }
 
     @Test
+    // AZP VMs don't support ping to external networks
+    @Tag(NOT_AZP_SUPPORTED)
     void testHostAliases() {
         String bridgeName = "bridge-with-hosts";
 

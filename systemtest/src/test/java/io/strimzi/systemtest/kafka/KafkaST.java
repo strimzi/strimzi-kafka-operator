@@ -80,6 +80,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.Constants.NOT_AZP_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
@@ -1522,6 +1523,8 @@ class KafkaST extends AbstractST {
     }
 
     @Test
+    // AZP VMs don't support ping to external networks
+    @Tag(NOT_AZP_SUPPORTED)
     void testHostAliases() {
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp("34.89.152.196")

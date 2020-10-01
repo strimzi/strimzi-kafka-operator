@@ -54,6 +54,7 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Constants.NOT_AZP_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -779,6 +780,8 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @Test
+    // AZP VMs don't support ping to external networks
+    @Tag(NOT_AZP_SUPPORTED)
     void testHostAliases() {
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp("34.89.152.196")

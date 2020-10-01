@@ -257,6 +257,11 @@ public interface Constants {
     String OLM = "olm";
 
     /**
+     * Tag for tests which are not allowed to run on Azure Pipelines, because it's limitations
+     */
+    String NOT_AZP_SUPPORTED = "notazpsupported";
+
+    /**
      * Cruise Control related parameters
      */
     String CRUISE_CONTROL_NAME = "Cruise Control";

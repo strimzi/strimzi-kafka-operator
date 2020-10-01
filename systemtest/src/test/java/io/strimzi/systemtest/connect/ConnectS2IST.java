@@ -77,6 +77,7 @@ import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.NOT_AZP_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
@@ -712,6 +713,8 @@ class ConnectS2IST extends AbstractST {
     }
 
     @Test
+    // AZP VMs don't support ping to external networks
+    @Tag(NOT_AZP_SUPPORTED)
     void testHostAliases() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
