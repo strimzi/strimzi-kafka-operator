@@ -278,6 +278,7 @@ spec:
             properties: {}
         arrayProperty:
           type: "array"
+          minItems: 1
           items:
             type: "string"
         arrayProperty2:
