@@ -44,7 +44,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
-    public static final String NAMESPACE = "multiple-listeners-cluster-test";
+    public static final String NAMESPACE = "multi-listener-namespace";
 
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
@@ -137,6 +137,11 @@ public class MultipleListenersST extends AbstractST {
     private void runListenersTest(List<GenericKafkaListener> listeners) {
 
         LOGGER.info("This is listeners {}, which will verified.", listeners);
+
+        if (listeners.get(0).getType().equals(KafkaListenerType.ROUTE)) {
+            LOGGER.info("Setting external1 ROUTE>....");
+            listeners.get(0).setName("external1");
+        }
 
         // exercise phase
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
