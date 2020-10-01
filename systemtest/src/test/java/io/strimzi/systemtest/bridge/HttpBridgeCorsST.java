@@ -18,7 +18,6 @@ import io.vertx.core.json.JsonObject;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -65,12 +64,12 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         LOGGER.info("Checking if response from Bridge is correct");
         assertThat(response, containsString("200 OK"));
         assertThat(BridgeUtils.getHeaderValue("access-control-allow-origin", response), is(ALLOWED_ORIGIN));
-        assertThat(responseAllowHeaders, CoreMatchers.containsString("access-control-allow-origin"));
-        assertThat(responseAllowHeaders, CoreMatchers.containsString("origin"));
-        assertThat(responseAllowHeaders, CoreMatchers.containsString("x-requested-with"));
-        assertThat(responseAllowHeaders, CoreMatchers.containsString("content-type"));
-        assertThat(responseAllowHeaders, CoreMatchers.containsString("access-control-allow-methods"));
-        assertThat(responseAllowHeaders, CoreMatchers.containsString("accept"));
+        assertThat(responseAllowHeaders, containsString("access-control-allow-origin"));
+        assertThat(responseAllowHeaders, containsString("origin"));
+        assertThat(responseAllowHeaders, containsString("x-requested-with"));
+        assertThat(responseAllowHeaders, containsString("content-type"));
+        assertThat(responseAllowHeaders, containsString("access-control-allow-methods"));
+        assertThat(responseAllowHeaders, containsString("accept"));
         assertThat(BridgeUtils.getHeaderValue("access-control-allow-methods", response), containsString(HttpMethod.POST.toString()));
 
         url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
