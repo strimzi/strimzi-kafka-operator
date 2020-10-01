@@ -138,11 +138,6 @@ public class MultipleListenersST extends AbstractST {
 
         LOGGER.info("This is listeners {}, which will verified.", listeners);
 
-        if (listeners.get(0).getType().equals(KafkaListenerType.ROUTE)) {
-            LOGGER.info("Setting external1 ROUTE>....");
-            listeners.get(0).setName("external1");
-        }
-
         // exercise phase
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
