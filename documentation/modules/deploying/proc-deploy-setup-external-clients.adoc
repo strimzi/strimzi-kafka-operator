@@ -93,7 +93,7 @@ spec:
 ----
 <1> Configuration options for enabling external listeners are described in the link:{BookURLUsing}#type-GenericKafkaListener-reference[Generic Kafka listener schema reference^].
 <2> Name to identify the listener. Must be unique within the Kafka cluster.
-<3> Port number for the listener. Must be unique within the Kafka cluster. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
+<3> Port number for the listener. Must be unique within the Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999 which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 <4> External listener type specified as `route`, `loadbalancer`, `nodeport` or `ingress`. An internal listener is specified as `internal`.
 <5> Enables TLS encryption on the listener. Default is `false`. TLS encryption is not required for `route` listeners.
 <6> Authentication specified as `tls`.

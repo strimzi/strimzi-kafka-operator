@@ -160,7 +160,8 @@ spec:
                             description: Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
                           port:
                             type: integer
-                            description: Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Depending on the listener type, it might not be the port number where the Kafka clients connect.
+                            minimum: 9092
+                            description: Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999 which are already used for Prometheus and JMX. Depending on the listener type, it might not be the port number where the Kafka clients connect.
                           type:
                             type: string
                             enum:

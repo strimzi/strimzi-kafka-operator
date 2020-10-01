@@ -132,7 +132,7 @@ spec:
 <5> JVM options can xref:ref-jvm-options-{context}[specify the minimum (`-Xms`) and maximum (`-Xmx`) memory allocation for JVM].
 <6> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-securing-kafka-brokers-str[configured as _internal_ or _external_ listeners for connection inside or outside the Kubernetes cluster].
 <7> Name to identify the listener. Must be unique within the Kafka cluster.
-<8> Port number for the listener. Must be unique within the Kafka cluster. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
+<8> Port number for the listener. Must be unique within the Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999 which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 <9> Listener type specified as `internal`, or for external listeners, as `route`, `loadbalancer`, `nodeport` or `ingress`.
 <10> Enables TLS encryption for each listener. Default is `false`. TLS encryption is not required for `route` listeners.
 <11> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
