@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
+import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -13,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.InvalidParameterException;
+import java.util.List;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<C>> {
@@ -211,6 +213,17 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     }
 
     public String getBootstrapServerFromStatus() {
+
+        List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
+
+        if (listenerStatusList.size() < 1) {
+            LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");
+            throw new RuntimeException("There is no Kafka external listener specified in the Kafka CR Status");
+        } else if (listenerName == null) {
+            LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status.");
+            return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().get(0).getBootstrapServers();
+        }
+
         return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().stream()
             .filter(listener -> listener.getType().equals(listenerName))
             .findFirst()
