@@ -18,6 +18,7 @@ class Quantities {
     public static long parseMemory(String memory) {
         boolean seenDot = false;
         boolean seenE = false;
+        boolean seenm = false;
         long factor = 1L;
         int end = memory.length();
         for (int i = 0; i < memory.length(); i++) {
@@ -26,6 +27,10 @@ class Quantities {
                 seenE = true;
             } else if (ch == '.') {
                 seenDot = true;
+            } else if (ch == 'm') {
+                seenm = true;
+                end = i;
+                break;
             } else if (ch < '0' || '9' < ch) {
                 end = i;
                 factor = memoryFactor(memory.substring(i));
@@ -36,6 +41,8 @@ class Quantities {
         String numberPart = memory.substring(0, end);
         if (seenDot || seenE) {
             result = (long) (Double.parseDouble(numberPart) * factor);
+        } else if (seenm)   {
+            result = (long) Math.floor(Double.parseDouble(numberPart) / 1000);
         } else {
             result = Long.parseLong(numberPart) * factor;
         }
