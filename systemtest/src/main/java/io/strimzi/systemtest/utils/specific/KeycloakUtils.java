@@ -132,7 +132,7 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "PUT",
-            baseUri + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/policy" + policy.getValue("id"),
+            baseUri + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/policy/" + policy.getValue("id"),
             "-H", "Authorization: Bearer " + token,
             "-d", policy.toString(),
             "-H", "Content-Type: application/json"

@@ -374,12 +374,17 @@ public class OauthAuthorizationST extends OauthAbstractST {
         LOGGER.info("Changing the Dev Team A policy for topics starting with x- and checking that job will not be successful");
         KeycloakUtils.updatePolicyOfRealmClient(baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
         assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT));
+
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
         LOGGER.info("Changing back to the original settings and checking, if the producer will be successful");
-        KeycloakUtils.updatePolicyOfRealmClient(baseUri, token, devAPolicy, TEST_REALM, kafkaClientId);
+
+        config.put("scopes", "[\"Describe\",\"Write\"]");
+        newDevAPolicy.put("config", config);
+
+        KeycloakUtils.updatePolicyOfRealmClient(baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
-            .withDelayMs(0)
+            .withDelayMs(1000)
             .build();
 
         teamAOauthClientJob.producerStrimziOauthTls(CLUSTER_NAME).done();
