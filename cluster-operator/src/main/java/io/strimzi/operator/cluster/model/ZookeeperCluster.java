@@ -128,7 +128,7 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              DNS name of the pod
      */
     public static String podDnsName(String namespace, String cluster, int podId) {
-        return ModelUtils.podDnsName(
+        return DnsNameGenerator.podDnsName(
                 namespace,
                 ZookeeperCluster.headlessServiceName(cluster),
                 ZookeeperCluster.zookeeperPodName(cluster, podId));
@@ -146,7 +146,7 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              DNS name of the pod without the cluster domain suffix
      */
     public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        return ModelUtils.podDnsNameWithoutClusterDomain(
+        return DnsNameGenerator.podDnsNameWithoutClusterDomain(
                 namespace,
                 ZookeeperCluster.headlessServiceName(cluster),
                 ZookeeperCluster.zookeeperPodName(cluster, podId));
@@ -248,9 +248,9 @@ public class ZookeeperCluster extends AbstractModel {
                         "changing the deleteClaim flag, " +
                         "changing overrides to nodes which do not exist yet " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("Your desired Zookeeper storage configuration contains changes which are not allowed. As " +
+                log.warn("The desired ZooKeeper storage configuration in the custom resource {}/{} contains changes which are not allowed. As " +
                         "a result, all storage changes will be ignored. Use DEBUG level logging for more information " +
-                        "about the detected changes.");
+                        "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
                 Condition warning = StatusUtils.buildWarningCondition("ZooKeeperStorage",
                         "The desired ZooKeeper storage configuration contains changes which are not allowed. As a " +
@@ -523,8 +523,8 @@ public class ZookeeperCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ModelUtils.createExecProbe(Collections.singletonList(livenessPath), livenessProbeOptions))
-                .withReadinessProbe(ModelUtils.createExecProbe(Collections.singletonList(readinessPath), readinessProbeOptions))
+                .withLivenessProbe(ProbeGenerator.execProbe(livenessProbeOptions, Collections.singletonList(livenessPath)))
+                .withReadinessProbe(ProbeGenerator.execProbe(readinessProbeOptions, Collections.singletonList(readinessPath)))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateZookeeperContainerSecurityContext)
@@ -550,7 +550,7 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
+        varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateZookeeperContainerEnvVars);
 

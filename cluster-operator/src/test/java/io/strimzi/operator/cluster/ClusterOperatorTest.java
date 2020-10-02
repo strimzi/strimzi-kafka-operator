@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -147,7 +148,7 @@ public class ClusterOperatorTest {
         }
         when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
-        when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
+        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(mockCms);
 
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
@@ -229,7 +230,7 @@ public class ClusterOperatorTest {
         }
         when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
-        when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
+        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(mockCms);
 
         FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
         when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);

@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
@@ -58,8 +60,8 @@ import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_CPU
 import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_DISK_MIB_CAPACITY;
 import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
 import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY;
-import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY;
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY;
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY;
 import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;
 import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_DISK_MIB_CAPACITY;
 import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
@@ -73,6 +75,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -255,10 +258,10 @@ public class CruiseControlTest {
         // checks on the main Cruise Control container
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
         assertThat(ccContainer.getImage(), is(cc.image));
-        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
-        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
-        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
-        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(new Integer(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
+        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
+        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
+        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
+        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
         assertThat(ccContainer.getEnv(), is(getExpectedEnvVars()));
         assertThat(ccContainer.getPorts().size(), is(1));
         assertThat(ccContainer.getPorts().get(0).getName(), is(CruiseControl.REST_API_PORT_NAME));
@@ -409,7 +412,7 @@ public class CruiseControlTest {
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(CruiseControl.REST_API_PORT_NAME));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(CruiseControl.REST_API_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(CruiseControl.REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
         TestUtils.checkOwnerReference(cc.createOwnerReference(), svc);
@@ -457,6 +460,15 @@ public class CruiseControlTest {
                 .withValue("value1")
                 .build());
 
+        HostAlias hostAlias1 = new HostAliasBuilder()
+                .withHostnames("my-host-1", "my-host-2")
+                .withIp("192.168.1.86")
+                .build();
+        HostAlias hostAlias2 = new HostAliasBuilder()
+                .withHostnames("my-host-3")
+                .withIp("192.168.1.87")
+                .build();
+
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .withNewCruiseControl()
@@ -475,6 +487,7 @@ public class CruiseControlTest {
                                 .endMetadata()
                                 .withNewPriorityClassName("top-priority")
                                 .withNewSchedulerName("my-scheduler")
+                                .withHostAliases(hostAlias1, hostAlias2)
                                 .withAffinity(affinity)
                                 .withTolerations(tolerations)
                             .endPod()
@@ -505,6 +518,7 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
 
         // Check Service
         svcLabels.putAll(expectedLabels());
@@ -609,10 +623,10 @@ public class CruiseControlTest {
         // checks on the main Cruise Control container
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
         assertThat(ccContainer.getImage(), is(cc.image));
-        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
+        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
     }
 
     @Test
@@ -765,7 +779,7 @@ public class CruiseControlTest {
                 "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal";
 
         Map<String, Object> customGoalConfig = (Map) configuration.asOrderedProperties().asMap();
-        customGoalConfig.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY, customGoals);
+        customGoalConfig.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getName(), customGoals);
 
         CruiseControlSpec ccSpecWithCustomGoals = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
@@ -787,7 +801,7 @@ public class CruiseControlTest {
 
         String anomalyDetectionGoals =  cruiseControlWithCustomGoals
                 .getConfiguration().asOrderedProperties().asMap()
-                .get(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY);
+                .get(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.getName());
 
         assertThat(anomalyDetectionGoals, is(customGoals));
     }

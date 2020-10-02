@@ -19,8 +19,6 @@ import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,8 +32,7 @@ import java.util.Map;
         "affinity", "tolerations", "logging", "metrics", "tracing", 
         "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
-public abstract class AbstractKafkaConnectSpec implements Serializable, UnknownPropertyPreserving {
-
+public abstract class AbstractKafkaConnectSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
     private Logging logging;
@@ -53,8 +50,6 @@ public abstract class AbstractKafkaConnectSpec implements Serializable, UnknownP
     private List<Toleration> tolerations;
     private KafkaConnectTemplate template;
     private ExternalConfiguration externalConfiguration;
-
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the Kafka Connect group.")
     @DefaultValue("3")
@@ -205,15 +200,5 @@ public abstract class AbstractKafkaConnectSpec implements Serializable, UnknownP
 
     public void setExternalConfiguration(ExternalConfiguration externalConfiguration) {
         this.externalConfiguration = externalConfiguration;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
     }
 }

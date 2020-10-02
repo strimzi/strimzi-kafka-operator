@@ -99,6 +99,7 @@ kubectl get deployments -l app.kubernetes.io/name=strimzi
 
 The following table shows the three topics that are automatically created when Cruise Control is deployed. These topics are required for Cruise Control to work properly and must not be deleted or changed.
 
+.Auto-created topics
 [cols="20,20,60",options="header",stripes="none",separator=¦]
 |===
 

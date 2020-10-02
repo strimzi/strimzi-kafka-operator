@@ -127,9 +127,9 @@ public interface Constants {
     String UPGRADE = "upgrade";
 
     /**
-     * Tag for acceptance tests executed during Travis builds.
+     * Tag for smoke tests
      */
-    String TRAVIS = "travis";
+    String SMOKE = "smoke";
 
     /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
@@ -240,4 +240,28 @@ public interface Constants {
      * Tag for tests where cruise control used
      */
     String CRUISE_CONTROL = "cruisecontrol";
+
+    /**
+     * Tag for tests where mainly dynamic configuration is used
+     */
+    String DYNAMIC_CONFIGURATION = "dynamicconfiguration";
+
+    /**
+     * Tag for tests which contains rolling update of resource
+     */
+    String ROLLING_UPDATE = "rollingupdate";
+
+    /**
+     * Tag for tests where OLM is used for deploying CO
+     */
+    String OLM = "olm";
+
+    /**
+     * Cruise Control related parameters
+     */
+    String CRUISE_CONTROL_NAME = "Cruise Control";
+    String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
+    String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
+    String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
+    String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
 }

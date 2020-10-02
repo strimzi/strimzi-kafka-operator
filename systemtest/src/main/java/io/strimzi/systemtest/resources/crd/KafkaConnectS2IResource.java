@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -23,10 +24,11 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaConnectS2IResource {
-    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = "../examples/connect/kafka-connect-s2i.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect-s2i.yaml";
 
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
         return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());
@@ -48,7 +50,6 @@ public class KafkaConnectS2IResource {
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
-                .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
             .editSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
@@ -60,7 +61,7 @@ public class KafkaConnectS2IResource {
                 .endTls()
                 .withInsecureSourceRepository(true)
                 .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                    .addToLoggers("log4j.rootLogger", "DEBUG")
                 .endInlineLogging()
             .endSpec();
     }
@@ -94,7 +95,7 @@ public class KafkaConnectS2IResource {
     }
 
     public static void deleteKafkaConnectS2IWithoutWait(String resourceName) {
-        kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
+        kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static KafkaConnectS2I getKafkaConnectS2IFromYaml(String yamlPath) {
@@ -102,7 +103,7 @@ public class KafkaConnectS2IResource {
     }
 
     private static KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectS2IClient(), kafkaConnectS2I, "Ready");
+        return ResourceManager.waitForResourceStatus(kafkaConnectS2IClient(), kafkaConnectS2I, Ready);
     }
 
     private static KafkaConnectS2I deleteLater(KafkaConnectS2I kafkaConnectS2I) {

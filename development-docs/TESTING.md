@@ -148,33 +148,39 @@ The following table shows currently used tags:
 
 | Name               | Description                                                                        |
 | :----------------: | :--------------------------------------------------------------------------------: |
-| travis             | Marks tests executed on Travis                                                     |
 | acceptance         | Acceptance tests, which guarantee, that basic functionality of Strimzi is working. |
 | regression         | Regression tests, which contains all non-flaky tests.                              |
 | upgrade            | Upgrade tests for specific versions of the Strimzi.                                |
+| smoke              | Execute all smoke tests                                                            |
 | flaky              | Execute all flaky tests (tests, which are failing from time to time)               |
+| scalability        | Execute scalability tests                                                          |
+| specific           | Specific tests, which cannot be easily added to other categories                   |
 | nodeport           | Execute tests which use external lister of type nodeport                           |
 | loadbalancer       | Execute tests which use external lister of type loadbalancer                       |
-| bridge             | Execute tests which use Kafka Bridge                                               |
-| specific           | Specific tests, which cannot be easily added to other categories                   |
 | networkpolicies    | Execute tests which use Kafka with Network Policies                                |
-| tracing            | Execute tests for Tracing                                                          |
 | prometheus         | Execute tests for Kafka with Prometheus                                            |
-| oauth              | Execute tests which use OAuth                                                      |
+| tracing            | Execute tests for Tracing                                                          |
 | helm               | Execute tests which use Helm for deploy cluster operator                           |
-| olm                | Execute tests which use OLM for deploy cluster operator                            |
+| oauth              | Execute tests which use OAuth                                                      |
+| recovery           | Execute recovery tests                                                             |
 | connectoroperator  | Execute tests which deploy KafkaConnector resource                                 |
 | connect            | Execute tests which deploy KafkaConnect resource                                   |
 | connects2i         | Execute tests which deploy KafkaConnectS2I resource                                |
 | mirrormaker        | Execute tests which deploy KafkaMirrorMaker resource                               |
 | mirrormaker2       | Execute tests which deploy KafkaMirrorMaker2 resource                              |
 | conneccomponents   | Execute tests which deploy KafkaConnect, KafkaConnectS2I, KafkaMirrorMaker2, KafkaConnector resources |
+| bridge             | Execute tests which use Kafka Bridge                                               |
 | internalclients    | Execute tests which use internal (from pod) kafka clients in tests                 |
 | externalclients    | Execute tests which use external (from code) kafka clients in tests                |
+| olm                | Execute tests which test examples from Strimzi manifests                          |
+| metrics            | Execute tests where metrics are used                                               |
+| cruisecontrol      | Execute tests which deploy CruiseControl resource                                  |
+| rollingupdate      | Execute tests where is rolling update triggered                                    |
 
 If your Kubernetes cluster doesn't support for example, Network Policies or NodePort services, you can easily skip those tests with `-DexcludeGroups=networkpolicies,nodeport`.
 
-There is also a mvn profile for most of the groups, but we suggest to use profile with id `all` (default) and then include or exclude specific groups.
+There is also a mvn profile for the main groups - `acceptance`, `regression`, `smoke`, `bridge` and `all`, but we suggest to use profile with id `all` (default) and then include or exclude specific groups.
+If you want specify the profile, use the `-P` flag - for example `-Psmoke`.
 
 All available test groups are listed in [Constants](systemtest/src/main/java/io/strimzi/systemtest/Constants.java) class.
 
@@ -223,6 +229,11 @@ If you want to use your own images with a different tag or from a different repo
 ##### Specific Kafka version
 
 To set custom Kafka version in system tests you need to set the environment variable `ST_KAFKA_VERSION` to one of the values in [kafka-versions](kafka-versions.yaml).
+
+#### Using private registries
+
+If you want use private registries, before executing the tests you have to create secret and then specify name of the created secret in env variable called
+`SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET` with the container registry credentials to be able pull images. Note that secret has to be created in `default` namespace.
 
 ##### Cluster Operator Log level
 

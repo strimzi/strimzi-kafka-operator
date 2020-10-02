@@ -4,10 +4,13 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 2.5.0
+    version: 2.6.0
     replicas: 3
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
           type: tls
     authorization:
@@ -16,7 +19,7 @@ spec:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
-      log.message.format.version: "2.5"
+      log.message.format.version: "2.6"
     storage:
       type: jbod
       volumes:

@@ -18,7 +18,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 
 public class ResourceVisitorTest {
-
     @Test
     public void testDoesNotThrow() {
         Kafka k = TestUtils.fromYaml("/example.yaml", Kafka.class, true);
@@ -36,4 +35,20 @@ public class ResourceVisitorTest {
         });
     }
 
+    @Test
+    public void testDoesNotThrowWithListenerList() {
+        Kafka k = TestUtils.fromYaml("/example2.yaml", Kafka.class, true);
+        assertThat(k, is(notNullValue()));
+        ResourceVisitor.visit(k, new ResourceVisitor.Visitor() {
+            @Override
+            public <M extends AnnotatedElement & Member> void visitProperty(List<String> path, Object owner, M member, ResourceVisitor.Property<M> property, Object propertyValue) {
+
+            }
+
+            @Override
+            public void visitObject(List<String> path, Object object) {
+
+            }
+        });
+    }
 }

@@ -4,11 +4,17 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 2.5.0
+    version: 2.6.0
     replicas: 3
     listeners:
-      plain: {}
-      tls: {}
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
@@ -19,7 +25,7 @@ spec:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
-      log.message.format.version: "2.5"
+      log.message.format.version: "2.6"
     storage:
       type: jbod
       volumes:
@@ -33,19 +39,47 @@ spec:
       lowercaseOutputName: true
       rules:
       # Special cases and very specific rules
-      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+      - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
         name: kafka_server_$1_$2
         type: GAUGE
         labels:
           clientId: "$3"
           topic: "$4"
           partition: "$5"
-      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+      - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
         name: kafka_server_$1_$2
         type: GAUGE
         labels:
           clientId: "$3"
           broker: "$4:$5"
+      - pattern: kafka.server<type=(.+), cipher=(.+), protocol=(.+), listener=(.+), networkProcessor=(.+)><>connections
+        name: kafka_server_$1_connections_tls_info
+        type: GAUGE
+        labels:
+          listener: "$2"
+          networkProcessor: "$3"
+          protocol: "$4"
+          cipher: "$5"
+      - pattern: kafka.server<type=(.+), clientSoftwareName=(.+), clientSoftwareVersion=(.+), listener=(.+), networkProcessor=(.+)><>connections
+        name: kafka_server_$1_connections_software
+        type: GAUGE
+        labels:
+          clientSoftwareName: "$2"
+          clientSoftwareVersion: "$3"
+          listener: "$4"
+          networkProcessor: "$5"
+      - pattern: "kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+):"
+        name: kafka_server_$1_$4
+        type: GAUGE
+        labels:
+          listener: "$2"
+          networkProcessor: "$3"
+      - pattern: kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+)
+        name: kafka_server_$1_$4
+        type: GAUGE
+        labels:
+          listener: "$2"
+          networkProcessor: "$3"
       # Some percent metrics use MeanRate attribute
       # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
       - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
@@ -168,13 +202,6 @@ spec:
         labels:
           replicaId: "$2"
           memberType: "$3"
-      # standalone Zookeeper
-      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
-        type: GAUGE
-        name: "zookeeper_$2"
-      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=InMemoryDataTree><>(\\w+)"
-        type: GAUGE
-        name: "zookeeper_$2"
   entityOperator:
     topicOperator: {}
     userOperator: {}

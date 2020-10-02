@@ -34,8 +34,9 @@ Consider a shorter interval for fast changing clusters, although this increases 
 [discrete]
 == Contents of optimization proposals
 
-The following table explains the properties contained in an optimization proposal:
+The following table describes the properties contained in an optimization proposal:
 
+.Properties contained in an optimization proposal
 [cols="35,65",options="header",stripes="none",separator=¦]
 |===
 

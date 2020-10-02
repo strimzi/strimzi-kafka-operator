@@ -4,6 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
+    listeners: []
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

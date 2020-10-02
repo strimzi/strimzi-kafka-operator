@@ -63,16 +63,17 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else
     if [ "${MAIN_BUILD}" = "TRUE" ] ; then
-        echo "Login into Docker Hub ..."
-        docker login -u $DOCKER_USER -p $DOCKER_PASS
+        echo "Do nothing - this is now handled on Azure"
+        # echo "Login into Docker Hub ..."
+        # docker login -u $DOCKER_USER -p $DOCKER_PASS
 
-        export DOCKER_ORG=strimzi
-        export DOCKER_TAG=$TAG
-        echo "Pushing to docker org $DOCKER_ORG"
-        make docker_push
-        if [ "$BRANCH" = "master" ]; then
-            make docu_pushtowebsite
-        fi
-        make pushtonexus
+        # export DOCKER_ORG=strimzi
+        # export DOCKER_TAG=$TAG
+        # echo "Pushing to docker org $DOCKER_ORG"
+        # make docker_push
+        # if [ "$BRANCH" = "master" ]; then
+        #     make docu_pushtowebsite
+        # fi
+        # make pushtonexus
     fi
 fi

@@ -36,19 +36,24 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private static List<String> supportedKafkaVersions = new ArrayList<>(3);
 
     static {
-        try (
-            InputStream inputStream = StrimziKafkaContainer.class.getResourceAsStream("/kafka-versions.txt");
-            InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-            BufferedReader bufferedReader = new BufferedReader(streamReader)) {
+        InputStream inputStream = StrimziKafkaContainer.class.getResourceAsStream("/kafka-versions.txt");
+        InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        BufferedReader bufferedReader = new BufferedReader(streamReader);
 
-            String kafkaVersion;
+        String kafkaVersion;
 
+        try {
             while ((kafkaVersion = bufferedReader.readLine()) != null) {
                 supportedKafkaVersions.add(kafkaVersion);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                bufferedReader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         LOGGER.info("This is all supported Kafka versions {}", supportedKafkaVersions.toString());

@@ -26,7 +26,6 @@ public class KafkaVersionTest {
         KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(
                 new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()), map);
         assertThat(defaultVersion.version(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION));
-        assertThat(map.size(), is(3));
         assertThat(map.containsKey(KafkaVersionTestUtils.LATEST_KAFKA_VERSION), is(true));
         assertThat(map.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).version(), is(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
         assertThat(map.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).protocolVersion(), is(KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION));

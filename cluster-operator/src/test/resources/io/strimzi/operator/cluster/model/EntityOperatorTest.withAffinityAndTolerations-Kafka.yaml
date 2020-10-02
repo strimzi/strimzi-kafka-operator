@@ -37,3 +37,4 @@ spec:
             effect: "NoExecute"
   kafka:
     replicas: 2
+    listeners: []

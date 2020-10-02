@@ -44,7 +44,7 @@ public class KubeClusterResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClusterResource.class);
 
-    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
+    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../install/cluster-operator";
 
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
@@ -339,5 +339,10 @@ public class KubeClusterResource {
 
     public boolean isNotKubernetes() {
         return cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift;
+    }
+
+    /** Returns list of currently deployed resources */
+    public List<String> getListOfDeployedResources() {
+        return deploymentResources;
     }
 }

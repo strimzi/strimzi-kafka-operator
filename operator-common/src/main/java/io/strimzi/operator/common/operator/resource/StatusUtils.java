@@ -53,8 +53,12 @@ public class StatusUtils {
     }
 
     public static Condition buildWarningCondition(String reason, String message) {
+        return buildWarningCondition(reason, message, iso8601Now());
+    }
+
+    public static Condition buildWarningCondition(String reason, String message, String transitionTime) {
         return new ConditionBuilder()
-                .withLastTransitionTime(iso8601Now())
+                .withLastTransitionTime(transitionTime)
                 .withType("Warning")
                 .withStatus("True")
                 .withReason(reason)

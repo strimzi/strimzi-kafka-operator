@@ -10,8 +10,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 
@@ -21,17 +21,17 @@ public interface TestSeparator {
     String SEPARATOR_CHAR = "#";
 
     @BeforeEach
-    default void beforeEachTest(TestInfo testInfo) {
-        TimeMeasuringSystem.getInstance().setTestName(testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName());
+    default void beforeEachTest(ExtensionContext testContext) {
+        TimeMeasuringSystem.getInstance().setTestName(testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName());
         TimeMeasuringSystem.getInstance().startOperation(Operation.TEST_EXECUTION);
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
-        LOGGER.info(String.format("%s.%s-STARTED", testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName()));
+        LOGGER.info(String.format("%s.%s-STARTED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()));
     }
 
     @AfterEach
-    default void afterEachTest(TestInfo testInfo) {
+    default void afterEachTest(ExtensionContext testContext) {
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
-        LOGGER.info(String.format("%s.%s-FINISHED", testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName()));
+        LOGGER.info(String.format("%s.%s-FINISHED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()));
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
     }
 }

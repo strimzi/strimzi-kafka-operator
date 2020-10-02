@@ -34,7 +34,7 @@ parameters:
   displayName: The Kafka version to use
   name: KAFKA_VERSION
   required: true
-  value: "2.5.0"
+  value: "2.6.0"
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Zookeeper healthcheck initial delay
   name: ZOOKEEPER_HEALTHCHECK_DELAY
@@ -73,8 +73,14 @@ objects:
       version: ${{KAFKA_VERSION}}
       replicas: ${{KAFKA_NODE_COUNT}}
       listeners:
-        plain: {}
-        tls: {}
+        - name: plain
+          port: 9092
+          type: internal
+          tls: false
+        - name: tls
+          port: 9093
+          type: internal
+          tls: true
       livenessProbe:
         initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
         timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}

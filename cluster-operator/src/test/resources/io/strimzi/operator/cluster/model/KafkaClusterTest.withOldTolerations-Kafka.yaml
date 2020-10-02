@@ -4,6 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
+    listeners: []
     tolerations:
     - key: "key1"
       operator: "Equal"

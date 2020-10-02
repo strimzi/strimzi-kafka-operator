@@ -315,14 +315,14 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .withCommand("/opt/kafka/kafka_mirror_maker_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ModelUtils.newProbeBuilder(livenessProbeOptions)
+                .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
                         .withNewExec()
-                        .withCommand("/opt/kafka/kafka_mirror_maker_liveness.sh")
+                            .withCommand("/opt/kafka/kafka_mirror_maker_liveness.sh")
                         .endExec().build())
-                .withReadinessProbe(ModelUtils.newProbeBuilder(readinessProbeOptions)
+                .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
                         .withNewExec()
-                        // The mirror-maker-agent will create /tmp/mirror-maker-ready in the container
-                        .withCommand("test", "-f", "/tmp/mirror-maker-ready")
+                            // The mirror-maker-agent will create /tmp/mirror-maker-ready in the container
+                            .withCommand("test", "-f", "/tmp/mirror-maker-ready")
                         .endExec().build())
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
@@ -400,7 +400,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 String.valueOf(readinessProbeOptions.getPeriodSeconds() != null ? readinessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getSharedEnvVars());
+        varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 

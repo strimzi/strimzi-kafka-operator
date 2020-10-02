@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -50,6 +52,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -68,9 +71,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectS2IClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
@@ -186,7 +190,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(KafkaConnectS2IResources.serviceName(cluster))));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaConnectCluster.REST_API_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaConnectCluster.REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaConnectCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getMetadata().getAnnotations().size(), is(0));
@@ -208,7 +212,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kc.getServiceName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
-        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(new Integer(KafkaConnectCluster.REST_API_PORT)));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaConnectCluster.REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaConnectCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
@@ -228,18 +232,18 @@ public class KafkaConnectS2IClusterTest {
         Map<String, String> expectedLabels = expectedLabels(KafkaConnectS2IResources.deploymentName(cluster));
         assertThat(dep.getMetadata().getLabels(), is(expectedLabels));
         assertThat(dep.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(dep.getSpec().getReplicas(), is(new Integer(replicas)));
+        assertThat(dep.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaConnectS2IResources.deploymentName(this.cluster)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is(KafkaConnectS2IResources.deploymentName(this.cluster) + ":latest"));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv(), is(getExpectedEnvVars()));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds(), is(new Integer(healthDelay)));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds(), is(new Integer(healthTimeout)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size(), is(2));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort(), is(new Integer(KafkaConnectCluster.REST_API_PORT)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort(), is(Integer.valueOf(KafkaConnectCluster.REST_API_PORT)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName(), is(KafkaConnectCluster.REST_API_PORT_NAME));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(dep.getSpec().getTriggers().size(), is(2));
@@ -251,8 +255,8 @@ public class KafkaConnectS2IClusterTest {
         assertThat(dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName(), is(KafkaConnectS2IResources.deploymentName(this.cluster) + ":latest"));
         assertThat(dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getKind(), is("ImageStreamTag"));
         assertThat(dep.getSpec().getStrategy().getType(), is("Rolling"));
-        assertThat(dep.getSpec().getStrategy().getRollingParams().getMaxSurge().getIntVal(), is(new Integer(1)));
-        assertThat(dep.getSpec().getStrategy().getRollingParams().getMaxUnavailable().getIntVal(), is(new Integer(0)));
+        assertThat(dep.getSpec().getStrategy().getRollingParams().getMaxSurge().getIntVal(), is(Integer.valueOf(1)));
+        assertThat(dep.getSpec().getStrategy().getRollingParams().getMaxUnavailable().getIntVal(), is(Integer.valueOf(0)));
         assertThat(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS),
                 is(nullValue()));
         checkOwnerReference(kc.createOwnerReference(), dep);
@@ -278,10 +282,10 @@ public class KafkaConnectS2IClusterTest {
         assertThat(bc.getSpec().getTriggers().get(0).getType(), is("ConfigChange"));
         assertThat(bc.getSpec().getTriggers().get(1).getType(), is("ImageChange"));
         assertThat(bc.getSpec().getTriggers().get(1).getImageChange(), is(new ImageChangeTrigger()));
-        assertThat(bc.getSpec().getSuccessfulBuildsHistoryLimit(), is(new Integer(5)));
-        assertThat(bc.getSpec().getFailedBuildsHistoryLimit(), is(new Integer(5)));
+        assertThat(bc.getSpec().getSuccessfulBuildsHistoryLimit(), is(Integer.valueOf(5)));
+        assertThat(bc.getSpec().getFailedBuildsHistoryLimit(), is(Integer.valueOf(5)));
         assertThat(bc.getSpec().getResources().getLimits().get("cpu").getAmount(), is("42"));
-        assertThat(bc.getSpec().getResources().getRequests().get("mem").getAmount(), is("4Gi"));
+        assertThat(bc.getSpec().getResources().getRequests().get("mem"), is(new Quantity("4", "Gi")));
         checkOwnerReference(kc.createOwnerReference(), bc);
     }
 
@@ -500,6 +504,15 @@ public class KafkaConnectS2IClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
+        HostAlias hostAlias1 = new HostAliasBuilder()
+                .withHostnames("my-host-1", "my-host-2")
+                .withIp("192.168.1.86")
+                .build();
+        HostAlias hostAlias2 = new HostAliasBuilder()
+                .withHostnames("my-host-3")
+                .withIp("192.168.1.87")
+                .build();
+
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -516,6 +529,7 @@ public class KafkaConnectS2IClusterTest {
                             .endMetadata()
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
+                            .withHostAliases(hostAlias1, hostAlias2)
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -544,6 +558,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
 
         // Check Service
         Service svc = kc.generateService();
@@ -869,7 +884,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(0));
+        assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
     @Test
@@ -1274,7 +1289,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector(), is(nullValue()));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
-        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(emptyMap()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(nullValue()));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
     }

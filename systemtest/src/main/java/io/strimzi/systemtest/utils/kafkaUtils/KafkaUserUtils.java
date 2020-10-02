@@ -16,6 +16,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
@@ -42,13 +45,21 @@ public class KafkaUserUtils {
         SecretUtils.waitForSecretReady(userName,
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
 
-        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, "Ready");
+        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, Ready);
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for KafkaUser deletion {}", userName);
         TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
-            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null,
+            () -> {
+                if (KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null) {
+                    return true;
+                } else {
+                    LOGGER.warn("KafkaUser {} is not deleted yet! Triggering force delete by cmd client!", userName);
+                    cmdKubeClient().deleteByName(KafkaUser.RESOURCE_KIND, userName);
+                    return false;
+                }
+            },
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
         );
         LOGGER.info("KafkaUser {} deleted", userName);
@@ -75,16 +86,16 @@ public class KafkaUserUtils {
      * @param userName name of KafkaUser
      * @param state desired state
      */
-    public static void waitForKafkaUserStatus(String userName, String state) {
+    public static void waitForKafkaUserStatus(String userName, Enum<?> state) {
         KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
         ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
     }
 
     public static void waitForKafkaUserReady(String userName) {
-        waitForKafkaUserStatus(userName, "Ready");
+        waitForKafkaUserStatus(userName, Ready);
     }
 
     public static void waitForKafkaUserNotReady(String userName) {
-        waitForKafkaUserStatus(userName, "NotReady");
+        waitForKafkaUserStatus(userName, NotReady);
     }
 }

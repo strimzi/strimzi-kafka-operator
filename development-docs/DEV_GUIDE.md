@@ -47,15 +47,15 @@ To build Strimzi from source the operator and Kafka code needs to be compiled in
         make clean
         make MVN_ARGS='-DskipTests -DskipIT' all
 
-4. In order to use the newly built images, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images. That can be done using the following command:
+4. To use the newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images:
 
     ```
     sed -Ei -e "s#(image|value): strimzi/([a-z0-9-]+):latest#\1: $DOCKER_ORG/\2:latest#" \
             -e "s#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_ORG/\2#" \
-            install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
+            install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     ```
 
-   This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
+   This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
 
 5. Then you can deploy the Cluster Operator by running: 
 
@@ -232,15 +232,15 @@ By default the `docker_push` target will build the images under the strimzi orga
 
 When the Docker images are build, they will be labeled in the form: `docker_hub_username/operator:latest` in your local repository and pushed to your Docker Hub account under the same label.
 
-In order to use these newly built images, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images. That can be done using the following command and replacing `docker_hub_username` with the relevant value:
+To use these newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images, replacing `docker_hub_username` with the relevant value:
 
 ```
 sed -Ei -e 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: docker_hub_username/\2:latest#' \
         -e 's#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=docker_hub_username/\2#' \
-        install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
+        install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
 ```
 
-This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
+This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
 
 Then you can deploy the Cluster Operator by running (for an OpenShift cluster):
 
@@ -279,15 +279,15 @@ Assuming your OpenShift login is `developer` (a user with the `cluster-admin` ro
 
         DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=$(oc project -q) make docker_push
         
-5. In order to use the built images in a deployment, you need to update the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `172.30.1.1:5000`, rather than from DockerHub. That can be done using the following command:
+5. To use the built images in a deployment, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `172.30.1.1:5000`, rather than from DockerHub:
 
     ```
     sed -Ei -e 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: 172.30.1.1:5000/myproject/\2:latest#' \
             -e 's#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=172.30.1.1:5000/myproject/\2#' \
-            install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
+            install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     ```
 
-    This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name from `172.30.1.1:5000/myproject`.
+    This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name from `172.30.1.1:5000/myproject`.
 
 6. Then you can deploy the Cluster Operator by running:
 
@@ -335,7 +335,7 @@ The chart is also available in the release artifact as a tarball.
 
 ## Running system tests
 
-System tests has its own guide with more information. See [Testing Guide](development-docs/TESTING.md) document for more information.
+System tests has its own guide with more information. See [Testing Guide](TESTING.md) document for more information.
 
 ## DCO Signoff
 

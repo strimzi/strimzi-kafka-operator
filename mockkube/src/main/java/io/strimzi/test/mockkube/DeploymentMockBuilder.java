@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.mockkube;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -41,7 +42,7 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
 
     @Override
     protected void mockCreate(String resourceName, RollableScalableResource<Deployment, DoneableDeployment> resource) {
-        when(resource.create(any())).thenAnswer(invocation -> {
+        when(resource.create(any(Deployment.class))).thenAnswer(invocation -> {
             checkNotExists(resourceName);
             Deployment deployment = invocation.getArgument(0);
             LOGGER.debug("create {} {} -> {}", resourceType, resourceName, deployment);
@@ -115,7 +116,7 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
                 // delete the first "old" Pod if there is one still remaining
                 if (podsForDeployments.get(deploymentName).size() > 0) {
                     String podToDelete = podsForDeployments.get(deploymentName).remove(0);
-                    mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).cascading(true).delete();
+                    mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                 }
 
             }

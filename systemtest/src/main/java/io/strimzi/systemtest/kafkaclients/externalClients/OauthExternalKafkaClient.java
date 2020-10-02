@@ -145,6 +145,8 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
 
         KafkaClientProperties properties = this.clientProperties;
 
+        LOGGER.info("This is client.id={}, client.secret.name={}, oauthTokenEndpointUri={}", clientId, clientSecretName, oauthTokenEndpointUri);
+
         if (properties == null || properties.getProperties().isEmpty()) {
             properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
                 .withNamespaceName(namespaceName)
@@ -216,7 +218,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient implements Kaf
     }
 
     public int receiveMessagesTls() {
-        return sendMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
+        return receiveMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     @Override

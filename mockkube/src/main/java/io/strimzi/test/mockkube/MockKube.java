@@ -38,6 +38,9 @@ import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
+import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.extensions.IngressList;
 import io.fabric8.kubernetes.api.model.networking.DoneableNetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
@@ -54,6 +57,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
+import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -62,6 +66,7 @@ import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
@@ -114,7 +119,8 @@ public class MockKube {
             DoneableRoleBinding.class);
     private final Map<String, ClusterRoleBinding> pdbCrb = db(emptySet(), ClusterRoleBinding.class,
             DoneableClusterRoleBinding.class);
-
+    private final Map<String, Ingress> ingressDb = db(emptySet(), Ingress.class,
+            DoneableIngress.class);
 
     private Map<String, CreateOrReplaceable> crdMixedOps = new HashMap<>();
     private MockBuilder<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapMockBuilder;
@@ -129,6 +135,7 @@ public class MockKube {
     private MockBuilder<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> networkPolicyMockBuilder;
     private MockBuilder<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> podMockBuilder;
     private MockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> persistentVolumeClaimMockBuilder;
+    private MockBuilder<Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> ingressMockBuilder;
     private DeploymentMockBuilder deploymentMockBuilder;
     private KubernetesClient mockClient;
 
@@ -269,6 +276,7 @@ public class MockKube {
         roleBindingMockBuilder = addMockBuilder("rolebindings", new MockBuilder<>(RoleBinding.class, RoleBindingList.class, DoneableRoleBinding.class, MockBuilder.castClass(Resource.class), pdbRb));
         clusterRoleBindingMockBuilder = addMockBuilder("clusterrolebindings", new MockBuilder<>(ClusterRoleBinding.class, ClusterRoleBindingList.class, DoneableClusterRoleBinding.class, MockBuilder.castClass(Resource.class), pdbCrb));
         networkPolicyMockBuilder = addMockBuilder("networkpolicies", new MockBuilder<>(NetworkPolicy.class, NetworkPolicyList.class, DoneableNetworkPolicy.class, MockBuilder.castClass(Resource.class), policyDb));
+        ingressMockBuilder = addMockBuilder("ingresses",  new MockBuilder<>(Ingress.class, IngressList.class, DoneableIngress.class, MockBuilder.castClass(Resource.class), ingressDb));
 
         podMockBuilder = addMockBuilder("pods", new MockBuilder<>(Pod.class, PodList.class, DoneablePod.class, MockBuilder.castClass(PodResource.class), podDb));
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = podMockBuilder.build();
@@ -306,7 +314,7 @@ public class MockKube {
                 Resource crdResource = mock(Resource.class);
                 when(crdResource.get()).thenReturn(crd);
                 when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
-                String key = crdKey(crd);
+                String key = crdKey(CustomResourceDefinitionContext.fromCrd(crd));
                 CreateOrReplaceable crdMixedOp = crdMixedOps.get(key);
                 if (crdMixedOp == null) {
                     CustomResourceMockBuilder customResourceMockBuilder = addMockBuilder(crd.getSpec().getNames().getPlural(), new CustomResourceMockBuilder<>((MockedCrd) mockedCrd));
@@ -319,6 +327,11 @@ public class MockKube {
             when(mockClient.customResourceDefinitions()).thenReturn(mockCrds);
             mockCrs(mockClient);
         }
+
+        // Extensions group
+        ExtensionsAPIGroupDSL extensions = mock(ExtensionsAPIGroupDSL.class);
+        when(mockClient.extensions()).thenReturn(extensions);
+        ingressMockBuilder.build2(extensions::ingresses);
 
         // Network group
         NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
@@ -356,18 +369,31 @@ public class MockKube {
         return mockClient;
     }
 
-    public String crdKey(CustomResourceDefinition crd) {
-        return crd.getSpec().getGroup() + "##" + crd.getSpec().getVersion() + "##" + crd.getSpec().getNames().getKind();
+    public String crdKey(CustomResourceDefinitionContext crdc) {
+        return crdc.getGroup() + "##" + crdc.getVersion() + "##" + crdc.getKind();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "deprecation"})
     public void mockCrs(KubernetesClient mockClient) {
+        when(mockClient.customResources(any(CustomResourceDefinitionContext.class),
+                any(Class.class),
+                any(Class.class),
+                any(Class.class))).thenAnswer(invocation -> {
+                    CustomResourceDefinitionContext crdArg = invocation.getArgument(0);
+                    String key = crdKey(crdArg);
+                    CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
+                    if (createOrReplaceable == null) {
+                        throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));
+                    }
+                    return createOrReplaceable;
+                });
+
         when(mockClient.customResources(any(CustomResourceDefinition.class),
                 any(Class.class),
                 any(Class.class),
                 any(Class.class))).thenAnswer(invocation -> {
                     CustomResourceDefinition crdArg = invocation.getArgument(0);
-                    String key = crdKey(crdArg);
+                    String key = crdKey(CustomResourceDefinitionContext.fromCrd(crdArg));
                     CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
                     if (createOrReplaceable == null) {
                         throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));

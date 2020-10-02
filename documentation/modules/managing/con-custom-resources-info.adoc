@@ -1,0 +1,126 @@
+// Module included in the following assemblies:
+//
+// assembly-resource-status-access.adoc
+
+[id='con-custom-resources-info-{context}']
+= Performing `kubectl` operations on custom resources
+
+Use `kubectl` commands, such as `get`, `describe`, `edit`, or `delete`, to perform operations on resource types.
+For example, `kubectl get kafkatopics` retrieves a list of all Kafka topics and `kubectl get kafkas` retrieves all deployed Kafka clusters.
+
+When referencing resource types, you can use both singular and plural names:
+`kubectl get kafkas` gets the same results as `kubectl get kafka`.
+
+You can also use the _short name_ of the resource.
+Learning short names can save you time when managing Strimzi.
+The short name for `Kafka` is `k`, so you can also run `kubectl get k` to list all Kafka clusters.
+
+[source,shell]
+----
+kubectl get k
+
+NAME         DESIRED KAFKA REPLICAS   DESIRED ZK REPLICAS
+my-cluster   3                        3
+----
+
+.Long and short names for each Strimzi resource
+[cols="3*",options="header",stripes="none"]
+|===
+
+m|Strimzi resource      |Long name          |Short name
+
+| Kafka                 | kafka             | k
+| Kafka Topic           | kafkatopic        | kt
+| Kafka User            | kafkauser         | ku
+| Kafka Connect         | kafkaconnect      | kc
+| Kafka Connect S2I     | kafkaconnects2i   | kcs2i
+| Kafka Connector       | kafkaconnector    | kctr
+| Kafka Mirror Maker    | kafkamirrormaker  | kmm
+| Kafka Mirror Maker 2  | kafkamirrormaker2 | kmm2
+| Kafka Bridge          | kafkabridge       | kb
+| Kafka Rebalance       | kafkarebalance    | kr
+
+|===
+
+== Resource categories
+
+Categories of custom resources can also be used in `kubectl` commands.
+
+All Strimzi custom resources belong to the category `strimzi`, so you can use `strimzi` to get all the Strimzi resources with one command.
+
+For example, running `kubectl get strimzi` lists all Strimzi custom resources in a given namespace.
+
+[source,shell]
+----
+kubectl get strimzi
+
+NAME                                   DESIRED KAFKA REPLICAS DESIRED ZK REPLICAS
+kafka.kafka.strimzi.io/my-cluster      3                      3
+
+NAME                                   PARTITIONS REPLICATION FACTOR
+kafkatopic.kafka.strimzi.io/kafka-apps 3          3
+
+NAME                                   AUTHENTICATION AUTHORIZATION
+kafkauser.kafka.strimzi.io/my-user     tls            simple
+----
+
+The `kubectl get strimzi -o name` command returns all resource types and resource names.
+The `-o name` option fetches the output in the _type/name_ format
+
+[source,shell]
+----
+kubectl get strimzi -o name
+
+kafka.kafka.strimzi.io/my-cluster
+kafkatopic.kafka.strimzi.io/kafka-apps
+kafkauser.kafka.strimzi.io/my-user
+----
+
+You can combine this `strimzi` command with other commands.
+For example, you can pass it into a `kubectl delete` command to delete all resources in a single command.
+
+[source,shell]
+----
+kubectl delete $(kubectl get strimzi -o name)
+
+kafka.kafka.strimzi.io "my-cluster" deleted
+kafkatopic.kafka.strimzi.io "kafka-apps" deleted
+kafkauser.kafka.strimzi.io "my-user" deleted
+----
+
+Deleting all resources in a single operation might be useful, for example,
+when you are testing new Strimzi features.
+
+== Querying the status of sub-resources
+
+There are other values you can pass to the `-o` option.
+For example, by using `-o yaml` you get the output in YAML format.
+Usng `-o json` will return it as JSON.
+
+You can see all the options in `kubectl get --help`.
+
+One of the most useful options is the {K8SJsonPath}, which allows you to pass JSONPath expressions to query the Kubernetes API.
+A JSONPath expression can extract or navigate specific parts of any resource.
+
+For example, you can use the JSONPath expression `{.status.listeners[?(@.type=="tls")].bootstrapServers}`
+to get the bootstrap address from the status of the Kafka custom resource and use it in your Kafka clients.
+
+Here, the command finds the `bootstrapServers` value of the `tls` listeners.
+
+[source,shell]
+----
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.type=="tls")].bootstrapServers}{"\n"}'
+
+my-cluster-kafka-bootstrap.myproject.svc:9093
+----
+
+By changing the type condition to `@.type=="external"` or `@.type=="plain"` you can also get the address of the other Kafka listeners.
+
+[source,shell]
+----
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
+
+192.168.1.247:9094
+----
+
+You can use `jsonpath` to extract any other property or group of properties from any custom resource.

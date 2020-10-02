@@ -1,6 +1,6 @@
 Kafka allows a user to set `quotas` to control the use of resources by clients.
 
-.`quotas`
+=== `quotas`
 
 Quotas split into two categories:
 

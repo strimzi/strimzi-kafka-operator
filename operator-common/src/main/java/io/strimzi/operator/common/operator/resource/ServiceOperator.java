@@ -102,8 +102,21 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
         }
     }
 
-    public Future<Void> endpointReadiness(String namespace, Service desired, long pollInterval, long operationTimeoutMs) {
-        return endpointOperations.readiness(namespace, desired.getMetadata().getName(), pollInterval, operationTimeoutMs);
+    /**
+     * Deletes the resource with the given namespace and name and completes the given future accordingly.
+     * This method will do a cascading delete.
+     *
+     * @param namespace Namespace of the resource which should be deleted
+     * @param name Name of the resource which should be deleted
+     *
+     * @return Future with result of the reconciliation
+     */
+    protected Future<ReconcileResult<Service>> internalDelete(String namespace, String name) {
+        return internalDelete(namespace, name, true);
+    }
+
+    public Future<Void> endpointReadiness(String namespace, String name, long pollInterval, long operationTimeoutMs) {
+        return endpointOperations.readiness(namespace, name, pollInterval, operationTimeoutMs);
     }
 
     /**

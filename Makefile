@@ -127,18 +127,18 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing-book.html
 
 docu_check:
-	./.travis/check_docs.sh
+	./.azure/scripts/check_docs.sh
 
 shellcheck:
-	./.travis/shellcheck.sh
+	./.azure/scripts/shellcheck.sh
 
 spotbugs: $(SUBDIRS) systemtest_make
 
 docu_pushtowebsite: docu_htmlnoheader docu_html
-	./.travis/docu-push-to-website.sh
+	./.azure/scripts/docu-push-to-website.sh
 
 pushtonexus:
-	./.travis/push-to-nexus.sh
+	./.azure/scripts/push-to-nexus.sh
 
 release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs

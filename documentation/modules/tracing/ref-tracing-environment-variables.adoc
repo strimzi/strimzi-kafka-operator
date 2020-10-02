@@ -46,7 +46,7 @@ m¦JAEGER_PASSWORD
 
 m¦JAEGER_PROPAGATION
 ¦No
-¦A comma-separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are `jaeger` and `b3`.
+¦A comma-separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are `jaeger`, `b3`, and `w3c`.
 
 m¦JAEGER_REPORTER_LOG_SPANS
 ¦No
@@ -58,7 +58,7 @@ m¦JAEGER_REPORTER_MAX_QUEUE_SIZE
 
 m¦JAEGER_REPORTER_FLUSH_INTERVAL
 ¦No
-¦The reporter's flush interval, in ms. Defines how frequently the Jaeger reporter flushes span batches. 
+¦The reporter's flush interval, in ms. Defines how frequently the Jaeger reporter flushes span batches.
 
 m¦JAEGER_SAMPLER_TYPE
 ¦No
@@ -86,7 +86,7 @@ m¦JAEGER_TAGS
 ¦A comma-separated list of tracer-level tags that are added to all reported spans.
 
 The value can also refer to an environment variable using the format `${envVarName:default}`. `:default` is optional and identifies a value to use if the environment variable cannot be found.
- 
+
 |===
 
 .Additional resources

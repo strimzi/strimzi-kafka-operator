@@ -46,11 +46,11 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
     }
 
     @Override
-    protected KafkaConnect getResource() {
+    protected KafkaConnect getResource(String resourceName) {
         return new KafkaConnectBuilder()
                 .withApiVersion(KafkaConnect.RESOURCE_GROUP + "/" + KafkaConnect.V1BETA1)
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(resourceName)
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()

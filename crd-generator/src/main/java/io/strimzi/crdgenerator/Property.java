@@ -4,16 +4,6 @@
  */
 package io.strimzi.crdgenerator;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -26,6 +16,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.crdgenerator.annotations.Alternative;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -38,6 +40,7 @@ class Property implements AnnotatedElement {
     private AnnotatedElement a;
     private Member m;
     private PropertyType type;
+
     public Property(Method method) {
         name = propertyName(method);
         owner = method.getDeclaringClass();
@@ -296,6 +299,13 @@ class Property implements AnnotatedElement {
 
     boolean isDiscriminator() {
         return getName().equals(discriminator(m.getDeclaringClass()));
+    }
+
+    List<Property> getAlternatives() {
+        List<Property> alternatives =
+                Property.properties(getType().getType()).values().stream()
+                        .filter(p -> p.getAnnotation(Alternative.class) != null).collect(Collectors.toList());
+        return alternatives;
     }
 
     @Override

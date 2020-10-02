@@ -101,13 +101,13 @@ public class ClusterOperator extends AbstractVerticle {
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
         List<Future> watchFutures = new ArrayList<>(8);
-        List<AbstractOperator<?, ?>> operators = new ArrayList<>(asList(
+        List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
                 kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
                 kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
         if (kafkaConnectS2IAssemblyOperator != null) {
             operators.add(kafkaConnectS2IAssemblyOperator);
         }
-        for (AbstractOperator<?, ?> operator : operators) {
+        for (AbstractOperator<?, ?, ?, ?> operator : operators) {
             watchFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
                 log.info("Opened watch for {} operator", operator.kind());
                 watchByKind.put(operator.kind(), w);

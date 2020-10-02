@@ -56,7 +56,7 @@ $ helm repo add strimzi https://strimzi.io/charts/
 To install the chart with the release name `my-release`:
 
 ```bash
-$ helm install --name my-release strimzi/strimzi-kafka-operator
+$ helm install my-release strimzi/strimzi-kafka-operator
 ```
 
 The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration.
@@ -86,7 +86,6 @@ the documentation for more details.
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
 | `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`                                       |
 | `image.imagePullSecrets`              | Docker registry pull secret              | `nil`                                                 |
-| `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
@@ -119,9 +118,6 @@ the documentation for more details.
 | `kafkaInit.image.repository`         | Init Kafka image repository               | `strimzi`                                            |
 | `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
 | `kafkaInit.image.tag`                | Init Kafka image tag                      | `latest`                                             |
-| `tlsSidecarKafka.image.repository`   | TLS Sidecar for Kafka image repository    | `strimzi`                                            |
-| `tlsSidecarKafka.image.name`         | TLS Sidecar for Kafka image name          | `kafka`                                              |
-| `tlsSidecarKafka.image.tag`          | TLS Sidecar for Kafka image tag prefix    | `latest`                                             |
 | `tlsSidecarCruiseControl.image.repository` | TLS Sidecar for Cruise Control image repository | `strimzi`                                         |
 | `tlsSidecarCruiseControl.image.name`     | TLS Sidecar for Cruise Control image name      | `kafka`                                              |
 | `tlsSidecarCruiseControl.image.tag`      | TLS Sidecar for Cruise Control image tag prefix | `latest`                                            |

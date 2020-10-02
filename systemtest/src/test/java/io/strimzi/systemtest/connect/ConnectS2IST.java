@@ -4,10 +4,15 @@
  */
 package io.strimzi.systemtest.connect;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -18,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaConnectTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.operator.common.Annotations;
@@ -59,19 +65,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
+import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -176,11 +186,15 @@ class ConnectS2IST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .withNewTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
                             .withNewKafkaListenerAuthenticationScramSha512Auth()
                             .endKafkaListenerAuthenticationScramSha512Auth()
-                        .endTls()
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -189,14 +203,12 @@ class ConnectS2IST extends AbstractST {
         final String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
+        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
         KafkaUser user = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
 
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS, user).done();
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
-                .editMetadata()
-                    .addToLabels("type", "kafka-connect-s2i")
-                .endMetadata()
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
@@ -219,8 +231,6 @@ class ConnectS2IST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, CONNECT_S2I_TOPIC_NAME).done();
-
         final String tlsKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -231,10 +241,9 @@ class ConnectS2IST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
-            .withConsumerGroupName("my-group-" + new Random().nextInt(Integer.MAX_VALUE))
             .build();
 
-        String kafkaConnectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String kafkaConnectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
         String kafkaConnectS2ILogs = kubeClient().logs(kafkaConnectS2IPodName);
 
         LOGGER.info("Verifying that in KafkaConnect logs not contain ERRORs");
@@ -264,9 +273,6 @@ class ConnectS2IST extends AbstractST {
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
-            .endMetadata()
             .editSpec()
                 .withNewTemplate()
                     .withNewConnectContainer()
@@ -315,9 +321,6 @@ class ConnectS2IST extends AbstractST {
         jvmOptionsXX.put("UseG1GC", "true");
 
         KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
-            .endMetadata()
             .editSpec()
                 .withResources(
                     new ResourceRequirementsBuilder()
@@ -346,7 +349,7 @@ class ConnectS2IST extends AbstractST {
         TestUtils.waitFor("build status: Pending", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_AVAILABILITY_TEST,
             () -> kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").get().getStatus().getPhase().equals("Pending"));
 
-        kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").cascading(true).delete();
+        kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(NAMESPACE).withName(kafkaConnectS2IName + "-connect-1").withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
         KafkaConnectS2IResource.replaceConnectS2IResource(kafkaConnectS2IName, kc -> {
             kc.getSpec().setBuildResources(new ResourceRequirementsBuilder()
@@ -364,7 +367,7 @@ class ConnectS2IST extends AbstractST {
 
         KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
-        String podName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String podName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
 
         assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
             "400M", "2", "300M", "1");
@@ -387,7 +390,6 @@ class ConnectS2IST extends AbstractST {
         // Create different connect cluster via S2I resources
         KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
                 .editSpec()
@@ -400,7 +402,6 @@ class ConnectS2IST extends AbstractST {
         // Create connect cluster with default connect image
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
             .editMetadata()
-                .addToLabels("type", "kafka-connect")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
@@ -422,7 +423,7 @@ class ConnectS2IST extends AbstractST {
             .endSpec().done();
 
         // Check that KafkaConnectS2I contains created connector
-        String connectS2IPodName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String connectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectorUtils.waitForConnectorCreation(connectS2IPodName, CLUSTER_NAME);
 
         KafkaConnectUtils.waitForConnectNotReady(CLUSTER_NAME);
@@ -467,7 +468,6 @@ class ConnectS2IST extends AbstractST {
         // Crate connect cluster with default connect image
         KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 3)
                 .editMetadata()
-                    .addToLabels("type", "kafka-connect-s2i")
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .editSpec()
@@ -493,16 +493,15 @@ class ConnectS2IST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        String execConnectPod =  kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
+        String execConnectPod =  kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
         JsonObject connectStatus = new JsonObject(cmdKubeClient().execInPod(
                 execConnectPod,
                 "curl", "-X", "GET", "http://localhost:8083/connectors/" + CLUSTER_NAME + "/status").out()
         );
         String podIP = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
-        String connectorPodName = kubeClient().listPods("type", "kafka-connect-s2i").stream().filter(pod ->
+        String connectorPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).stream().filter(pod ->
                 pod.getStatus().getPodIP().equals(podIP)).findFirst().get().getMetadata().getName();
 
         internalKafkaClient.assertSentAndReceivedMessages(
@@ -522,7 +521,6 @@ class ConnectS2IST extends AbstractST {
 
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, CLUSTER_NAME, 1)
                 .editMetadata()
-                    .addToLabels("type", "kafka-connect-s2i")
                     .addToAnnotations("strimzi.io/use-connector-resources", "true")
                 .endMetadata()
                 .editSpec()
@@ -532,7 +530,7 @@ class ConnectS2IST extends AbstractST {
 
         String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
 
-        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
+        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
 
         LOGGER.info("===== SCALING UP AND DOWN =====");
 
@@ -547,7 +545,7 @@ class ConnectS2IST extends AbstractST {
                 cs2i.getSpec().setReplicas(scaleReplicasTo));
         DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, scaleReplicasTo);
 
-        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
         assertThat(connectPods.size(), Matchers.is(scaleReplicasTo));
         LOGGER.info("Scaling to {} finished", scaleReplicasTo);
 
@@ -557,7 +555,7 @@ class ConnectS2IST extends AbstractST {
                 cs2i.getSpec().setReplicas(initialReplicas));
         Map<String, String> depConfSnapshot = DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, initialReplicas);
 
-        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I");
+        connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
         assertThat(connectPods.size(), is(initialReplicas));
 
         LOGGER.info("Scaling to {} finished", initialReplicas);
@@ -589,7 +587,7 @@ class ConnectS2IST extends AbstractST {
 
         String versionCommand = "ls libs | grep -Po 'connect-api-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1";
 
-        String actualVersion = cmdKubeClient().execInPodContainer(kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, "KafkaConnectS2I").get(0),
+        String actualVersion = cmdKubeClient().execInPodContainer(kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0),
                 "", "/bin/bash", "-c", versionCommand).out().trim();
 
         assertThat(actualVersion, is(TestKafkaVersion.getKafkaVersions().get(1).version()));
@@ -617,17 +615,14 @@ class ConnectS2IST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALABILITY)
     void testScaleConnectS2IWithoutConnectorToZero() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, CLUSTER_NAME, 2)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
-            .endMetadata()
-            .done();
+        KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, CLUSTER_NAME, 2).done();
 
         String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
-        List<String> connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
+        List<String> connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
 
         assertThat(connectS2IPods.size(), Matchers.is(2));
         //scale down
@@ -636,20 +631,21 @@ class ConnectS2IST extends AbstractST {
 
         DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, 0);
 
-        connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
+        connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
         KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
 
         assertThat(connectS2IPods.size(), Matchers.is(0));
-        assertThat(connectS2IStatus.getConditions().get(0).getType(), is("Ready"));
+        assertThat(connectS2IStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
+    @Tag(SCALABILITY)
     void testScaleConnectS2IWithConnectorToZero() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, CLUSTER_NAME, 2)
             .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .done();
@@ -665,7 +661,7 @@ class ConnectS2IST extends AbstractST {
             .done();
 
         String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
-        List<String> connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
+        List<String> connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
 
         assertThat(connectS2IPods.size(), Matchers.is(2));
         //scale down
@@ -674,29 +670,26 @@ class ConnectS2IST extends AbstractST {
 
         DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, 0);
 
-        connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
+        connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
         KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
 
         assertThat(connectS2IPods.size(), Matchers.is(0));
-        assertThat(connectS2IStatus.getConditions().get(0).getType(), is("Ready"));
-        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+        assertThat(connectS2IStatus.getConditions().get(0).getType(), is(Ready.toString()));
+        assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 
     @Test
+    @Tag(SCALABILITY)
     void testScaleConnectS2ISubresource() {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
-            .endMetadata()
-            .done();
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1).done();
 
         int scaleTo = 4;
         long connectS2IObsGen = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
-        String connectS2IGenName = kubeClient().listPods("type", "kafka-connect-s2i").get(0).getMetadata().getGenerateName();
+        String connectS2IGenName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaConnectS2I subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
@@ -704,7 +697,7 @@ class ConnectS2IST extends AbstractST {
         DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(KafkaConnectS2IResources.deploymentName(CLUSTER_NAME), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        List<String> connectS2IPods = kubeClient().listPodNames("type", "kafka-connect-s2i");
+        List<String> connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
         assertThat(connectS2IPods.size(), is(4));
         assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
@@ -718,12 +711,44 @@ class ConnectS2IST extends AbstractST {
         }
     }
 
+    @Test
+    void testHostAliases() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp("34.89.152.196")
+            .withHostnames("strimzi")
+            .build();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewPod()
+                        .withHostAliases(hostAlias)
+                    .endPod()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String connectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
+        String output = cmdKubeClient().execInPod(connectS2IPodName, "ping", "-c", "5", "strimzi").out();
+
+        LOGGER.info("Checking output of ping");
+        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
+        assertThat(output, containsString("5 packets transmitted, 5 received"));
+
+        LOGGER.info("Checking the /etc/hosts file");
+        output = cmdKubeClient().execInPod(connectS2IPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+    }
+
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
         KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
             .editMetadata()
-                .addToLabels("type", "kafka-connect-s2i")
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, Boolean.toString(useConnectorOperator))
             .endMetadata()
             .done();
@@ -762,11 +787,32 @@ class ConnectS2IST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
-        deployKafkaClients();
-    }
-
-    private void deployKafkaClients() {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+
+        if (SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+
+            LOGGER.info("Checking if secret {} is in the default namespace", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+
+            if (kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
+                throw new RuntimeException(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default namespace!");
+            }
+
+            Secret pullSecret = kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+
+            kubeClient(NAMESPACE).createSecret(new SecretBuilder()
+                .withNewApiVersion("v1")
+                .withNewKind("Secret")
+                .withNewMetadata()
+                .withName(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
+                .endMetadata()
+                .withNewType("kubernetes.io/dockerconfigjson")
+                .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
+                .build());
+
+            LOGGER.info("Link existing pull-secret {} with associate builder service account", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+
+            ResourceManager.cmdKubeClient().exec("secrets", "link", "builder", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+        }
     }
 }

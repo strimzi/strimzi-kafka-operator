@@ -1,0 +1,19 @@
+// This assembly is included in:
+//
+// assembly-management-tasks.adoc
+
+[id="working-with-resources-{context}"]
+= Working with custom resources
+
+You can use `kubectl` commands to retrieve information and perform other operations on Strimzi custom resources.
+
+Using `kubectl` with the `status` subresource of a custom resource allows you to get the information about the resource.
+
+//accessing resource information
+include::modules/con-custom-resources-info.adoc[leveloffset=+1]
+
+//reference table for resource status
+include::modules/con-custom-resources-status.adoc[leveloffset=+1]
+
+//procedure to check status of a resources
+include::modules/proc-accessing-resource-status.adoc[leveloffset=+1]

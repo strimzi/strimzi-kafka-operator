@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.logs;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.test.k8s.KubeClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,22 +77,28 @@ public class LogCollector {
 
     public void collectDeployments() {
         LOGGER.info("Collecting Deployments in Namespace {}", namespace);
-        writeFile(logDir + "/deployments.log", cmdKubeClient().list("deployment").toString());
+        writeFile(logDir + "/deployments.log", cmdKubeClient().getResourcesAsYaml(Constants.DEPLOYMENT));
     }
 
     public void collectStatefulSets() {
         LOGGER.info("Collecting StatefulSets in Namespace {}", namespace);
-        writeFile(logDir + "/statefulsets.log", cmdKubeClient().list("statefulset").toString());
+        writeFile(logDir + "/statefulsets.log", cmdKubeClient().getResourcesAsYaml(Constants.STATEFUL_SET));
     }
 
     public void collectReplicaSets() {
         LOGGER.info("Collecting ReplicaSet in Namespace {}", namespace);
-        writeFile(logDir + "/replicasets.log", cmdKubeClient().list("replicaset").toString());
+        writeFile(logDir + "/replicasets.log", cmdKubeClient().getResourcesAsYaml("replicaset"));
     }
 
     public void collectStrimzi() {
         LOGGER.info("Collecting Strimzi in Namespace {}", namespace);
         String crData = cmdKubeClient().exec(false, "get", "strimzi", "-o", "yaml", "-n", namespace).out();
         writeFile(logDir + "/strimzi-custom-resources.log", crData);
+    }
+
+    public void collectClusterInfo() {
+        LOGGER.info("Collecting cluster status");
+        String nodes = cmdKubeClient().exec(false, "describe", "nodes").out();
+        writeFile(logDir + "/cluster-status.log", nodes);
     }
 }

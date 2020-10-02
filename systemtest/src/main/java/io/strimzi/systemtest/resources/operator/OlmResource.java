@@ -61,8 +61,8 @@ public class OlmResource {
         ResourceManager.cmdKubeClient().apply(subscriptionFile);
         // Make sure that operator will be deleted
         TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
-            () -> ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_NAME) != null);
-        String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_NAME);
+            () -> ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null);
+        String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
         ResourceManager.getPointerResources().push(() -> deleteOlm(deploymentName, namespace, csvName));
         // Wait for operator creation

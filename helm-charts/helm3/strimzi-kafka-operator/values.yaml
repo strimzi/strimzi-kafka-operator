@@ -9,7 +9,9 @@ image:
   repository: strimzi
   name: operator
   tag: latest
-logLevel: INFO
+logVolume: co-config-volume
+logConfigMap: strimzi-cluster-operator
+logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
@@ -56,11 +58,6 @@ kafkaInit:
     repository: strimzi
     name: operator
     tag: latest
-tlsSidecarKafka:
-  image:
-    repository: strimzi
-    name: kafka
-    tagPrefix: latest
 tlsSidecarEntityOperator:
   image:
     repository: strimzi

@@ -9,7 +9,7 @@
 
 [id='assembly-kafka-connect-authentication-{context}']
 
-= Connecting to Kafka brokers with Authentication
+= Connecting to Kafka brokers with authentication
 
 By default, Kafka Connect will try to connect to Kafka brokers without authentication.
 Authentication is enabled through the `KafkaConnect` and `KafkaConnectS2I` resources.

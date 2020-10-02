@@ -70,7 +70,7 @@ public class KubernetesResource {
             TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
-                        ResourceManager.kubeClient().getClient().batch().jobs().inNamespace(kubeClient().getNamespace()).createOrReplace(kubernetesJob);
+                        ResourceManager.kubeClient().createJob(kubernetesJob);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -211,30 +211,32 @@ public class KubernetesResource {
         return new DoneableService(service);
     }
 
-    public static Service deployKeycloakNodePortHttpService(String namespace) {
+    public static Service createKeycloakNodePortHttpService(String namespace) {
         String keycloakName = "keycloak";
 
         Map<String, String> keycloakLabels = new HashMap<>();
         keycloakLabels.put("app", keycloakName);
+        keycloakLabels.put("component", keycloakName);
 
-        return getSystemtestsServiceResource(keycloakName + "service-http",
-                Constants.HTTP_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
-                .editSpec()
-                    .withType("NodePort")
-                    .withSelector(keycloakLabels)
-                    .editFirstPort()
-                        .withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
-                    .endPort()
-                .endSpec().build();
+        return getSystemtestsServiceResource(keycloakName + "-service-http",
+            Constants.HTTP_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
+            .editSpec()
+                .withType("NodePort")
+                .withSelector(keycloakLabels)
+                .editFirstPort()
+                    .withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
+                .endPort()
+            .endSpec().build();
     }
 
-    public static Service deployKeycloakNodePortService(String namespace) {
+    public static Service createKeycloakNodePortService(String namespace) {
         String keycloakName = "keycloak";
 
         Map<String, String> keycloakLabels = new HashMap<>();
         keycloakLabels.put("app", keycloakName);
+        keycloakLabels.put("component", keycloakName);
 
-        return getSystemtestsServiceResource(keycloakName + "service-https",
+        return getSystemtestsServiceResource(keycloakName + "-service-https",
             Constants.HTTPS_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
             .editSpec()
                 .withType("NodePort")
@@ -281,7 +283,7 @@ public class KubernetesResource {
                 .build();
 
         if (kubeClient().listPods(labelSelector).size() == 0) {
-            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the Kafka Connect");
+            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
         }
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", deploymentName, labelSelector);

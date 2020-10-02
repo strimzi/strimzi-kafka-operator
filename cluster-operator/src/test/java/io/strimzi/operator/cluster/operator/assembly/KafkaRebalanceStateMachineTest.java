@@ -13,8 +13,8 @@ import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -70,7 +70,7 @@ public class KafkaRebalanceStateMachineTest {
 
     @BeforeAll
     public static void before() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.getCCServer(CruiseControl.REST_API_PORT);
+        ccServer = MockCruiseControl.server(CruiseControl.REST_API_PORT);
     }
 
     @AfterAll

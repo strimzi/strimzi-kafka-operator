@@ -16,6 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +27,6 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +56,7 @@ public class InitWriterTest {
     }
 
     @Test
-    public void testWriteRackId() {
+    public void testWriteRackId() throws IOException {
 
         // create and configure (env vars) the path to the rack-id file
         File kafkaFolder = new File(tempDir.getPath() + "opt/kafka");
@@ -70,10 +72,11 @@ public class InitWriterTest {
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(true));
+        assertThat(readFile(rackFolder + "/rack.id"), is("eu-zone1"));
     }
 
     @Test
-    public void testWriteExternalAddress() {
+    public void testWriteExternalAddress() throws IOException {
 
         // create and configure (env vars) the path to the rack-id file
         File kafkaFolder = new File(tempDir.getPath(), "/opt/kafka");
@@ -89,6 +92,12 @@ public class InitWriterTest {
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeExternalAddress(), is(true));
+        assertThat(readFile(addressFolder + "/external.address"), is("export STRIMZI_NODEPORT_DEFAULT_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_EXTERNALIP_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_EXTERNALDNS_ADDRESS=my.external.address\n" +
+                "export STRIMZI_NODEPORT_INTERNALIP_ADDRESS=192.168.2.94\n" +
+                "export STRIMZI_NODEPORT_INTERNALDNS_ADDRESS=my.internal.address\n" +
+                "export STRIMZI_NODEPORT_HOSTNAME_ADDRESS=my.external.address\n"));
     }
 
     @Test
@@ -121,55 +130,8 @@ public class InitWriterTest {
         assertThat(writer.writeRack(), is(false));
     }
 
-    @Test
-    public void testFindAddressWithAddressType()   {
-        Map<String, String> envs = new HashMap<>(envVars);
-        envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
-
-        InitWriterConfig config = InitWriterConfig.fromMap(envs);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is("my.internal.address"));
-    }
-
-    @Test
-    public void testFindAddressReturnsExternalAddress()   {
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is("my.external.address"));
-    }
-
-    @Test
-    public void testFindAddressNullWithInvalidAddressTypes()   {
-        List<NodeAddress> addresses = new ArrayList<>(3);
-        addresses.add(new NodeAddressBuilder().withType("SomeAddress").withAddress("my.external.address").build());
-        addresses.add(new NodeAddressBuilder().withType("SomeOtherAddress").withAddress("my.internal.address").build());
-        addresses.add(new NodeAddressBuilder().withType("YetAnotherAddress").withAddress("192.168.2.94").build());
-
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is(nullValue()));
-    }
-
-    @Test
-    public void testFindAddressNullWhenAddressesNull()   {
-        List<NodeAddress> addresses = null;
-
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
-        InitWriter writer = new InitWriter(client, config);
-        String address = writer.findAddress(addresses);
-
-        assertThat(address, is(nullValue()));
+    private String readFile(String file) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(file)));
     }
 
     /**

@@ -6,12 +6,15 @@ package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Probe;
-import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -52,122 +55,10 @@ import java.util.Optional;
  */
 public class ModelUtils {
 
-    public static final io.strimzi.api.kafka.model.Probe DEFAULT_TLS_SIDECAR_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
-            .withInitialDelaySeconds(TlsSidecar.DEFAULT_HEALTHCHECK_DELAY)
-            .withTimeoutSeconds(TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT)
-            .build();
-
     private ModelUtils() {}
 
     protected static final Logger log = LogManager.getLogger(ModelUtils.class.getName());
-
-    public static final String KUBERNETES_SERVICE_DNS_DOMAIN =
-            System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
-
-    /**
-     * Generates the DNS name of the pod including the cluster suffix
-     * (i.e. usually with the cluster.local - but can be different on different clusters)
-     * Example: my-pod-1.my-service.my-ns.svc.cluster.local
-     *
-     * Note: Conventionally this would only be used for pods with deterministic names such as statefulset pods
-     *
-     * @param namespace     Namespace of the pod
-     * @param serviceName   Name of the cluster
-     * @param podName       Name of the pod
-     *
-     * @return              DNS name of the pod
-     */
-    public static String podDnsName(String namespace, String serviceName, String podName) {
-        return String.format("%s.%s",
-                podName,
-                ModelUtils.serviceDnsName(namespace, serviceName));
-    }
-
-    /**
-     * Generates the DNS name of the pod without the cluster domain suffix
-     * (i.e. usually without the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-pod-1.my-cluster-service.my-ns.svc
-     *
-     * Note: Conventionally this would only be used for pods with deterministic names such as statefulset pods
-     *
-     * @param namespace     Namespace of the pod
-     * @param serviceName   Name of the service
-     * @param podName       Name of the pod
-     *
-     * @return              DNS name of the pod without the cluster domain suffix
-     */
-    public static String podDnsNameWithoutClusterDomain(String namespace, String serviceName, String podName) {
-        return String.format("%s.%s",
-                podName,
-                ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, serviceName));
-
-    }
-
-    /**
-     * Generates the DNS name of the service including the cluster suffix
-     * (i.e. usually with the cluster.local - but can be different on different clusters)
-     * Example: my-service.my-ns.svc.cluster.local
-     *
-     * @param namespace     Namespace of the pod
-     * @param serviceName   Name of the cluster
-     *
-     * @return              DNS name of the service
-     */
-    public static String serviceDnsName(String namespace, String serviceName) {
-        return String.format("%s.%s.svc.%s",
-                serviceName,
-                namespace,
-                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
-    }
-
-    /**
-     * Generates the wildcard DNS name of the service without the cluster domain suffix
-     * (i.e. usually without the cluster.local - but can be different on different clusters)
-     * Example: *.my-service.my-ns.svc
-     *
-     * @param namespace     Namespace of the pod
-     * @param serviceName   Name of the service
-     *
-     * @return              Wildcard DNS name of the service without the cluster domain suffix
-     */
-    public static String wildcardServiceDnsNameWithoutClusterDomain(String namespace, String serviceName) {
-        return String.format("*.%s.%s.svc",
-                serviceName,
-                namespace);
-    }
-
-    /**
-     * Generates the wildcard DNS name of the service including the cluster suffix
-     * (i.e. usually with the cluster.local - but can be different on different clusters)
-     * Example: *.my-service.my-ns.svc.cluster.local
-     *
-     * @param namespace     Namespace of the pod
-     * @param serviceName   Name of the cluster
-     *
-     * @return              Wildcard DNS name of the service
-     */
-    public static String wildcardServiceDnsName(String namespace, String serviceName) {
-        return String.format("*.%s.%s.svc.%s",
-                serviceName,
-                namespace,
-                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
-    }
-
-    /**
-     * Generates the DNS name of the service without the cluster domain suffix
-     * (i.e. usually without the cluster.local - but can be different on different clusters)
-     * Example: my-service.my-ns.svc
-     *
-     * @param namespace     Namespace of the pod
-     * @param serviceName   Name of the service
-     *
-     * @return              DNS name of the service without the cluster domain suffix
-     */
-    public static String serviceDnsNameWithoutClusterDomain(String namespace, String serviceName) {
-        return String.format("%s.%s.svc",
-                serviceName,
-                namespace);
-    }
+    public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
      * @param certificateAuthority The CA configuration.
@@ -231,101 +122,6 @@ public class ModelUtils {
         }
         throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
     }
-
-    /**
-     * @param pod The StatefulSet
-     * @param containerName The name of the container whoes environment variables are to be retrieved
-     * @param envVarName Name of the environment variable which we should get
-     * @return The environment of the Kafka container in the sts.
-     */
-    public static String getPodEnv(Pod pod, String containerName, String envVarName) {
-        if (pod != null) {
-            for (Container container : pod.getSpec().getContainers()) {
-                if (containerName.equals(container.getName())) {
-                    if (container.getEnv() != null) {
-                        for (EnvVar envVar : container.getEnv()) {
-                            if (envVarName.equals(envVar.getName()))    {
-                                return envVar.getValue();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public static List<EnvVar> envAsList(Map<String, String> env) {
-        ArrayList<EnvVar> result = new ArrayList<>(env.size());
-        for (Map.Entry<String, String> entry : env.entrySet()) {
-            result.add(new EnvVar(entry.getKey(), entry.getValue(), null));
-        }
-        return result;
-    }
-
-    protected static ProbeBuilder newProbeBuilder(io.strimzi.api.kafka.model.Probe userProbe) {
-        return new ProbeBuilder()
-                .withInitialDelaySeconds(userProbe.getInitialDelaySeconds())
-                .withTimeoutSeconds(userProbe.getTimeoutSeconds())
-                .withPeriodSeconds(userProbe.getPeriodSeconds())
-                .withSuccessThreshold(userProbe.getSuccessThreshold())
-                .withFailureThreshold(userProbe.getFailureThreshold());
-    }
-
-
-    protected static Probe createTcpSocketProbe(int port, io.strimzi.api.kafka.model.Probe userProbe) {
-        Probe probe = ModelUtils.newProbeBuilder(userProbe)
-                .withNewTcpSocket()
-                .withNewPort()
-                .withIntVal(port)
-                .endPort()
-                .endTcpSocket()
-                .build();
-        log.trace("Created TCP socket probe {}", probe);
-        return probe;
-    }
-
-    protected static Probe createHttpProbe(String path, String port, io.strimzi.api.kafka.model.Probe userProbe) {
-        Probe probe = ModelUtils.newProbeBuilder(userProbe).withNewHttpGet()
-                .withPath(path)
-                .withNewPort(port)
-                .endHttpGet()
-                .build();
-        log.trace("Created http probe {}", probe);
-        return probe;
-    }
-
-    static Probe createExecProbe(List<String> command, io.strimzi.api.kafka.model.Probe userProbe) {
-        Probe probe = newProbeBuilder(userProbe).withNewExec()
-                .withCommand(command)
-                .endExec()
-                .build();
-        log.trace("Created exec probe {}", probe);
-        return probe;
-    }
-
-    static Probe tlsSidecarReadinessProbe(TlsSidecar tlsSidecar) {
-        io.strimzi.api.kafka.model.Probe tlsSidecarReadinessProbe;
-        if (tlsSidecar != null && tlsSidecar.getReadinessProbe() != null) {
-            tlsSidecarReadinessProbe = tlsSidecar.getReadinessProbe();
-        } else {
-            tlsSidecarReadinessProbe = DEFAULT_TLS_SIDECAR_PROBE;
-        }
-        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessProbe);
-    }
-
-    static Probe tlsSidecarLivenessProbe(TlsSidecar tlsSidecar) {
-        io.strimzi.api.kafka.model.Probe tlsSidecarLivenessProbe;
-        if (tlsSidecar != null && tlsSidecar.getLivenessProbe() != null) {
-            tlsSidecarLivenessProbe = tlsSidecar.getLivenessProbe();
-        } else {
-            tlsSidecarLivenessProbe = DEFAULT_TLS_SIDECAR_PROBE;
-        }
-        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessProbe);
-    }
-
-    public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {
         return AbstractModel.buildEnvVar(TLS_SIDECAR_LOG_LEVEL,
@@ -459,6 +255,7 @@ public class ModelUtils {
             model.templateSecurityContext = pod.getSecurityContext();
             model.templatePodPriorityClassName = pod.getPriorityClassName();
             model.templatePodSchedulerName = pod.getSchedulerName();
+            model.templatePodHostAliases = pod.getHostAliases();
         }
     }
 
@@ -606,5 +403,55 @@ public class ModelUtils {
         }
         removeEmptyValuesFromTolerations(tolerationsListLocal);
         return tolerationsListLocal;
+    }
+
+    /**
+     *
+     * @param builder the builder which is used to populate the node affinity
+     * @param userAffinity the userAffinity which is defined by the user
+     * @param topologyKey  the topology key which is used to select the node
+     * @return the AffinityBuilder which has the node selector with topology key which is needed to make sure
+     * the pods are scheduled only on nodes with the rack label
+     */
+    public static AffinityBuilder populateAffinityBuilderWithRackLabelSelector(AffinityBuilder builder, Affinity userAffinity, String topologyKey) {
+        // We need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
+        NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
+                .withNewOperator("Exists")
+                .withNewKey(topologyKey)
+                .build();
+
+        if (userAffinity != null
+                && userAffinity.getNodeAffinity() != null
+                && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution() != null
+                && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms() != null) {
+            // User has specified some Node Selector Terms => we should enhance them
+            List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
+            List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
+
+            for (NodeSelectorTerm term : oldTerms) {
+                NodeSelectorTerm enhancedTerm = new NodeSelectorTermBuilder(term)
+                        .addToMatchExpressions(selector)
+                        .build();
+                enhancedTerms.add(enhancedTerm);
+            }
+
+            builder = builder
+                    .editOrNewNodeAffinity()
+                        .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                            .withNodeSelectorTerms(enhancedTerms)
+                        .endRequiredDuringSchedulingIgnoredDuringExecution()
+                    .endNodeAffinity();
+        } else {
+            // User has not specified any selector terms => we add our own
+            builder = builder
+                    .editOrNewNodeAffinity()
+                        .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
+                            .addNewNodeSelectorTerm()
+                                .withMatchExpressions(selector)
+                            .endNodeSelectorTerm()
+                        .endRequiredDuringSchedulingIgnoredDuringExecution()
+                    .endNodeAffinity();
+        }
+        return builder;
     }
 }

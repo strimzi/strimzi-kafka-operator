@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -43,6 +44,10 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -60,6 +65,7 @@ import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,6 +83,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
+/**
+ * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
+ */
 public abstract class AbstractModel {
 
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
@@ -86,6 +96,15 @@ public abstract class AbstractModel {
 
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
+
+    /**
+     * Init container related configuration
+     */
+    protected static final String INIT_NAME = "kafka-init";
+    protected static final String INIT_VOLUME_NAME = "rack-volume";
+    protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
+    protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
+    protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
 
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
@@ -109,7 +128,6 @@ public abstract class AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
-    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
@@ -232,6 +250,7 @@ public abstract class AbstractModel {
     protected int templatePodDisruptionBudgetMaxUnavailable = 1;
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
+    protected List<HostAlias> templatePodHostAliases;
     protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
@@ -343,6 +362,10 @@ public abstract class AbstractModel {
      * @return OrderedProperties map with all available loggers for current pod and default values.
      */
     protected OrderedProperties getDefaultLogConfig() {
+        String logConfigFileName = getDefaultLogConfigFileName();
+        if (logConfigFileName == null || logConfigFileName.isEmpty()) {
+            return new OrderedProperties();
+        }
         return getOrderedProperties(getDefaultLogConfigFileName());
     }
 
@@ -353,22 +376,23 @@ public abstract class AbstractModel {
      * @return The OrderedProperties of the inputted file.
      */
     public static OrderedProperties getOrderedProperties(String configFileName) {
+        if (configFileName == null || configFileName.isEmpty()) {
+            throw new IllegalArgumentException("configFileName must be non-empty string");
+        }
         OrderedProperties properties = new OrderedProperties();
-        if (configFileName != null && !configFileName.isEmpty()) {
-            InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
-            if (is == null) {
-                log.warn("Cannot find resource '{}'", configFileName);
-            } else {
+        InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
+        if (is == null) {
+            log.warn("Cannot find resource '{}'", configFileName);
+        } else {
+            try {
+                properties.addStringPairs(is);
+            } catch (IOException e) {
+                log.warn("Unable to read default log config from '{}'", configFileName);
+            } finally {
                 try {
-                    properties.addStringPairs(is);
+                    is.close();
                 } catch (IOException e) {
-                    log.warn("Unable to read default log config from '{}'", configFileName);
-                } finally {
-                    try {
-                        is.close();
-                    } catch (IOException e) {
-                        log.error("Failed to close stream. Reason: " + e.getMessage());
-                    }
+                    log.error("Failed to close stream. Reason: " + e.getMessage());
                 }
             }
         }
@@ -429,6 +453,7 @@ public abstract class AbstractModel {
 
     /**
      * Adds 'monitorInterval=30' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
+     *
      * @param data String with log4j2 properties in format key=value separated by new lines
      * @return log4j2 configuration with monitorInterval property
      */
@@ -436,7 +461,8 @@ public abstract class AbstractModel {
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(data);
 
-        Optional<String> mi = orderedProperties.asMap().keySet().stream().filter(key -> key.matches("^monitorInterval$")).findFirst();
+        Optional<String> mi = orderedProperties.asMap().keySet().stream()
+                .filter(key -> key.matches("^monitorInterval$")).findFirst();
         if (mi.isPresent()) {
             return data;
         } else {
@@ -447,6 +473,7 @@ public abstract class AbstractModel {
 
     /**
      * Generates a metrics and logging ConfigMap according to configured defaults.
+     *
      * @param externalConfigMap The ConfigMap used if Logging is an instance of ExternalLogging
      * @return The generated ConfigMap.
      */
@@ -481,12 +508,14 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Returns a lit of environment variables which should be shared by all containers.
-     * Currently contains the mirrored HTTP Proxy environment variables
+     * Returns a lit of environment variables which are required by all containers.
      *
-     * @return  List of environment variables
+     * Contains:
+     * The mirrored HTTP Proxy environment variables
+     *
+     * @return  List of required environment variables for all containers
      */
-    protected List<EnvVar> getSharedEnvVars() {
+    protected List<EnvVar> getRequiredEnvVars() {
         // HTTP Proxy configuration should be passed to all images
         return PROXY_ENV_VARS;
     }
@@ -519,8 +548,11 @@ public abstract class AbstractModel {
 
     /**
      * Validates persistent storage
+     * If storage is of a persistent type, validations are made
+     * If storage is not of a persistent type, validation passes
      *
      * @param storage   Persistent Storage configuration
+     * @throws InvalidResourceException if validations fails for any reason
      */
     protected static void validatePersistentStorage(Storage storage)   {
         if (storage instanceof PersistentClaimStorage) {
@@ -772,15 +804,11 @@ public abstract class AbstractModel {
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(serviceName, templateServiceLabels),
+        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, templateServiceLabels),
                 getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations) {
-        return createService(name, type, ports, labels, selector, annotations, null);
-    }
-
-    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, String loadBalancerIP) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -793,7 +821,6 @@ public abstract class AbstractModel {
                     .withType(type)
                     .withSelector(selector.toMap())
                     .withPorts(ports)
-                    .withLoadBalancerIP(loadBalancerIP)
                 .endSpec()
                 .build();
         log.trace("Created service {}", service);
@@ -811,7 +838,7 @@ public abstract class AbstractModel {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
-                    .withLabels(getLabelsWithStrimziName(headlessServiceName, templateHeadlessServiceLabels).toMap())
+                    .withLabels(getLabelsWithStrimziName(name, templateHeadlessServiceLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -882,6 +909,7 @@ public abstract class AbstractModel {
                             .withSecurityContext(securityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
+                            .withHostAliases(templatePodHostAliases)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -930,6 +958,7 @@ public abstract class AbstractModel {
                             .withSecurityContext(templateSecurityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName)
+                            .withHostAliases(templatePodHostAliases)
                         .endSpec()
                     .endTemplate()
                 .endSpec()
@@ -1266,6 +1295,30 @@ public abstract class AbstractModel {
                 }
             }
         }
+    }
+
+    protected ClusterRoleBinding getClusterRoleBinding(Subject subject, RoleRef roleRef) {
+
+        return new ClusterRoleBindingBuilder()
+                .withNewMetadata()
+                .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                .withOwnerReferences(createOwnerReference())
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .withSubjects(subject)
+                .withRoleRef(roleRef)
+                .build();
+    }
+
+    /**
+     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
+     *
+     * @param namespace The namespace.
+     * @param cluster   The cluster name.
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
+        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
     }
 
     /**

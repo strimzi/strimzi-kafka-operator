@@ -128,17 +128,18 @@ public class VerifiableClient {
 
         this.setAllowedArguments(this.clientType);
         this.clientArgumentMap = new ClientArgumentMap();
-        this.clientArgumentMap.put(ClientArgument.BROKER_LIST, bootstrapServer);
         this.clientArgumentMap.put(ClientArgument.TOPIC, topicName);
         this.clientArgumentMap.put(ClientArgument.MAX_MESSAGES, Integer.toString(maxMessages));
         if (kafkaUsername != null) this.clientArgumentMap.put(ClientArgument.USER,  kafkaUsername.replace("-", "_"));
 
+        String image = kubeClient().getPod(this.podName).getSpec().getContainers().get(0).getImage();
+        String clientVersion = image.substring(image.length() - 5);
+
+        this.clientArgumentMap.put(allowParameter("2.5.0", clientVersion) ? ClientArgument.BOOTSTRAP_SERVER : ClientArgument.BROKER_LIST, bootstrapServer);
+
         if (clientType == ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER) {
             this.consumerGroupName = verifiableClientBuilder.consumerGroupName;
             this.clientArgumentMap.put(ClientArgument.GROUP_ID, consumerGroupName);
-
-            String image = kubeClient().getPod(this.podName).getSpec().getContainers().get(0).getImage();
-            String clientVersion = image.substring(image.length() - 5);
 
             if (allowParameter("2.3.0", clientVersion)) {
                 this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
@@ -298,6 +299,7 @@ public class VerifiableClient {
         switch (clientType) {
             case CLI_KAFKA_VERIFIABLE_PRODUCER:
                 allowedArguments.add(ClientArgument.TOPIC);
+                allowedArguments.add(ClientArgument.BOOTSTRAP_SERVER);
                 allowedArguments.add(ClientArgument.BROKER_LIST);
                 allowedArguments.add(ClientArgument.MAX_MESSAGES);
                 allowedArguments.add(ClientArgument.THROUGHPUT);
@@ -309,6 +311,7 @@ public class VerifiableClient {
                 allowedArguments.add(ClientArgument.USER);
                 break;
             case CLI_KAFKA_VERIFIABLE_CONSUMER:
+                allowedArguments.add(ClientArgument.BOOTSTRAP_SERVER);
                 allowedArguments.add(ClientArgument.BROKER_LIST);
                 allowedArguments.add(ClientArgument.TOPIC);
                 allowedArguments.add(ClientArgument.GROUP_ID);

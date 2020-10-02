@@ -4,28 +4,42 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -108,7 +122,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
         KafkaResource.kafkaWithCruiseControlWithoutWait(CLUSTER_NAME, 1, 1);
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, errMessage);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, errMessage, Duration.ofMinutes(6).toMillis());
 
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
 
@@ -149,6 +163,77 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(CLUSTER_NAME, KafkaRebalanceAnnotation.approve);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.Ready);
+    }
+
+    @Test
+    void testCruiseControlReplicaMovementStrategy() {
+        final String replicaMovementStrategies = "default.replica.movement.strategies";
+        String newReplicaMovementStrategies = "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy," +
+                "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
+                "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
+
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
+        KafkaClientsResource.deployKafkaClients(KAFKA_CLIENTS_NAME).done();
+
+        String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+
+        LOGGER.info("Check for default CruiseControl replicaMovementStrategy in pod configuration file.");
+        Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(NAMESPACE)
+                .withName(CLUSTER_NAME).get().getSpec().getCruiseControl().getConfig();
+        assertThat(actualStrategies, anEmptyMap());
+
+        String ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
+
+        Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
+
+        Map<String, Object> ccConfigMap = new HashMap<>();
+        ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource.");
+            kafka.getSpec().getCruiseControl().setConfig(ccConfigMap);
+        });
+
+        LOGGER.info("Verifying that CC pod is rolling, because of change size of disk");
+        DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(CLUSTER_NAME), 1, kafkaRebalanceSnapshot);
+
+        ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
+    }
+
+    @Test
+    void testHostAliases() {
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp("34.89.152.196")
+            .withHostnames("strimzi")
+            .build();
+
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editCruiseControl()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withHostAliases(hostAlias)
+                        .endPod()
+                    .endTemplate()
+                .endCruiseControl()
+            .endSpec()
+            .done();
+
+        String ccPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-cruise-control").get(0).getMetadata().getName();
+
+        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
+        String output = cmdKubeClient().execInPod(ccPodName, "ping", "-c", "5", "strimzi").out();
+
+        LOGGER.info("Checking output of ping");
+        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
+        assertThat(output, containsString("5 packets transmitted, 5 received"));
+
+        LOGGER.info("Checking the /etc/hosts file");
+        output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
     }
 
     @BeforeAll

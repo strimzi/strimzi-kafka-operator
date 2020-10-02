@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -12,7 +13,7 @@ import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -23,7 +24,7 @@ import java.util.function.Consumer;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaRebalanceResource {
-    public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = "../examples/cruise-control/kafka-rebalance.yaml";
+    public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-rebalance.yaml";
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>> kafkaRebalanceClient() {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
@@ -69,7 +70,7 @@ public class KafkaRebalanceResource {
     }
 
     public static void deleteKafkaRebalanceWithoutWait(String resourceName) {
-        kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).cascading(true).delete();
+        kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static KafkaRebalance getKafkaRebalanceFromYaml(String yamlPath) {
@@ -78,7 +79,7 @@ public class KafkaRebalanceResource {
 
     private static KafkaRebalance waitFor(KafkaRebalance kafkaRebalance) {
         long timeout = ResourceOperation.getTimeoutForKafkaRebalanceState(KafkaRebalanceState.PendingProposal);
-        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, KafkaRebalanceState.PendingProposal.toString(), timeout);
+        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, KafkaRebalanceState.PendingProposal, timeout);
     }
 
     private static KafkaRebalance deleteLater(KafkaRebalance kafkaRebalance) {

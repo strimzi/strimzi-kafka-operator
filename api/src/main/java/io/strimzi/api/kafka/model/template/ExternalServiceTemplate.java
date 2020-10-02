@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -54,6 +55,8 @@ public class ExternalServiceTemplate implements Serializable, UnknownPropertyPre
             "`Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). " +
             "If unspecified, Kubernetes will use `Cluster` as the default.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @DeprecatedProperty
+    @Deprecated
     public ExternalTrafficPolicy getExternalTrafficPolicy() {
         return externalTrafficPolicy;
     }
@@ -67,6 +70,8 @@ public class ExternalServiceTemplate implements Serializable, UnknownPropertyPre
             "This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. " +
             "For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @DeprecatedProperty
+    @Deprecated
     public List<String> getLoadBalancerSourceRanges() {
         return loadBalancerSourceRanges;
     }

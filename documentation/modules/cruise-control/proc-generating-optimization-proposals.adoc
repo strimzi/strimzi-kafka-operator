@@ -7,7 +7,7 @@
 
 When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
 
-Analyze the summary information in the optimization proposal and decide whether to approve it. 
+Analyze the information in the optimization proposal and decide whether to approve it. 
 
 .Prerequisites
 
@@ -48,6 +48,23 @@ spec:
   goals:
     - RackAwareGoal
     - ReplicaCapacityGoal
+----
+
+.. To ignore the configured hard goals, add the `skipHardGoalCheck: true` property:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels: 
+    strimzi.io/cluster: my-cluster
+spec:    
+  goals:
+    - RackAwareGoal
+    - ReplicaCapacityGoal
+skipHardGoalCheck: true
 ----
 
 . Create or update the resource:

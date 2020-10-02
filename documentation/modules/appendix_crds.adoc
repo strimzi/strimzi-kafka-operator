@@ -50,6 +50,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -61,10 +62,10 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim, jbod].
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |listeners            1.2+<.<|Configures listeners of Kafka brokers.
-|xref:type-KafkaListeners-{context}[`KafkaListeners`]
+|xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] array or xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak].
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
-|config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms).
+|config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms).
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
@@ -94,7 +95,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |map
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tlsSidecar           1.2+<.<|TLS sidecar configuration.
+|tlsSidecar           1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
@@ -180,34 +181,35 @@ It must have the value `jbod` for the type `JbodStorage`.
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`] array
 |====
 
-[id='type-KafkaListeners-{context}']
-### `KafkaListeners` schema reference
+[id='type-GenericKafkaListener-{context}']
+### `GenericKafkaListener` schema reference
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
-
-[options="header"]
-|====
-|Property         |Description
-|plain     1.2+<.<|Configures plain listener on port 9092.
-|xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`]
-|tls       1.2+<.<|Configures TLS listener on port 9093.
-|xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
-|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route, loadbalancer, nodeport, ingress].
-|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
-|====
-
-[id='type-KafkaListenerPlain-{context}']
-### `KafkaListenerPlain` schema reference
-
-Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
-
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener.adoc[leveloffset=+1]
 
 [options="header"]
 |====
 |Property                   |Description
-|authentication      1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|name                1.2+<.<|Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
+|string
+|port                1.2+<.<|Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Depending on the listener type, it might not be the port number where the Kafka clients connect.
+|integer
+|type                1.2+<.<|Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. 
+
+* `internal` type exposes Kafka internally only within the Kubernetes cluster.
+* `route` type uses OpenShift Routes to expose Kafka.
+* `loadbalancer` type uses LoadBalancer type services to expose Kafka.
+* `nodeport` type uses NodePort type services to expose Kafka.
+* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.
+.
+|string (one of [ingress, internal, route, loadbalancer, nodeport])
+|tls                 1.2+<.<|Enables TLS encryption on the listener. This is a required property.
+|boolean
+|authentication      1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
+|configuration       1.2+<.<|Additional listener configuration.
+|xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
 
 
@@ -217,7 +219,7 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 [id='type-KafkaListenerAuthenticationTls-{context}']
 ### `KafkaListenerAuthenticationTls` schema reference
 
-Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
@@ -232,7 +234,7 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [id='type-KafkaListenerAuthenticationScramSha512-{context}']
 ### `KafkaListenerAuthenticationScramSha512` schema reference
 
-Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationScramSha512` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
@@ -247,51 +249,55 @@ It must have the value `scram-sha-512` for the type `KafkaListenerAuthentication
 [id='type-KafkaListenerAuthenticationOAuth-{context}']
 ### `KafkaListenerAuthenticationOAuth` schema reference
 
-Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationOAuth` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
 It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 [options="header"]
 |====
-|Property                               |Description
-|accessTokenIsJwt                1.2+<.<|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+|Property                                  |Description
+|accessTokenIsJwt                   1.2+<.<|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
 |boolean
-|checkAccessTokenType            1.2+<.<|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+|checkAccessTokenType               1.2+<.<|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
 |boolean
-|checkIssuer                     1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
+|checkIssuer                        1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
 |boolean
-|clientId                        1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|clientId                           1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |string
-|clientSecret                    1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|clientSecret                       1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
+|disableTlsHostnameVerification     1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|enableECDSA                     1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+|enableECDSA                        1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
 |boolean
-|fallbackUserNameClaim           1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
+|fallbackUserNameClaim              1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string
-|fallbackUserNamePrefix          1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
+|fallbackUserNamePrefix             1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
 |string
-|introspectionEndpointUri        1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
+|introspectionEndpointUri           1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
-|jwksEndpointUri                 1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
+|jwksEndpointUri                    1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
 |string
-|jwksExpirySeconds               1.2+<.<|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+|jwksExpirySeconds                  1.2+<.<|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
 |integer
-|jwksRefreshSeconds              1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+|jwksMinRefreshPauseSeconds         1.2+<.<|The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
 |integer
-|tlsTrustedCertificates          1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
+|jwksRefreshSeconds                 1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+|integer
+|maxSecondsWithoutReauthentication  1.2+<.<|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+|integer
+|tlsTrustedCertificates             1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|type                            1.2+<.<|Must be `oauth`.
+|type                               1.2+<.<|Must be `oauth`.
 |string
-|userInfoEndpointUri             1.2+<.<|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
+|userInfoEndpointUri                1.2+<.<|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
 |string
-|userNameClaim                   1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
+|userNameClaim                      1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
 |string
-|validIssuerUri                  1.2+<.<|URI of the token issuer used for authentication.
+|validIssuerUri                     1.2+<.<|URI of the token issuer used for authentication.
 |string
-|validTokenType                  1.2+<.<|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
+|validTokenType                     1.2+<.<|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
 |string
 |====
 
@@ -325,6 +331,144 @@ Used in: xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycl
 |string
 |====
 
+[id='type-GenericKafkaListenerConfiguration-{context}']
+### `GenericKafkaListenerConfiguration` schema reference
+
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
+
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration.adoc[leveloffset=+1]
+
+[options="header"]
+|====
+|Property                             |Description
+|brokerCertChainAndKey         1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
+|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
+|externalTrafficPolicy         1.2+<.<|Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` or `nodeport` type listener.
+|string (one of [Local, Cluster])
+|loadBalancerSourceRanges      1.2+<.<|A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/This field can be used only with `loadbalancer` type listener.
+|string array
+|bootstrap                     1.2+<.<|Bootstrap configuration.
+|xref:type-GenericKafkaListenerConfigurationBootstrap-{context}[`GenericKafkaListenerConfigurationBootstrap`]
+|brokers                       1.2+<.<|Per-broker configurations.
+|xref:type-GenericKafkaListenerConfigurationBroker-{context}[`GenericKafkaListenerConfigurationBroker`] array
+|class                         1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
+|string
+|preferredNodePortAddressType  1.2+<.<|Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
+* `ExternalDNS`
+* `ExternalIP`
+* `InternalDNS`
+* `InternalIP`
+* `Hostname`
+
+This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener..
+|string (one of [ExternalDNS, ExternalIP, Hostname, InternalIP, InternalDNS])
+|useServiceDnsDomain           1.2+<.<|Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses with contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` type listener.
+|boolean
+|====
+
+[id='type-CertAndKeySecretSource-{context}']
+### `CertAndKeySecretSource` schema reference
+
+Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`], xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`], xref:type-NodePortListenerConfiguration-{context}[`NodePortListenerConfiguration`], xref:type-TlsListenerConfiguration-{context}[`TlsListenerConfiguration`]
+
+
+[options="header"]
+|====
+|Property            |Description
+|certificate  1.2+<.<|The name of the file certificate in the Secret.
+|string
+|key          1.2+<.<|The name of the private key in the Secret.
+|string
+|secretName   1.2+<.<|The name of the Secret containing the certificate.
+|string
+|====
+
+[id='type-GenericKafkaListenerConfigurationBootstrap-{context}']
+### `GenericKafkaListenerConfigurationBootstrap` schema reference
+
+Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
+
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrap.adoc[leveloffset=+1]
+
+[options="header"]
+|====
+|Property                 |Description
+|alternativeNames  1.2+<.<|Additional alternative names for the bootstrap service. The alternative names will be added to the list of subject alternative names of the TLS certificates.
+|string array
+|host              1.2+<.<|The bootstrap host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
+|string
+|nodePort          1.2+<.<|Node port for the bootstrap service. This field can be used only with `nodeport` type listener.
+|integer
+|loadBalancerIP    1.2+<.<|The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+|string
+|annotations       1.2+<.<|Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
+|map
+|====
+
+[id='type-GenericKafkaListenerConfigurationBroker-{context}']
+### `GenericKafkaListenerConfigurationBroker` schema reference
+
+Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
+
+include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker.adoc[leveloffset=+1]
+
+[options="header"]
+|====
+|Property               |Description
+|broker          1.2+<.<|ID of the kafka broker (broker identifier). Broker IDs start from 0 and correspond to the number of broker replicas.
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
+|host            1.2+<.<|The broker host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
+|string
+|nodePort        1.2+<.<|Node port for the per-broker service. This field can be used only with `nodeport` type listener.
+|integer
+|loadBalancerIP  1.2+<.<|The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+|string
+|annotations     1.2+<.<|Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
+|map
+|====
+
+[id='type-KafkaListeners-{context}']
+### `KafkaListeners` schema reference
+
+*The type `KafkaListeners` has been deprecated.*
+Please use xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] instead.
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+Refer to link:{BookURLUsingPrevious}[previous documentation] for example configuration.
+
+[options="header"]
+|====
+|Property         |Description
+|plain     1.2+<.<|Configures plain listener on port 9092.
+|xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`]
+|tls       1.2+<.<|Configures TLS listener on port 9093.
+|xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route, loadbalancer, nodeport, ingress].
+|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
+|====
+
+[id='type-KafkaListenerPlain-{context}']
+### `KafkaListenerPlain` schema reference
+
+Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|authentication      1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[networking.k8s.io/v1 networkpolicypeer].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
+|====
+
 [id='type-KafkaListenerTls-{context}']
 ### `KafkaListenerTls` schema reference
 
@@ -355,23 +499,6 @@ Used in: xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 |Property                      |Description
 |brokerCertChainAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|====
-
-[id='type-CertAndKeySecretSource-{context}']
-### `CertAndKeySecretSource` schema reference
-
-Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`], xref:type-NodePortListenerConfiguration-{context}[`NodePortListenerConfiguration`], xref:type-TlsListenerConfiguration-{context}[`TlsListenerConfiguration`]
-
-
-[options="header"]
-|====
-|Property            |Description
-|certificate  1.2+<.<|The name of the file certificate in the Secret.
-|string
-|key          1.2+<.<|The name of the private key in the Secret.
-|string
-|secretName   1.2+<.<|The name of the Secret containing the certificate.
-|string
 |====
 
 [id='type-KafkaListenerExternalRoute-{context}']
@@ -728,6 +855,7 @@ Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfig
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationSimple.adoc[leveloffset=+1]
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationSimple` from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
@@ -789,8 +917,12 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|delegateToKafkaAcls             1.2+<.<|Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies.Default value is `false`.
+|delegateToKafkaAcls             1.2+<.<|Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
 |boolean
+|grantsRefreshPeriodSeconds      1.2+<.<|The time between two consecutive grants refresh runs in seconds. The default value is 60.
+|integer
+|grantsRefreshPoolSize           1.2+<.<|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
+|integer
 |superUsers                      1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
 |string array
 |====
@@ -798,7 +930,7 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 [id='type-Rack-{context}']
 ### `Rack` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
 
 [options="header"]
@@ -985,7 +1117,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |kafkaContainer            1.2+<.<|Template for the Kafka broker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer       1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|tlsSidecarContainer       1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |initContainer             1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
@@ -1048,14 +1180,18 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|priorityClassName              1.2+<.<|The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-|string
-|schedulerName                  1.2+<.<|The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
-|string
 |tolerations                    1.2+<.<|The pod's tolerations. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
+|priorityClassName              1.2+<.<|The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+|string
+|schedulerName                  1.2+<.<|The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+|string
+|hostAliases                    1.2+<.<|The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[core/v1 HostAlias].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[HostAlias] array
 |====
 
 [id='type-ResourceTemplate-{context}']
@@ -1083,9 +1219,9 @@ include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc
 |Property                         |Description
 |metadata                  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|externalTrafficPolicy     1.2+<.<|Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
+|externalTrafficPolicy     1.2+<.<|*The property `externalTrafficPolicy` has been deprecated.* Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
 |string (one of [Local, Cluster])
-|loadBalancerSourceRanges  1.2+<.<|A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+|loadBalancerSourceRanges  1.2+<.<|*The property `loadBalancerSourceRanges` has been deprecated.* A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
 |string array
 |====
 
@@ -1212,6 +1348,9 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 [id='type-TopicOperatorSpec-{context}']
 ### `TopicOperatorSpec` schema reference
+
+*The type `TopicOperatorSpec` has been deprecated.*
+Please use xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`] instead.
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
@@ -1727,6 +1866,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
+|clientRackInitImage    1.2+<.<|The image of the init container used for initializing the `client.rack`.
+|string
+|rack                   1.2+<.<|Configuration of the node label which will be used as the client.rack consumer configuration.
+|xref:type-Rack-{context}[`Rack`]
 |====
 
 [id='type-KafkaConnectTls-{context}']
@@ -1882,6 +2025,8 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |apiService           1.2+<.<|Template for Kafka Connect API `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |connectContainer     1.2+<.<|Template for the Kafka Connect container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|initContainer        1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Kafka Connect `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
@@ -2047,12 +2192,16 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
 |bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
+|clientRackInitImage       1.2+<.<|The image of the init container used for initializing the `client.rack`.
+|string
 |config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
 |map
 |externalConfiguration     1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
+|rack                      1.2+<.<|Configuration of the node label which will be used as the client.rack consumer configuration.
+|xref:type-Rack-{context}[`Rack`]
 |resources                 1.2+<.<|The maximum limits for CPU and memory resources and the requested initial resources. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[core/v1 resourcerequirements].
 
 
@@ -2225,6 +2374,7 @@ It must have the value `simple` for the type `KafkaUserAuthorizationSimple`.
 
 Used in: xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 
+include::../api/io.strimzi.api.kafka.model.AclRule.adoc[leveloffset=+1]
 
 [options="header"]
 |====

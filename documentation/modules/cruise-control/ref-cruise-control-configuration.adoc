@@ -62,10 +62,17 @@ spec:
 [discrete]
 == Capacity configuration
 
-Cruise Control uses _capacity limits_ to determine if certain resource-based optimization goals are being broken. 
+Cruise Control uses _capacity limits_ to determine if optimization goals for resource distribution are being broken. 
+There are four goals of this type:
 
-You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
-Capacity limits can be set for the following broker resources using the standard Kubernetes byte units K, M, G and T or their bibyte (power of two) equivalents Ki, Mi, Gi and Ti:
+* `DiskUsageDistributionGoal`            - Disk utilization distribution
+* `CpuUsageDistributionGoal`             - CPU utilization distribution    
+* `NetworkInboundUsageDistributionGoal`  - Network inbound utilization distribution
+* `NetworkOutboundUsageDistributionGoal` - Network outbound utilization distribution
+
+You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` . 
+They are enabled by default and you can change their default values. 
+Capacity limits can be set for the following broker resources, using the standard Kubernetes byte units (K, M, G and T) or their bibyte (power of two) equivalents (Ki, Mi, Gi and Ti):
 
 * `disk`            - Disk storage per broker (Default: 100000Mi)
 * `cpuUtilization`  - CPU utilization as a percentage (Default: 100)

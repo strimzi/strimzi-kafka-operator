@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.common.model.OrderedProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

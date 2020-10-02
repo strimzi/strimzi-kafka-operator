@@ -23,6 +23,7 @@ public enum ClientArgument {
     ASSIGMENT_STRATEGY("--assignment-strategy"),
 
     // Producer
+    BOOTSTRAP_SERVER("--bootstrap-server"),
     BROKER_LIST("--broker-list"),
     PRODUCER_CONFIG("--producer.config"),
     ACKS("--acks"),

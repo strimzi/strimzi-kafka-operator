@@ -29,7 +29,7 @@ Use the `bootstrapServers` property to configure a list of bootstrap servers.
 The bootstrap server lists can refer to Kafka clusters that are not deployed in the same Kubernetes cluster.
 They can also refer to a Kafka cluster not deployed by Strimzi.
 
-If on the same Kubernetes cluster, each list must ideally contain the Kafka cluster bootstrap service which is named `_CLUSTER-NAME_-kafka-bootstrap` and a port of 9092 for plain traffic or 9093 for encrypted traffic.
+If on the same Kubernetes cluster, each list must ideally contain the Kafka cluster bootstrap service which is named `_CLUSTER-NAME_-kafka-bootstrap` and a port number.
 If deployed by Strimzi but on different Kubernetes clusters, the list content depends on the approach used for exposing the clusters (routes, nodeports or loadbalancers).
 
 When using Kafka with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the given cluster.
@@ -137,7 +137,6 @@ A copy of the container image might also be customized and used for debugging.
 You can specify which container image to use for a component using the `image` property in the following resources:
 
 * `Kafka.spec.kafka`
-* `Kafka.spec.kafka.tlsSidecar`
 * `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
@@ -186,9 +185,6 @@ For the `image` property in the other custom resources, the given value will be 
 If the `image` property is missing, the `image` specified in the Cluster Operator configuration will be used.
 If the `image` name is not defined in the Cluster Operator configuration, then the default value will be used.
 
-* For Kafka broker TLS sidecar:
-. Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerKafkaStunnel}` container image.
 * For Topic Operator:
 . Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerTopicOperator}` container image.
@@ -368,7 +364,6 @@ jvmOptions:
     "MaxGCPauseMillis": 20
     "InitiatingHeapOccupancyPercent": 35
     "ExplicitGCInvokesConcurrent": true
-    "UseParNewGC": false
 ----
 
 The example configuration above will result in the following JVM options:

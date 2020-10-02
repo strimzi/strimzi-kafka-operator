@@ -10,8 +10,6 @@ This procedure describes how to access a Strimzi Kafka cluster from an external 
 To connect to a broker, you need the address of the _bootstrap loadbalancer_,
 as well as the certificate used for TLS encryption.
 
-For access using loadbalancers, the port is always 9094.
-
 .Prerequisites
 
 * A Kubernetes cluster
@@ -31,10 +29,10 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: loadbalancer
-        authentication:
-          type: tls
+        tls: true
         # ...
     # ...
   zookeeper:
@@ -64,6 +62,3 @@ kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
-
-.Additional resources
-* For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

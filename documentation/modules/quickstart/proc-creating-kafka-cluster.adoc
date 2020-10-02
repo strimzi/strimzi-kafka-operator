@@ -35,9 +35,18 @@ spec:
   kafka:
     replicas: 1
     listeners:
-      plain: {}
-      tls: {}
-      external:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+      - name: external
+        port: 9094
         type: nodeport
         tls: false
     storage:

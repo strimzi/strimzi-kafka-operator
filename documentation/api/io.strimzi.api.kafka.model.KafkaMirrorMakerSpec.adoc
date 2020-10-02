@@ -1,7 +1,7 @@
-Use the `KafkaMirrorMakerSpec` properties to configure Kafka MirrorMaker.
+Configures Kafka MirrorMaker.
 
 [id='property-mm-whitelist-{context}']
-.`whitelist`
+=== `whitelist`
 
 Use the `whitelist` property to configure a list of topics that Kafka MirrorMaker mirrors from the source to the target Kafka cluster.
 
@@ -10,7 +10,7 @@ For example, you can mirror topics A and B using "A|B" or all topics using "*".
 You can also pass multiple regular expressions separated by commas to the Kafka MirrorMaker.
 
 [id='property-mm-producer-consumer-{context}']
-.`KafkaMirrorMakerConsumerSpec` and `KafkaMirrorMakerProducerSpec`
+=== `KafkaMirrorMakerConsumerSpec` and `KafkaMirrorMakerProducerSpec`
 
 Use the `KafkaMirrorMakerConsumerSpec` and `KafkaMirrorMakerProducerSpec` to configure source (consumer) and target (producer) clusters.
 
@@ -19,7 +19,7 @@ To establish a connection, the bootstrap servers for the source and the target K
 Each comma-separated list contains one or more Kafka brokers or a `Service` pointing to Kafka brokers specified as a `_HOSTNAME:PORT_` pair.
 
 [id='property-mm-loggers-{context}']
-.`logging`
+=== `logging`
 
 Kafka MirrorMaker has its own configurable logger:
 

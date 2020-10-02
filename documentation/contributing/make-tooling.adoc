@@ -8,19 +8,23 @@ Make is a useful tool for building your documentation and pushing it to a public
 == Make commands to build documentation
 
 `make docu_clean`:: Delete all temporary files
-`make docu_check`:: Execute the documentation checks in `.travis/check_docs.sh`
+`make docu_check`:: Execute the documentation checks in `.azure/scripts/check_docs.sh`
 `make docu_html`:: Generate the HTML version of all the guides (the HTML files can be found in `documentation/html)
 `make docu_htmlnoheader`:: Generate the HTML version of all the guides without the HTML headers so they are suitable for including into a website (the HTML files can be found in `documentation/htmlnoheader)
 
-== Generate the API Reference
+== Generate the Custom Resource API Reference
 
-The API Reference is stored in the `documentation/modules/appendix_crds.adoc` file.
+The `documentation/modules/appendix_crds.adoc` file provides the main content for the _Custom Resource API Reference_.
 It is generated directly from the Java code when building the operators.
-If you change the Strimzi API, you need to regenerate the API Reference with following command:
+
+If you change the Strimzi API, you need to regenerate the API Reference before submitting your PR by running the following from the root:
 
 [source,shell,subs=attributes+]
 ----
 mvn clean -DskipTests install
+make crd_install
 ----
 
-NOTE: You have to generate the API Reference only if you changed anything in the `api` module of the Java code.
+The build uses https://github.com/mikefarah/yq[`yq`^], so make sure it is kept up-to-date for it to work properly.
+
+NOTE: You only have to generate the _Custom Resource API Reference_ if you changed anything in the `api` module of the Java code.

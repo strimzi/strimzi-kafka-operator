@@ -6,6 +6,7 @@ package io.strimzi.operator.common.operator.resource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
@@ -14,6 +15,7 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.vertx.core.Future;
@@ -34,7 +36,7 @@ public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends CustomResourceList<T>,
             D extends Doneable<T>>
-        extends AbstractWatchableResourceOperator<C, T, L, D, Resource<T, D>> {
+        extends AbstractWatchableStatusedResourceOperator<C, T, L, D, Resource<T, D>> {
 
     private final Class<T> cls;
     private final Class<L> listCls;
@@ -63,7 +65,7 @@ public class CrdOperator<C extends KubernetesClient,
 
     @Override
     protected MixedOperation<T, L, D, Resource<T, D>> operation() {
-        return client.customResources(crd, cls, listCls, doneableCls);
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), cls, listCls, doneableCls);
     }
 
     public Future<T> patchAsync(T resource) {
@@ -77,7 +79,7 @@ public class CrdOperator<C extends KubernetesClient,
             String namespace = resource.getMetadata().getNamespace();
             String name = resource.getMetadata().getName();
             try {
-                T result = operation().inNamespace(namespace).withName(name).cascading(cascading).patch(resource);
+                T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(resource);
                 log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {

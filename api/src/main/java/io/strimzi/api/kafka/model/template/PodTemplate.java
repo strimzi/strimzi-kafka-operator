@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.template;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -33,8 +34,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds"})
+@JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
+        "tolerations", "priorityClassName", "schedulerName", "hostAliases"})
 @EqualsAndHashCode
 @DescriptionFile
 public class PodTemplate implements Serializable, UnknownPropertyPreserving {
@@ -48,6 +49,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private List<Toleration> tolerations;
     private String priorityClassName;
     private String schedulerName;
+    private List<HostAlias> hostAliases;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")
@@ -142,6 +144,18 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setSchedulerName(String schedulerName) {
         this.schedulerName = schedulerName;
+    }
+
+    @Description("The pod's HostAliases. " +
+            "HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.")
+    @KubeLink(group = "core", version = "v1", kind = "HostAlias")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<HostAlias> getHostAliases() {
+        return hostAliases;
+    }
+
+    public void setHostAliases(List<HostAlias> hostAliases) {
+        this.hostAliases = hostAliases;
     }
 
     @Override

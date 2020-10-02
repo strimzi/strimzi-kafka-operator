@@ -14,18 +14,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.OrderedProperties;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -53,17 +52,19 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
      */
     public static final Pattern IGNORABLE_PROPERTIES = Pattern.compile(
             "^(broker\\.id"
-            + "|.*-909[1-4]\\.ssl\\.keystore\\.location"
-            + "|.*-909[1-4]\\.ssl\\.keystore\\.password"
-            + "|.*-909[1-4]\\.ssl\\.keystore\\.type"
-            + "|.*-909[1-4]\\.ssl\\.truststore\\.location"
-            + "|.*-909[1-4]\\.ssl\\.truststore\\.password"
-            + "|.*-909[1-4]\\.ssl\\.truststore\\.type"
-            + "|.*-909[1-4]\\.ssl\\.client\\.auth"
-            + "|.*-909[1-4]\\.scram-sha-512\\.sasl\\.jaas\\.config"
-            + "|.*-909[1-4]\\.sasl\\.enabled\\.mechanisms"
+            + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.location"
+            + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.password"
+            + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.type"
+            + "|.*-[0-9]{2,5}\\.ssl\\.truststore\\.location"
+            + "|.*-[0-9]{2,5}\\.ssl\\.truststore\\.password"
+            + "|.*-[0-9]{2,5}\\.ssl\\.truststore\\.type"
+            + "|.*-[0-9]{2,5}\\.ssl\\.client\\.auth"
+            + "|.*-[0-9]{2,5}\\.scram-sha-512\\.sasl\\.jaas\\.config"
+            + "|.*-[0-9]{2,5}\\.sasl\\.enabled\\.mechanisms"
             + "|advertised\\.listeners"
             + "|zookeeper\\.connect"
+            + "|zookeeper\\.ssl\\..*"
+            + "|zookeeper\\.clientCnxnSocket"
             + "|broker\\.rack)$");
 
     public KafkaBrokerConfigurationDiff(Config brokerConfigs, String desired, KafkaVersion kafkaVersion, int brokerId) {
@@ -111,10 +112,11 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
     }
 
     /**
-     * @return A map which can be used for dynamic configuration of kafka broker
+     * Returns configuration difference
+     * @return Collection of AlterConfigOp containing difference between current and desired configuration
      */
-    public Map<ConfigResource, Collection<AlterConfigOp>> getConfigDiff() {
-        return Collections.singletonMap(Util.getBrokersConfig(brokerId), diff);
+    public Collection<AlterConfigOp> getConfigDiff() {
+        return diff;
     }
 
     /**
@@ -134,7 +136,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
      * @param desired desired configuration, may be null if the related ConfigMap does not exist yet or no changes are required
      * @param brokerConfigs current configuration
      * @param configModel default configuration for {@code kafkaVersion} of broker
-     * @return KafkaConfiguration containing all entries which were changed from current in desired configuration
+     * @return Collection of AlterConfigOp containing all entries which were changed from current in desired configuration
      */
     private static Collection<AlterConfigOp> diff(int brokerId, String desired,
                                                   Config brokerConfigs,
@@ -157,8 +159,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
 
         fillPlaceholderValue(desiredMap, "STRIMZI_BROKER_ID", Integer.toString(brokerId));
 
-        JsonNode source = patchMapper().valueToTree(currentMap);
-        JsonNode target = patchMapper().valueToTree(desiredMap);
+        JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(currentMap);
+        JsonNode target = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(desiredMap);
         JsonNode jsonDiff = JsonDiff.asJson(source, target);
 
         for (JsonNode d : jsonDiff) {
@@ -185,9 +187,16 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
                 }
             }
 
-            log.debug("Kafka Broker {} Config Differs : {}", brokerId, d);
-            log.debug("Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
-            log.debug("Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+            if ("remove".equals(op)) {
+                // there is a lot of properties set by default - not having them in desired causes very noisy log output
+                log.trace("Kafka Broker {} Config Differs : {}", brokerId, d);
+                log.trace("Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
+                log.trace("Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+            } else {
+                log.debug("Kafka Broker {} Config Differs : {}", brokerId, d);
+                log.debug("Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
+                log.debug("Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+            }
         }
 
         return updatedCE;

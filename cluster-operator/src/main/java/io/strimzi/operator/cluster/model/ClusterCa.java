@@ -118,18 +118,22 @@ public class ClusterCa extends Ca {
     public Map<String, CertAndKey> generateZkCerts(Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
+
+        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, ZookeeperCluster.serviceName(cluster));
+        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, ZookeeperCluster.headlessServiceName(cluster));
+
         Function<Integer, Subject> subjectFn = i -> {
             Map<String, String> sbjAltNames = new HashMap<>(6);
             sbjAltNames.put("DNS.1", ZookeeperCluster.serviceName(cluster));
             sbjAltNames.put("DNS.2", String.format("%s.%s", ZookeeperCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.3", ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, ZookeeperCluster.serviceName(cluster)));
-            sbjAltNames.put("DNS.4", ModelUtils.serviceDnsName(namespace, ZookeeperCluster.serviceName(cluster)));
+            sbjAltNames.put("DNS.3", zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
+            sbjAltNames.put("DNS.4", zkDnsGenerator.serviceDnsName());
             sbjAltNames.put("DNS.5", ZookeeperCluster.podDnsName(namespace, cluster, i));
             sbjAltNames.put("DNS.6", ZookeeperCluster.podDnsNameWithoutSuffix(namespace, cluster, i));
-            sbjAltNames.put("DNS.7", ModelUtils.wildcardServiceDnsNameWithoutClusterDomain(namespace, ZookeeperCluster.serviceName(cluster)));
-            sbjAltNames.put("DNS.8", ModelUtils.wildcardServiceDnsName(namespace, ZookeeperCluster.serviceName(cluster)));
-            sbjAltNames.put("DNS.9", ModelUtils.wildcardServiceDnsNameWithoutClusterDomain(namespace, ZookeeperCluster.headlessServiceName(cluster)));
-            sbjAltNames.put("DNS.10", ModelUtils.wildcardServiceDnsName(namespace, ZookeeperCluster.headlessServiceName(cluster)));
+            sbjAltNames.put("DNS.7", zkDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
+            sbjAltNames.put("DNS.8", zkDnsGenerator.wildcardServiceDnsName());
+            sbjAltNames.put("DNS.9", zkHeadlessDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
+            sbjAltNames.put("DNS.10", zkHeadlessDnsGenerator.wildcardServiceDnsName());
 
             Subject subject = new Subject();
             subject.setOrganizationName("io.strimzi");
@@ -152,16 +156,20 @@ public class ClusterCa extends Ca {
             Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
+
+        DnsNameGenerator kafkaDnsGenerator = DnsNameGenerator.of(namespace, KafkaCluster.serviceName(cluster));
+        DnsNameGenerator kafkaHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaCluster.headlessServiceName(cluster));
+
         Function<Integer, Subject> subjectFn = i -> {
             Map<String, String> sbjAltNames = new HashMap<>();
             sbjAltNames.put("DNS.1", KafkaCluster.serviceName(cluster));
             sbjAltNames.put("DNS.2", String.format("%s.%s", KafkaCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.3", ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, KafkaCluster.serviceName(cluster)));
-            sbjAltNames.put("DNS.4", ModelUtils.serviceDnsName(namespace, KafkaCluster.serviceName(cluster)));
+            sbjAltNames.put("DNS.3", kafkaDnsGenerator.serviceDnsNameWithoutClusterDomain());
+            sbjAltNames.put("DNS.4", kafkaDnsGenerator.serviceDnsName());
             sbjAltNames.put("DNS.5", KafkaCluster.headlessServiceName(cluster));
             sbjAltNames.put("DNS.6", String.format("%s.%s", KafkaCluster.headlessServiceName(cluster), namespace));
-            sbjAltNames.put("DNS.7", ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, KafkaCluster.headlessServiceName(cluster)));
-            sbjAltNames.put("DNS.8", ModelUtils.serviceDnsName(namespace, KafkaCluster.headlessServiceName(cluster)));
+            sbjAltNames.put("DNS.7", kafkaHeadlessDnsGenerator.serviceDnsNameWithoutClusterDomain());
+            sbjAltNames.put("DNS.8", kafkaHeadlessDnsGenerator.serviceDnsName());
             sbjAltNames.put("DNS.9", KafkaCluster.podDnsName(namespace, cluster, i));
             sbjAltNames.put("DNS.10", KafkaCluster.podDnsNameWithoutClusterDomain(namespace, cluster, i));
             int nextDnsId = 11;

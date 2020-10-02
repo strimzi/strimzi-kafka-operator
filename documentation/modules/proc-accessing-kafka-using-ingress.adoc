@@ -12,6 +12,16 @@ as well as the certificate used for authentication.
 
 For access using Ingress, the port is always 443.
 
+.TLS passthrough
+
+Kafka uses a binary protocol over TCP, but the {NginxIngressController} is designed to work with the HTTP protocol.
+To be able to pass the Kafka connections through the Ingress, Strimzi uses the TLS passthrough feature of the {NginxIngressController}.
+Ensure TLS passthrough is enabled in your {NginxIngressController} deployment.
+
+Because it is using the TLS passthrough functionality, TLS encryption cannot be disabled when exposing Kafka using `Ingress`.
+
+For more information about enabling TLS passthrough, see {NginxIngressControllerTLSPassthrough}.
+
 .Prerequisites
 
 * Kubernetes cluster
@@ -34,8 +44,10 @@ spec:
   kafka:
     # ...
     listeners:
-      external:
+      - name: external
+        port: 9094
         type: ingress
+        tls: true
         authentication:
           type: tls
         configuration: <1>
@@ -75,6 +87,3 @@ kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.
 +
 Use the extracted certificate in your Kafka client to configure the TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
-
-.Additional resources
-* For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

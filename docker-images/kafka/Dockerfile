@@ -45,7 +45,7 @@ COPY ./tmp/mirror-maker-agent.jar ${KAFKA_HOME}/libs/
 COPY ./tmp/tracing-agent.jar ${KAFKA_HOME}/libs/
 
 #####
-# Add 3dr party libs
+# Add 3rd party libs
 #####
 COPY kafka-thirdparty-libs/${THIRD_PARTY_LIBS}/target/dependency/ ${KAFKA_HOME}/libs/
 
@@ -69,15 +69,6 @@ COPY ./stunnel-scripts/ $STUNNEL_HOME
 #####
 ENV S2I_HOME=/opt/kafka/s2i
 COPY ./s2i-scripts $S2I_HOME
-
-#####
-# Add Tini
-#####
-ENV TINI_VERSION v0.18.0
-ENV TINI_SHA256=12d20136605531b09a2c2dac02ccee85e1b874eb322ef6baf7561cd93f93c855
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
-RUN echo "${TINI_SHA256} */usr/bin/tini" | sha256sum -c \
-    && chmod +x /usr/bin/tini
 
 WORKDIR $KAFKA_HOME
 

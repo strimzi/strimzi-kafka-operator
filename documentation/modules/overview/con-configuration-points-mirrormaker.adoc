@@ -22,6 +22,11 @@ MirrorMaker 2.0 uses:
 [discrete]
 === Cluster configuration
 
+You can use MirrorMaker 2.0 in _active/passive_ or _active/active_ cluster configurations.
+
+* In an _active/active_ configuration, both clusters are active and provide the same data simultaneously, which is useful if you want to make the same data available locally in different geographical locations.
+* In an _active/passive_ configuration, the data from an active cluster is replicated in a passive cluster, which remains on standby, for example, for data recovery in the event of system failure.
+
 You configure a `KafkaMirrorMaker2` custom resource to define the Kafka Connect deployment, including the connection details of the source and target clusters,
 and then run a set of MirrorMaker 2.0 connectors to make the connection.
 
@@ -43,7 +48,7 @@ The heartbeat topic makes it easy to check that the remote cluster is available 
 If things go wrong, the heartbeat topic offset positions and time stamps can help with recovery and diagnosis.
 
 .Replication across two clusters
-image::mirrormaker.png[MirrorMaker 2.0 replication]
+image::mirrormaker.png[MirrorMaker 2.0 replication between a Kafka cluster in Region 1 and a Kafka cluster in Region 2]
 
 [discrete]
 === Bidirectional replication across two clusters
@@ -51,8 +56,12 @@ image::mirrormaker.png[MirrorMaker 2.0 replication]
 The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration,
 so both clusters are active and provide the same data simultaneously.
 A MirrorMaker 2.0 cluster is required at each target destination.
+
 Remote topics are distinguished by automatic renaming that prepends the name of cluster to the name of the topic.
 This is useful if you want to make the same data available locally in different geographical locations.
+
+However, if you want to backup or migrate data in an active/passive cluster configuration, you might want to keep the original names of the topics.
+If so, you can configure MirrorMaker 2.0 to turn off automatic renaming.
 
 .Bidirectional replication
 image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]

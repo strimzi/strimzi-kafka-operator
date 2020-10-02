@@ -82,16 +82,14 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
         // Now change it in Kafka
         doReassignmentCommand(
-                //"--boostrap-server", kafkaCluster.brokerList(),
-                "--zookeeper", "localhost:" + kafkaCluster.zkPort(),
+                "--bootstrap-server", kafkaCluster.brokerList(),
                 "--reassignment-json-file", file.getAbsolutePath(),
                 "--execute");
 
         LOGGER.info("Waiting for reassignment completion");
         waitFor(() -> {
             String output = doReassignmentCommand(
-                    //"--boostrap-server", kafkaCluster.brokerList(),
-                    "--zookeeper", "localhost:" + kafkaCluster.zkPort(),
+                    "--bootstrap-server", kafkaCluster.brokerList(),
                     "--reassignment-json-file", file.getAbsolutePath(),
                     "--verify");
             LOGGER.info(output);
@@ -100,7 +98,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
                 return false;
             } else {
                 assertThat("Reassignment is no longer in progress, but wasn't successful: " + output,
-                        output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 completed successfully"), is(true));
+                        output.contains("Reassignment of partition test-kafkatopic-modified-with-changed-replication-0 is complete"), is(true));
                 return true;
             }
         }, "reassignment completion");

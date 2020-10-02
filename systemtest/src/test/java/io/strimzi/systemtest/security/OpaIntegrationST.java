@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.security;
 
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -15,6 +17,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -102,23 +105,23 @@ public class OpaIntegrationST extends AbstractST {
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
         // Install OPA
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile("../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
-            .editMetadata()
-                .addToLabels("type", "kafka-ephemeral")
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()
                         .withUrl("http://opa:8181/v1/data/kafka/simple/authz/allow")
                         .addNewSuperUser("CN=" + OPA_SUPERUSER)
                     .endKafkaAuthorizationOpa()
-                    .editListeners()
-                        .editOrNewTls()
-                            .withNewKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerAuthenticationTlsAuth()
-                        .endTls()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
+                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -138,6 +141,6 @@ public class OpaIntegrationST extends AbstractST {
     @AfterAll
     void teardown() throws IOException {
         // Delete OPA
-        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile("../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
+        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
     }
 }

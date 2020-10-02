@@ -16,6 +16,8 @@ Example metrics configuration files are provided with Strimzi.
 
 Distributed tracing complements the gathering of metrics data by providing a facility for end-to-end tracking of messages through Strimzi.
 
+Cruise Control provides support for rebalancing of Kafka clusters, based on workload data. 
+
 .Metrics and monitoring tools
 Strimzi can employ the following tools for metrics and monitoring:
 
@@ -23,6 +25,7 @@ Strimzi can employ the following tools for metrics and monitoring:
 * *Kafka Exporter* adds additional Prometheus metrics
 * *Grafana* provides dashboard visualizations of Prometheus metrics
 * *Jaeger* provides distributed tracing support to track transactions between applications
+* *Cruise Control* balances data across a Kafka cluster
 
 .Additional resources
 
@@ -30,8 +33,6 @@ Strimzi can employ the following tools for metrics and monitoring:
 * {kafka-exporter-project}
 * {GrafanaHome}
 * {JaegerHome}
+* link:https://github.com/linkedin/cruise-control/wiki[Cruise Control Wiki^]
 
-include::modules/con-metrics-overview-prometheus.adoc[leveloffset=+1]
-include::modules/con-metrics-overview-grafana.adoc[leveloffset=+1]
-include::modules/con-metrics-overview-exporter.adoc[leveloffset=+1]
-include::modules/con-metrics-overview-tracing.adoc[leveloffset=+1]
+include::modules/con-metrics-overview-tools.adoc[leveloffset=+1]

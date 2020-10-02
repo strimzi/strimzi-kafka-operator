@@ -719,6 +719,8 @@ spec:
                       properties:
                         fsGroup:
                           type: integer
+                        fsGroupChangePolicy:
+                          type: string
                         runAsGroup:
                           type: integer
                         runAsNonRoot:
@@ -755,6 +757,8 @@ spec:
                             gmsaCredentialSpec:
                               type: string
                             gmsaCredentialSpecName:
+                              type: string
+                            runAsUserName:
                               type: string
                       description: Configures pod-level security attributes and common container settings.
                     terminationGracePeriodSeconds:
@@ -970,12 +974,6 @@ spec:
                                   topologyKey:
                                     type: string
                       description: The pod's affinity rules.
-                    priorityClassName:
-                      type: string
-                      description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
-                    schedulerName:
-                      type: string
-                      description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
                     tolerations:
                       type: array
                       items:
@@ -992,6 +990,24 @@ spec:
                           value:
                             type: string
                       description: The pod's tolerations.
+                    priorityClassName:
+                      type: string
+                      description: The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}.
+                    schedulerName:
+                      type: string
+                      description: The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
+                    hostAliases:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          hostnames:
+                            type: array
+                            items:
+                              type: string
+                          ip:
+                            type: string
+                      description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
                   description: Template for Kafka MirrorMaker `Pods`.
                 mirrorMakerContainer:
                   type: object
@@ -1053,6 +1069,8 @@ spec:
                             gmsaCredentialSpec:
                               type: string
                             gmsaCredentialSpecName:
+                              type: string
+                            runAsUserName:
                               type: string
                       description: Security context for the container.
                   description: Template for Kafka MirrorMaker container.

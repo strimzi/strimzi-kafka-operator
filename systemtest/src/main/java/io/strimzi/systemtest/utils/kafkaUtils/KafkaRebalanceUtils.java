@@ -6,8 +6,8 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.operator.assembly.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -48,7 +48,7 @@ public class KafkaRebalanceUtils {
 
     public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
         KafkaRebalance kafkaRebalance = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get();
-        ResourceManager.waitForResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient(), kafkaRebalance, state.toString(), ResourceOperation.getTimeoutForKafkaRebalanceState(state));
+        ResourceManager.waitForResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient(), kafkaRebalance, state, ResourceOperation.getTimeoutForKafkaRebalanceState(state));
     }
 
     public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {

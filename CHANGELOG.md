@@ -1,14 +1,95 @@
-
 # CHANGELOG
 
 ## 0.20.0
 
-* Updated to Cruise Control 2.0.124, which fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
+* Add support for Kafka 2.5.1 and 2.6.0. Remove support for 2.4.0 and 2.4.1
+* Remove TLS sidecars from Kafka pods => Kafka now uses native TLS to connect to ZooKeeper
+* Updated to Cruise Control 2.5.11, which adds Kafka 2.6.0 support and fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
 * Cruise Control metrics integration:
-  * enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
-  * new Grafana dashboard for the Cruise Control metrics
+  * Enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
+  * New Grafana dashboard for the Cruise Control metrics
+* Configure Cluster Operator logging using ConfigMap instead of environment variable and support dynamic changes  
+* Switch to use the `AclAuthorizer` class for the `simple` Kafka authorization type. `AclAuthorizer` contains new features such as the ability to control the amount of authorization logs in the broker logs.
+* Support dynamically changeable logging configuration of Kafka Connect and Kafka Connect S2I
+* Support dynamically changeable logging configuration of Kafka brokers
+* Support dynamically changeable logging configuration of Kafka MirrorMaker2
+* Add support for `client.rack` property for Kafka Connect to use `fetch from closest replica` feature. 
+* Refactored operators Grafana dashboard
+  * Fixed bug on maximum reconcile time graph
+  * Removed the avarage reconcile time graph
+  * Rearranged graphs
+* Make `listeners` configurable as an array and add support for more different listeners in single cluster
+* Add support for configuring `hostAliases` in Pod templates
+* Add new resource state metric in the operators for reflecting the reconcile result on a specific resource 
 
 ### Deprecations and removals
+
+#### Redesign of the `.spec.kafka.listeners` section
+
+The `.spec.kafka.listeners` section of the Kafka CRD has been redesigned to allow configuring more different listeners.
+The old `listeners` object which allowed only configuration of one`plain`, one `tls`, and one `external` listener is now deprecated and will be removed in the future.
+It is replaced with an array allowing configuration of multiple different listeners:
+
+```yaml
+listeners:
+  - name: local
+    port: 9092
+    type: internal
+    tls: true
+  - name: external1
+    port: 9093
+    type: loadbalancer
+    tls: true
+  - name: external2
+    port: 9094
+    type: nodeport
+    tls: true
+```
+
+This change includes some other changes:
+* The `tls` field is now required.
+* The former `overrides` section is now merged with the `configuration` section.
+* The `dnsAnnotations` field has been renamed to `annotations` since we found out it has wider use.
+* Configuration of `loadBalancerSourceRanges` and `externalTrafficPolicy` has been moved into listener configuration. Its use in the `template` section is now deprecated.
+* For `type: internal` listeners, you can now use the flag `useServiceDnsDomain` to define whether they should use the fully qualified DNS names including the cluster service suffix (usually `.cluster.local`). This option defaults to false.
+* All listeners now support configuring the advertised hostname and port.
+* `preferredAddressType` has been removed to `preferredNodePortAddressType`.
+
+To convert the old format into the new format with backwards compatibility, you should use following names and types:
+* For the old `plain` listener, use the name `plain`, port `9092` and type `internal`.
+* For the old `tls` listener, use the name `tls`, port `9093` and type `internal`.
+* For the old `external` listener, use the name `external`, port `9094`.
+
+For example the following old configuration:
+
+```yaml
+listeners:
+  plain:
+    # ...
+  tls: 
+    # ...
+  external:
+    type: loadbalancer 
+    # ...
+```
+
+Will look like this in the new format:
+
+```yaml
+listeners:
+  - name: plain
+    port: 9092
+    type: internal
+    tls: false
+  - name: tls
+    port: 9093
+    type: internal
+    tls: true
+  - name: external
+    port: 9094
+    type: loadbalancer
+    tls: true
+```
 
 #### Removal of monitoring port on Kafka and ZooKeeper related services
 
@@ -18,6 +99,12 @@ It was already deprecated in the previous 0.19.0 release.
 Together with it we have also removed the Prometheus annotations from the services. If you want to add them, you can use the templates.
 See here https://strimzi.io/docs/operators/master/using.html#assembly-customizing-kubernetes-resources-str for more details about templates usage.
 Finally, the Kafka Exporter service was has been removed because it was used just for the monitoring port.
+
+#### Deprecation of Kafka TLS sidecar configuration
+
+Since the Kafka TLS sidecar has been removed, the related configuration options in the Kafka custom resource are now deprecated:
+* `.spec.kafka.tlsSidecar`
+* `.spec.kafka.template.tlsSidecar`
 
 ## 0.19.0
 
@@ -41,6 +128,7 @@ Finally, the Kafka Exporter service was has been removed because it was used jus
   * enable/disable metrics in the KafkaBridge custom resource
   * new Grafana dashboard for the bridge metrics
 * Support dynamically changeable logging in the Entity Operator and Kafka Bridge 
+* Extended the Grafana example dashboard for Kafka Connect to provide more relevant information
 
 ### Deprecations and removals
 

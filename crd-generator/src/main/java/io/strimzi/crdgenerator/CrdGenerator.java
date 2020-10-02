@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.crdgenerator.annotations.Alternation;
+import io.strimzi.crdgenerator.annotations.Alternative;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -466,9 +468,33 @@ public class CrdGenerator {
     private ObjectNode buildSchemaProperties(Class<?> crdClass) {
         ObjectNode properties = nf.objectNode();
         for (Property property : unionOfSubclassProperties(crdClass)) {
-            buildProperty(properties, property);
+            if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
+                List<Property> alternatives = property.getAlternatives();
+                if (alternatives.size() < 2) {
+                    err("Class " + property.getType().getType().getName() + " is annotated with " +
+                            "@" + Alternation.class.getSimpleName() + " but has less than two " +
+                            "@" + Alternative.class.getSimpleName() + "-annotated properties");
+                }
+                buildMultiTypeProperty(properties, property, alternatives);
+            } else {
+                buildProperty(properties, property);
+            }
         }
         return properties;
+    }
+
+
+
+    private void buildMultiTypeProperty(ObjectNode properties, Property property, List<Property> alternatives) {
+        ArrayNode oneOfAlternatives = nf.arrayNode(alternatives.size());
+
+        for (Property alternative : alternatives)   {
+            oneOfAlternatives.add(buildSchema(alternative));
+        }
+
+        ObjectNode oneOf = nf.objectNode();
+        oneOf.set("oneOf", oneOfAlternatives);
+        properties.set(property.getName(), oneOf);
     }
 
     private void buildProperty(ObjectNode properties, Property property) {
@@ -575,13 +601,14 @@ public class CrdGenerator {
             result.set("enum", stringArray(Property.subtypeNames(property.getDeclaringClass())));
         }
 
-        Deprecated deprecated = property.getAnnotation(Deprecated.class);
+        // The deprecated field cannot be set in Kube OpenAPI v3 schema. But we should keep this code for future when it might be possible.
+        /*Deprecated deprecated = property.getAnnotation(Deprecated.class);
         if (deprecated == null) {
             deprecated = property.getType().getType().getAnnotation(Deprecated.class);
         }
         if (deprecated != null) {
             result.put("deprecated", true);
-        }
+        }*/
 
         return result;
     }

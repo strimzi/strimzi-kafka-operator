@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
@@ -15,7 +14,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -26,7 +24,6 @@ import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.api.model.RouteIngress;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertificateAuthority;
@@ -36,7 +33,10 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.KafkaSpec;
+import io.strimzi.api.kafka.model.listener.NodeAddressType;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
@@ -56,6 +56,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
@@ -66,8 +67,8 @@ import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
+import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
@@ -87,6 +88,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
@@ -153,7 +155,7 @@ import static java.util.Collections.singletonMap;
  * </ul>
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
-public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>, KafkaSpec, KafkaStatus> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
@@ -203,57 +205,39 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
-        Promise<Void> createOrUpdatePromise = Promise.promise();
-
-        if (kafkaAssembly.getSpec() == null) {
-            log.error("{} spec cannot be null", kafkaAssembly.getMetadata().getName());
-            return Future.failedFuture("Spec cannot be null");
-        }
-
+    public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+        Promise<KafkaStatus> createOrUpdatePromise = Promise.promise();
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
+
         reconcile(reconcileState).onComplete(reconcileResult -> {
             KafkaStatus status = reconcileState.kafkaStatus;
-            Condition readyCondition;
+            Condition condition;
 
             if (kafkaAssembly.getMetadata().getGeneration() != null)    {
                 status.setObservedGeneration(kafkaAssembly.getMetadata().getGeneration());
             }
 
             if (reconcileResult.succeeded())    {
-                readyCondition = new ConditionBuilder()
+                condition = new ConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
+
+                status.addCondition(condition);
+                createOrUpdatePromise.complete(status);
             } else {
-                readyCondition = new ConditionBuilder()
+                condition = new ConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("NotReady")
                         .withStatus("True")
                         .withReason(reconcileResult.cause().getClass().getSimpleName())
                         .withMessage(reconcileResult.cause().getMessage())
                         .build();
+
+                status.addCondition(condition);
+                createOrUpdatePromise.fail(new ReconciliationException(status, reconcileResult.cause()));
             }
-
-            status.addCondition(readyCondition);
-            reconcileState.updateStatus(status).onComplete(statusResult -> {
-                if (statusResult.succeeded())    {
-                    log.debug("Status for {} is up to date", kafkaAssembly.getMetadata().getName());
-                } else {
-                    log.error("Failed to set status for {}", kafkaAssembly.getMetadata().getName());
-                }
-
-                // If both features succeeded, createOrUpdate succeeded as well
-                // If one or both of them failed, we prefer the reconciliation failure as the main error
-                if (reconcileResult.succeeded() && statusResult.succeeded())    {
-                    createOrUpdatePromise.complete();
-                } else if (reconcileResult.failed())    {
-                    createOrUpdatePromise.fail(reconcileResult.cause());
-                } else {
-                    createOrUpdatePromise.fail(statusResult.cause());
-                }
-            });
         });
 
         return createOrUpdatePromise.future();
@@ -301,21 +285,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaInitServiceAccount())
                 .compose(state -> state.kafkaInitClusterRoleBinding())
                 .compose(state -> state.kafkaScaleDown())
-                .compose(state -> state.kafkaService())
-                .compose(state -> state.kafkaHeadlessService())
-                .compose(state -> state.kafkaExternalBootstrapService())
-                .compose(state -> state.kafkaReplicaServices())
-                .compose(state -> state.kafkaBootstrapRoute())
-                .compose(state -> state.kafkaReplicaRoutes())
-                .compose(state -> state.kafkaBootstrapIngress())
-                .compose(state -> state.kafkaReplicaIngress())
-                .compose(state -> state.kafkaExternalBootstrapServiceReady())
-                .compose(state -> state.kafkaReplicaServicesReady())
-                .compose(state -> state.kafkaBootstrapRouteReady())
-                .compose(state -> state.kafkaReplicaRoutesReady())
+                .compose(state -> state.kafkaServices())
+                .compose(state -> state.kafkaRoutes())
+                .compose(state -> state.kafkaIngresses())
+                .compose(state -> state.kafkaInternalServicesReady())
+                .compose(state -> state.kafkaLoadBalancerServicesReady())
+                .compose(state -> state.kafkaNodePortServicesReady())
+                .compose(state -> state.kafkaRoutesReady())
+                .compose(state -> state.kafkaIngressesReady())
                 .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
-                .compose(state -> state.customTlsListenerCertificate())
-                .compose(state -> state.customExternalListenerCertificate())
+                .compose(state -> state.customListenerCertificates())
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaJmxSecret())
@@ -326,10 +305,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaPodsReady())
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
-                .compose(state -> state.kafkaNodePortExternalListenerStatus())
                 .compose(state -> state.kafkaPersistentClaimDeletion())
-                .compose(state -> state.kafkaTlsListenerCertificatesToStatus())
-                .compose(state -> state.kafkaExternalListenerCertificatesToStatus())
+                // This has to run after all possible rolling updates which might move the pods to different nodes
+                .compose(state -> state.kafkaNodePortExternalListenerStatus())
+                .compose(state -> state.kafkaCustomCertificatesToStatus())
 
                 .compose(state -> state.checkUnsupportedTopicOperator())
 
@@ -388,8 +367,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /* test */ ClientsCa clientsCa;
 
         /* test */ ZookeeperCluster zkCluster;
-        private Service zkService;
-        private Service zkHeadlessService;
         private ConfigMap zkMetricsAndLogsConfigMap;
         /* test */ ReconcileResult<StatefulSet> zkDiffs;
         private Integer zkCurrentReplicas = null;
@@ -398,16 +375,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Integer kafkaCurrentReplicas = null;
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
 
-        private Service kafkaService;
-        private Service kafkaHeadlessService;
         /* test */ ReconcileResult<StatefulSet> kafkaDiffs;
-        private Set<String> kafkaExternalBootstrapDnsName = new HashSet<>();
-        private Set<String> kafkaExternalAdvertisedHostnames = new TreeSet<>();
-        private Set<String> kafkaExternalAdvertisedPorts = new TreeSet<>();
-        private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
+        private final Set<String> kafkaBootstrapDnsName = new HashSet<>();
+        private final Set<String> kafkaAdvertisedHostnames = new TreeSet<>();
+        private final Set<String> kafkaAdvertisedPorts = new TreeSet<>();
+        private final Map<Integer, Set<String>> kafkaBrokerDnsNames = new HashMap<>();
+        /* test */ final Map<String, Integer> kafkaBootstrapNodePorts = new HashMap<>();
+
 
         private String zkLoggingHash = "";
-        private String kafkaLoggingHash = "";
+        private String kafkaLogging = "";
+        private String kafkaLoggingAppendersHash = "";
         private String kafkaBrokerConfigurationHash = "";
 
         /* test */ EntityOperator entityOperator;
@@ -433,13 +411,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean existingCruiseControlCertsChanged = false;
 
         // Custom Listener certificates
-        private String tlsListenerCustomCertificate;
-        private String tlsListenerCustomCertificateThumbprint;
-        private String externalListenerCustomCertificate;
-        private String externalListenerCustomCertificateThumbprint;
-
-        // Stores node port of the external bootstrap service for use in KafkaStatus
-        /* test */ int externalBootstrapNodePort;
+        private final Map<String, String> customListenerCertificates = new HashMap<>();
+        private final Map<String, String> customListenerCertificateThumbprints = new HashMap<>();
 
         private JmxTrans jmxTrans = null;
         private ConfigMap jmxTransConfigMap = null;
@@ -683,7 +656,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Utility method for checking the Secret existence when custom CA is used. The custom CA is configured but the
-         * secrets do not exist, it will throw InvalifConfigurationException.
+         * secrets do not exist, it will throw InvalidConfigurationException.
          *
          * @param ca            The CA Configuration from the Custom Resource
          * @param certSecret    Secret with the certificate public key
@@ -703,7 +676,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Note this is only necessary when the CA certificate has changed due to a new CA key.
          * It is not necessary when the CA certificate is replace while retaining the existing key.
          */
-        @SuppressWarnings("deprecation")
         Future<ReconciliationState> rollingUpdateForNewCaKey() {
             List<String> reason = new ArrayList<>(4);
             if (this.clusterCa.keyReplaced()) {
@@ -730,7 +702,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(sts -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                             () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
-                            kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                            kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
                             .rollingRestart(rollPodAndLogReason))
                         .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
                         .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
@@ -1171,7 +1143,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // Force the user to explicitly set log.message.format.version
             // (Controller shouldn't break clients)
-            if (oldMessageFormat == null || !oldMessageFormat.equals(versionChange.to().messageVersion())) {
+            if (oldMessageFormat == null || compareDottedVersions(oldMessageFormat, versionChange.to().messageVersion()) > 0) {
                 return Future.failedFuture(new KafkaUpgradeException(
                         String.format("Cannot downgrade Kafka cluster %s in namespace %s to version %s " +
                                         "because the current cluster is configured with %s=%s. " +
@@ -1281,7 +1253,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return adminClientSecrets()
                 .compose(compositeFuture -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                     () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
-                        kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                        kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion())
                     .rollingRestart(podNeedsRestart));
         }
 
@@ -1351,15 +1323,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
-                        this.zkService = zkCluster.generateService();
-                        this.zkHeadlessService = zkCluster.generateHeadlessService();
 
                         // We are upgrading from previous Strimzi version which has a sidecars. The older sidecar
                         // configurations allowed only older versions of TLS to be used by default. But the Zookeeper
                         // native TLS support enabled by default only secure TLSv1.2. That is correct, but makes the
-                        // upgrade hard since Kakfa will be unable to connect. So in the first roll, we enable also
-                        // older TLS versions in Zookeeper so that we can configure the KAfka sidecars to enable
-                        // TLSv1.2 as well. Thsi will be removed again in the next rolling update of Zookeeper -> done
+                        // upgrade hard since Kafka will be unable to connect. So in the first roll, we enable also
+                        // older TLS versions in Zookeeper so that we can configure the Kafka sidecars to enable
+                        // TLSv1.2 as well. This will be removed again in the next rolling update of Zookeeper -> done
                         // only when Kafka is ready for it.
                         if (sts != null
                                 && sts.getSpec() != null
@@ -1378,7 +1348,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.zkMetricsAndLogsConfigMap = zkCluster.generateConfigurationConfigMap(logAndMetricsConfigMap);
 
                         String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-                        this.zkLoggingHash = getStringHash(loggingConfiguration);
+                        this.zkLoggingHash = Util.stringHash(loggingConfiguration);
 
                         return Future.succeededFuture(this);
                     });
@@ -1402,11 +1372,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkService() {
-            return withVoid(serviceOperations.reconcile(namespace, zkCluster.getServiceName(), zkService));
+            return withVoid(serviceOperations.reconcile(namespace, zkCluster.getServiceName(), zkCluster.generateService()));
         }
 
         Future<ReconciliationState> zkHeadlessService() {
-            return withVoid(serviceOperations.reconcile(namespace, zkCluster.getHeadlessServiceName(), zkHeadlessService));
+            return withVoid(serviceOperations.reconcile(namespace, zkCluster.getHeadlessServiceName(), zkCluster.generateHeadlessService()));
         }
 
         Future<ReconciliationState> zkAncillaryCm() {
@@ -1453,7 +1423,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
-            Annotations.annotations(zkSts.getSpec().getTemplate()).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
+            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
         }
 
@@ -1514,10 +1484,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
                         }
 
-                        Function<Integer, String> zkNodeAddress = (Integer i) -> ModelUtils.podDnsNameWithoutClusterDomain(
-                                namespace,
-                                KafkaResources.zookeeperHeadlessServiceName(name),
-                                zkCluster.getPodName(i));
+                        Function<Integer, String> zkNodeAddress = (Integer i) ->
+                                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace,
+                                        KafkaResources.zookeeperHeadlessServiceName(name), zkCluster.getPodName(i));
 
                         ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
@@ -1638,11 +1607,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness() {
-            return withVoid(serviceOperations.endpointReadiness(namespace, zkService, 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, zkCluster.getServiceName(), 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> zkHeadlessServiceEndpointReadiness() {
-            return withVoid(serviceOperations.endpointReadiness(namespace, zkHeadlessService, 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, zkCluster.getHeadlessServiceName(), 1_000, operationTimeoutMs));
         }
 
         /*test*/ Future<ReconciliationState> getKafkaClusterDescription() {
@@ -1656,8 +1625,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage, kafkaCurrentReplicas);
-                        this.kafkaService = kafkaCluster.generateService();
-                        this.kafkaHeadlessService = kafkaCluster.generateHeadlessService();
+                        this.kafkaBootstrapDnsName.addAll(ListenersUtils.alternativeNames(kafkaCluster.getListeners()));
                         return Future.succeededFuture(this);
                     });
         }
@@ -1671,7 +1639,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaInitServiceAccount() {
             return withVoid(serviceAccountOperations.reconcile(namespace,
-                    KafkaCluster.initContainerServiceAccountName(kafkaCluster.getCluster()),
+                    kafkaCluster.getServiceAccountName(),
                     kafkaCluster.generateServiceAccount()));
         }
 
@@ -1703,209 +1671,382 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(kafkaSetOperations.scaleDown(namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
         }
 
-        Future<ReconciliationState> kafkaService() {
-            Future<ReconcileResult<Service>> serviceFuture = serviceOperations.reconcile(namespace, kafkaCluster.getServiceName(), kafkaService);
+        /**
+         * Makes sure all desired services are updated and the rest is deleted
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaServices() {
+            List<Service> services = new ArrayList<>();
+            services.add(kafkaCluster.generateService());
+            services.add(kafkaCluster.generateHeadlessService());
+            services.addAll(kafkaCluster.generateExternalBootstrapServices());
 
-            return withVoid(serviceFuture.map(res -> {
-                setPlainAndTlsListenerStatus();
-                return res;
-            }));
-        }
-
-        Future<ReconciliationState> kafkaHeadlessService() {
-            return withVoid(serviceOperations.reconcile(namespace, kafkaCluster.getHeadlessServiceName(), kafkaHeadlessService));
-        }
-
-        Future<ReconciliationState> kafkaExternalBootstrapService() {
-            return withVoid(serviceOperations.reconcile(namespace, KafkaCluster.externalBootstrapServiceName(name), kafkaCluster.generateExternalBootstrapService()));
-        }
-
-        Future<ReconciliationState> kafkaReplicaServices() {
             int replicas = kafkaCluster.getReplicas();
-            List<Future> serviceFutures = new ArrayList<>(replicas);
-
             for (int i = 0; i < replicas; i++) {
-                serviceFutures.add(serviceOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), kafkaCluster.generateExternalService(i)));
+                services.addAll(kafkaCluster.generateExternalServices(i));
             }
 
-            return withVoid(CompositeFuture.join(serviceFutures));
+            Future fut = serviceOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                    .compose(existingServices -> {
+                        List<Future> serviceFutures = new ArrayList<>(services.size());
+                        List<String> existingServiceNames = existingServices.stream().map(svc -> svc.getMetadata().getName()).collect(Collectors.toList());
+
+                        log.debug("{}: Reconciling existing Services {} against the desired services", reconciliation, existingServiceNames);
+
+                        // Update desired services
+                        for (Service service : services) {
+                            String serviceName = service.getMetadata().getName();
+                            existingServiceNames.remove(serviceName);
+                            serviceFutures.add(serviceOperations.reconcile(namespace, serviceName, service));
+                        }
+
+                        log.debug("{}: Services {} should be deleted", reconciliation, existingServiceNames);
+
+                        // Delete services which match our selector but are not desired anymore
+                        for (String serviceName : existingServiceNames) {
+                            serviceFutures.add(serviceOperations.reconcile(namespace, serviceName, null));
+                        }
+
+                        return CompositeFuture.join(serviceFutures);
+                    });
+
+            return withVoid(fut);
         }
 
-        Future<ReconciliationState> kafkaBootstrapRoute() {
-            Route route = kafkaCluster.generateExternalBootstrapRoute();
+        /**
+         * Makes sure all desired routes are updated and the rest is deleted
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaRoutes() {
+            List<Route> routes = new ArrayList<>(kafkaCluster.generateExternalBootstrapRoutes());
 
-            if (pfa.hasRoutes()) {
-                return withVoid(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route));
-            } else if (route != null) {
-                log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);
-                return withVoid(Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + name + " using routes is not possible."));
-            }
-
-            return withVoid(Future.succeededFuture());
-        }
-
-        Future<ReconciliationState> kafkaReplicaRoutes() {
-            int replicas = kafkaCluster.getReplicas();
-            List<Future> routeFutures = new ArrayList<>(replicas);
-
-            for (int i = 0; i < replicas; i++) {
-                Route route = kafkaCluster.generateExternalRoute(i);
-
+            if (routes.size() > 0) {
                 if (pfa.hasRoutes()) {
-                    routeFutures.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), route));
-                } else if (route != null) {
+                    int replicas = kafkaCluster.getReplicas();
+                    for (int i = 0; i < replicas; i++) {
+                        routes.addAll(kafkaCluster.generateExternalRoutes(i));
+                    }
+
+                    Future fut = routeOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                            .compose(existingRoutes -> {
+                                List<Future> routeFutures = new ArrayList<>(routes.size());
+                                List<String> existingRouteNames = existingRoutes.stream().map(route -> route.getMetadata().getName()).collect(Collectors.toList());
+
+                                log.debug("{}: Reconciling existing Routes {} against the desired routes", reconciliation, existingRouteNames);
+
+                                // Update desired routes
+                                for (Route route : routes) {
+                                    String routeName = route.getMetadata().getName();
+                                    existingRouteNames.remove(routeName);
+                                    routeFutures.add(routeOperations.reconcile(namespace, routeName, route));
+                                }
+
+                                log.debug("{}: Routes {} should be deleted", reconciliation, existingRouteNames);
+
+                                // Delete routes which match our selector but are not desired anymore
+                                for (String routeName : existingRouteNames) {
+                                    routeFutures.add(routeOperations.reconcile(namespace, routeName, null));
+                                }
+
+                                return CompositeFuture.join(routeFutures);
+                            });
+
+                    return withVoid(fut);
+                } else {
                     log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);
                     return withVoid(Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + name + " using routes is not possible."));
                 }
             }
 
-            return withVoid(CompositeFuture.join(routeFutures));
+            return withVoid(Future.succeededFuture());
         }
 
-        Future<ReconciliationState> kafkaBootstrapIngress() {
-            if (kafkaCluster.isExposedWithIngress()) {
-                Ingress ingress = kafkaCluster.generateExternalBootstrapIngress();
+        /**
+         * Makes sure all desired ingresses are updated and the rest is deleted
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaIngresses() {
+            List<Ingress> ingresses = new ArrayList<>(kafkaCluster.generateExternalBootstrapIngresses());
 
-                if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null) {
-                    log.debug("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-                    this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-                }
-
-                this.kafkaExternalBootstrapDnsName.add(ingress.getSpec().getRules().get(0).getHost());
-
-                return withVoid(ingressOperations.reconcile(namespace, KafkaCluster.serviceName(name), ingress));
-            } else {
-                return withVoid(Future.succeededFuture());
-            }
-        }
-
-        Future<ReconciliationState> kafkaReplicaIngress() {
-            if (kafkaCluster.isExposedWithIngress()) {
-                int replicas = kafkaCluster.getReplicas();
-                List<Future> routeFutures = new ArrayList<>(replicas);
-
-                for (int i = 0; i < replicas; i++) {
-                    Ingress ingress = kafkaCluster.generateExternalIngress(i);
-
-                    Set<String> dnsNames = new HashSet<>();
-
-                    String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
-                    if (dnsOverride != null)    {
-                        dnsNames.add(dnsOverride);
-                    }
-
-                    String host = ingress.getSpec().getRules().get(0).getHost();
-                    dnsNames.add(host);
-
-                    this.kafkaExternalDnsNames.put(i, dnsNames);
-                    this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(i, host));
-                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(i, "443"));
-
-                    routeFutures.add(ingressOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), ingress));
-                }
-
-                return withVoid(CompositeFuture.join(routeFutures));
-            } else {
-                return withVoid(Future.succeededFuture());
-            }
-        }
-
-        Future<ReconciliationState> kafkaExternalBootstrapServiceReady() {
-            if (!kafkaCluster.isExposedWithLoadBalancer() && !kafkaCluster.isExposedWithNodePort()) {
-                return withVoid(Future.succeededFuture());
+            int replicas = kafkaCluster.getReplicas();
+            for (int i = 0; i < replicas; i++) {
+                ingresses.addAll(kafkaCluster.generateExternalIngresses(i));
             }
 
-            if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null)    {
-                log.trace("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-                this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-            }
+            Future fut = ingressOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                    .compose(existingIngresses -> {
+                        List<Future> ingressFutures = new ArrayList<>(ingresses.size());
+                        List<String> existingIngressNames = existingIngresses.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
 
-            Promise blockingPromise = Promise.promise();
+                        log.debug("{}: Reconciling existing Ingresses {} against the desired ingresses", reconciliation, existingIngressNames);
 
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    String serviceName = KafkaCluster.externalBootstrapServiceName(name);
-                    Future<Void> address = null;
-
-                    if (kafkaCluster.isExposedWithNodePort()) {
-                        address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
-                    } else {
-                        address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
-                    }
-
-                    address.onComplete(res -> {
-                        if (res.succeeded()) {
-                            if (kafkaCluster.isExposedWithLoadBalancer()) {
-                                String bootstrapAddress = null;
-
-                                if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                                    bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
-                                } else {
-                                    bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
-                                }
-
-                                if (log.isTraceEnabled()) {
-                                    log.trace("{}: Found address {} for Service {}", reconciliation, bootstrapAddress, serviceName);
-                                }
-
-                                this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
-
-                                setExternalListenerStatus(new ListenerAddressBuilder()
-                                        .withHost(bootstrapAddress)
-                                        .withPort(kafkaCluster.getLoadbalancerPort())
-                                        .build());
-                            } else if (kafkaCluster.isExposedWithNodePort()) {
-                                ServiceSpec sts = serviceOperations.get(namespace, serviceName).getSpec();
-                                externalBootstrapNodePort = sts.getPorts().get(0).getNodePort();
-                            }
-                            future.complete();
-                        } else {
-                            if (kafkaCluster.isExposedWithNodePort()) {
-                                log.warn("{}: Node port was not assigned for Service {}.", reconciliation, serviceName);
-                                future.fail("Node port was not assigned for Service " + serviceName + ".");
-                            } else {
-                                log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
-                                future.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
-                            }
+                        // Update desired ingresses
+                        for (Ingress ingress : ingresses) {
+                            String ingressName = ingress.getMetadata().getName();
+                            existingIngressNames.remove(ingressName);
+                            ingressFutures.add(ingressOperations.reconcile(namespace, ingressName, ingress));
                         }
-                    });
-                }, res -> {
-                    if (res.succeeded()) {
-                        blockingPromise.complete();
-                    } else {
-                        blockingPromise.fail(res.cause());
-                    }
-                });
 
-            return withVoid(blockingPromise.future());
+                        log.debug("{}: Ingresses {} should be deleted", reconciliation, existingIngressNames);
+
+                        // Delete ingresses which match our selector but are not desired anymore
+                        for (String ingressName : existingIngressNames) {
+                            ingressFutures.add(ingressOperations.reconcile(namespace, ingressName, null));
+                        }
+
+                        return CompositeFuture.join(ingressFutures);
+                    });
+
+            return withVoid(fut);
+        }
+
+        Future<ReconciliationState> kafkaInternalServicesReady()   {
+            for (GenericKafkaListener listener : ListenersUtils.internalListeners(kafkaCluster.getListeners())) {
+                boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
+                        ? listener.getConfiguration().getUseServiceDnsDomain() : false;
+
+                // Set status based on bootstrap service
+                String bootstrapAddress = getInternalServiceHostname(ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener), useServiceDnsDomain);
+
+                ListenerStatus ls = new ListenerStatusBuilder()
+                        .withNewType(listener.getName())
+                        .withAddresses(new ListenerAddressBuilder()
+                                .withHost(bootstrapAddress)
+                                .withPort(listener.getPort())
+                                .build())
+                        .build();
+
+                addListenerStatus(ls);
+
+                // Set advertised hostnames and ports
+                for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++) {
+                    String brokerAddress;
+
+                    if (useServiceDnsDomain) {
+                        brokerAddress = DnsNameGenerator.podDnsNameWithClusterDomain(namespace, KafkaResources.brokersServiceName(name), KafkaResources.kafkaStatefulSetName(name) + "-" + pod);
+                    } else {
+                        brokerAddress = DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(name), KafkaResources.kafkaStatefulSetName(name) + "-" + pod);
+                    }
+
+                    kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
+                    kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, listener.getPort()));
+                }
+            }
+
+            return Future.succeededFuture(this);
+        }
+
+        /**
+         * Makes sure all services related to load balancers are ready and collects their addresses for Statuses,
+         * certificates and advertised addresses. This method for all Load Balancer type listeners:
+         *      1) Checks if the bootstrap service has been provisioned (has a loadbalancer address)
+         *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
+         *      3) Checks it the broker services have been provisioned (have a loadbalancer address)
+         *      4) Collects the loadbalancer addresses for certificates and advertised hostnames
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaLoadBalancerServicesReady() {
+            List<GenericKafkaListener> loadBalancerListeners = ListenersUtils.loadBalancerListeners(kafkaCluster.getListeners());
+            List<Future> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
+
+            for (GenericKafkaListener listener : loadBalancerListeners) {
+                String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener);
+
+                Future perListenerFut = serviceOperations.hasIngressAddress(namespace, bootstrapServiceName, 1_000, operationTimeoutMs)
+                        .compose(res -> serviceOperations.getAsync(namespace, bootstrapServiceName))
+                        .compose(svc -> {
+                            String bootstrapAddress;
+
+                            if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null)    {
+                                bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                            } else {
+                                bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                            }
+
+                            log.debug("{}: Found address {} for Service {}", reconciliation, bootstrapAddress, bootstrapServiceName);
+
+                            kafkaBootstrapDnsName.add(bootstrapAddress);
+
+                            ListenerStatus ls = new ListenerStatusBuilder()
+                                    .withNewType(listener.getName())
+                                    .withAddresses(new ListenerAddressBuilder()
+                                            .withHost(bootstrapAddress)
+                                            .withPort(listener.getPort())
+                                            .build())
+                                    .build();
+                            addListenerStatus(ls);
+
+                            return Future.succeededFuture();
+                        })
+                        .compose(res -> {
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                perPodFutures.add(
+                                        serviceOperations.hasIngressAddress(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener), 1_000, operationTimeoutMs)
+                                );
+                            }
+
+                            return CompositeFuture.join(perPodFutures);
+                        })
+                        .compose(res -> {
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                final int podNumber = pod;
+                                Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
+                                        .compose(svc -> {
+                                            String brokerAddress;
+
+                                            if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null)    {
+                                                brokerAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                            } else {
+                                                brokerAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                            }
+
+                                            log.debug("{}: Found address {} for Service {}", reconciliation, brokerAddress, svc.getMetadata().getName());
+
+                                            kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(2)).add(brokerAddress);
+
+                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                            if (advertisedHostname != null) {
+                                                kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                            }
+
+                                            kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, brokerAddress));
+                                            kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, listener.getPort()));
+
+                                            return Future.succeededFuture();
+                                        });
+
+                                perPodFutures.add(perBrokerFut);
+                            }
+
+                            return CompositeFuture.join(perPodFutures);
+                        });
+
+                listenerFutures.add(perListenerFut);
+            }
+
+            return withVoid(CompositeFuture.join(listenerFutures));
+        }
+
+        /**
+         * Makes sure all services related to node ports are ready and collects their addresses for Statuses,
+         * certificates and advertised addresses. This method for all NodePort type listeners:
+         *      1) Checks if the bootstrap service has been provisioned (has a node port)
+         *      2) Collects the node port for use in CR status
+         *      3) Checks it the broker services have been provisioned (have a node port)
+         *      4) Collects the node ports for advertised hostnames
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaNodePortServicesReady() {
+            List<GenericKafkaListener> loadBalancerListeners = ListenersUtils.nodePortListeners(kafkaCluster.getListeners());
+            List<Future> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
+
+            for (GenericKafkaListener listener : loadBalancerListeners) {
+                String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener);
+
+                Future perListenerFut = serviceOperations.hasNodePort(namespace, bootstrapServiceName, 1_000, operationTimeoutMs)
+                        .compose(res -> serviceOperations.getAsync(namespace, bootstrapServiceName))
+                        .compose(svc -> {
+                            Integer externalBootstrapNodePort = svc.getSpec().getPorts().get(0).getNodePort();
+                            log.debug("{}: Found node port {} for Service {}", reconciliation, externalBootstrapNodePort, bootstrapServiceName);
+                            kafkaBootstrapNodePorts.put(ListenersUtils.identifier(listener), externalBootstrapNodePort);
+
+                            return Future.succeededFuture();
+                        })
+                        .compose(res -> {
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                perPodFutures.add(
+                                        serviceOperations.hasNodePort(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener), 1_000, operationTimeoutMs)
+                                );
+                            }
+
+                            return CompositeFuture.join(perPodFutures);
+                        })
+                        .compose(res -> {
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                final int podNumber = pod;
+                                Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
+                                        .compose(svc -> {
+                                            Integer externalBrokerNodePort = svc.getSpec().getPorts().get(0).getNodePort();
+                                            log.debug("{}: Found node port {} for Service {}", reconciliation, externalBrokerNodePort, svc.getMetadata().getName());
+
+                                            kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, externalBrokerNodePort));
+
+                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+
+                                            if (advertisedHostname != null) {
+                                                kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(1)).add(advertisedHostname);
+                                            }
+
+                                            kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, nodePortAddressEnvVar(listener)));
+
+                                            return Future.succeededFuture();
+                                        });
+
+                                perPodFutures.add(perBrokerFut);
+                            }
+
+                            return CompositeFuture.join(perPodFutures);
+                        });
+
+                listenerFutures.add(perListenerFut);
+            }
+
+            return withVoid(CompositeFuture.join(listenerFutures));
+        }
+
+        /**
+         * Generates the name of the environment variable which will contain the advertised address for given listener. The
+         * environment variable will be different for Node Port listeners which need to consume the address from the init
+         * container corresponding to their preferred node.
+         *
+         * @param listener              The listener
+         * @return                      The environment variable which will have the address
+         */
+        String nodePortAddressEnvVar(GenericKafkaListener listener)  {
+            String preferredNodeAddressType;
+            NodeAddressType preferredType = ListenersUtils.preferredNodeAddressType(listener);
+
+            if (preferredType != null)  {
+                preferredNodeAddressType = preferredType.toValue().toUpperCase(Locale.ENGLISH);
+            } else {
+                preferredNodeAddressType = "DEFAULT";
+            }
+
+            return String.format("${STRIMZI_NODEPORT_%s_ADDRESS}", preferredNodeAddressType);
         }
 
         Future<ReconciliationState> kafkaNodePortExternalListenerStatus() {
-            List<Node> nodes = new ArrayList<>();
+            List<Node> allNodes = new ArrayList<>();
 
-            if (kafkaCluster.isExposedWithNodePort())   {
+            if (!ListenersUtils.nodePortListeners(kafkaCluster.getListeners()).isEmpty())   {
                 return nodeOperator.listAsync(Labels.EMPTY)
                         .compose(result -> {
-                            nodes.addAll(result);
+                            allNodes.addAll(result);
                             return podOperations.listAsync(namespace, kafkaCluster.getSelectorLabels());
                         })
                         .map(pods -> {
-                            Set<ListenerAddress> statusAddresses = new HashSet<>();
+                            Map<Integer, Node> brokerNodes = new HashMap<>(kafkaCluster.getReplicas());
 
                             for (Pod broker : pods) {
                                 String podName = broker.getMetadata().getName();
                                 Integer podIndex = getPodIndexFromPodName(podName);
 
-                                if (kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex) != null)    {
-                                    ListenerAddress address = new ListenerAddressBuilder()
-                                            .withHost(kafkaCluster.getExternalServiceAdvertisedHostOverride(podIndex))
-                                            .withPort(externalBootstrapNodePort)
-                                            .build();
-
-                                    statusAddresses.add(address);
-                                } else if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
+                                if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
                                     String hostIP = broker.getStatus().getHostIP();
-                                    Node podNode = nodes.stream().filter(node -> {
+                                    Node podNode = allNodes.stream().filter(node -> {
                                         if (node.getStatus() != null && node.getStatus().getAddresses() != null)    {
                                             return null != node.getStatus().getAddresses().stream().filter(address -> hostIP.equals(address.getAddress())).findFirst().orElse(null);
                                         } else {
@@ -1914,20 +2055,40 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     }).findFirst().orElse(null);
 
                                     if (podNode != null) {
-                                        ListenerAddress address = new ListenerAddressBuilder()
-                                                .withHost(NodeUtils.findAddress(podNode.getStatus().getAddresses(), kafkaCluster.getPreferredNodeAddressType()))
-                                                .withPort(externalBootstrapNodePort)
-                                                .build();
-
-                                        statusAddresses.add(address);
+                                        brokerNodes.put(podIndex, podNode);
                                     }
-
-                                } else {
-                                    continue;
                                 }
                             }
 
-                            setExternalListenerStatus(statusAddresses.toArray(new ListenerAddress[statusAddresses.size()]));
+                            for (GenericKafkaListener listener : ListenersUtils.nodePortListeners(kafkaCluster.getListeners())) {
+                                // Set is used to ensure each node/port is listed only once. It is later converted to List.
+                                Set<ListenerAddress> statusAddresses = new HashSet<>(brokerNodes.size());
+
+                                for (Map.Entry<Integer, Node> entry : brokerNodes.entrySet())   {
+                                    String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, entry.getKey());
+                                    ListenerAddress address;
+
+                                    if (advertisedHost != null)    {
+                                        address = new ListenerAddressBuilder()
+                                                .withHost(advertisedHost)
+                                                .withPort(kafkaBootstrapNodePorts.get(ListenersUtils.identifier(listener)))
+                                                .build();
+                                    } else {
+                                        address = new ListenerAddressBuilder()
+                                                .withHost(NodeUtils.findAddress(entry.getValue().getStatus().getAddresses(), ListenersUtils.preferredNodeAddressType(listener)))
+                                                .withPort(kafkaBootstrapNodePorts.get(ListenersUtils.identifier(listener)))
+                                                .build();
+                                    }
+
+                                    statusAddresses.add(address);
+                                }
+
+                                ListenerStatus ls = new ListenerStatusBuilder()
+                                        .withNewType(listener.getName())
+                                        .withAddresses(new ArrayList<>(statusAddresses))
+                                        .build();
+                                addListenerStatus(ls);
+                            }
 
                             return this;
                         });
@@ -1936,237 +2097,160 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
-        Future<ReconciliationState> kafkaReplicaServicesReady() {
-            if (!kafkaCluster.isExposedWithLoadBalancer() && !kafkaCluster.isExposedWithNodePort()) {
-                return withVoid(Future.succeededFuture());
-            }
+        /**
+         * Makes sure all routes are ready and collects their addresses for Statuses,
+         * certificates and advertised addresses. This method for all routes:
+         *      1) Checks if the bootstrap route has been provisioned (has a loadbalancer address)
+         *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
+         *      3) Checks it the broker routes have been provisioned (have an address)
+         *      4) Collects the route addresses for certificates and advertised hostnames
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaRoutesReady() {
+            List<GenericKafkaListener> routeListeners = ListenersUtils.routeListeners(kafkaCluster.getListeners());
+            List<Future> listenerFutures = new ArrayList<>(routeListeners.size());
 
-            Promise blockingPromise = Promise.promise();
+            for (GenericKafkaListener listener : routeListeners) {
+                String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(name, listener);
 
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    int replicas = kafkaCluster.getReplicas();
-                    List<Future> serviceFutures = new ArrayList<>(replicas);
+                Future perListenerFut = routeOperations.hasAddress(namespace, bootstrapRouteName, 1_000, operationTimeoutMs)
+                        .compose(res -> routeOperations.getAsync(namespace, bootstrapRouteName))
+                        .compose(route -> {
+                            String bootstrapAddress = route.getStatus().getIngress().get(0).getHost();
+                            log.debug("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, bootstrapRouteName);
 
-                    for (int i = 0; i < replicas; i++) {
-                        String serviceName = KafkaCluster.externalServiceName(name, i);
-                        Promise servicePromise = Promise.promise();
+                            kafkaBootstrapDnsName.add(bootstrapAddress);
 
-                        Future<Void> address = null;
-                        Set<String> dnsNames = new HashSet<>();
+                            ListenerStatus ls = new ListenerStatusBuilder()
+                                    .withNewType(listener.getName())
+                                    .withAddresses(new ListenerAddressBuilder()
+                                            .withHost(bootstrapAddress)
+                                            .withPort(kafkaCluster.getRoutePort())
+                                            .build())
+                                    .build();
+                            addListenerStatus(ls);
 
-                        String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
-                        if (dnsOverride != null)    {
-                            dnsNames.add(dnsOverride);
-                        }
+                            return Future.succeededFuture();
+                        })
+                        .compose(res -> {
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
-                        if (kafkaCluster.isExposedWithNodePort()) {
-                            address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
-                        } else {
-                            address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
-                        }
-
-                        int podNumber = i;
-
-                        address.onComplete(res -> {
-                            if (res.succeeded()) {
-                                if (kafkaCluster.isExposedWithLoadBalancer()) {
-                                    // Get the advertised URL
-                                    String serviceAddress = null;
-
-                                    if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                                        serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
-                                    } else {
-                                        serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
-                                    }
-
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
-                                    }
-
-                                    this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(podNumber, serviceAddress));
-                                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, "9094"));
-
-                                    // Collect the DNS names for certificates
-                                    for (LoadBalancerIngress ingress : serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress())    {
-                                        if (ingress.getHostname() != null) {
-                                            dnsNames.add(ingress.getHostname());
-                                        } else {
-                                            dnsNames.add(ingress.getIp());
-                                        }
-                                    }
-                                } else if (kafkaCluster.isExposedWithNodePort()) {
-                                    // Get the advertised URL
-                                    String port = serviceOperations.get(namespace, serviceName).getSpec().getPorts()
-                                        .get(0).getNodePort().toString();
-
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("{}: Found port {} for Service {}", reconciliation, port, serviceName);
-                                    }
-
-                                    // For node ports, when the override is not set, we don't pass any advertised hostname
-                                    String advertisedHostname = kafkaCluster.getExternalAdvertisedHostname(podNumber, null);
-                                    if (advertisedHostname != null) {
-                                        this.kafkaExternalAdvertisedHostnames.add(advertisedHostname);
-                                    }
-
-                                    this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, port));
-                                }
-
-                                this.kafkaExternalDnsNames.put(podNumber, dnsNames);
-
-                                servicePromise.complete();
-                            } else {
-                                if (kafkaCluster.isExposedWithNodePort()) {
-                                    log.warn("{}: Node port was not assigned for Service {}.", reconciliation, serviceName);
-                                    servicePromise.fail("Node port was not assigned for Service " + serviceName + ".");
-                                } else {
-                                    log.warn("{}: No loadbalancer address found in the Status section of Service {} resource. Loadbalancer was probably not provisioned.", reconciliation, serviceName);
-                                    servicePromise.fail("No loadbalancer address found in the Status section of Service " + serviceName + " resource. Loadbalancer was probably not provisioned.");
-                                }
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                perPodFutures.add(
+                                        routeOperations.hasAddress(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener), 1_000, operationTimeoutMs)
+                                );
                             }
+
+                            return CompositeFuture.join(perPodFutures);
+                        })
+                        .compose(res -> {
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                final int podNumber = pod;
+                                Future<Void> perBrokerFut = routeOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
+                                        .compose(route -> {
+                                            String brokerAddress = route.getStatus().getIngress().get(0).getHost();
+                                            log.debug("{}: Found address {} for Route {}", reconciliation, brokerAddress, route.getMetadata().getName());
+
+                                            kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(2)).add(brokerAddress);
+
+                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                            if (advertisedHostname != null) {
+                                                kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                            }
+
+                                            kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, brokerAddress));
+                                            kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, kafkaCluster.getRoutePort()));
+
+                                            return Future.succeededFuture();
+                                        });
+
+                                perPodFutures.add(perBrokerFut);
+                            }
+
+                            return CompositeFuture.join(perPodFutures);
                         });
 
-                        serviceFutures.add(servicePromise.future());
-                    }
+                listenerFutures.add(perListenerFut);
+            }
 
-                    CompositeFuture.join(serviceFutures).onComplete(res -> {
-                        if (res.succeeded()) {
-                            future.complete();
-                        } else {
-                            future.fail(res.cause());
-                        }
-                    });
-                }, res -> {
-                    if (res.succeeded()) {
-                        blockingPromise.complete();
-                    } else {
-                        blockingPromise.fail(res.cause());
-                    }
-                });
-
-            return withVoid(blockingPromise.future());
+            return withVoid(CompositeFuture.join(listenerFutures));
         }
 
-        Future<ReconciliationState> kafkaBootstrapRouteReady() {
-            if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {
-                return withVoid(Future.succeededFuture());
-            }
+        /**
+         * Makes sure all ingresses are ready and collects their addresses for Statuses,
+         * certificates and advertised addresses. This method for all ingresses:
+         *      1) Checks if the bootstrap ingress has been provisioned (has a loadbalancer address)
+         *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
+         *      3) Checks it the broker ingresses have been provisioned (have an address)
+         *      4) Collects the route addresses for certificates and advertised hostnames
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaIngressesReady() {
+            List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(kafkaCluster.getListeners());
+            List<Future> listenerFutures = new ArrayList<>(ingressListeners.size());
 
-            if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null)    {
-                log.trace("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-                this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
-            }
+            for (GenericKafkaListener listener : ingressListeners) {
+                String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(name, listener);
 
-            Promise blockingPromise = Promise.promise();
+                Future perListenerFut = ingressOperations.hasIngressAddress(namespace, bootstrapIngressName, 1_000, operationTimeoutMs)
+                        .compose(res -> {
+                            String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
+                            log.debug("{}: Using address {} for Ingress {}", reconciliation, bootstrapAddress, bootstrapIngressName);
 
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    String routeName = KafkaCluster.serviceName(name);
-                    Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
+                            kafkaBootstrapDnsName.add(bootstrapAddress);
 
-                    address.onComplete(res -> {
-                        if (res.succeeded()) {
-                            String bootstrapAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
-                            this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
+                            ListenerStatus ls = new ListenerStatusBuilder()
+                                    .withNewType(listener.getName())
+                                    .withAddresses(new ListenerAddressBuilder()
+                                            .withHost(bootstrapAddress)
+                                            .withPort(kafkaCluster.getRoutePort())
+                                            .build())
+                                    .build();
+                            addListenerStatus(ls);
 
-                            setExternalListenerStatus(new ListenerAddressBuilder()
-                                    .withHost(bootstrapAddress)
-                                    .withPort(kafkaCluster.getRoutePort())
-                                    .build());
+                            // Check if broker ingresses are ready
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
-                            if (log.isTraceEnabled()) {
-                                log.trace("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, routeName);
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                perPodFutures.add(
+                                        ingressOperations.hasIngressAddress(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener), 1_000, operationTimeoutMs)
+                                );
                             }
 
-                            future.complete();
-                        } else {
-                            log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
-                            future.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
-                        }
-                    });
-                }, res -> {
-                    if (res.succeeded()) {
-                        blockingPromise.complete();
-                    } else {
-                        blockingPromise.fail(res.cause());
-                    }
-                });
+                            return CompositeFuture.join(perPodFutures);
+                        })
+                        .compose(res -> {
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                final int podNumber = pod;
+                                String brokerAddress = listener.getConfiguration().getBrokers().stream()
+                                        .filter(broker -> broker.getBroker() == podNumber)
+                                        .map(GenericKafkaListenerConfigurationBroker::getHost)
+                                        .findAny()
+                                        .orElse(null);
+                                log.debug("{}: Using address {} for Ingress {}", reconciliation, brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener));
 
-            return withVoid(blockingPromise.future());
-        }
+                                kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(2)).add(brokerAddress);
 
-        Future<ReconciliationState> kafkaReplicaRoutesReady() {
-            if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {
-                return withVoid(Future.succeededFuture());
-            }
-
-            Promise blockingPromise = Promise.promise();
-
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    int replicas = kafkaCluster.getReplicas();
-                    List<Future> routeFutures = new ArrayList<>(replicas);
-
-                    for (int i = 0; i < replicas; i++) {
-                        String routeName = KafkaCluster.externalServiceName(name, i);
-                        Promise routePromise = Promise.promise();
-                        Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
-                        int podNumber = i;
-
-                        Set<String> dnsNames = new HashSet<>();
-
-                        String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
-                        if (dnsOverride != null)    {
-                            dnsNames.add(dnsOverride);
-                        }
-
-                        address.onComplete(res -> {
-                            if (res.succeeded()) {
-                                Route route = routeOperations.get(namespace, routeName);
-
-                                // Get the advertised URL
-                                String routeAddress = route.getStatus().getIngress().get(0).getHost();
-                                this.kafkaExternalAdvertisedHostnames.add(kafkaCluster.getExternalAdvertisedHostname(podNumber, routeAddress));
-                                this.kafkaExternalAdvertisedPorts.add(kafkaCluster.getExternalAdvertisedPort(podNumber, "443"));
-
-                                if (log.isTraceEnabled()) {
-                                    log.trace("{}: Found address {} for Route {}", reconciliation, routeAddress, routeName);
+                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                if (advertisedHostname != null) {
+                                    kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
                                 }
 
-                                // Collect the DNS names for certificates
-                                for (RouteIngress ingress : route.getStatus().getIngress()) {
-                                    dnsNames.add(ingress.getHost());
-                                }
-
-                                this.kafkaExternalDnsNames.put(podNumber, dnsNames);
-
-                                routePromise.complete();
-                            } else {
-                                log.warn("{}: No route address found in the Status section of Route {} resource. Route was probably not provisioned by the OpenShift router.", reconciliation, routeName);
-                                routePromise.fail("No route address found in the Status section of Route " + routeName + " resource. Route was probably not provisioned by the OpenShift router.");
+                                kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
+                                kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, kafkaCluster.getIngressPort()));
                             }
+
+                            return Future.succeededFuture();
                         });
 
-                        routeFutures.add(routePromise.future());
-                    }
+                listenerFutures.add(perListenerFut);
+            }
 
-                    CompositeFuture.join(routeFutures).onComplete(res -> {
-                        if (res.succeeded()) {
-                            future.complete();
-                        } else {
-                            future.fail(res.cause());
-                        }
-                    });
-                }, res -> {
-                    if (res.succeeded()) {
-                        blockingPromise.complete();
-                    } else {
-                        blockingPromise.fail(res.cause());
-                    }
-                });
-
-            return withVoid(blockingPromise.future());
+            return withVoid(CompositeFuture.join(listenerFutures));
         }
 
         Future<ReconciliationState> kafkaGenerateCertificates(Supplier<Date> dateSupplier) {
@@ -2175,7 +2259,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 future -> {
                     try {
                         kafkaCluster.generateCertificates(kafkaAssembly,
-                                clusterCa, kafkaExternalBootstrapDnsName, kafkaExternalDnsNames,
+                                clusterCa, kafkaBootstrapDnsName, kafkaBrokerDnsNames,
                                 isMaintenanceTimeWindowsSatisfied(dateSupplier));
                         future.complete(this);
                     } catch (Throwable e) {
@@ -2187,67 +2271,70 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return resultPromise.future();
         }
 
-        Future<ReconciliationState> customTlsListenerCertificate() {
-            CertAndKeySecretSource customCertSecret = kafkaCluster.getSecretSourceTls();
+        Future<ReconciliationState> customListenerCertificates() {
+            List<String> secretNames = kafkaCluster.getListeners().stream()
+                    .filter(listener -> listener.isTls()
+                            && listener.getConfiguration() != null
+                            && listener.getConfiguration().getBrokerCertChainAndKey() != null)
+                    .map(listener -> listener.getConfiguration().getBrokerCertChainAndKey().getSecretName())
+                    .distinct()
+                    .collect(Collectors.toList());
+            log.debug("Validating secret {} with custom TLS listener certificates", secretNames);
 
-            return getCustomCertificateSecret(customCertSecret)
-                    .compose(secret -> {
-                        if (secret != null)  {
-                            byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCertSecret.getCertificate()));
-                            tlsListenerCustomCertificate = new String(publicKeyBytes, StandardCharsets.US_ASCII);
-                            tlsListenerCustomCertificateThumbprint = getCertificateThumbprint(secret, customCertSecret);
+            List<Future> secretFutures = new ArrayList<>(secretNames.size());
+            Map<String, Secret> customSecrets = new HashMap<>(secretNames.size());
 
-                            return Future.succeededFuture(this);
-                        } else {
-                            return Future.succeededFuture(this);
-                        }
-                    });
-        }
-
-        Future<ReconciliationState> customExternalListenerCertificate() {
-            CertAndKeySecretSource customCertSecret = kafkaCluster.getSecretSourceExternal();
-
-            return getCustomCertificateSecret(customCertSecret)
-                    .compose(secret -> {
-                        if (secret != null)  {
-                            byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCertSecret.getCertificate()));
-                            externalListenerCustomCertificate = new String(publicKeyBytes, StandardCharsets.US_ASCII);
-                            externalListenerCustomCertificateThumbprint = getCertificateThumbprint(secret, customCertSecret);
-
-                            return Future.succeededFuture(this);
-                        } else {
-                            return Future.succeededFuture(this);
-                        }
-                    });
-        }
-
-        Future<Secret> getCustomCertificateSecret(CertAndKeySecretSource customCertSecret)  {
-            Promise<Secret> certificatePromise = Promise.promise();
-            if (customCertSecret != null)   {
-                secretOperations.getAsync(namespace, customCertSecret.getSecretName())
-                        .onComplete(result -> {
-                            if (result.succeeded()) {
-                                Secret certSecret = result.result();
-                                if (certSecret != null) {
-                                    if (!certSecret.getData().containsKey(customCertSecret.getCertificate())) {
-                                        certificatePromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain certificate under the key " + customCertSecret.getCertificate() + "."));
-                                    } else if (!certSecret.getData().containsKey(customCertSecret.getKey())) {
-                                        certificatePromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " does not contain custom certificate private key under the key " + customCertSecret.getKey() + "."));
-                                    } else  {
-                                        certificatePromise.complete(certSecret);
-                                    }
-                                } else {
-                                    certificatePromise.fail(new InvalidResourceException("Secret " + customCertSecret.getSecretName() + " with custom TLS certificate does not exist."));
-                                }
-                            } else {
-                                certificatePromise.fail(new NoSuchResourceException("Failed to get secret " + customCertSecret.getSecretName() + " with custom TLS certificate."));
+            for (String secretName : secretNames)   {
+                Future fut = secretOperations.getAsync(namespace, secretName)
+                        .compose(secret -> {
+                            if (secret != null) {
+                                customSecrets.put(secretName, secret);
+                                log.debug("Found secrets {} with custom TLS listener certificate", secretName);
                             }
+
+                            return Future.succeededFuture();
                         });
-            } else {
-                certificatePromise.complete(null);
+
+                secretFutures.add(fut);
             }
 
-            return certificatePromise.future();
+            Future customCertificatesFuture = CompositeFuture.join(secretFutures)
+                    .compose(res -> {
+                        List<String> errors = new ArrayList<>();
+
+                        for (GenericKafkaListener listener : kafkaCluster.getListeners())   {
+                            if (listener.isTls()
+                                    && listener.getConfiguration() != null
+                                    && listener.getConfiguration().getBrokerCertChainAndKey() != null)  {
+                                CertAndKeySecretSource customCert = listener.getConfiguration().getBrokerCertChainAndKey();
+                                Secret secret = customSecrets.get(customCert.getSecretName());
+
+                                if (secret != null) {
+                                    if (!secret.getData().containsKey(customCert.getCertificate())) {
+                                        errors.add("Secret " + customCert.getSecretName() + " does not contain certificate under the key " + customCert.getCertificate() + ".");
+                                    } else if (!secret.getData().containsKey(customCert.getKey())) {
+                                        errors.add("Secret " + customCert.getSecretName() + " does not contain custom certificate private key under the key " + customCert.getKey() + ".");
+                                    } else  {
+                                        byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCert.getCertificate()));
+                                        customListenerCertificates.put(listener.getName(), new String(publicKeyBytes, StandardCharsets.US_ASCII));
+                                        customListenerCertificateThumbprints.put(listener.getName(), getCertificateThumbprint(secret, customCert));
+                                    }
+                                } else {
+                                    errors.add("Secret " + customCert.getSecretName() + " with custom TLS certificate does not exist.");
+                                }
+
+                            }
+                        }
+
+                        if (errors.isEmpty())   {
+                            return Future.succeededFuture();
+                        } else {
+                            log.error("{}: Failed to process Secrets with custom certificates: {}", reconciliation, errors);
+                            return Future.failedFuture(new InvalidResourceException("Failed to process Secrets with custom certificates: " + errors));
+                        }
+                    });
+
+            return withVoid(customCertificatesFuture);
         }
 
         String getCertificateThumbprint(Secret certSecret, CertAndKeySecretSource customCertSecret)   {
@@ -2267,18 +2354,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 loggingCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName());
             }
 
-            ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(loggingCm, kafkaExternalAdvertisedHostnames, kafkaExternalAdvertisedPorts);
+            ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(loggingCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
+            KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration
 
             // if BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME changes, compute a hash and put it into annotation
             String brokerConfiguration = brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
             brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_PORTS_FILENAME, "");
+            brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
 
-            this.kafkaBrokerConfigurationHash = getStringHash(brokerConfiguration);
-            KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration());
-            this.kafkaBrokerConfigurationHash += getStringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
+            this.kafkaBrokerConfigurationHash = Util.stringHash(brokerConfiguration);
+            this.kafkaBrokerConfigurationHash += Util.stringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
 
             String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-            this.kafkaLoggingHash = getStringHash(loggingConfiguration);
+            this.kafkaLogging = loggingConfiguration;
+            this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration));
 
             return brokerCm;
         }
@@ -2454,20 +2543,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
                     String.valueOf(getCaCertGeneration(this.clientsCa)));
 
-            Annotations.annotations(template).put(AbstractModel.ANNO_STRIMZI_LOGGING_HASH, kafkaLoggingHash);
+            Annotations.annotations(template).put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, kafkaLoggingAppendersHash);
             Annotations.annotations(template).put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash);
 
             // Annotations with custom cert thumbprints to help with rolling updates when they change
-            if (tlsListenerCustomCertificateThumbprint != null) {
+            if (!customListenerCertificateThumbprints.isEmpty()) {
                 Annotations.annotations(template).put(
-                        KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER,
-                        tlsListenerCustomCertificateThumbprint);
-            }
-
-            if (externalListenerCustomCertificateThumbprint != null) {
-                Annotations.annotations(template).put(
-                        KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER,
-                        externalListenerCustomCertificateThumbprint);
+                        KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
+                        customListenerCertificateThumbprints.toString());
             }
 
             return kafkaSts;
@@ -2516,11 +2599,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaServiceEndpointReady() {
-            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaService, 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaCluster.getServiceName(), 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> kafkaHeadlessServiceEndpointReady() {
-            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaHeadlessService, 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaCluster.getHeadlessServiceName(), 1_000, operationTimeoutMs));
         }
 
         /**
@@ -2805,10 +2888,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Internal method for deleting PVCs after scale-downs or disk removal from JBOD storage. It gets list of
-         * existing and desired PVCs, diffs them and removes those wioch should not exist.
+         * existing and desired PVCs, diffs them and removes those which should not exist.
          *
          * @param maybeDeletePvcs   List of existing PVCs
-         * @param desiredPvcs       List of PVCs whcih should exist
+         * @param desiredPvcs       List of PVCs which should exist
          * @return
          */
         Future<ReconciliationState> persistentClaimDeletion(List<String> maybeDeletePvcs, List<String> desiredPvcs) {
@@ -3130,8 +3213,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
-            boolean isCustomCertTlsListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_TLS_LISTENER);
-            boolean isCustomCertExternalListenerUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_CERT_THUMBPRINT_EXTERNAL_LISTENER);
+            boolean areCustomListenerCertsUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS);
 
             List<String> reasons = new ArrayList<>(3);
 
@@ -3152,11 +3234,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (fsResizingRestartRequest.contains(pod.getMetadata().getName()))   {
                 reasons.add("file system needs to be resized");
             }
-            if (!isCustomCertTlsListenerUpToDate) {
-                reasons.add("custom certificate on the TLS listener changes");
-            }
-            if (!isCustomCertExternalListenerUpToDate) {
-                reasons.add("custom certificate on the external listener changes");
+            if (!areCustomListenerCertsUpToDate) {
+                reasons.add("custom certificate one or more listeners changed");
             }
             if (nodeCertsChange) {
                 reasons.add("server certificates changed");
@@ -3250,51 +3329,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return storage;
         }
 
-        void setExternalListenerStatus(ListenerAddress... addresses)   {
-            KafkaListeners listeners = kafkaCluster.getListeners();
-
-            if (listeners != null)  {
-                if (listeners.getExternal() != null)   {
-                    ListenerStatus ls = new ListenerStatusBuilder()
-                            .withNewType("external")
-                            .withAddresses(addresses)
-                            .build();
-
-                    addListenerStatus(ls);
-                }
-            }
-        }
-
-        void setPlainAndTlsListenerStatus()   {
-            KafkaListeners listeners = kafkaCluster.getListeners();
-
-            if (listeners != null)  {
-                if (listeners.getPlain() != null)   {
-                    ListenerStatus ls = new ListenerStatusBuilder()
-                            .withNewType("plain")
-                            .withAddresses(new ListenerAddressBuilder()
-                                    .withHost(getInternalServiceHostname(kafkaService.getMetadata().getName()))
-                                    .withPort(kafkaCluster.getClientPort())
-                                    .build())
-                            .build();
-
-                    addListenerStatus(ls);
-                }
-
-                if (listeners.getTls() != null) {
-                    ListenerStatus ls = new ListenerStatusBuilder()
-                            .withNewType("tls")
-                            .withAddresses(new ListenerAddressBuilder()
-                                    .withHost(getInternalServiceHostname(kafkaService.getMetadata().getName()))
-                                    .withPort(kafkaCluster.getClientTlsPort())
-                                    .build())
-                            .build();
-
-                    addListenerStatus(ls);
-                }
-            }
-        }
-
         void addListenerStatus(ListenerStatus ls)    {
             List<ListenerStatus> current = kafkaStatus.getListeners();
             ArrayList<ListenerStatus> desired;
@@ -3311,18 +3345,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             kafkaStatus.setListeners(desired);
         }
 
-        Future<ReconciliationState> kafkaTlsListenerCertificatesToStatus() {
-            if (kafkaCluster.getListeners() != null
-                    && kafkaCluster.getListeners().getTls() != null) {
-                addCertificateToListener("tls", tlsListenerCustomCertificate);
-            }
-
-            return Future.succeededFuture(this);
-        }
-
-        Future<ReconciliationState> kafkaExternalListenerCertificatesToStatus() {
-            if (kafkaCluster.isExposedWithTls())    {
-                addCertificateToListener("external", externalListenerCustomCertificate);
+        Future<ReconciliationState> kafkaCustomCertificatesToStatus() {
+            for (GenericKafkaListener listener : kafkaCluster.getListeners())   {
+                if (listener.isTls())   {
+                    log.debug("Adding certificate to status for listener: {}", listener.getName());
+                    addCertificateToListener(listener.getName(), customListenerCertificates.get(listener.getName()));
+                }
             }
 
             return Future.succeededFuture(this);
@@ -3345,8 +3373,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
-        String getInternalServiceHostname(String serviceName)    {
-            return ModelUtils.serviceDnsNameWithoutClusterDomain(namespace, serviceName);
+        String getInternalServiceHostname(String serviceName, boolean useServiceDnsDomain)    {
+            if (useServiceDnsDomain)    {
+                return DnsNameGenerator.serviceDnsNameWithClusterDomain(namespace, serviceName);
+            } else {
+                return DnsNameGenerator.serviceDnsNameWithoutClusterDomain(namespace, serviceName);
+            }
         }
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {
@@ -3477,23 +3509,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new Date();
     }
 
-    private String getStringHash(String toBeHashed)  {
-        try {
-            MessageDigest hashFunc = MessageDigest.getInstance("SHA-512");
-
-            byte[] hash = hashFunc.digest(toBeHashed.getBytes(StandardCharsets.UTF_8));
-
-            StringBuffer stringHash = new StringBuffer();
-
-            for (int i = 0; i < hash.length; i++) {
-                String hex = Integer.toHexString(0xff & hash[i]);
-                if (hex.length() == 1) stringHash.append('0');
-                stringHash.append(hex);
-            }
-
-            return stringHash.toString();
-        } catch (NoSuchAlgorithmException e)    {
-            throw new RuntimeException("Failed to create SHA-512 MessageDigest instance");
-        }
+    @Override
+    protected KafkaStatus createStatus() {
+        return new KafkaStatus();
     }
 }

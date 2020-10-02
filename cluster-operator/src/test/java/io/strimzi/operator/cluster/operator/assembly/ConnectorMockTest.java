@@ -172,6 +172,7 @@ public class ConnectorMockTest {
                     .build();
             return Future.succeededFuture(Collections.singletonList(connectorPlugin));
         });
+        when(api.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
         when(api.getConnectorConfig(any(), any(), anyInt(), any())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
             String connectorName = invocation.getArgument(3);
@@ -386,7 +387,7 @@ public class ConnectorMockTest {
                     .withName(connectName)
                 .endMetadata()
                 .done();
-        waitForConnectNotReady(connectName, "InvalidResourceException", "spec property is required");
+        waitForConnectNotReady(connectName, "InvalidResourceException", "Spec cannot be null");
     }
 
     @Test
