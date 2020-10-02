@@ -517,6 +517,19 @@ public class KafkaAssemblyOperatorTest {
             expectedSecrets.add(EntityOperator.secretName(kafkaName));
         }
 
+        List<Secrets> caSecrets = getInitialCertificates(kafkaName);
+        if (getKafkaAssembly(kafkaName).getSpec().getClusterCa().isGenerateSecretOwnerReference()) {
+            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(1));
+        } else {
+            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(0));
+        }
+
+        if (getKafkaAssembly(kafkaName).getSpec().getClientsCa().isGenerateSecretOwnerReference()) {
+            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(1));
+        } else {
+            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(0));
+        }
+
         when(mockDepOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
             String name = invocation.getArgument(1);
             Deployment desired = invocation.getArgument(2);
@@ -695,12 +708,12 @@ public class KafkaAssemblyOperatorTest {
         return kafka;
     }
 
+
+    private List<Secret> getInitialCertificates(String clusterName) {
+        String kafkaNamespace = "test";
+        return ResourceUtils.createKafkaClusterInitialSecrets(kafkaNamespace, clusterName);
+    }
     // TODO unused
-//    private List<Secret> getInitialCertificates(String clusterName) {
-//        String kafkaNamespace = "test";
-//        return ResourceUtils.createKafkaClusterInitialSecrets(kafkaNamespace, clusterName);
-//    }
-//
 //    private List<Secret> getClusterCertificates(String kafkaName, int kafkaReplicas, int zkReplicas) {
 //        String kafkaNamespace = "test";
 //        return ResourceUtils.createKafkaClusterSecretsWithReplicas(kafkaNamespace, kafkaName, kafkaReplicas, zkReplicas);
