@@ -292,24 +292,24 @@ public class OauthAuthorizationST extends OauthAbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListenersBuilder()
                 .addNewGenericKafkaListener()
-                .withName("tls")
-                .withPort(9093)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(true)
-                .withNewKafkaListenerAuthenticationOAuth()
-                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                    .withTlsTrustedCertificates(
-                        new CertSecretSourceBuilder()
-                            .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                            .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                            .build())
-                    .withDisableTlsHostnameVerification(true)
-                    .withMaxSecondsWithoutReauthentication(30)
-                .endKafkaListenerAuthenticationOAuth()
+                    .withName("tls")
+                    .withPort(9093)
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withTls(true)
+                    .withNewKafkaListenerAuthenticationOAuth()
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                        .withTlsTrustedCertificates(
+                            new CertSecretSourceBuilder()
+                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                                .build())
+                        .withDisableTlsHostnameVerification(true)
+                        .withMaxSecondsWithoutReauthentication(30)
+                    .endKafkaListenerAuthenticationOAuth()
                 .endGenericKafkaListener()
                 .build());
         });
@@ -385,6 +385,33 @@ public class OauthAuthorizationST extends OauthAbstractST {
         teamAOauthClientJob.producerStrimziOauthTls(CLUSTER_NAME).done();
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
+
+        LOGGER.info("Changing configuration of Kafka back to it's original form");
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListenersBuilder()
+                .addNewGenericKafkaListener()
+                    .withName("tls")
+                    .withPort(9093)
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withTls(true)
+                    .withNewKafkaListenerAuthenticationOAuth()
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                        .withTlsTrustedCertificates(
+                            new CertSecretSourceBuilder()
+                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                                .build())
+                        .withDisableTlsHostnameVerification(true)
+                    .endKafkaListenerAuthenticationOAuth()
+                .endGenericKafkaListener()
+                .build());
+        });
+
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
     }
 
     @Disabled("Will be implemented in next PR")
