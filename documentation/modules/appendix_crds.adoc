@@ -193,7 +193,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |Property                   |Description
 |name                1.2+<.<|Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
 |string
-|port                1.2+<.<|Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999 which are already used for Prometheus and JMX. Depending on the listener type, it might not be the port number where the Kafka clients connect.
+|port                1.2+<.<|Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 |integer
 |type                1.2+<.<|Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. 
 

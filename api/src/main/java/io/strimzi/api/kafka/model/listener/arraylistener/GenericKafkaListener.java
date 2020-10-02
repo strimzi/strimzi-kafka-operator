@@ -64,11 +64,10 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
         this.name = name;
     }
 
-    @Description("Port number used by the listener. " +
+    @Description("Port number used by the listener inside Kafka. " +
             "The port number has to be unique within a given Kafka cluster. " +
-            "The port number will be used for the listener inside Kafka. " +
-            "Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999 which are already used for Prometheus and JMX. " +
-            "Depending on the listener type, it might not be the port number where the Kafka clients connect.")
+            "Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. " +
+            "Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.")
     @JsonProperty(required = true)
     @Minimum(9092)
     public int getPort() {
