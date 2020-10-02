@@ -40,6 +40,8 @@ spec:
   zookeeper:
     # ...
 ----
++
+WARNING: Make sure that the name of the listener does not exceed 63 characters.
 
 . Create or update the resource.
 +
