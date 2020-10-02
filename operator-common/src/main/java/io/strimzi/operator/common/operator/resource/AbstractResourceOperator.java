@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -245,7 +244,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
     @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInAnyNamespace(Labels selector) {
-        FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation().inAnyNamespace();
+        FilterWatchListMultiDeletable<T, L, Boolean, Watch> operation = operation().inAnyNamespace();
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
@@ -265,7 +264,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
-            FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> tlBooleanWatchWatcherFilterWatchListDeletable = tldrNonNamespaceOperation.withLabels(labels);
+            FilterWatchListDeletable<T, L, Boolean, Watch> tlBooleanWatchWatcherFilterWatchListDeletable = tldrNonNamespaceOperation.withLabels(labels);
             return tlBooleanWatchWatcherFilterWatchListDeletable
                     .list()
                     .getItems();
@@ -306,7 +305,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
         Promise<List<T>> result = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
             future -> {
-                FilterWatchListDeletable<T, L, Boolean, Watch, Watcher<T>> operation;
+                FilterWatchListDeletable<T, L, Boolean, Watch> operation;
                 if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
                     operation = operation().inAnyNamespace();
                 } else {
