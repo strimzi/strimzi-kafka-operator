@@ -29,7 +29,7 @@ public class KafkaClusterOAuthValidationTest {
     private List<GenericKafkaListener> getListeners(KafkaListenerAuthenticationOAuth auth)   {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .withAuth(auth)
                 .build();
@@ -56,7 +56,7 @@ public class KafkaClusterOAuthValidationTest {
     public void testOAuthAuthnAuthz() {
         List<GenericKafkaListener> listeners = asList(new GenericKafkaListenerBuilder()
                 .withName("listener1")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .withAuth(new KafkaListenerAuthenticationOAuthBuilder()
                         .withClientId("my-client-id")
@@ -108,7 +108,7 @@ public class KafkaClusterOAuthValidationTest {
         assertThrows(InvalidResourceException.class, () -> {
             List<GenericKafkaListener> listeners = asList(new GenericKafkaListenerBuilder()
                     .withName("listener1")
-                    .withPort(9000)
+                    .withPort(9900)
                     .withType(KafkaListenerType.INTERNAL)
                     .withAuth(new KafkaListenerAuthenticationScramSha512Builder()
                             .build())

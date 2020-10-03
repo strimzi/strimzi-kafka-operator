@@ -50,7 +50,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newPlain = new GenericKafkaListenerBuilder()
             .withName("plain2")
-            .withPort(9000)
+            .withPort(9900)
             .withType(KafkaListenerType.INTERNAL)
             .withTls(false)
             .withNewConfiguration()
@@ -70,7 +70,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newTls = new GenericKafkaListenerBuilder()
             .withName("tls2")
-            .withPort(9001)
+            .withPort(9901)
             .withType(KafkaListenerType.INTERNAL)
             .withTls(true)
             .withNewConfiguration()
@@ -98,7 +98,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newRoute = new GenericKafkaListenerBuilder()
             .withName("route")
-            .withPort(9002)
+            .withPort(9902)
             .withType(KafkaListenerType.ROUTE)
             .withTls(true)
             .withNewConfiguration()
@@ -126,7 +126,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newNodePort = new GenericKafkaListenerBuilder()
             .withName("np1")
-            .withPort(9003)
+            .withPort(9903)
             .withType(KafkaListenerType.NODEPORT)
             .withTls(true)
             .withNewConfiguration()
@@ -135,7 +135,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newNodePort2 = new GenericKafkaListenerBuilder()
             .withName("np2")
-            .withPort(9004)
+            .withPort(9904)
             .withType(KafkaListenerType.NODEPORT)
             .withTls(true)
             .withNewConfiguration()
@@ -165,7 +165,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newLoadBalancer = new GenericKafkaListenerBuilder()
             .withName("lb1")
-            .withPort(9005)
+            .withPort(9905)
             .withType(KafkaListenerType.LOADBALANCER)
             .withTls(true)
             .withNewConfiguration()
@@ -179,7 +179,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newLoadBalancer2 = new GenericKafkaListenerBuilder()
             .withName("lb2")
-            .withPort(9006)
+            .withPort(9906)
             .withType(KafkaListenerType.LOADBALANCER)
             .withTls(true)
             .withNewConfiguration()
@@ -209,7 +209,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newIngress = new GenericKafkaListenerBuilder()
             .withName("ing1")
-            .withPort(9007)
+            .withPort(9907)
             .withType(KafkaListenerType.INGRESS)
             .withTls(true)
             .withNewConfiguration()
@@ -229,7 +229,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newIngress2 = new GenericKafkaListenerBuilder()
             .withName("ing2")
-            .withPort(9008)
+            .withPort(9908)
             .withType(KafkaListenerType.INGRESS)
             .withTls(true)
             .withNewConfiguration()
@@ -258,7 +258,7 @@ public class ListenersUtilsTest {
 
     private GenericKafkaListener newNodePort3 = new GenericKafkaListenerBuilder()
             .withName("np3")
-            .withPort(9009)
+            .withPort(9909)
             .withType(KafkaListenerType.NODEPORT)
             .withTls(true)
             .withNewConfiguration()
