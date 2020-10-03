@@ -24,6 +24,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
@@ -511,12 +512,12 @@ public class CrdGenerator {
             System.err.println("It's OK");
             schema = nf.objectNode();
             schema.put("type", "object");
-            schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1])));
+            schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(property, new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1])));
         } else if (Schema.isJsonScalarType(returnType)
                 || Map.class.equals(returnType)) {            
             schema = addSimpleTypeConstraints(buildBasicTypeSchema(property, returnType), property);
         } else if (returnType.isArray() || List.class.equals(returnType)) {
-            schema = buildArraySchema(property.getType());
+            schema = buildArraySchema(property, property.getType());
         } else {
             schema = buildObjectSchema(property, returnType);
         }
@@ -524,12 +525,16 @@ public class CrdGenerator {
         return schema;
     }
 
-    private ObjectNode buildArraySchema(PropertyType propertyType) {
+    private ObjectNode buildArraySchema(Property property, PropertyType propertyType) {
         int arrayDimension = propertyType.arrayDimension();
         ObjectNode result = nf.objectNode();
         ObjectNode itemResult = result;
         for (int i = 0; i < arrayDimension; i++) {
             itemResult.put("type", "array");
+            MinimumItems minimumItems = property.getAnnotation(MinimumItems.class);
+            if (minimumItems != null) {
+                itemResult.put("minItems", minimumItems.value());
+            }
             itemResult = itemResult.putObject("items");
         }
         Class<?> elementType = propertyType.arrayBase();

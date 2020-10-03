@@ -15,6 +15,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
 
@@ -68,6 +69,7 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     @Description("Example of field property.")
     public String fieldProperty;
 
+    @MinimumItems(1)
     public String[] arrayProperty;
 
     public String[][] arrayProperty2;
