@@ -1524,8 +1524,8 @@ class KafkaST extends AbstractST {
     @Test
     void testHostAliases() {
         HostAlias hostAlias = new HostAliasBuilder()
-            .withIp("34.89.152.196")
-            .withHostnames("strimzi")
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
             .build();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -1552,18 +1552,9 @@ class KafkaST extends AbstractST {
         for (String podName : pods) {
             if (!podName.contains("entity-operator")) {
                 String containerName = podName.contains("kafka") ? "kafka" : "zookeeper";
-                LOGGER.info("Checking host alias settings in {}, {} container", podName, containerName);
-
-                LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
-                String output = cmdKubeClient().execInPodContainer(false, podName, containerName, "ping", "-c", "5", "strimzi").out();
-
-                LOGGER.info("Checking output of ping");
-                assertThat(output, containsString("PING strimzi (34.89.152.196)"));
-                assertThat(output, containsString("5 packets transmitted, 5 received"));
-
                 LOGGER.info("Checking the /etc/hosts file");
-                output = cmdKubeClient().execInPodContainer(false, podName, containerName, "cat", "/etc/hosts").out();
-                assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+                String output = cmdKubeClient().execInPodContainer(false, podName, containerName, "cat", "/etc/hosts").out();
+                assertThat(output, containsString(etcHostsData));
             }
         }
     }
