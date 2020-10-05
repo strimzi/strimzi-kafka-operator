@@ -839,9 +839,9 @@ public class CrdGenerator {
         ObjectNode itemResult = result;
         for (int i = 0; i < arrayDimension; i++) {
             itemResult.put("type", "array");
-            MinimumItems minimumItems = selectVersion(crdApiVersion, property, MinimumItems.class);
+            MinimumItems minimumItems = selectVersion(crApiVersion, property, MinimumItems.class);
             if (minimumItems != null) {
-                result.put("minimum", minimumItems.value());
+                result.put("minItems", minimumItems.value());
             }
             itemResult = itemResult.putObject("items");
         }

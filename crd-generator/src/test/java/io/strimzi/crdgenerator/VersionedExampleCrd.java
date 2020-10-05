@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import java.util.List;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 
@@ -79,6 +81,9 @@ public class VersionedExampleCrd<T, U extends Number, V extends U> extends Custo
     @Minimum(apiVersions = "v2+", value = 4)
     @Maximum(value = 10)
     public int someOtherInt;
+
+    @MinimumItems(apiVersions = "v2+", value = 2)
+    public List<String> listWithMinimum;
 
     @PresentInVersions("v1")
     public String removed;

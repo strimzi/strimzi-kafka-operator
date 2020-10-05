@@ -37,6 +37,10 @@ spec:
             type: "string"
             pattern: "v1Pattern"
             description: "V1 description."
+          listWithMinimum:
+            type: "array"
+            items:
+              type: "string"
           removed:
             type: "string"
           someInt:
@@ -76,6 +80,11 @@ spec:
             type: "string"
             pattern: "v2Pattern"
             description: "V2 description."
+          listWithMinimum:
+            type: "array"
+            minItems: 2
+            items:
+              type: "string"
           someInt:
             type: "integer"
             minimum: 4
