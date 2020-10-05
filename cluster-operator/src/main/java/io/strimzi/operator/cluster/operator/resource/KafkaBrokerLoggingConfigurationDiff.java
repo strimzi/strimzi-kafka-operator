@@ -113,9 +113,9 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
                 // everything that does not start with 'log4j.' is a variable definition
                 if (!line.startsWith("log4j.")) {
-                    int p = line.indexOf("=");
-                    if (p >= 0) {
-                        env.put(line.substring(0, p).trim(), line.substring(p + 1).trim());
+                    int foundIdx = line.indexOf("=");
+                    if (foundIdx >= 0) {
+                        env.put(line.substring(0, foundIdx).trim(), line.substring(foundIdx + 1).trim());
                     } else {
                         env.put(line.trim(), "");
                     }
@@ -139,8 +139,8 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                     parsed.put(name, value);
 
                 } else if (line.startsWith("log4j.rootLogger=")) {
-                    int startat = "log4j.rootLogger=".length();
-                    parsed.put("root", Util.expandVar(line.substring(startat).trim(), env));
+                    int startIdx = "log4j.rootLogger=".length();
+                    parsed.put("root", Util.expandVar(line.substring(startIdx).trim(), env));
 
                 } else {
                     log.debug("Skipping log4j line: {}", line);
