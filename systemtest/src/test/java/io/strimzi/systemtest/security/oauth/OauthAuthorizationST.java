@@ -271,6 +271,19 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(TEAM_A_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
+    /**
+     * 1) Try to send messages to topic starting with `x-` with producer from Dev Team A
+     * 2) Change the Oauth listener configuration -> add the maxSecondsWithoutReauthentication set to 30s
+     * 3) Try to send messages with delay of 1000ms (in the meantime, the permissions configuration will be changed)
+     * 4) Get all configuration from the Keycloak (realms, policies) and change the policy so the Dev Team A producer should not be able to send messages to the topic
+     *      starting with `x-` -> updating the policy through the Keycloak API
+     * 5) Wait for the WaitException to appear -> as the producer doesn't have permission for sending messages, the
+     *      job will be in error state
+     * 6) Change the permissions back and check that the messages are correctly set
+     *
+     *
+     * The re-authentication can be seen in the log of team-a-producer pod.
+     */
     @Test
     @Order(7)
     void testSessionReAuthentication() {
