@@ -16,7 +16,8 @@ endif::Downloading[]
 Strimzi release artifacts include sample YAML files to help you deploy the components of Strimzi to Kubernetes, perform common operations,
 and configure your Kafka cluster.
 
-You deploy Strimzi to a Kubernetes cluster using the `kubectl` command-line tool.
+Use `kubectl` to deploy Strimzi Cluster Operator from the `install/cluster-operator` folder from the downloaded zip file.
+In addition, if you want to use stand-alone installations of the Topic and User Operators with a Kafka cluster not managed by the Strimzi Cluster Operator, you can deploy them from the `install/topic-operator` and `install/user-operator` folders.
 
 NOTE: Additionally, Strimzi container images are available through the {DockerRepository}.
 However, we recommend that you use the YAML files provided to deploy Strimzi.
