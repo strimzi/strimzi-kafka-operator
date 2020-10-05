@@ -27,6 +27,11 @@ For example:
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+metadata:
+  labels:
+    app: my-cluster
+  name: my-cluster
+  namespace: myproject
 spec:
   kafka:
     # ...
@@ -41,7 +46,8 @@ spec:
     # ...
 ----
 +
-WARNING: Make sure that the name of the listener does not exceed 63 characters.
+WARNING: An OpenShift Route address comprises the name of the Kafka cluster, the name of the listener, and the name of the namespace it is created in.
+For example, `my-cluster-external-myproject`. Be careful with naming as the whole length of the address must not exceed 63 characters, with an 11-character limit for the listener name.
 
 . Create or update the resource.
 +

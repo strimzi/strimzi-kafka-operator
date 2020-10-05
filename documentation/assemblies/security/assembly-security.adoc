@@ -3,7 +3,7 @@
 // master.adoc
 
 [id='security-{context}']
-= Managing TLS certificates for secure communication
+= Managing TLS certificates
 
 Strimzi supports encrypted communication between the Kafka and Strimzi components using the TLS protocol.
 Communication between Kafka brokers (interbroker communication), between ZooKeeper nodes (internodal communication), and between these and the Strimzi operators is always encrypted.
