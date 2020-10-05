@@ -1537,7 +1537,7 @@ public class KafkaClusterTest {
 
     private Secret generateBrokerSecret(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(),emptyMap(), null, true);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
 
         kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses, true);
         return kc.generateBrokersSecret();

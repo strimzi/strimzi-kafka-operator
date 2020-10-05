@@ -576,7 +576,7 @@ public abstract class Ca {
         }
 
         caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels,additonalLabels),
-                Util.mergeLabelsOrAnnotations(additonalAnnotations,certAnnotations), ownerRef);
+                Util.mergeLabelsOrAnnotations(certAnnotations,additonalAnnotations), ownerRef);
 
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels,
                 keyAnnotations, ownerRef);
