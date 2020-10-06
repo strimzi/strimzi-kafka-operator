@@ -53,11 +53,14 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     @Override
     protected Future<ReconcileResult<Service>> internalPatch(String namespace, String name, Service current, Service desired) {
         try {
-            if (current.getSpec() != null && desired.getSpec() != null
-                    && (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
-                    || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType()))))   {
-                patchNodePorts(current, desired);
-                patchHealthCheckPorts(current, desired);
+            if (current.getSpec() != null && desired.getSpec() != null) {
+                if (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
+                        || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType())))   {
+                    patchNodePorts(current, desired);
+                    patchHealthCheckPorts(current, desired);
+                }
+
+                patchIpFamily(current, desired);
             }
 
             return super.internalPatch(namespace, name, current, desired);
@@ -100,6 +103,19 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                 && desired.getSpec().getHealthCheckNodePort() == null) {
             desired.getSpec().setHealthCheckNodePort(current.getSpec().getHealthCheckNodePort());
         }
+    }
+
+    /**
+     * DualStack Kubernetes clusters (https://kubernetes.io/docs/concepts/services-networking/dual-stack/) specify
+     * ipFamily field of the Service spec section. This field indicates whether IPv4 or IPv6 should be used. This field
+     * is immutable and cannot be changed. This method is used to patch the service and set the value from the current
+     * resource in the desired to allow to patch / reconcile the Service. Without this the reconciliation would fail.
+     *
+     * @param current   Current Service
+     * @param desired   Desired Service
+     */
+    protected void patchIpFamily(Service current, Service desired) {
+        desired.getSpec().setIpFamily(current.getSpec().getIpFamily());
     }
 
     /**
