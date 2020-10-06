@@ -917,7 +917,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaVersionChange(boolean postponedUpgrade) {
             boolean shouldBePostponed = kafkaAssembly.getSpec().getKafka().getVersion() == null;
 
-            if (shouldBePostponed != postponedUpgrade) {
+            if (versionChange == null)   {
+                log.debug("{}: Kafka versions are not known yet, upgrade iwll be skipped", reconciliation);
+                return Future.succeededFuture(this);
+            } else if (shouldBePostponed != postponedUpgrade) {
                 log.debug("{}: Upgrade should not be done in this phase", reconciliation);
                 return Future.succeededFuture(this);
             } else if (versionChange.isNoop()) {
