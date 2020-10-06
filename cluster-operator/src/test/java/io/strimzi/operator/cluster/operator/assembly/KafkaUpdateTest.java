@@ -216,7 +216,9 @@ public class KafkaUpdateTest {
                         }
                     }
                 }
-                .kafkaVersionChange();
+                .kafkaVersionChangeCheck()
+                .compose(res -> res.kafkaVersionChange(false));
+
         AtomicReference<UpgradeException> ex = new AtomicReference<>();
         future.onComplete(ar -> {
             if (ar.failed()) {
