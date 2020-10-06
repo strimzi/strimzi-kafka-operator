@@ -320,43 +320,38 @@ public class KafkaRoller {
         }
 
         try {
-            if (isCrashlooping(pod)) {
-                log.warn("{}: Pod {} will be force-rolled, due to crashloop state.", reconciliation, podName(podId));
-                restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-            } else {
-                RestartPlan restartPlan = restartPlan(podId, pod, restartContext);
-                if (restartPlan.needsRestart || restartPlan.needsReconfig) {
-                    if (deferController(podId, restartContext)) {
-                        log.debug("{}: Pod {} is controller and there are other pods to roll", reconciliation, podId);
-                        throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
-                    } else {
-                        if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, false)) {
-                            // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                            if (!maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
-                                log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
-                                restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                            } else {
-                                // TODO do we need some check here that the broker is still OK?
-                                awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                            }
-                        } else {
-                            log.debug("{}: Pod {} cannot be rolled right now", reconciliation, podId);
-                            throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
-                        }
-                    }
+            RestartPlan restartPlan = restartPlan(podId, pod, restartContext);
+            if (restartPlan.needsRestart || restartPlan.needsReconfig) {
+                if (deferController(podId, restartContext)) {
+                    log.debug("{}: Pod {} is controller and there are other pods to roll", reconciliation, podId);
+                    throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                 } else {
-                    // By testing even pods which don't need needsRestart for readiness we prevent successive reconciliations
-                    // from taking out a pod each time (due, e.g. to a configuration error).
-                    // We rely on Kube to try restarting such pods.
-                    log.debug("{}: Pod {} does not need to be restarted", reconciliation, podId);
-                    log.debug("{}: Waiting for non-restarted pod {} to become ready", reconciliation, podId);
-                    await(isReady(namespace, KafkaCluster.kafkaPodName(cluster, podId)), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
-                    log.debug("{}: Pod {} is now ready", reconciliation, podId);
+                    if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, false)) {
+                        // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
+                        if (!maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
+                            log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
+                            restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                        } else {
+                            // TODO do we need some check here that the broker is still OK?
+                            awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                        }
+                    } else {
+                        log.debug("{}: Pod {} cannot be rolled right now", reconciliation, podId);
+                        throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
+                    }
                 }
+            } else {
+                // By testing even pods which don't need needsRestart for readiness we prevent successive reconciliations
+                // from taking out a pod each time (due, e.g. to a configuration error).
+                // We rely on Kube to try restarting such pods.
+                log.debug("{}: Pod {} does not need to be restarted", reconciliation, podId);
+                log.debug("{}: Waiting for non-restarted pod {} to become ready", reconciliation, podId);
+                await(isReady(namespace, KafkaCluster.kafkaPodName(cluster, podId)), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
+                log.debug("{}: Pod {} is now ready", reconciliation, podId);
             }
         } catch (ForceableProblem e) {
-            if (restartContext.backOff.done() || e.forceNow) {
-                if (isCrashlooping(pod) || canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
+            if (isCrashlooping(pod) || restartContext.backOff.done() || e.forceNow) {
+                if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
                     log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {

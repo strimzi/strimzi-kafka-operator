@@ -14,9 +14,9 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,6 +41,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
@@ -126,27 +127,33 @@ class KafkaRollerST extends AbstractST {
     }
 
     @Test
-    void testKafkaPodCrashLooping() throws InterruptedException {
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 3, 3)
+    void testKafkaPodCrashLooping() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
-                        .withXx(Collections.singletonMap("UseParNewGC", "true"))
+                        .withXx(Collections.emptyMap())
                     .endJvmOptions()
                 .endKafka()
             .endSpec()
-            .build());
-
-        TestUtils.waitFor("kafka STS to be created", Constants.GLOBAL_POLL_INTERVAL, 60_000, () ->
-            kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)) != null
-        );
+            .done();
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
-        TestUtils.waitFor("one of the pods to be rolled", Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(20).toMillis(), () ->
-            !StatefulSetUtils.ssSnapshot(kafkaName).equals(kafkaPods)
-        );
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")));
+
+        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()));
+
+        long startTime = System.currentTimeMillis();
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        long endTime = System.currentTimeMillis();
+
+        assertThat(Duration.ofMillis(endTime - startTime).toMinutes(), is(lessThan(20L)));
     }
 
     @BeforeAll
