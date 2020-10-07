@@ -139,15 +139,6 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         if (!s.isMissingNode()
             && !t.isMissingNode()) {
             if ("cpu".equals(group)) {
-                try {
-                    if (!s.asText().equals(t.asText())) {
-                        // try to parse previous resources as it might be incorrect
-                        Quantities.parseCpuAsMilliCpus(s.asText());
-                    }
-                } catch (IllegalArgumentException e) {
-                    log.warn("Previous CPU resource set to invalid value {}. Considering as a difference", s.asText());
-                    return false;
-                }
                 // Ignore single millicpu differences as they could be due to rounding error
                 if (Math.abs(Quantities.parseCpuAsMilliCpus(s.asText()) - Quantities.parseCpuAsMilliCpus(t.asText())) < 1) {
                     return true;

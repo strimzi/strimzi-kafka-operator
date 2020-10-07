@@ -190,7 +190,7 @@ class KafkaRollerST extends AbstractST {
                 .done();
 
         Map<String, Quantity> requests = new HashMap<>(2);
-        requests.put("cpu", new Quantity("1000"));
+        requests.put("cpu", new Quantity("10"));
         requests.put("memory", new Quantity("512Mi"));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
