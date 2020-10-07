@@ -340,6 +340,7 @@ public class StrimziUpgradeST extends AbstractST {
             .withClusterName(kafkaClusterName)
             .withKafkaUsername(userName)
             .withMessageCount(produceMessagesCount)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -384,8 +385,10 @@ public class StrimziUpgradeST extends AbstractST {
         final String afterUpgradeKafkaClientsPodName =
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(afterUpgradeKafkaClientsPodName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));

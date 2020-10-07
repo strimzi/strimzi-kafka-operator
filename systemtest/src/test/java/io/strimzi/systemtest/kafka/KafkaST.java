@@ -986,13 +986,13 @@ class KafkaST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
             ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
                     new GenericKafkaListenerBuilder()
-                            .withName("plain")
+                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
                             .build(),
                     new GenericKafkaListenerBuilder()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)

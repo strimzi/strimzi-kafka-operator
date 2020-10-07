@@ -147,6 +147,8 @@ public class VerifiableClient {
             }
         }
 
+        LOGGER.debug("This is all args {}, which are set.", this.clientArgumentMap);
+
         this.setArguments(this.clientArgumentMap);
         this.executable = ClientType.getCommand(clientType);
     }

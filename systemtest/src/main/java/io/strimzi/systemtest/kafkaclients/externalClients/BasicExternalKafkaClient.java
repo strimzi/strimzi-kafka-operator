@@ -42,6 +42,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
 
     private BasicExternalKafkaClient(Builder builder) {
         super(builder);
+
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
     }
 
     @Override
@@ -58,17 +62,13 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
         return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
-    public int sendMessagePlainWithHugeTimeout() {
-        return sendMessagesPlain(Constants.HUGE_CLIENTS_TIMEOUT);
-    }
-
     /**
      * Send messages to external entrypoint of the cluster with PLAINTEXT security protocol setting
      * @return sent message count
      */
     public int sendMessagesPlain(long timeoutMs) {
 
-        String clientName = "sender-plain-" + this.clusterName;
+        String clientName = "sender-plain-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -108,12 +108,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
      */
     public int sendMessagesTls(long timeoutMs) {
 
-        String clientName = "sender-ssl" + this.clusterName;
+        String clientName = "sender-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ProducerProperties properties = this.producerProperties;
@@ -155,7 +153,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
      */
     public int receiveMessagesPlain(long timeoutMs) {
 
-        String clientName = "receiver-plain-" + clusterName;
+        String clientName = "receiver-plain-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -197,12 +195,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
      */
     public int receiveMessagesTls(long timeoutMs) {
 
-        String clientName = "receiver-ssl-" + clusterName;
+        String clientName = "receiver-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ConsumerProperties properties = this.consumerProperties;

@@ -19,6 +19,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +97,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
         clientSecretName = builder.clientSecretName;
         oauthTokenEndpointUri = builder.oauthTokenEndpointUri;
         introspectionEndpointUri = builder.introspectionEndpointUri;
+
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
     }
 
     public int sendMessagesPlain() {
@@ -104,7 +109,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
 
     @Override
     public int sendMessagesPlain(long timeoutMs) {
-        String clientName = "sender-plain-" + clusterName;
+        String clientName = "sender-plain-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -143,12 +148,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
 
     @Override
     public int sendMessagesTls(long timeoutMs) {
-        String clientName = "sender-ssl" + clusterName;
+        String clientName = "sender-ssl" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ProducerProperties properties = this.producerProperties;
@@ -190,7 +193,7 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
 
     @Override
     public int receiveMessagesPlain(long timeoutMs) {
-        String clientName = "receiver-plain-" + clusterName;
+        String clientName = "receiver-plain-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -232,12 +235,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
     @Override
     public int receiveMessagesTls(long timeoutMs) {
 
-        String clientName = "receiver-ssl-" + clusterName;
+        String clientName = "receiver-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) : this.caCertName;
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
         ConsumerProperties properties = this.consumerProperties;

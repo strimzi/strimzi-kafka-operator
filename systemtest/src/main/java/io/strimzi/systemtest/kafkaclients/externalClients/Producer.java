@@ -37,17 +37,6 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
         this.producer = KafkaProducer.create(vertx, properties.getProperties());
     }
 
-    Producer(ProducerProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate,
-             String topic, String clientName) {
-        super(resultPromise, msgCntPredicate);
-        this.properties = properties;
-        this.topic = topic;
-        this.partition = null;
-        this.clientName = clientName;
-        this.vertx = Vertx.vertx();
-        this.producer = KafkaProducer.create(vertx, properties.getProperties());
-    }
-
     @Override
     protected void handleClient() {
         LOGGER.info("Creating instance of Vert.x for the client {}", this.getClass().getName());

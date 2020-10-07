@@ -126,7 +126,9 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Verifying stability of kafka pods");
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
@@ -140,7 +142,9 @@ class RollingUpdateST extends AbstractST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -149,8 +153,10 @@ class RollingUpdateST extends AbstractST {
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
-        internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(newTopicName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -198,7 +204,9 @@ class RollingUpdateST extends AbstractST {
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         PodUtils.waitForPendingPod(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
@@ -221,7 +229,9 @@ class RollingUpdateST extends AbstractST {
         // Therefore we use longer timeout.
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, Duration.ofMinutes(12).toMillis());
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
@@ -229,8 +239,10 @@ class RollingUpdateST extends AbstractST {
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
-        internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(newTopicName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -301,7 +313,9 @@ class RollingUpdateST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, scaleTo);
         LOGGER.info("Kafka scale up to {} finished", scaleTo);
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
@@ -318,7 +332,10 @@ class RollingUpdateST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zookeeperScaleTo);
         LOGGER.info("Kafka scale up to {} finished", zookeeperScaleTo);
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
+
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
 
@@ -331,7 +348,9 @@ class RollingUpdateST extends AbstractST {
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -343,8 +362,10 @@ class RollingUpdateST extends AbstractST {
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
-        internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(newTopicName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -405,7 +426,9 @@ class RollingUpdateST extends AbstractST {
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -414,8 +437,10 @@ class RollingUpdateST extends AbstractST {
         String scaleUpTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, scaleUpTopicName, 1, 1).done();
 
-        internalKafkaClient.setTopicName(scaleUpTopicName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(scaleUpTopicName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -431,7 +456,9 @@ class RollingUpdateST extends AbstractST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), initialZkReplicas);
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         // Wait for one zk pods will became leader and others follower state
         KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2);
@@ -442,8 +469,10 @@ class RollingUpdateST extends AbstractST {
         String scaleDownTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, scaleDownTopicName, 1, 1).done();
 
-        internalKafkaClient.setTopicName(scaleDownTopicName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(scaleDownTopicName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -599,13 +628,13 @@ class RollingUpdateST extends AbstractST {
             kafka.getSpec().getKafka()
                     .setListeners(new ArrayOrObjectKafkaListeners(asList(
                             new GenericKafkaListenerBuilder()
-                                    .withName("plain")
+                                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                     .withPort(9092)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(false)
                                     .build(),
                             new GenericKafkaListenerBuilder()
-                                    .withName("tls")
+                                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                     .withPort(9093)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(true)

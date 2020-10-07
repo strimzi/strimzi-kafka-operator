@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -56,6 +57,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(internalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
@@ -94,7 +96,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)

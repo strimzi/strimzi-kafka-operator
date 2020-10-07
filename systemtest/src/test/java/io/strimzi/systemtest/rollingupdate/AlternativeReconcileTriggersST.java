@@ -156,7 +156,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                 || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -165,8 +167,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).done();
 
-        internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(newTopicName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));

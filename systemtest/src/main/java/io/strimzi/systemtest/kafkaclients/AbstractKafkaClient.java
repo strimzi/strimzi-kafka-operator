@@ -42,8 +42,8 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         private String clusterName;
         private int messageCount;
         private String consumerGroup;
-        private String kafkaUsername;
-        private SecurityProtocol securityProtocol;
+        protected String kafkaUsername;
+        protected SecurityProtocol securityProtocol;
         private String caCertName;
         protected String listenerName;
         private ProducerProperties producerProperties;
@@ -157,6 +157,8 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         if (namespaceName == null || namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
         if (clusterName == null  || clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
         if (messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (listenerName == null || listenerName.isEmpty()) throw new InvalidParameterException("Listener name is not set.");
+
         if (consumerGroup == null || consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one.");
             consumerGroup = ClientUtils.generateRandomConsumerGroup();
@@ -168,6 +170,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
         if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.listenerName == null || builder.listenerName.isEmpty()) throw new InvalidParameterException("Listener name is not set.");
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one.");
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
@@ -191,25 +194,6 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     }
     public ConsumerProperties getConsumerProperties() {
         return consumerProperties;
-    }
-    public void setConsumerGroup(String consumerGroup) {
-        this.consumerGroup = consumerGroup;
-    }
-
-    public void setTopicName(String topicName) {
-        this.topicName = topicName;
-    }
-
-    public void setKafkaUsername(String kafkaUsername) {
-        this.kafkaUsername = kafkaUsername;
-    }
-
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
-    public void setCaCertName(String caCertName) {
-        this.caCertName = caCertName;
     }
 
     public String getBootstrapServerFromStatus() {
@@ -235,12 +219,6 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     }
     public Integer getPartition() {
         return partition;
-    }
-    public String getNamespaceName() {
-        return namespaceName;
-    }
-    public String getClusterName() {
-        return clusterName;
     }
     public int getMessageCount() {
         return messageCount;

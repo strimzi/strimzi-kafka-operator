@@ -176,6 +176,7 @@ class SecurityST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -229,7 +230,9 @@ class SecurityST extends AbstractST {
                     value, is(not(initialCaCerts.get(secretName))));
         }
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
 
@@ -247,8 +250,10 @@ class SecurityST extends AbstractST {
         defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .build();
 
         LOGGER.info("Checking consumed messages to pod:{}", MirrorMaker.defaultMirrorMakerMessageHandler$::new);
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -331,6 +336,7 @@ class SecurityST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -400,7 +406,10 @@ class SecurityST extends AbstractST {
         }
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             MESSAGE_COUNT,
@@ -414,8 +423,10 @@ class SecurityST extends AbstractST {
         defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
 
@@ -476,13 +487,13 @@ class SecurityST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("plain")
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
                             .endGenericKafkaListener()
                             .addNewGenericKafkaListener()
-                                .withName("tls")
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
@@ -530,6 +541,7 @@ class SecurityST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -699,7 +711,7 @@ class SecurityST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("plain")
+                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
@@ -741,6 +753,7 @@ class SecurityST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
+            .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -752,15 +765,16 @@ class SecurityST extends AbstractST {
 
         String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(deniedKafkaClientsPodName);
-        internalKafkaClient.setTopicName(topic1);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        InternalKafkaClient newInternalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(deniedKafkaClientsPodName)
+            .withTopicName(topic1)
+            .build();
 
         LOGGER.info("Verifying that {} pod is not able to exchange messages", deniedKafkaClientsPodName);
         assertThrows(AssertionError.class, () ->  {
-            internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesPlain(),
-                internalKafkaClient.receiveMessagesPlain()
+            newInternalKafkaClient.checkProducedAndConsumedMessages(
+                newInternalKafkaClient.sendMessagesPlain(),
+                newInternalKafkaClient.receiveMessagesPlain()
             );
         });
 
@@ -789,7 +803,7 @@ class SecurityST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -839,16 +853,18 @@ class SecurityST extends AbstractST {
 
         String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
-        internalKafkaClient.setPodName(deniedKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
-        internalKafkaClient.setTopicName(topic1);
+        InternalKafkaClient newInternalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(deniedKafkaClientsPodName)
+            .withTopicName(topic1)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         LOGGER.info("Verifying that {} pod is  not able to exchange messages", deniedKafkaClientsPodName);
 
         assertThrows(AssertionError.class, () -> {
-            internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(),
-                internalKafkaClient.receiveMessagesTls()
+            newInternalKafkaClient.checkProducedAndConsumedMessages(
+                newInternalKafkaClient.sendMessagesTls(),
+                newInternalKafkaClient.receiveMessagesTls()
             );
         });
     }
@@ -977,7 +993,7 @@ class SecurityST extends AbstractST {
                     .endKafkaAuthorizationSimple()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
@@ -1049,13 +1065,14 @@ class SecurityST extends AbstractST {
             .endSpec()
             .done();
 
-        basicExternalKafkaClient.setConsumerGroup(consumerGroupName);
-        basicExternalKafkaClient.setKafkaUsername(kafkaUserRead);
+        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+            .withKafkaUsername(kafkaUserRead)
+            .build();
 
         assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
-        assertThrows(WaitException.class, () -> basicExternalKafkaClient.sendMessagesTls());
+        assertThrows(WaitException.class, newBasicExternalKafkaClient::sendMessagesTls);
     }
 
     @Test
@@ -1070,7 +1087,7 @@ class SecurityST extends AbstractST {
                     .endKafkaAuthorizationSimple()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
@@ -1143,16 +1160,20 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", nonSuperuserName, TOPIC_NAME);
 
-        basicExternalKafkaClient.setKafkaUsername(nonSuperuserName);
+        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+            .withKafkaUsername(nonSuperuserName)
+            .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
                 " ACLs on only write operation", nonSuperuserName, TOPIC_NAME);
 
-        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
-        assertThrows(WaitException.class, () -> basicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(WaitException.class, () -> newBasicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
     }
 
     @Test
@@ -1183,7 +1204,9 @@ class SecurityST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(),
@@ -1225,7 +1248,9 @@ class SecurityST extends AbstractST {
             }
         );
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
@@ -1244,7 +1269,9 @@ class SecurityST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
         received = internalKafkaClient.receiveMessagesTls();
@@ -1254,8 +1281,10 @@ class SecurityST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
-        internalKafkaClient.setTopicName(topicName);
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .withTopicName(topicName)
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesTls(),

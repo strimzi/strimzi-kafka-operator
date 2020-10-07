@@ -141,6 +141,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         // Check brokers availability
@@ -333,21 +334,21 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             kafka.getSpec().getKafka()
                     .setListeners(new ArrayOrObjectKafkaListeners(asList(
                             new GenericKafkaListenerBuilder()
-                                    .withName("plain")
+                                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                     .withPort(9092)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(false)
                                     .withAuth(new KafkaListenerAuthenticationScramSha512())
                                     .build(),
                             new GenericKafkaListenerBuilder()
-                                    .withName("tls")
+                                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                     .withPort(9093)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(true)
                                     .withAuth(new KafkaListenerAuthenticationTls())
                                     .build(),
                             new GenericKafkaListenerBuilder()
-                                    .withName("external")
+                                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                     .withPort(9094)
                                     .withType(KafkaListenerType.NODEPORT)
                                     .withTls(true)

@@ -124,7 +124,7 @@ public class TopicST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
@@ -138,7 +138,7 @@ public class TopicST extends AbstractST {
 
         properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaResource.kafkaClient().inNamespace(NAMESPACE)
             .withName(clusterName).get().getStatus().getListeners().stream()
-            .filter(listener -> listener.getType().equals("external"))
+            .filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
             .findFirst()
             .orElseThrow(RuntimeException::new)
             .getBootstrapServers());
@@ -188,7 +188,7 @@ public class TopicST extends AbstractST {
 
         assertThat(topicCRDMessage, containsString(exceptedMessage));
 
-        cmdKubeClient().deleteByName("kafkatopic", topicName);
+        cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_SINGULAR, topicName);
         KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
     }
 

@@ -70,12 +70,12 @@ public class ProducerProperties extends AbstractKafkaClientProperties<ProducerPr
         super(builder);
 
         if (builder.properties.getProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG) == null || builder.properties.getProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG).isEmpty()) {
-            LOGGER.info("Setting default value of {} to {}", ProducerConfig.MAX_BLOCK_MS_CONFIG, DEFAULT_MAX_BLOG_MS_CONFIG);
+            LOGGER.debug("Setting default value of {} to {}", ProducerConfig.MAX_BLOCK_MS_CONFIG, DEFAULT_MAX_BLOG_MS_CONFIG);
             properties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, DEFAULT_MAX_BLOG_MS_CONFIG);
         }
 
         if (builder.properties.getProperty(ProducerConfig.ACKS_CONFIG) == null || builder.properties.getProperty(ProducerConfig.ACKS_CONFIG).isEmpty()) {
-            LOGGER.info("Setting default value of {} to {}", ProducerConfig.ACKS_CONFIG, DEFAULT_ACKS_CONFIG);
+            LOGGER.debug("Setting default value of {} to {}", ProducerConfig.ACKS_CONFIG, DEFAULT_ACKS_CONFIG);
             properties.setProperty(ProducerConfig.ACKS_CONFIG, DEFAULT_ACKS_CONFIG);
         }
 

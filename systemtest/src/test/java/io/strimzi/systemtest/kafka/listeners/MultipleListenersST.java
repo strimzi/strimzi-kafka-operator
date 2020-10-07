@@ -4,12 +4,12 @@
  */
 package io.strimzi.systemtest.kafka.listeners;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
@@ -65,6 +66,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ACCEPTANCE)
     @Test
     void testCombinationOfInternalAndExternalListeners() {
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
@@ -170,7 +172,10 @@ public class MultipleListenersST extends AbstractST {
                         .withKafkaUsername(kafkaUsername)
                         .withListenerName(listener.getName())
                         .withSecurityProtocol(SecurityProtocol.SSL)
+                        .withListenerName(listener.getName())
                         .build();
+
+                    LOGGER.info("Verifying {} listener", Constants.TLS_LISTENER_DEFAULT_NAME);
 
                     // verify phase
                     externalTlsKafkaClient.verifyProducedAndConsumedMessages(
@@ -186,6 +191,8 @@ public class MultipleListenersST extends AbstractST {
                         .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                         .withListenerName(listener.getName())
                         .build();
+
+                    LOGGER.info("Verifying {} listener", Constants.PLAIN_LISTENER_DEFAULT_NAME);
 
                     // verify phase
                     externalPlainKafkaClient.verifyProducedAndConsumedMessages(
@@ -203,14 +210,14 @@ public class MultipleListenersST extends AbstractST {
                         ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-tls").get(0).getMetadata().getName();
 
                     InternalKafkaClient internalTlsKafkaClient = new InternalKafkaClient.Builder()
-                            .withUsingPodName(kafkaClientsTlsPodName)
-                            .withBootstrapServer(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + listener.getPort())
-                            .withTopicName(topicName)
-                            .withNamespaceName(NAMESPACE)
-                            .withClusterName(CLUSTER_NAME)
-                            .withKafkaUsername(kafkaUsername)
-                            .withMessageCount(MESSAGE_COUNT)
-                            .build();
+                        .withUsingPodName(kafkaClientsTlsPodName)
+                        .withListenerName(listener.getName())
+                        .withTopicName(topicName)
+                        .withNamespaceName(NAMESPACE)
+                        .withClusterName(CLUSTER_NAME)
+                        .withKafkaUsername(kafkaUsername)
+                        .withMessageCount(MESSAGE_COUNT)
+                        .build();
 
                     LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsTlsPodName);
 
@@ -227,7 +234,7 @@ public class MultipleListenersST extends AbstractST {
 
                     InternalKafkaClient internalPlainKafkaClient = new InternalKafkaClient.Builder()
                         .withUsingPodName(kafkaClientsPlainPodName)
-                        .withBootstrapServer(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + listener.getPort())
+                        .withListenerName(listener.getName())
                         .withTopicName(topicName)
                         .withNamespaceName(NAMESPACE)
                         .withClusterName(CLUSTER_NAME)
@@ -268,7 +275,7 @@ public class MultipleListenersST extends AbstractST {
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
-                            .withPort(1090 + j)
+                            .withPort(10900 + j)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(stochasticCommunication)
                             .build());
@@ -283,7 +290,7 @@ public class MultipleListenersST extends AbstractST {
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
-                            .withPort(1190 + j)
+                            .withPort(11900 + j)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(stochasticCommunication)
                             .build());
@@ -307,7 +314,7 @@ public class MultipleListenersST extends AbstractST {
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
                             .withName(generateRandomListenerName())
-                            .withPort(1390 + j)
+                            .withPort(13900 + j)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(stochasticCommunication)
                             .build());

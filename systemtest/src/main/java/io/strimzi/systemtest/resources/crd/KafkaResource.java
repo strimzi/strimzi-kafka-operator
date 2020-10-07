@@ -158,13 +158,13 @@ public class KafkaResource {
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("plain")
+                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -296,7 +296,7 @@ public class KafkaResource {
         List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
 
         GenericKafkaListener tlsListener = listenerName == null || listenerName.isEmpty() ?
-            listeners.stream().filter(listener -> "tls".equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> Constants.TLS_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
             listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
         return tlsListener.getConfiguration() == null ?
                 KafkaResources.clusterCaCertificateSecretName(clusterName) : tlsListener.getConfiguration().getBrokerCertChainAndKey().getSecretName();
@@ -306,7 +306,7 @@ public class KafkaResource {
         List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
 
         GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
-            listeners.stream().filter(listener -> "external".equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> Constants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
             listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
         return external.getConfiguration() == null ?
             KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();

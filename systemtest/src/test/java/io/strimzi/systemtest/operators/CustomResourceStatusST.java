@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -344,7 +345,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     void testKafkaStatusCertificate() {
-        String certs = getKafkaStatusCertificates("tls", NAMESPACE, CLUSTER_NAME);
+        String certs = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, CLUSTER_NAME);
         String secretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
@@ -437,19 +438,19 @@ class CustomResourceStatusST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("plain")
+                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
@@ -472,15 +473,15 @@ class CustomResourceStatusST extends AbstractST {
 
         for (ListenerStatus listener : kafkaStatus.getListeners()) {
             switch (listener.getType()) {
-                case "tls":
+                case Constants.TLS_LISTENER_DEFAULT_NAME:
                     assertThat("TLS bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(9093));
                     assertThat("TLS bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
-                case "plain":
+                case Constants.PLAIN_LISTENER_DEFAULT_NAME:
                     assertThat("Plain bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(9092));
                     assertThat("Plain bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
-                case "external":
+                case Constants.EXTERNAL_LISTENER_DEFAULT_NAME:
                     Service extBootstrapService = kubeClient(NAMESPACE).getClient().services()
                             .inNamespace(NAMESPACE)
                             .withName(externalBootstrapServiceName(CLUSTER_NAME))

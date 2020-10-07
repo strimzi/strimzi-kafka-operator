@@ -104,7 +104,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                 .editKafka()
                     .editListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
@@ -132,19 +132,19 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName("plain")
+                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(false)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("tls")
+                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(true)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
@@ -183,13 +183,13 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName("plain")
+                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(false)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
@@ -221,7 +221,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
@@ -257,7 +257,9 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
-        basicExternalKafkaClientTls.setKafkaUsername(userName);
+        BasicExternalKafkaClient newBasicExternalKafkaClientTls = basicExternalKafkaClientTls.toBuilder()
+            .withKafkaUsername(userName)
+            .build();
 
         basicExternalKafkaClientPlain.verifyProducedAndConsumedMessages(
             basicExternalKafkaClientPlain.sendMessagesPlain(),
@@ -265,8 +267,8 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         );
 
         assertThrows(Exception.class, () -> {
-            basicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            basicExternalKafkaClientTls.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
+            newBasicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
+            newBasicExternalKafkaClientTls.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
             LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to plain communication");
         });
 
@@ -274,13 +276,13 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName("tls")
+                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(true)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
@@ -308,7 +310,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(false)
@@ -319,8 +321,8 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
 
         assertThrows(Exception.class, () -> {
-            basicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
-            basicExternalKafkaClientTls.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
+            newBasicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
+            newBasicExternalKafkaClientTls.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
             LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to plain communication");
         });
 

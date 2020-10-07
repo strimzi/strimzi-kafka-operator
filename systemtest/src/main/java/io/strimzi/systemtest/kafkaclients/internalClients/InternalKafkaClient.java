@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
@@ -28,20 +27,13 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
     private String podName;
-    private String bootstrapServer;
 
     public static class Builder extends AbstractKafkaClient.Builder<Builder> {
 
         private String podName;
-        private String bootstrapServer;
 
         public Builder withUsingPodName(String podName) {
             this.podName = podName;
-            return this;
-        }
-
-        public Builder withBootstrapServer(String bootstrapServer) {
-            this.bootstrapServer = bootstrapServer;
             return this;
         }
 
@@ -54,7 +46,6 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     private InternalKafkaClient(Builder builder) {
         super(builder);
         podName = builder.podName;
-        bootstrapServer = builder.bootstrapServer;
     }
 
     @Override
@@ -63,10 +54,9 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     @Override
-    protected Builder toBuilder() {
+    public Builder toBuilder() {
         return ((Builder) super.toBuilder())
-            .withUsingPodName(podName)
-            .withBootstrapServer(bootstrapServer);
+            .withUsingPodName(podName);
     }
 
     public int sendMessagesPlain() {
@@ -80,15 +70,13 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     @Override
     public int sendMessagesPlain(long timeout) {
 
-        bootstrapServer = bootstrapServer == null ? KafkaResources.plainBootstrapAddress(clusterName) : bootstrapServer;
-
         VerifiableClient producer = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_PRODUCER)
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(bootstrapServer)
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .build();
 
@@ -112,15 +100,13 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     @Override
     public int sendMessagesTls(long timeout) {
 
-        bootstrapServer = bootstrapServer == null ? KafkaResources.tlsBootstrapAddress(clusterName) : bootstrapServer;
-
         VerifiableClient producerTls = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_PRODUCER)
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(bootstrapServer)
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .build();
 
@@ -144,15 +130,13 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     @Override
     public int receiveMessagesPlain(long timeout) {
 
-        bootstrapServer = bootstrapServer == null ? KafkaResources.plainBootstrapAddress(clusterName) : bootstrapServer;
-
         VerifiableClient consumer = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_CONSUMER)
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(bootstrapServer)
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .withConsumerGroupName(consumerGroup)
             .withConsumerInstanceId("instance" + new Random().nextInt(Integer.MAX_VALUE))
@@ -182,15 +166,13 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     @Override
     public int receiveMessagesTls(long timeoutMs) {
 
-        bootstrapServer = bootstrapServer == null ? KafkaResources.tlsBootstrapAddress(clusterName) : bootstrapServer;
-
         VerifiableClient consumerTls = new VerifiableClient.VerifiableClientBuilder()
             .withClientType(CLI_KAFKA_VERIFIABLE_CONSUMER)
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(bootstrapServer)
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .withConsumerGroupName(consumerGroup)
             .withConsumerInstanceId("instance" + new Random().nextInt(Integer.MAX_VALUE))
@@ -261,14 +243,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
         return receivedMessages;
     }
 
-    public void setPodName(String podName) {
-        this.podName = podName;
-    }
-
     public String getPodName() {
         return podName;
-    }
-    public String getBootstrapServer() {
-        return bootstrapServer;
     }
 }
