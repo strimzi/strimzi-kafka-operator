@@ -12,15 +12,6 @@ metadata:
     heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
-  versions:
-    - name: v1beta1
-      served: true
-      storage: true
-    - name: v1alpha1
-      served: true
-      storage: false
-  version: v1beta1
-  scope: Namespaced
   names:
     kind: KafkaConnectS2I
     listKind: KafkaConnectS2IList
@@ -30,6 +21,7 @@ spec:
       - kcs2i
     categories:
       - strimzi
+  scope: Namespaced
   additionalPrinterColumns:
     - name: Desired replicas
       description: The desired number of Kafka Connect replicas
@@ -41,6 +33,16 @@ spec:
       specReplicasPath: .spec.replicas
       statusReplicasPath: .status.replicas
       labelSelectorPath: .status.labelSelector
+  conversion:
+    strategy: None
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+    - name: v1alpha1
+      served: true
+      storage: false
+  version: v1beta1
   validation:
     openAPIV3Schema:
       properties:

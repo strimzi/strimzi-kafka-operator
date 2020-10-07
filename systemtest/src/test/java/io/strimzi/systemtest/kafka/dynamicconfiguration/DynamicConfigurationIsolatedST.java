@@ -149,7 +149,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
                     .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
@@ -194,7 +194,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
                     .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
@@ -287,7 +287,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withNewKafkaListenerAuthenticationTlsAuth()
                     .endKafkaListenerAuthenticationTlsAuth()
                     .build()
-            ), null));
+            )));
         });
 
         // TODO: remove it ?
@@ -313,7 +313,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(false)
                     .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);

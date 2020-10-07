@@ -615,7 +615,7 @@ class RollingUpdateST extends AbstractST {
                                         .endBootstrap()
                                     .endConfiguration()
                                     .build()
-                    ), null));
+                    )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
