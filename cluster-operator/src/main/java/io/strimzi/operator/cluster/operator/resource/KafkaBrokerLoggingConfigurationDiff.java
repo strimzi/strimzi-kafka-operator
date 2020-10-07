@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
@@ -13,9 +13,13 @@ import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
@@ -57,11 +61,10 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
         Collection<AlterConfigOp> updatedCE = new ArrayList<>();
 
-        OrderedProperties orderedProperties = new OrderedProperties();
-        desired = desired.replaceAll("log4j\\.logger\\.", "");
-        desired = desired.replaceAll("log4j\\.rootLogger", "root");
-        orderedProperties.addStringPairs(desired);
-        Map<String, String> desiredMap = orderedProperties.asMap();
+        Map<String, String> desiredMap = readLog4jConfig(desired);
+        if (desiredMap.get("root") == null) {
+            desiredMap.put("root", LoggingLevel.WARN.name());
+        }
 
         LoggingLevelResolver levelResolver = new LoggingLevelResolver(desiredMap);
 
@@ -82,9 +85,6 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
 
         for (Map.Entry<String, String> ent: desiredMap.entrySet()) {
             String name = ent.getKey();
-            if (name.startsWith("log4j.appender")) {
-                continue;
-            }
             ConfigEntry configEntry = brokerConfigs.get(name);
             if (configEntry == null) {
                 String level = LoggingLevel.nameOrDefault(LoggingLevel.ofLog4jConfig(ent.getValue()), LoggingLevel.WARN);
@@ -94,6 +94,63 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         }
 
         return updatedCE;
+    }
+
+    private static Map<String, String> readLog4jConfig(String config) {
+
+        Map<String, String> parsed = new LinkedHashMap<>();
+        Map<String, String> env = new HashMap<>();
+        BufferedReader reader = new BufferedReader(new StringReader(config));
+        String line;
+        try {
+            while ((line = reader.readLine()) != null) {
+                // skip comments
+                if (line.startsWith("#")) continue;
+
+                // ignore empty lines
+                line = line.trim();
+                if (line.length() == 0) continue;
+
+                // everything that does not start with 'log4j.' is a variable definition
+                if (!line.startsWith("log4j.")) {
+                    int foundIdx = line.indexOf("=");
+                    if (foundIdx >= 0) {
+                        env.put(line.substring(0, foundIdx).trim(), line.substring(foundIdx + 1).trim());
+                    } else {
+                        env.put(line.trim(), "");
+                    }
+                    log.debug("Treating the line as ENV var declaration: {}", line);
+                    continue;
+                }
+
+                // we ignore appenders (log4j.appender.*)
+                // and only handle loggers (log4j.logger.*)
+                if (line.startsWith("log4j.logger.")) {
+                    int startIdx = "log4j.logger.".length();
+                    int endIdx = line.indexOf("=", startIdx);
+                    if (endIdx == -1) {
+                        log.debug("Skipping log4j.logger.* declaration without level: {}", line);
+                        continue;
+                    }
+                    String name = line.substring(startIdx, endIdx).trim();
+                    String value = line.substring(endIdx + 1).trim();
+
+                    value = Util.expandVar(value, env);
+                    parsed.put(name, value);
+
+                } else if (line.startsWith("log4j.rootLogger=")) {
+                    int startIdx = "log4j.rootLogger=".length();
+                    parsed.put("root", Util.expandVar(line.substring(startIdx).trim(), env));
+
+                } else {
+                    log.debug("Skipping log4j line: {}", line);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse logging configuration: " + config, e);
+            return Collections.emptyMap();
+        }
+        return parsed;
     }
 
     /**
@@ -152,19 +209,19 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                 return result != null ? result : LoggingLevel.WARN;
             }
 
-            int e = name.length();
-            while (e > -1) {
-                e = name.lastIndexOf('.', e);
-                if (e == -1) {
+            int endIdx = name.length();
+            while (endIdx > -1) {
+                endIdx = name.lastIndexOf('.', endIdx);
+                if (endIdx == -1) {
                     level = config.get("root");
                 } else {
-                    level = config.get(name.substring(0, e));
+                    level = config.get(name.substring(0, endIdx));
                 }
                 if (level != null) {
                     LoggingLevel result = LoggingLevel.ofLog4jConfig(level);
                     return result != null ? result : LoggingLevel.WARN;
                 }
-                e -= 1;
+                endIdx -= 1;
             }
             // still here? Not even root logger defined?
             return LoggingLevel.WARN;

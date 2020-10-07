@@ -361,7 +361,7 @@ public abstract class AbstractModel {
     /**
      * @return OrderedProperties map with all available loggers for current pod and default values.
      */
-    protected OrderedProperties getDefaultLogConfig() {
+    public OrderedProperties getDefaultLogConfig() {
         String logConfigFileName = getDefaultLogConfigFileName();
         if (logConfigFileName == null || logConfigFileName.isEmpty()) {
             return new OrderedProperties();
@@ -419,6 +419,16 @@ public abstract class AbstractModel {
         this.logging = logging;
     }
 
+
+    /**
+     * Regarding to used implementation we may need to patch an appender.
+     * If the user does not provide the appender in tuple logger: level, it should be added and warn message printed.
+     * @return true if patching needs to be done due to dynamic configuration, otherwise false
+     */
+    protected boolean shouldPatchLoggerAppender() {
+        return false;
+    }
+
     /**
      * @param logging The Logging to parse.
      * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
@@ -431,7 +441,19 @@ public abstract class AbstractModel {
 
             if (inlineLogging.getLoggers() != null) {
                 // Inline logging as specified and some loggers are configured
-                newSettings.addMapPairs(inlineLogging.getLoggers());
+                if (shouldPatchLoggerAppender()) {
+                    String rootAppenderName = getRootAppenderNamesFromDefaultLoggingConfig(newSettings);
+                    String newRootLogger = inlineLogging.getLoggers().get("log4j.rootLogger");
+                    newSettings.addMapPairs(inlineLogging.getLoggers());
+
+                    if (newRootLogger != null && !rootAppenderName.isEmpty() && !newRootLogger.contains(",")) {
+                        log.warn("Newly set rootLogger does not contain appender. Setting appender to {}.", rootAppenderName);
+                        String level = newSettings.asMap().get("log4j.rootLogger");
+                        newSettings.addPair("log4j.rootLogger", level + ", " + rootAppenderName);
+                    }
+                } else {
+                    newSettings.addMapPairs(inlineLogging.getLoggers());
+                }
             }
 
             return createLog4jProperties(newSettings);
@@ -449,6 +471,22 @@ public abstract class AbstractModel {
             log.debug("logging is not set, using default loggers");
             return createLog4jProperties(getDefaultLogConfig());
         }
+    }
+
+    private String getRootAppenderNamesFromDefaultLoggingConfig(OrderedProperties newSettings) {
+        String logger = newSettings.asMap().get("log4j.rootLogger");
+        String appenderName = "";
+        if (logger != null) {
+            String[] tmp = logger.trim().split(",", 2);
+            if (tmp.length == 2) {
+                appenderName = tmp[1].trim();
+            } else {
+                log.warn("Logging configuration for root logger does not contain appender.");
+            }
+        } else {
+            log.warn("Logger log4j.rootLogger not set.");
+        }
+        return appenderName;
     }
 
     /**

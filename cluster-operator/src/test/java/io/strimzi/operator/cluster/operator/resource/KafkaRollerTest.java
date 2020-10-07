@@ -497,12 +497,15 @@ public class KafkaRollerTest {
             }
         })
             .onComplete(testContext.failing(e -> testContext.verify(() -> {
-                assertThat(e.getClass() + " is not a subclass of " + exception.getName(), e, instanceOf(exception));
-                assertThat("The exception message was not as expected", e.getMessage(), is(message));
-                assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
-                assertNoUnclosedAdminClient(testContext, kafkaRoller);
-                testContext.completeNow();
-                async.countDown();
+                try {
+                    assertThat(e.getClass() + " is not a subclass of " + exception.getName(), e, instanceOf(exception));
+                    assertThat("The exception message was not as expected", e.getMessage(), is(message));
+                    assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
+                    assertNoUnclosedAdminClient(testContext, kafkaRoller);
+                    testContext.completeNow();
+                } finally {
+                    async.countDown();
+                }
             })));
         async.await();
     }

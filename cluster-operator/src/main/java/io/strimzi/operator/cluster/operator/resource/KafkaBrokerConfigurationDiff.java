@@ -98,6 +98,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
         for (AlterConfigOp entry : diff) {
             if (isEntryReadOnly(entry.configEntry())) {
                 result = false;
+                log.debug("Configuration can't be updated dynamically due to: {}", entry);
+                break;
             }
         }
         return result;

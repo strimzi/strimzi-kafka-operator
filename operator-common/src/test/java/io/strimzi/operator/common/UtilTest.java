@@ -119,4 +119,21 @@ public class UtilTest {
         assertThat(Util.mergeLabelsOrAnnotations(null, overrides2), is(overrides2));
         assertThrows(InvalidResourceException.class, () -> Util.mergeLabelsOrAnnotations(base, forbiddenOverrides));
     }
+
+    @Test
+    public void testVarExpansion() {
+        String input = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                "mirrormaker.root.logger=INFO\n" +
+                "log4j.rootLogger=${mirrormaker.root.logger}, CONSOLE";
+
+        String expectedOutput = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                "mirrormaker.root.logger=INFO\n" +
+                "log4j.rootLogger=INFO, CONSOLE\n";
+        String result = Util.expandVars(input);
+        assertThat(result, is(expectedOutput));
+    }
 }

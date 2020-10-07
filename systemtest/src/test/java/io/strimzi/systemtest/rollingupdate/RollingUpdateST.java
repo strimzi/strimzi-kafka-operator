@@ -501,7 +501,7 @@ class RollingUpdateST extends AbstractST {
 
         String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
                 "kafka.root.logger.level=INFO\n" +
                 "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
                 "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
@@ -540,7 +540,7 @@ class RollingUpdateST extends AbstractST {
         zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
-        configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("INFO", "DEBUG"));
+        configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
         configMapLoggers.getData().put("log4j2.properties", loggersConfig.replace("INFO", "DEBUG"));
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
 
