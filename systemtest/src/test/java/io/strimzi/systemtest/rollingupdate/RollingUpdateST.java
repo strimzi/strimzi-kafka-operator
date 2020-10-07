@@ -540,7 +540,6 @@ class RollingUpdateST extends AbstractST {
         zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
 
-        configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("INFO", "DEBUG"));
         configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
         configMapLoggers.getData().put("log4j2.properties", loggersConfig.replace("INFO", "DEBUG"));
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
