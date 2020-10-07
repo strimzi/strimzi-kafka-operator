@@ -48,7 +48,7 @@ public class KafkaResource {
     }
 
     public static DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
-        return kafkaEphemeral(name, kafkaReplicas, 3);
+        return kafkaEphemeral(name, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
 
     public static DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
@@ -57,7 +57,7 @@ public class KafkaResource {
     }
 
     public static DoneableKafka kafkaPersistent(String name, int kafkaReplicas) {
-        return kafkaPersistent(name, kafkaReplicas, 3);
+        return kafkaPersistent(name, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
 
     public static DoneableKafka kafkaPersistent(String name, int kafkaReplicas, int zookeeperReplicas) {

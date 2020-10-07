@@ -377,61 +377,6 @@ public class OauthPlainST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @Test
-    void testIntrospectionEndpointWithPlainCommunication() {
-        LOGGER.info("Deploying kafka...");
-
-        keycloakInstance.setIntrospectionEndpointUri("http://" + keycloakInstance.getHttpUri() + "/auth/realms/internal/protocol/openid-connect/token/introspect");
-        String introspectionKafka = CLUSTER_NAME + "-intro";
-
-        KafkaResource.kafkaEphemeral(introspectionKafka, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewKafkaListenerAuthenticationOAuth()
-                                .withClientId(OAUTH_KAFKA_CLIENT_NAME)
-                                .withNewClientSecret()
-                                    .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
-                                    .withKey(OAUTH_KEY)
-                                .endClientSecret()
-                                .withAccessTokenIsJwt(false)
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withIntrospectionEndpointUri(keycloakInstance.getIntrospectionEndpointUri())
-                            .endKafkaListenerAuthenticationOAuth()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(false)
-                            .withNewKafkaListenerAuthenticationOAuth()
-                                .withClientId(OAUTH_KAFKA_CLIENT_NAME)
-                                .withNewClientSecret()
-                                    .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
-                                    .withKey(OAUTH_KEY)
-                                .endClientSecret()
-                                .withAccessTokenIsJwt(false)
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withIntrospectionEndpointUri(keycloakInstance.getIntrospectionEndpointUri())
-                            .endKafkaListenerAuthenticationOAuth()
-                        .endGenericKafkaListener()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
-
-        oauthInternalClientJob.producerStrimziOauthPlain().done();
-        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
-
-        oauthInternalClientJob.consumerStrimziOauthPlain().done();
-        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
-    }
-
     @BeforeAll
     void setUp() {
         keycloakInstance.setRealm("internal", false);

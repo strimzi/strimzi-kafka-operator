@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -320,6 +321,64 @@ public class OauthTlsST extends OauthAbstractST {
 
         kafkaOauthClientJob.consumerStrimziOauthTls(CLUSTER_NAME);
 
+        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+    }
+
+    @Test
+    void testIntrospectionEndpoint() {
+        LOGGER.info("Deploying kafka...");
+
+        keycloakInstance.setIntrospectionEndpointUri("https://" + keycloakInstance.getHttpsUri() + "/auth/realms/internal/protocol/openid-connect/token/introspect");
+        String introspectionKafka = CLUSTER_NAME + "-intro";
+
+        CertSecretSource cert = new CertSecretSourceBuilder()
+                .withNewSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                .withNewCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                .build();
+
+        KafkaResource.kafkaEphemeral(introspectionKafka, 1)
+            .editSpec()
+                .editKafka()
+                    .withNewListeners()
+                    .addNewGenericKafkaListener()
+                        .withName("tls")
+                        .withPort(9093)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationOAuth()
+                            .withClientId(OAUTH_KAFKA_CLIENT_NAME)
+                            .withNewClientSecret()
+                                .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                                .withKey(OAUTH_KEY)
+                            .endClientSecret()
+                            .withAccessTokenIsJwt(false)
+                            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                            .withIntrospectionEndpointUri(keycloakInstance.getIntrospectionEndpointUri())
+                            .withTlsTrustedCertificates(cert)
+                            .withDisableTlsHostnameVerification(true)
+                        .endKafkaListenerAuthenticationOAuth()
+                    .endGenericKafkaListener()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+
+        KafkaOauthExampleClients oauthInternalClientIntrospectionJob = new KafkaOauthExampleClients.Builder()
+                .withProducerName(OAUTH_PRODUCER_NAME)
+                .withConsumerName(OAUTH_CONSUMER_NAME)
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(introspectionKafka))
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthClientId(OAUTH_CLIENT_NAME)
+                .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .build();
+
+        oauthInternalClientIntrospectionJob.producerStrimziOauthTls(introspectionKafka).done();
+        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+
+        oauthInternalClientIntrospectionJob.consumerStrimziOauthTls(introspectionKafka).done();
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
