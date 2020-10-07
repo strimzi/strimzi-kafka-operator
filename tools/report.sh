@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 oc_installed=false
 kubectl_installed=false
