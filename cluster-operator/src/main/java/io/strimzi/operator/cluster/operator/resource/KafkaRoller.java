@@ -310,6 +310,7 @@ public class KafkaRoller {
      * @throws UnforceableProblem Some error, still thrown when finalAttempt==true.
      */
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(int podId, RestartContext restartContext)
             throws Exception {
         Pod pod;
@@ -350,7 +351,19 @@ public class KafkaRoller {
                 log.debug("{}: Pod {} is now ready", reconciliation, podId);
             }
         } catch (ForceableProblem e) {
-            if (isCrashlooping(pod) || restartContext.backOff.done() || e.forceNow) {
+            if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
+                if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
+                    log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                } else {
+                    log.warn("{}: Pod {} can't be safely force-rolled; original error: ", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    throw e;
+                }
+            } else {
+                throw e;
+            }
+        } catch (IllegalArgumentException e) {
+            if (isPodStuck(pod) || restartContext.backOff.done()) {
                 if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
                     log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
@@ -364,17 +377,40 @@ public class KafkaRoller {
         }
     }
 
-    private boolean isCrashlooping(Pod pod) {
+    private boolean isCrashLooping(Pod pod) {
+        return podWaitingBecauseOfReason(pod, "CrashLoopBackOff");
+    }
+
+    private boolean isImagePullBackOff(Pod pod) {
+        return podWaitingBecauseOfReason(pod, "ImagePullBackOff");
+    }
+
+    private boolean isCreating(Pod pod) {
+        return podWaitingBecauseOfReason(pod, "ContainerCreating");
+    }
+
+    private boolean podWaitingBecauseOfReason(Pod pod, String reason) {
         if (pod != null && pod.getStatus() != null) {
             List<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream().filter(containerStatus -> containerStatus.getName().equals("kafka")).collect(Collectors.toList());
             if (kafkaContainerStatus.size() > 0) {
                 ContainerStateWaiting waiting = kafkaContainerStatus.get(0).getState().getWaiting();
                 if (waiting != null) {
-                    return "CrashLoopBackOff".equals(waiting.getReason());
+                    return reason.equals(waiting.getReason());
                 }
             }
         }
         return false;
+    }
+
+    private boolean isPending(Pod pod) {
+        if (pod != null && pod.getStatus() != null && "Pending".equals(pod.getStatus().getPhase())) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isPodStuck(Pod pod) {
+        return isPending(pod) || isCrashLooping(pod) || isImagePullBackOff(pod) || isCreating(pod);
     }
 
     /**

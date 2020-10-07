@@ -6,6 +6,9 @@ package io.strimzi.systemtest.rollingupdate;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -138,9 +142,6 @@ class KafkaRollerST extends AbstractST {
             .endSpec()
             .done();
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
-
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")));
 
@@ -148,6 +149,58 @@ class KafkaRollerST extends AbstractST {
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()));
+
+        long startTime = System.currentTimeMillis();
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        long endTime = System.currentTimeMillis();
+
+        assertThat(Duration.ofMillis(endTime - startTime).toMinutes(), is(lessThan(20L)));
+    }
+
+    @Test
+    void testKafkaPodImagePullBackOff() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().setImage("strimzi/kafka:not-existent-tag"));
+
+        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().setImage("strimzi/kafka:latest-kafka-2.6.0"));
+
+        long startTime = System.currentTimeMillis();
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        long endTime = System.currentTimeMillis();
+
+        assertThat(Duration.ofMillis(endTime - startTime).toMinutes(), is(lessThan(20L)));
+    }
+
+    @Test
+    void testKafkaPodPending() {
+        ResourceRequirements rr = new ResourceRequirementsBuilder()
+                .withRequests(Collections.emptyMap())
+                .build();
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+                .editSpec()
+                    .editKafka()
+                        .withResources(rr)
+                    .endKafka()
+                .endSpec()
+                .done();
+
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("cpu", new Quantity("1000"));
+        requests.put("memory", new Quantity("512Mi"));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().getResources().setRequests(requests));
+
+        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+
+        requests.put("cpu", new Quantity("250m"));
+
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().getResources().setRequests(requests));
 
         long startTime = System.currentTimeMillis();
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
