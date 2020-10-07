@@ -188,7 +188,6 @@ public class StrimziUpgradeST extends AbstractST {
 
         coDir = new File(dir, "strimzi-" + strimziReleaseWithOlderKafkaVersion + "/install/cluster-operator/");
 
-        //String previousKafkaVersion = getValueForLastKafkaVersionInFile(previousKafkaVersionsYaml, "version");
         String latestKafkaVersion = getValueForLastKafkaVersionInFile(latestKafkaVersionsYaml, "version");
 
         // Modify + apply installation files
