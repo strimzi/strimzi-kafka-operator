@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import java.security.InvalidParameterException;
 import java.util.List;
 
-@SuppressWarnings("unchecked")
 public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<C>> {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
@@ -51,61 +50,66 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
 
         public SELF withTopicName(String topicName) {
             this.topicName = topicName;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withPartition(Integer partition) {
             this.partition = partition;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withNamespaceName(String namespaceName) {
             this.namespaceName = namespaceName;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withClusterName(String clusterName) {
             this.clusterName = clusterName;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withMessageCount(int messageCount) {
             this.messageCount = messageCount;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withConsumerGroupName(String consumerGroup) {
             this.consumerGroup = consumerGroup;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withKafkaUsername(String kafkaUsername) {
             this.kafkaUsername = kafkaUsername;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withSecurityProtocol(SecurityProtocol securityProtocol) {
             this.securityProtocol = securityProtocol;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withCertificateAuthorityCertificateName(String caCertName) {
             this.caCertName = caCertName;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withListenerName(String listenerName) {
             this.listenerName = listenerName;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withProducerProperties(ProducerProperties producerProperties) {
             this.producerProperties = producerProperties;
-            return (SELF) this;
+            return self();
         }
 
         public SELF withConsumerProperties(ConsumerProperties consumerProperties) {
             this.consumerProperties =  consumerProperties;
+            return self();
+        }
+
+        @SuppressWarnings("unchecked")
+        protected SELF self() {
             return (SELF) this;
         }
 

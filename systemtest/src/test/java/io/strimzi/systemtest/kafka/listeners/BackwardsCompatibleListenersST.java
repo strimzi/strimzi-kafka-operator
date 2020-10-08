@@ -179,14 +179,14 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(kafkaUsername)
-                .withSecurityProtocol(SecurityProtocol.SSL)
-                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(kafkaUsername)
+            .withSecurityProtocol(SecurityProtocol.SSL)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
@@ -313,13 +313,14 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         final String kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withKafkaUsername(kafkaUsername)
-                .withMessageCount(MESSAGE_COUNT)
-                .build();
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUsername)
+            .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .build();
 
         LOGGER.info("Checking produced and consumed messages to pod: {}", kafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -362,8 +363,8 @@ public class BackwardsCompatibleListenersST extends AbstractST {
 
         LOGGER.info("Checking produced and consumed messages to pod: {}", kafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(),
-                internalKafkaClient.receiveMessagesTls()
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
         LOGGER.info("Check if Kafka pods didn't roll");

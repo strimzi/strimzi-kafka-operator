@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -31,7 +32,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -46,6 +46,7 @@ public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
     public static final String NAMESPACE = "multi-listener-namespace";
+    public final PasswordGenerator passwordGenerator = new PasswordGenerator(9, "a", "abcdefghilkfmnoprstwxyz");
 
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
@@ -64,9 +65,9 @@ public class MultipleListenersST extends AbstractST {
     }
 
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(ACCEPTANCE)
     @Test
     void testCombinationOfInternalAndExternalListeners() {
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
@@ -95,8 +96,8 @@ public class MultipleListenersST extends AbstractST {
         runListenersTest(testCases.get(KafkaListenerType.ROUTE));
     }
 
-    @Tag(NODEPORT_SUPPORTED)
     @OpenShiftOnly
+    @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @Test
@@ -113,9 +114,9 @@ public class MultipleListenersST extends AbstractST {
         runListenersTest(multipleDifferentListeners);
     }
 
+    @OpenShiftOnly
     @Tag(NODEPORT_SUPPORTED)
     @Tag(LOADBALANCER_SUPPORTED)
-    @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @Test
@@ -162,7 +163,6 @@ public class MultipleListenersST extends AbstractST {
             boolean isTlsEnabled = listener.isTls();
 
             if (listener.getType() != KafkaListenerType.INTERNAL) {
-
                 if (isTlsEnabled) {
                     BasicExternalKafkaClient externalTlsKafkaClient = new BasicExternalKafkaClient.Builder()
                         .withTopicName(topicName)
@@ -253,6 +253,11 @@ public class MultipleListenersST extends AbstractST {
         }
     }
 
+    /**
+     * Generates stochastic count of GenericKafkaListener for each type. Every type of listener has it's own count and
+     * port generation interval.
+     * @return HashMap which holds all generated listeners
+     */
     private Map<KafkaListenerType, List<GenericKafkaListener>> generateTestCases() {
 
         LOGGER.info("Starting to generate test cases for multiple listeners");
@@ -274,7 +279,7 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(generateRandomListenerName())
+                            .withName(passwordGenerator.generate())
                             .withPort(10900 + j)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(stochasticCommunication)
@@ -289,7 +294,7 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(generateRandomListenerName())
+                            .withName(passwordGenerator.generate())
                             .withPort(11900 + j)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(stochasticCommunication)
@@ -297,8 +302,9 @@ public class MultipleListenersST extends AbstractST {
                     }
                     break;
                 case ROUTE:
+                    // TODO: bug with unique ports per listener which should be fixed now in Kafka 2.7.0
                     testCaseListeners.add(new GenericKafkaListenerBuilder()
-                        .withName(generateRandomListenerName())
+                        .withName(passwordGenerator.generate())
                         .withPort(12091)
                         .withType(KafkaListenerType.ROUTE)
                         // Route or Ingress type listener and requires enabled TLS encryption
@@ -313,34 +319,20 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(generateRandomListenerName())
+                            .withName(passwordGenerator.generate())
                             .withPort(13900 + j)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(stochasticCommunication)
                             .build());
                     }
             }
+            LOGGER.info("Generating listeners with type {} -> {}", kafkaListenerType.name(), testCaseListeners.toArray());
             testCases.put(kafkaListenerType, testCaseListeners);
         }
 
-        LOGGER.info("Finished will generation of test cases for multiple listeners");
+        LOGGER.info("Finished with generation of test cases for multiple listeners");
 
         return testCases;
-    }
-
-    private String generateRandomListenerName() {
-        final String lexicon = "abcdefghilkfmnoprstwxyz";
-
-        StringBuilder builder = new StringBuilder();
-
-        while (builder.toString().length() == 0) {
-            // spec.containers[j].ports[i].name = "tcp-[generated-name]": must be no more than 15 characters
-            int length = new Random().nextInt(5) + 5;
-            for (int i = 0; i < length; i++) {
-                builder.append(lexicon.charAt(new Random().nextInt(lexicon.length())));
-            }
-        }
-        return builder.toString();
     }
 
     @BeforeAll
