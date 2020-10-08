@@ -204,7 +204,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
 
         List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
 
-        if (listenerStatusList.size() < 1) {
+        if (listenerStatusList == null || listenerStatusList.size() < 1) {
             LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");
             throw new RuntimeException("There is no Kafka external listener specified in the Kafka CR Status");
         } else if (listenerName == null) {

@@ -121,17 +121,11 @@ class RollingUpdateST extends AbstractST {
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
         PodUtils.waitForPendingPod(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-        LOGGER.info("Verifying stability of zookeper pods except the one, which is in pending phase");
+        LOGGER.info("Verifying stability of zookeeper pods except the one, which is in pending phase");
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
         LOGGER.info("Verifying stability of kafka pods");
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
-        internalKafkaClient = internalKafkaClient.toBuilder()
-            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
-            .build();
-
-        ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec()
