@@ -185,6 +185,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
+                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
                 .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(

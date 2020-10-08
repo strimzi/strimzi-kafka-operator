@@ -157,6 +157,8 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         kafkaBridgeClientJob.consumerStrimziBridge().done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+            .withClusterName(CLUSTER_NAME)
+            .withNamespaceName(NAMESPACE)
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(weirdUserName)

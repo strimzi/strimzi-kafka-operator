@@ -62,6 +62,7 @@ public class OpaIntegrationST extends AbstractST {
             .withConsumerGroupName(consumerGroupName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withUsingPodName(clientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -95,6 +96,7 @@ public class OpaIntegrationST extends AbstractST {
             .withConsumerGroupName(consumerGroupName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withUsingPodName(clientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(

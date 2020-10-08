@@ -506,7 +506,7 @@ class MirrorMaker2ST extends AbstractST {
             .withClusterName(kafkaClusterSourceName)
             .withKafkaUsername(userSource.getMetadata().getName())
             .withMessageCount(messagesCount)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",

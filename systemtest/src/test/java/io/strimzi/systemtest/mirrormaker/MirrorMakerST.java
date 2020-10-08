@@ -466,11 +466,15 @@ public class MirrorMakerST extends AbstractST {
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + kafkaClusterSourceName + " to " + kafkaClusterTargetName,
             Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
-                InternalKafkaClient client = newInternalKafkaClient.toBuilder().build();
+                InternalKafkaClient client = newInternalKafkaClient.toBuilder()
+                    .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+                    .build();
                 return sent == client.receiveMessagesTls();
             });
 
-        internalKafkaClient = internalKafkaClient.toBuilder().build();
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             sent,
@@ -503,7 +507,7 @@ public class MirrorMakerST extends AbstractST {
             .withClusterName(kafkaClusterSourceName)
             .withMessageCount(messagesCount)
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         // Check brokers availability

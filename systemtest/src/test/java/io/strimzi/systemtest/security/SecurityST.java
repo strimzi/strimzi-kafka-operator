@@ -598,6 +598,7 @@ class SecurityST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(user.getMetadata().getName())
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
@@ -658,6 +659,7 @@ class SecurityST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         List<Secret> secrets = kubeClient().listSecrets().stream()
@@ -1034,6 +1036,7 @@ class SecurityST extends AbstractST {
             .withKafkaUsername(kafkaUserWrite)
             .withMessageCount(numberOfMessages)
             .withSecurityProtocol(SecurityProtocol.SSL)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
@@ -1128,6 +1131,7 @@ class SecurityST extends AbstractST {
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SSL)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
@@ -1202,6 +1206,7 @@ class SecurityST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient = internalKafkaClient.toBuilder()

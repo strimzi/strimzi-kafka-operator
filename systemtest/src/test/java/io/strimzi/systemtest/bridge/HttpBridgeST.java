@@ -92,6 +92,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(internalKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));

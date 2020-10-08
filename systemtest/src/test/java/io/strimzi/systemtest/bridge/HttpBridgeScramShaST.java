@@ -78,6 +78,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
             .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));

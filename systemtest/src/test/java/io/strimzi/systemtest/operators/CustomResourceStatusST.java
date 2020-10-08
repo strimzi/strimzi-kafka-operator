@@ -110,6 +110,7 @@ class CustomResourceStatusST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
