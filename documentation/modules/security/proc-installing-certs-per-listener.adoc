@@ -71,7 +71,7 @@ listeners:
     configuration:
       brokerCertChainAndKey:
         secretName: my-secret
-        certificate: my-listener-certificate.pem
+        certificate: my-listener-certificate.crt
         key: my-listener-key.key
 # ...
 ----
