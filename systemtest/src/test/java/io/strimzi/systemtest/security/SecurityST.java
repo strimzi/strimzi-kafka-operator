@@ -1041,7 +1041,7 @@ class SecurityST extends AbstractST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
 
-        assertThrows(WaitException.class, () -> basicExternalKafkaClient.receiveMessagesTls());
+        assertThrows(WaitException.class, basicExternalKafkaClient::receiveMessagesTls);
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
             .editSpec()
@@ -1070,6 +1070,7 @@ class SecurityST extends AbstractST {
 
         BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
             .withKafkaUsername(kafkaUserRead)
+            .withConsumerGroupName(consumerGroupName)
             .build();
 
         assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
