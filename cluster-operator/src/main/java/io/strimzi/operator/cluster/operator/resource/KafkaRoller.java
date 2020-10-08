@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -369,11 +370,10 @@ public class KafkaRoller {
 
     private boolean podWaitingBecauseOfAnyReasons(Pod pod, Set<String> reasons) {
         if (pod != null && pod.getStatus() != null) {
-            List<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream()
-                    .filter(containerStatus -> containerStatus.getName().equals("kafka"))
-                    .collect(Collectors.toList());
-            if (kafkaContainerStatus.size() > 0) {
-                ContainerStateWaiting waiting = kafkaContainerStatus.get(0).getState().getWaiting();
+            Optional<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream()
+                    .filter(containerStatus -> containerStatus.getName().equals("kafka")).findFirst();
+            if (kafkaContainerStatus.isPresent()) {
+                ContainerStateWaiting waiting = kafkaContainerStatus.get().getState().getWaiting();
                 if (waiting != null) {
                     return reasons.contains(waiting.getReason());
                 }
