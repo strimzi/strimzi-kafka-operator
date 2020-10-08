@@ -11,8 +11,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -362,40 +364,18 @@ public class KafkaRoller {
             } else {
                 throw e;
             }
-        } catch (IllegalArgumentException e) {
-            if (isPodStuck(pod) || restartContext.backOff.done()) {
-                if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
-                    log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
-                    restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                } else {
-                    log.warn("{}: Pod {} can't be safely force-rolled; original error: ", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
-                    throw e;
-                }
-            } else {
-                throw e;
-            }
         }
     }
 
-    private boolean isCrashLooping(Pod pod) {
-        return podWaitingBecauseOfReason(pod, "CrashLoopBackOff");
-    }
-
-    private boolean isImagePullBackOff(Pod pod) {
-        return podWaitingBecauseOfReason(pod, "ImagePullBackOff");
-    }
-
-    private boolean isCreating(Pod pod) {
-        return podWaitingBecauseOfReason(pod, "ContainerCreating");
-    }
-
-    private boolean podWaitingBecauseOfReason(Pod pod, String reason) {
+    private boolean podWaitingBecauseOfAnyReasons(Pod pod, Set<String> reasons) {
         if (pod != null && pod.getStatus() != null) {
-            List<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream().filter(containerStatus -> containerStatus.getName().equals("kafka")).collect(Collectors.toList());
+            List<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream()
+                    .filter(containerStatus -> containerStatus.getName().equals("kafka"))
+                    .collect(Collectors.toList());
             if (kafkaContainerStatus.size() > 0) {
                 ContainerStateWaiting waiting = kafkaContainerStatus.get(0).getState().getWaiting();
                 if (waiting != null) {
-                    return reason.equals(waiting.getReason());
+                    return reasons.contains(waiting.getReason());
                 }
             }
         }
@@ -410,7 +390,11 @@ public class KafkaRoller {
     }
 
     private boolean isPodStuck(Pod pod) {
-        return isPending(pod) || isCrashLooping(pod) || isImagePullBackOff(pod) || isCreating(pod);
+        Set<String> set = new HashSet<>();
+        set.add("CrashLoopBackOff");
+        set.add("ImagePullBackOff");
+        set.add("ContainerCreating");
+        return isPending(pod) || podWaitingBecauseOfAnyReasons(pod, set);
     }
 
     /**
