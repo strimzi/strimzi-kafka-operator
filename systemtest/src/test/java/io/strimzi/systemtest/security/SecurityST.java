@@ -1073,7 +1073,7 @@ class SecurityST extends AbstractST {
             .withConsumerGroupName(consumerGroupName)
             .build();
 
-        assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
+        assertThat(newBasicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
         assertThrows(WaitException.class, newBasicExternalKafkaClient::sendMessagesTls);

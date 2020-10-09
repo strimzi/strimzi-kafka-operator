@@ -97,10 +97,6 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
         clientSecretName = builder.clientSecretName;
         oauthTokenEndpointUri = builder.oauthTokenEndpointUri;
         introspectionEndpointUri = builder.introspectionEndpointUri;
-
-        this.caCertName = this.caCertName == null ?
-            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
-            this.caCertName;
     }
 
     public int sendMessagesPlain() {
@@ -151,6 +147,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
         String clientName = "sender-ssl" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
+
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
 
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
@@ -238,6 +238,10 @@ public class OauthExternalKafkaClient extends AbstractKafkaClient<OauthExternalK
         String clientName = "receiver-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
+
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
 
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 

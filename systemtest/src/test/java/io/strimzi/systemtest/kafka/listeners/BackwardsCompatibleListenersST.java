@@ -43,6 +43,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.TLS_LISTENER_DEFAULT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
@@ -91,6 +92,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         // Check brokers availability

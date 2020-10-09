@@ -43,7 +43,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         private String consumerGroup;
         protected String kafkaUsername;
         protected SecurityProtocol securityProtocol;
-        private String caCertName;
+        protected String caCertName;
         protected String listenerName;
         private ProducerProperties producerProperties;
         private ConsumerProperties consumerProperties;

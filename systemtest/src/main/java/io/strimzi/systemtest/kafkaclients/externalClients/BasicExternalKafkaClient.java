@@ -42,10 +42,6 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
 
     private BasicExternalKafkaClient(Builder builder) {
         super(builder);
-
-        this.caCertName = this.caCertName == null ?
-            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
-            this.caCertName;
     }
 
     @Override
@@ -111,6 +107,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
         String clientName = "sender-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
+
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
 
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
@@ -198,6 +198,10 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
         String clientName = "receiver-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
+
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
 
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
