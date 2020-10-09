@@ -1,0 +1,169 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect.adoc
+
+[id='proc-kafka-connect-config-{context}']
+= Configuring Kafka Connect
+
+Use Kafka Connect to make external data connections to your Kafka clusters through configuration.
+
+Use the properties of the `KafkaConnect` or `KafkaConnectS2I` resource to configure your Kafka Connect deployment.
+The example shown in this procedure is for the `KafkaConnect`, but the properties are applicable to the `KafkaConnectS2I` resource.
+
+.Kafka connector configuration
+In the configuration, you enable `KafkaConnectors` for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources`.
+You can also specify external configuration for Kafka Connect connectors through the `externalConfiguration` property.
+
+Connectors are created, reconfigured, and deleted using the Kafka Connect HTTP REST interface, or by using `KafkaConnectors`.
+For more information on these methods, see link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^] in the _Deploying Strimzi_ guide.
+
+The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
+ConfigMaps and Secrets are standard Kubernetes resources used for storing configurations and confidential data.
+You can use ConfigMaps and Secrets to configure certain elements of a connector.
+You can then reference the configuration values in HTTP REST commands (this keeps the configuration separate and more secure, if needed).
+This method applies especially to confidential data, such as usernames, passwords, or certificates.
+
+.Prerequisites
+
+* A Kubernetes cluster
+* A running Cluster Operator
+
+See the _Deploying Strimzi_ guide for instructions on running a:
+
+* link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
+* link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
+
+.Procedure
+
+. Edit the `spec` properties for the `KafkaConnect` or `KafkaConnectS2I` resource.
++
+The properties you can configure are shown in this example configuration:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect <1>
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true" <2>
+spec:
+  replicas: 3 <3>
+  authentication: <4>
+    type: tls
+    certificateAndKey:
+        certificate: source.crt
+        key: source.key
+        secretName: my-user-source
+  bootstrapServers: my-cluster-kafka-bootstrap:9092 <5>
+  tls: <6>
+    trustedCertificates:
+      - secretName: my-cluster-cluster-cert
+        certificate: ca.crt
+      - secretName: my-cluster-cluster-cert
+        certificate: ca2.crt
+  config: <7>
+    group.id: my-connect-cluster
+    offset.storage.topic: my-connect-cluster-offsets
+    config.storage.topic: my-connect-cluster-configs
+    status.storage.topic: my-connect-cluster-status
+    key.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    key.converter.schemas.enable: true
+    value.converter.schemas.enable: true
+    config.storage.replication.factor: 3
+    offset.storage.replication.factor: 3
+    status.storage.replication.factor: 3
+  externalConfiguration: <8>
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: aws-creds
+            key: awsAccessKey
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: aws-creds
+            key: awsSecretAccessKey
+  resources: <9>
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  logging: <10>
+    type: inline
+    loggers:
+      log4j.rootLogger: "INFO"
+  readinessProbe: <11>
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  metrics: <12>
+      lowercaseOutputName: true
+      lowercaseOutputLabelNames: true
+      rules:
+        - pattern: kafka.connect<type=connect-worker-metrics><>([a-z-]+)
+          name: kafka_connect_worker_$1
+          help: "Kafka Connect JMX metric worker"
+          type: GAUGE
+        - pattern: kafka.connect<type=connect-worker-rebalance-metrics><>([a-z-]+)
+          name: kafka_connect_worker_rebalance_$1
+          help: "Kafka Connect JMX metric rebalance information"
+          type: GAUGE
+  jvmOptions: <13>
+    "-Xmx": "1g"
+    "-Xms": "1g"
+  image: my-org/my-image:latest <14>
+  template: <15>
+      pod:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: application
+                      operator: In
+                      values:
+                        - postgresql
+                        - mongodb
+                topologyKey: "kubernetes.io/hostname"
+      connectContainer: <16>
+        env:
+          - name: JAEGER_SERVICE_NAME
+            value: my-jaeger-service
+          - name: JAEGER_AGENT_HOST
+            value: jaeger-agent-name
+          - name: JAEGER_AGENT_PORT
+            value: "6831"
+
+----
+<1> Use `KafkaConnect` or `KafkaConnectS2I`, as required.
+<2> Enables `KafkaConnectors` for the Kafka Connect cluster.
+<3> xref:con-common-configuration-replicas-reference[The number of replica nodes].
+<4> Authentication for the Kafka Connect cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
+By default, Kafka Connect connects to Kafka brokers using a plain text connection.
+<5> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the Kafka Connect cluster.
+<6> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the cluster. If certificates are stored in the same secret, it can be listed multiple times.
+<7> xref:property-kafka-connect-config-reference[Kafka Connect configuration] of _workers_ (not connectors).
+Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
+<8> xref:type-ExternalConfiguration-reference[External configuration for Kafka connectors] using environment variables, as shown here, or volumes.
+<9> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<10> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<11> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<12> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled with configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using `metrics: {}`.
+<13> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka Connect.
+<14> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
+<15> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<16> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
+
+. Create or update the resource:
++
+[source,shell,subs=+quotes]
+kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
+
+. If authorization is enabled for Kafka Connect, xref:proc-configuring-kafka-connect-user-authorization-{context}[configure Kafka Connect users to enable access to the Kafka Connect consumer group and topics].

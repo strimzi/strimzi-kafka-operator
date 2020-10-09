@@ -61,6 +61,35 @@ spec:
 Allowed values are `TLSv1.1` and `TLSv1.2`.
 <4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.
 
+[id='con-common-configuration-trusted-certificates-{context}']
+=== `trustedCertificates`
+
+Having xref:type-KafkaClientAuthenticationTls-reference[set `tls` to configure TLS encryption], use the
+`trustedCertificates` property to provide a list of secrets with key names under which the certificates are stored in X.509 format.
+
+.An example TLS encryption configuration
+[source,yaml,subs=attributes+]
+----
+tls:
+  trustedCertificates:
+    - secretName: my-cluster-cluster-ca-cert
+      certificate: ca.crt
+    - secretName: my-cluster-cluster-cert
+      certificate: ca2.crt
+----
+
+If certificates are stored in the same secret, it can be listed multiple times.
+
+If you want to enable TLS, but use the default set of public certification authorities shipped with Java,
+you can specify `trustedCertificates` as an empty array:
+
+.An example of enabling TLS with the default Java certificates
+[source,yaml,subs=attributes+]
+----
+tls:
+  trustedCertificates: []
+----
+
 [id='con-common-configuration-resources-{context}']
 === `resources`
 

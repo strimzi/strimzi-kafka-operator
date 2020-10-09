@@ -12,7 +12,7 @@ For MirrorMaker and MirrorMaker 2.0, messages are traced from the source cluster
 
 .Tracing in Kafka Connect
 
-Only messages produced and consumed by Kafka Connect itself are traced. To trace messages sent between Kafka Connect and external systems, you must configure tracing in the connectors for those systems. For more information, see xref:assembly-deployment-configuration-kafka-connect-{context}[].
+Only messages produced and consumed by Kafka Connect itself are traced. To trace messages sent between Kafka Connect and external systems, you must configure tracing in the connectors for those systems. For more information, see xref:proc-kafka-connect-config-{context}[].
 
 .Tracing in the Kafka Bridge
 

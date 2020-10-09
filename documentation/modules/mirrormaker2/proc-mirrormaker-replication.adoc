@@ -185,11 +185,11 @@ spec:
 <5> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Cluster alias] for the source Kafka cluster.
 <6> Authentication for the source cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 <7> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the source Kafka cluster.
-<8> xref:type-KafkaMirrorMaker2Tls-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster.
+<8> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
 <9> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Cluster alias] for the target Kafka cluster.
 <10> Authentication for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
 <11> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the target Kafka cluster.
-<12> xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[Kafka Connect configuration].
+<12> xref:property-kafka-connect-config-reference[Kafka Connect configuration].
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
 <13> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
 <14> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Hostname verification is enabled] by setting to `HTTPS`. An empty string disables the verification.
@@ -211,7 +211,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <30> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as regular expression patterns]. Here we request three consumer groups by name.
 You can use comma-separated lists.
 <31> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<32> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. Kafka Connect has a single logger called `log4j.rootLogger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<32> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <33> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <34> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <35> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
