@@ -103,7 +103,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
         String aliceUser = "alice";
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
