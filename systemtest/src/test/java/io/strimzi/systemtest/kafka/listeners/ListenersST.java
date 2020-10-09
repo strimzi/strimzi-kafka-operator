@@ -648,6 +648,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
+    // TODO:
     void testCustomChainCertificatesForNodePort() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -697,9 +698,6 @@ public class ListenersST extends AbstractST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
-
-        LOGGER.info("This is the producer configuration {}", basicExternalKafkaClient.getProducerProperties().toString());
-        LOGGER.info("This is the consumer configuration {}", basicExternalKafkaClient.getConsumerProperties().toString());
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
