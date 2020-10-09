@@ -648,7 +648,6 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    // TODO:
     void testCustomChainCertificatesForNodePort() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
