@@ -460,15 +460,15 @@ public class KafkaRoller {
             loggingDiff = logging(podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
-                    log.info("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
+                    log.debug("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
                     needsReconfig = true;
                 } else {
-                    log.info("{}: Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", reconciliation, podId);
+                    log.debug("{}: Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", reconciliation, podId);
                     needsRestart = true;
                 }
             }
             if (loggingDiff.getDiffSize() > 0) {
-                log.info("{}: Pod {} logging needs to be reconfigured.", reconciliation, podId);
+                log.debug("{}: Pod {} logging needs to be reconfigured.", reconciliation, podId);
                 needsReconfig = true;
             }
         } else {
@@ -509,8 +509,8 @@ public class KafkaRoller {
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
         updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
-        log.info("{}: Altering broker {}", reconciliation, podId);
-        log.debug("{}: Altering broker {} with {}", reconciliation, podId, updatedConfig);
+        log.debug("{}: Altering broker configuration {}", reconciliation, podId);
+        log.trace("{}: Altering broker configuration {} with {}", reconciliation, podId, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
@@ -520,7 +520,7 @@ public class KafkaRoller {
         await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error performing dynamic logging update for pod " + podId, error));
 
-        log.info("{}: Dynamic AlterConfig for broker {} was successful.", reconciliation, podId);
+        log.info("{}: Dynamic reconfiguration for broker {} was successful.", reconciliation, podId);
     }
 
     private KafkaBrokerLoggingConfigurationDiff logging(int podId)
