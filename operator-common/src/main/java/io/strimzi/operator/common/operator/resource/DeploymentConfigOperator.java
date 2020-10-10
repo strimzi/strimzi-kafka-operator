@@ -112,16 +112,17 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
      *
      * @param namespace The namespace.
      * @param name The resource name.
-     * @return Whether the resource in in the Ready state.
+     * @return Whether the resource is in the Ready state.
      */
+    @Override
     public boolean isReady(String namespace, String name) {
         DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig> resourceOp = operation().inNamespace(namespace).withName(name);
         DeploymentConfig resource = resourceOp.get();
         
         if (resource != null)   {
-            // resourceOp.isReady(...) does not work because of https://github.com/fabric8io/kubernetes-client/issues/2537
-            // This method provides a temporary workaround by calling OpenShiftReadiness.isReady directly.
-            // TODO: This should be changed to resourceOp.isReady(resource) after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed.
+            // resourceOp.isReady() does not work because of https://github.com/fabric8io/kubernetes-client/issues/2537
+            // This method provides a temporary workaround by calling OpenShiftReadiness.isDeploymentConfigReady(...) directly.
+            // TODO: This should be changed to resourceOp.isReady() after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed.
             return Boolean.TRUE.equals(OpenShiftReadiness.isDeploymentConfigReady(resource));
         } else {
             return false;
