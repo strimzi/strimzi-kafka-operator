@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.kafka;
+package io.strimzi.systemtest.kafka.listeners;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -43,6 +43,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.TLS_LISTENER_DEFAULT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
@@ -91,6 +92,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         // Check brokers availability
@@ -141,6 +143,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         // Check brokers availability
@@ -178,13 +181,14 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(kafkaUsername)
-                .withSecurityProtocol(SecurityProtocol.SSL)
-                .build();
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(kafkaUsername)
+            .withSecurityProtocol(SecurityProtocol.SSL)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
@@ -311,13 +315,14 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         final String kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withKafkaUsername(kafkaUsername)
-                .withMessageCount(MESSAGE_COUNT)
-                .build();
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUsername)
+            .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .build();
 
         LOGGER.info("Checking produced and consumed messages to pod: {}", kafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -333,21 +338,21 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             kafka.getSpec().getKafka()
                     .setListeners(new ArrayOrObjectKafkaListeners(asList(
                             new GenericKafkaListenerBuilder()
-                                    .withName("plain")
+                                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                     .withPort(9092)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(false)
                                     .withAuth(new KafkaListenerAuthenticationScramSha512())
                                     .build(),
                             new GenericKafkaListenerBuilder()
-                                    .withName("tls")
+                                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                     .withPort(9093)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(true)
                                     .withAuth(new KafkaListenerAuthenticationTls())
                                     .build(),
                             new GenericKafkaListenerBuilder()
-                                    .withName("external")
+                                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                     .withPort(9094)
                                     .withType(KafkaListenerType.NODEPORT)
                                     .withTls(true)
@@ -360,8 +365,8 @@ public class BackwardsCompatibleListenersST extends AbstractST {
 
         LOGGER.info("Checking produced and consumed messages to pod: {}", kafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(),
-                internalKafkaClient.receiveMessagesTls()
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
         );
 
         LOGGER.info("Check if Kafka pods didn't roll");

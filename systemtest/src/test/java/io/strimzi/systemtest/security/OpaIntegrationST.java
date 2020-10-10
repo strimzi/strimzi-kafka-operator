@@ -62,6 +62,7 @@ public class OpaIntegrationST extends AbstractST {
             .withConsumerGroupName(consumerGroupName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withUsingPodName(clientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -70,7 +71,11 @@ public class OpaIntegrationST extends AbstractST {
         );
 
         LOGGER.info("Checking KafkaUser {} that is not able to send or receive messages to/from topic '{}'", OPA_BAD_USER, TOPIC_NAME);
-        internalKafkaClient.setKafkaUsername(OPA_BAD_USER);
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withKafkaUsername(OPA_BAD_USER)
+            .build();
+
         assertThat(internalKafkaClient.sendMessagesTls(), is(-1));
         assertThat(internalKafkaClient.receiveMessagesTls(), is(0));
     }
@@ -91,6 +96,7 @@ public class OpaIntegrationST extends AbstractST {
             .withConsumerGroupName(consumerGroupName)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withUsingPodName(clientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -116,7 +122,7 @@ public class OpaIntegrationST extends AbstractST {
                     .endKafkaAuthorizationOpa()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)

@@ -4,21 +4,19 @@
  */
 package io.strimzi.systemtest.kafkaclients;
 
-import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.InvalidParameterException;
+import java.util.List;
 
-import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
-public abstract class AbstractKafkaClient {
+public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<C>> {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 
@@ -31,9 +29,11 @@ public abstract class AbstractKafkaClient {
     protected String kafkaUsername;
     protected SecurityProtocol securityProtocol;
     protected String caCertName;
-    protected KafkaClientProperties clientProperties;
+    protected String listenerName;
+    protected ProducerProperties producerProperties;
+    protected ConsumerProperties consumerProperties;
 
-    public abstract static class Builder<T extends Builder<T>> {
+    public abstract static class Builder<SELF extends Builder<SELF>> {
 
         private String topicName;
         protected Integer partition;
@@ -41,78 +41,106 @@ public abstract class AbstractKafkaClient {
         private String clusterName;
         private int messageCount;
         private String consumerGroup;
-        private String kafkaUsername;
-        private SecurityProtocol securityProtocol;
-        private String caCertName;
-        private KafkaClientProperties clientProperties;
+        protected String kafkaUsername;
+        protected SecurityProtocol securityProtocol;
+        protected String caCertName;
+        protected String listenerName;
+        private ProducerProperties producerProperties;
+        private ConsumerProperties consumerProperties;
 
-        public T withTopicName(String topicName) {
+        public SELF withTopicName(String topicName) {
             this.topicName = topicName;
             return self();
         }
 
-        public T withPartition(Integer partition) {
+        public SELF withPartition(Integer partition) {
             this.partition = partition;
             return self();
         }
 
-        public T withNamespaceName(String namespaceName) {
+        public SELF withNamespaceName(String namespaceName) {
             this.namespaceName = namespaceName;
             return self();
         }
 
-        public T withClusterName(String clusterName) {
+        public SELF withClusterName(String clusterName) {
             this.clusterName = clusterName;
             return self();
         }
 
-        public T withMessageCount(int messageCount) {
+        public SELF withMessageCount(int messageCount) {
             this.messageCount = messageCount;
             return self();
         }
 
-        public T withConsumerGroupName(String consumerGroup) {
+        public SELF withConsumerGroupName(String consumerGroup) {
             this.consumerGroup = consumerGroup;
             return self();
         }
 
-        public T withKafkaUsername(String kafkaUsername) {
+        public SELF withKafkaUsername(String kafkaUsername) {
             this.kafkaUsername = kafkaUsername;
             return self();
         }
 
-        public T withSecurityProtocol(SecurityProtocol securityProtocol) {
+        public SELF withSecurityProtocol(SecurityProtocol securityProtocol) {
             this.securityProtocol = securityProtocol;
             return self();
         }
 
-        public T withCertificateAuthorityCertificateName(String caCertName) {
+        public SELF withCertificateAuthorityCertificateName(String caCertName) {
             this.caCertName = caCertName;
             return self();
         }
 
-        public T withKafkaClientProperties(KafkaClientProperties clientProperties) {
-            this.clientProperties = clientProperties;
+        public SELF withListenerName(String listenerName) {
+            this.listenerName = listenerName;
             return self();
         }
 
-        protected abstract AbstractKafkaClient build();
+        public SELF withProducerProperties(ProducerProperties producerProperties) {
+            this.producerProperties = producerProperties;
+            return self();
+        }
 
-        // Subclasses must override this method to return "this" protected abstract T self();
-        // for not explicit casting..
-        protected abstract T self();
+        public SELF withConsumerProperties(ConsumerProperties consumerProperties) {
+            this.consumerProperties =  consumerProperties;
+            return self();
+        }
+
+        @SuppressWarnings("unchecked")
+        protected SELF self() {
+            return (SELF) this;
+        }
+
+        public AbstractKafkaClient<?> build() throws InstantiationException {
+            // ensure that build() can be only invoked in sub-classes
+            throw new InstantiationException();
+        };
+    }
+
+    protected abstract C newBuilder();
+
+    protected AbstractKafkaClient.Builder<C> toBuilder() {
+        verifyEssentialInstanceAttributes();
+
+        return newBuilder()
+            .withTopicName(topicName)
+            .withPartition(partition)
+            .withNamespaceName(namespaceName)
+            .withClusterName(clusterName)
+            .withMessageCount(messageCount)
+            .withConsumerGroupName(consumerGroup)
+            .withKafkaUsername(kafkaUsername)
+            .withSecurityProtocol(securityProtocol)
+            .withCertificateAuthorityCertificateName(caCertName)
+            .withListenerName(listenerName)
+            .withProducerProperties(producerProperties)
+            .withConsumerProperties(consumerProperties);
     }
 
     protected AbstractKafkaClient(Builder<?> builder) {
-
-        if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
-        if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
-        if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
-        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
-        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
-            LOGGER.info("Consumer group were not specified going to create the random one.");
-            builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
-        }
+        verifyEssentialAttributes(builder);
 
         topicName = builder.topicName;
         partition = builder.partition;
@@ -123,7 +151,34 @@ public abstract class AbstractKafkaClient {
         kafkaUsername = builder.kafkaUsername;
         securityProtocol = builder.securityProtocol;
         caCertName = builder.caCertName;
-        clientProperties = builder.clientProperties;
+        listenerName = builder.listenerName;
+        producerProperties = builder.producerProperties;
+        consumerProperties = builder.consumerProperties;
+    }
+
+    private void verifyEssentialInstanceAttributes() {
+        if (topicName == null || topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
+        if (namespaceName == null || namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
+        if (clusterName == null  || clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
+        if (messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (listenerName == null || listenerName.isEmpty()) throw new InvalidParameterException("Listener name is not set.");
+
+        if (consumerGroup == null || consumerGroup.isEmpty()) {
+            LOGGER.info("Consumer group were not specified going to create the random one.");
+            consumerGroup = ClientUtils.generateRandomConsumerGroup();
+        }
+    }
+
+    private void verifyEssentialAttributes(Builder<?> builder) {
+        if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
+        if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
+        if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
+        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
+        if (builder.listenerName == null || builder.listenerName.isEmpty()) throw new InvalidParameterException("Listener name is not set.");
+        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
+            LOGGER.info("Consumer group were not specified going to create the random one.");
+            builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
+        }
     }
 
     public void setMessageCount(int messageCount) {
@@ -138,83 +193,71 @@ public abstract class AbstractKafkaClient {
         }
     }
 
-    /**
-     * Get external bootstrap connection
-     * @param namespace kafka namespace
-     * @param clusterName kafka cluster name
-     * @return bootstrap url as string
-     */
-    public static String getExternalBootstrapConnect(String namespace, String clusterName) {
-        if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
-            Route route = kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
-            if (route != null && !route.getStatus().getIngress().isEmpty()) {
-                return route.getStatus().getIngress().get(0).getHost() + ":443";
-            }
+    public ProducerProperties getProducerProperties() {
+        return producerProperties;
+    }
+    public ConsumerProperties getConsumerProperties() {
+        return consumerProperties;
+    }
+
+    public String getBootstrapServerFromStatus() {
+
+        List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
+
+        if (listenerStatusList == null || listenerStatusList.size() < 1) {
+            LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");
+            throw new RuntimeException("There is no Kafka external listener specified in the Kafka CR Status");
+        } else if (listenerName == null) {
+            LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status.");
+            return listenerStatusList.get(0).getBootstrapServers();
         }
 
-        Service extBootstrapService = kubeClient(namespace).getClient().services()
-                .inNamespace(namespace)
-                .withName(externalBootstrapServiceName(clusterName))
-                .get();
-
-        if (extBootstrapService == null) {
-            throw new RuntimeException("Kafka cluster " + clusterName + " doesn't have an external bootstrap service");
-        }
-
-        String extBootstrapServiceType = extBootstrapService.getSpec().getType();
-
-        if (extBootstrapServiceType.equals("NodePort")) {
-            int port = extBootstrapService.getSpec().getPorts().get(0).getNodePort();
-            String externalAddress = kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
-            return externalAddress + ":" + port;
-        } else if (extBootstrapServiceType.equals("LoadBalancer")) {
-            LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
-            String result = loadBalancerIngress.getHostname();
-
-            if (result == null) {
-                result = loadBalancerIngress.getIp();
-            }
-            return result + ":9094";
-        } else {
-            throw new RuntimeException("Unexpected external bootstrap service" + extBootstrapServiceType + " for Kafka cluster " + clusterName);
-        }
+        return listenerStatusList.stream().filter(listener -> listener.getType().equals(listenerName))
+            .findFirst()
+            .orElseThrow(RuntimeException::new)
+            .getBootstrapServers();
     }
 
-    public KafkaClientProperties getClientProperties() {
-        return clientProperties;
+    public String getTopicName() {
+        return topicName;
+    }
+    public Integer getPartition() {
+        return partition;
+    }
+    public int getMessageCount() {
+        return messageCount;
+    }
+    public String getConsumerGroup() {
+        return consumerGroup;
+    }
+    public String getKafkaUsername() {
+        return kafkaUsername;
+    }
+    public SecurityProtocol getSecurityProtocol() {
+        return securityProtocol;
+    }
+    public String getCaCertName() {
+        return caCertName;
+    }
+    public String getListenerName() {
+        return listenerName;
     }
 
-    public void setConsumerGroup(String consumerGroup) {
-        this.consumerGroup = consumerGroup;
-    }
-
-    public void setTopicName(String topicName) {
-        this.topicName = topicName;
-    }
-
-    public void setKafkaUsername(String kafkaUsername) {
-        this.kafkaUsername = kafkaUsername;
-    }
-
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
-    public void setCaCertName(String caCertName) {
-        this.caCertName = caCertName;
-    }
     @Override
     public String toString() {
         return "AbstractKafkaClient{" +
             "topicName='" + topicName + '\'' +
+            ", partition=" + partition +
             ", namespaceName='" + namespaceName + '\'' +
             ", clusterName='" + clusterName + '\'' +
             ", messageCount=" + messageCount +
             ", consumerGroup='" + consumerGroup + '\'' +
             ", kafkaUsername='" + kafkaUsername + '\'' +
-            ", securityProtocol='" + securityProtocol + '\'' +
+            ", securityProtocol=" + securityProtocol +
             ", caCertName='" + caCertName + '\'' +
-            ", clientProperties=" + clientProperties +
+            ", listenerName='" + listenerName + '\'' +
+            ", producerProperties=" + producerProperties +
+            ", consumerProperties=" + consumerProperties +
             '}';
     }
 }

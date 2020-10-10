@@ -176,6 +176,7 @@ class ConnectST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -195,7 +196,7 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("plain")
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
@@ -252,6 +253,7 @@ class ConnectST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -290,6 +292,7 @@ class ConnectST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         int received = internalKafkaClient.receiveMessagesPlain();
@@ -373,7 +376,7 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("tls")
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
@@ -434,6 +437,7 @@ class ConnectST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -452,7 +456,7 @@ class ConnectST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -511,6 +515,7 @@ class ConnectST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -725,6 +730,7 @@ class ConnectST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         String execConnectPod =  kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
@@ -757,14 +763,14 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("tls")
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .withAuth(new KafkaListenerAuthenticationTls())
                             .endGenericKafkaListener()
                             .addNewGenericKafkaListener()
-                                .withName("external")
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
@@ -820,14 +826,14 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("tls")
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .withAuth(new KafkaListenerAuthenticationScramSha512())
                             .endGenericKafkaListener()
                             .addNewGenericKafkaListener()
-                                .withName("external")
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
@@ -887,6 +893,7 @@ class ConnectST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(securityProtocol)
             .withTopicName(TOPIC_NAME)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));

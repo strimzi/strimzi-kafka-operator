@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -67,7 +68,7 @@ public class SpecificST extends AbstractST {
                     .endRack()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(false)
@@ -125,7 +126,7 @@ public class SpecificST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
@@ -204,7 +205,7 @@ public class SpecificST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(false)
@@ -239,13 +240,15 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");
 
-        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
-        basicExternalKafkaClient.setMessageCount(2 * MESSAGE_COUNT);
+        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+            .withMessageCount(2 * MESSAGE_COUNT)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         assertThrows(TimeoutException.class, () ->
-            basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-                basicExternalKafkaClient.sendMessagesPlain(),
-                basicExternalKafkaClient.receiveMessagesPlain()
+            newBasicExternalKafkaClient.verifyProducedAndConsumedMessages(
+                newBasicExternalKafkaClient.sendMessagesPlain(),
+                newBasicExternalKafkaClient.receiveMessagesPlain()
             ));
     }
 

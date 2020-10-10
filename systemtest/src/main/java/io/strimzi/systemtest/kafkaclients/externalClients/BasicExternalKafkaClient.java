@@ -7,7 +7,8 @@ package io.strimzi.systemtest.kafkaclients.externalClients;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -27,7 +28,7 @@ import java.util.function.IntPredicate;
 /**
  * The BasicExternalKafkaClient for sending and receiving messages with basic properties. The client is using an external listeners.
  */
-public class BasicExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalKafkaClient.Builder> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
 
@@ -37,23 +38,24 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
         public BasicExternalKafkaClient build() {
             return new BasicExternalKafkaClient(this);
         }
-
-        @Override
-        protected Builder self() {
-            return this;
-        }
     }
 
     private BasicExternalKafkaClient(Builder builder) {
         super(builder);
     }
 
-    public int sendMessagesPlain() {
-        return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
+    @Override
+    protected Builder newBuilder() {
+        return new Builder();
     }
 
-    public int sendMessagePlainWithHugeTimeout() {
-        return sendMessagesPlain(Constants.HUGE_CLIENTS_TIMEOUT);
+    @Override
+    public Builder toBuilder() {
+        return (Builder) super.toBuilder();
+    }
+
+    public int sendMessagesPlain() {
+        return sendMessagesPlain(Constants.GLOBAL_CLIENTS_TIMEOUT);
     }
 
     /**
@@ -62,17 +64,17 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
      */
     public int sendMessagesPlain(long timeoutMs) {
 
-        String clientName = "sender-plain-" + this.clusterName;
+        String clientName = "sender-plain-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties properties = this.clientProperties;
+        ProducerProperties properties = this.producerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getBootstrapServerFromStatus())
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
                 .withClientIdConfig("producer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
@@ -102,21 +104,23 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
      */
     public int sendMessagesTls(long timeoutMs) {
 
-        String clientName = "sender-ssl" + this.clusterName;
+        String clientName = "sender-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, clusterName) : this.caCertName;
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
+
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        KafkaClientProperties properties = this.clientProperties;
+        ProducerProperties properties = this.producerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ProducerProperties.ProducerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getBootstrapServerFromStatus())
                 .withKeySerializerConfig(StringSerializer.class)
                 .withValueSerializerConfig(StringSerializer.class)
                 .withClientIdConfig("producer-tls-" + new Random().nextInt(Integer.MAX_VALUE))
@@ -149,17 +153,17 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
      */
     public int receiveMessagesPlain(long timeoutMs) {
 
-        String clientName = "receiver-plain-" + clusterName;
+        String clientName = "receiver-plain-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        KafkaClientProperties properties = this.clientProperties;
+        ConsumerProperties properties = this.consumerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getBootstrapServerFromStatus())
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig("consumer-plain-" + new Random().nextInt(Integer.MAX_VALUE))
@@ -191,21 +195,23 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient implements Kaf
      */
     public int receiveMessagesTls(long timeoutMs) {
 
-        String clientName = "receiver-ssl-" + clusterName;
+        String clientName = "receiver-ssl-" + new Random().nextInt(Integer.MAX_VALUE);
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
-        String caCertName = this.caCertName == null ?
-                KafkaResource.getKafkaExternalListenerCaCertName(this.namespaceName, this.clusterName) : this.caCertName;
+        this.caCertName = this.caCertName == null ?
+            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            this.caCertName;
+
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
 
-        KafkaClientProperties properties = this.clientProperties;
+        ConsumerProperties properties = this.consumerProperties;
 
         if (properties == null || properties.getProperties().isEmpty()) {
-            properties = new KafkaClientProperties.KafkaClientPropertiesBuilder()
+            properties = new ConsumerProperties.ConsumerPropertiesBuilder()
                 .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
-                .withBootstrapServerConfig(getExternalBootstrapConnect(namespaceName, clusterName))
+                .withBootstrapServerConfig(getBootstrapServerFromStatus())
                 .withKeyDeserializerConfig(StringDeserializer.class)
                 .withValueDeserializerConfig(StringDeserializer.class)
                 .withClientIdConfig("consumer-tls-" + new Random().nextInt(Integer.MAX_VALUE))
