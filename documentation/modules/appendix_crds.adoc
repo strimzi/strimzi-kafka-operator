@@ -997,7 +997,7 @@ Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`],
 [id='type-PodTemplate-{context}']
 ### `PodTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -1032,7 +1032,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -1077,14 +1077,18 @@ Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:ty
 [id='type-ContainerTemplate-{context}']
 ### `ContainerTemplate` schema reference
 
-Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
 |====
-|Property    |Description
-|env  1.2+<.<|Environment variables which should be applied to the container.
+|Property                |Description
+|env              1.2+<.<|Environment variables which should be applied to the container.
 |xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] array
+|securityContext  1.2+<.<|Security context for the container. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#securitycontext-v1-core[core/v1 securitycontext].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#securitycontext-v1-core[SecurityContext]
 |====
 
 [id='type-ContainerEnvVar-{context}']
@@ -1356,6 +1360,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-JmxTransQueryTemplate-{context}[`JmxTransQueryTemplate`] array
 |resources          1.2+<.<|CPU and memory resources to reserve.
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|template           1.2+<.<|Template for JmxTrans resources.
+|xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`]
 |====
 
 [id='type-JmxTransOutputDefinitionTemplate-{context}']
@@ -1396,6 +1402,23 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |string array
 |outputs      1.2+<.<|List of the names of output definitions specified in the spec.kafka.jmxTrans.outputDefinitions that have defined where JMX metrics are pushed to, and in which data format.
 |string array
+|====
+
+[id='type-JmxTransTemplate-{context}']
+### `JmxTransTemplate` schema reference
+
+Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
+
+
+[options="header"]
+|====
+|Property           |Description
+|deployment  1.2+<.<|Template for JmxTrans `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod         1.2+<.<|Template for JmxTrans `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+|container   1.2+<.<|Template for JmxTrans container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
 [id='type-KafkaExporterSpec-{context}']

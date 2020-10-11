@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -37,6 +38,7 @@ import java.util.Map;
 /**
  * Represents the Entity Operator deployment
  */
+@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class EntityOperator extends AbstractModel {
     protected static final String APPLICATION_NAME = "entity-operator";
 
@@ -55,6 +57,9 @@ public class EntityOperator extends AbstractModel {
     private EntityUserOperator userOperator;
     private TlsSidecar tlsSidecar;
     private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
+
+    private SecurityContext templateTlsSidecarContainerSecurityContext;
+
 
     private boolean isDeployed;
     private String tlsSidecarImage;
@@ -154,12 +159,24 @@ public class EntityOperator extends AbstractModel {
                     topicOperator.setContainerEnvVars(template.getTopicOperatorContainer().getEnv());
                 }
 
+                if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getSecurityContext() != null) {
+                    topicOperator.setContainerSecurityContext(template.getTopicOperatorContainer().getSecurityContext());
+                }
+
                 if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getEnv() != null) {
                     userOperator.setContainerEnvVars(template.getUserOperatorContainer().getEnv());
                 }
 
+                if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getSecurityContext() != null) {
+                    userOperator.setContainerSecurityContext(template.getUserOperatorContainer().getSecurityContext());
+                }
+
                 if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
                     result.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
+                }
+
+                if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
+                    result.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
                 }
             }
 
@@ -264,6 +281,7 @@ public class EntityOperator extends AbstractModel {
                             .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
+                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
                 .build();
 
         containers.add(tlsSidecarContainer);
@@ -380,4 +398,5 @@ public class EntityOperator extends AbstractModel {
             }
         }
     }
+
 }

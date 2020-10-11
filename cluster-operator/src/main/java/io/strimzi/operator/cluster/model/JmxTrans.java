@@ -13,12 +13,14 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
+import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxTransResources;
 import io.strimzi.api.kafka.model.JmxTransSpec;
 import io.strimzi.api.kafka.model.Kafka;
@@ -27,6 +29,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
+import io.strimzi.api.kafka.model.template.JmxTransTemplate;
 import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
@@ -69,6 +72,9 @@ public class JmxTrans extends AbstractModel {
     private String configMapName;
     private String clusterName;
     private String loggingLevel;
+
+    protected List<ContainerEnvVar> templateContainerEnvVars;
+    protected SecurityContext templateContainerSecurityContext;
 
     /**
      * Constructor
@@ -122,6 +128,26 @@ public class JmxTrans extends AbstractModel {
             result.setImage(image);
 
             result.setOwnerReference(kafkaAssembly);
+
+            if (spec.getTemplate() != null) {
+                JmxTransTemplate template = spec.getTemplate();
+
+                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                    result.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                    result.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                }
+
+                ModelUtils.parsePodTemplate(result, template.getPod());
+
+                if (template.getContainer() != null && template.getContainer().getEnv() != null) {
+                    result.templateContainerEnvVars = template.getContainer().getEnv();
+                }
+
+                if (template.getContainer() != null && template.getContainer().getSecurityContext() != null) {
+                    result.templateContainerSecurityContext = template.getContainer().getSecurityContext();
+                }
+            }
+
         }
 
         return result;
@@ -218,6 +244,7 @@ public class JmxTrans extends AbstractModel {
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build();
 
         containers.add(container);
@@ -235,7 +262,7 @@ public class JmxTrans extends AbstractModel {
         }
         varList.add(buildEnvVar(ENV_VAR_JMXTRANS_LOGGING_LEVEL, loggingLevel));
 
-        addContainerEnvsToExistingEnvs(varList, Collections.emptyList());
+        addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
     }

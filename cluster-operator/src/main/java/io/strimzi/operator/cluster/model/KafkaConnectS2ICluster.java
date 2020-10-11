@@ -88,6 +88,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, image))
+                .withSecurityContext(templateContainerSecurityContext)
                 .build();
 
         DeploymentTriggerPolicy configChangeTrigger = new DeploymentTriggerPolicyBuilder()
