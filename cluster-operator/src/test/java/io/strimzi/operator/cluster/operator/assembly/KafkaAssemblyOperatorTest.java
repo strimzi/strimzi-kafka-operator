@@ -4,22 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.api.model.RouteIngressBuilder;
-import io.fabric8.openshift.api.model.RouteStatus;
-import io.fabric8.openshift.api.model.RouteStatusBuilder;
+import io.fabric8.openshift.api.model.*;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
@@ -42,8 +33,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
-import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
+import io.strimzi.api.kafka.model.template.*;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -350,6 +340,34 @@ public class KafkaAssemblyOperatorTest {
                         .withData(Collections.singletonMap("foo", "bar"))
                         .build()
                 )); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testCreateClusterWithAnnotationsAndLabelsInCaCertSecret(Params params, VertxTestContext context) {
+        setFields(params);
+        Kafka kafka = getKafkaAssembly("foo");
+        kafka.getSpec()
+                .getKafka()
+                .setTemplate(new KafkaClusterTemplateBuilder()
+                    .withClusterCaCert(
+                            new ResourceTemplateBuilder()
+                                    .withNewMetadata()
+                                    .withLabels(Collections.singletonMap("foo", "bar"))
+                                    .withAnnotations(Collections.singletonMap("foo", "bar"))
+                                    .endMetadata()
+                                    .build())
+                            .build());
+
+        createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
+                .withNewMetadata()
+                .withName(KafkaCluster.jmxSecretName("foo"))
+                .withNamespace("test")
+                .endMetadata()
+                .withData(Collections.singletonMap("foo", "bar"))
+                .build()
+        ));
     }
 
     @ParameterizedTest
