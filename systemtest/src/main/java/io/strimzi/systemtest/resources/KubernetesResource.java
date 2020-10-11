@@ -5,15 +5,14 @@
 package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.batch.DoneableJob;
-import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -26,8 +25,9 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -39,15 +39,88 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubernetesResource {
     private static final Logger LOGGER = LogManager.getLogger(KubernetesResource.class);
 
+    public static final String PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+
+    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
+        return deployNewDeployment(defaultCLusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());
+    }
+
+    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+        return deployNewDeployment(defaultCLusterOperator(namespace, operationTimeout, reconciliationInterval).build());
+    }
+
+    public static DoneableDeployment clusterOperator(String namespace) {
+        return deployNewDeployment(defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
+    }
+
+    public static DeploymentBuilder defaultClusterOperator(String namespace) {
+        return defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    private static DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+
+        Deployment clusterOperator = getDeploymentFromYaml(PATH_TO_CO_CONFIG);
+
+        // Get env from config file
+        List<EnvVar> envVars = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        // Get default CO image
+        String coImage = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+
+        // Update images
+        for (EnvVar envVar : envVars) {
+            switch (envVar.getName()) {
+                case "STRIMZI_LOG_LEVEL":
+                    envVar.setValue(Environment.STRIMZI_LOG_LEVEL);
+                    break;
+                case "STRIMZI_NAMESPACE":
+                    envVar.setValue(namespace);
+                    envVar.setValueFrom(null);
+                    break;
+                case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
+                    envVar.setValue(Long.toString(reconciliationInterval));
+                    break;
+                case "STRIMZI_OPERATION_TIMEOUT_MS":
+                    envVar.setValue(Long.toString(operationTimeout));
+                    break;
+                default:
+                    if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
+                        envVar.setValue(envVar.getValue());
+                    } else if (envVar.getName().contains("STRIMZI_DEFAULT")) {
+                        envVar.setValue(StUtils.changeOrgAndTag(envVar.getValue()));
+                    } else if (envVar.getName().contains("IMAGES")) {
+                        envVar.setValue(StUtils.changeOrgAndTagInImageMap(envVar.getValue()));
+                    }
+            }
+        }
+
+        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
+        // Apply updated env variables
+        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
+
+        return new DeploymentBuilder(clusterOperator)
+            .editSpec()
+                .withNewSelector()
+                    .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
+                .endSelector()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .withImage(StUtils.changeOrgAndTag(coImage))
+                            .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
     public static DoneableDeployment deployNewDeployment(Deployment deployment) {
         return new DoneableDeployment(deployment, co -> {
-            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         ResourceManager.kubeClient().createOrReplaceDeployment(co);
@@ -65,26 +138,6 @@ public class KubernetesResource {
         });
     }
 
-    public static DoneableJob deployNewJob(Job job) {
-        return new DoneableJob(job, kubernetesJob -> {
-            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        ResourceManager.kubeClient().createJob(kubernetesJob);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
-                    }
-                }
-            );
-            return deleteLater(kubernetesJob);
-        });
-    }
-
     public static DoneableRoleBinding roleBinding(String yamlPath, String namespace, String clientNamespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
@@ -95,6 +148,7 @@ public class KubernetesResource {
     }
 
     private static DoneableRoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
+        LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
         ResourceManager.kubeClient().namespace(clientNamespace).createOrReplaceRoleBinding(roleBinding);
         deleteLater(roleBinding);
         return new DoneableRoleBinding(roleBinding);
@@ -110,6 +164,7 @@ public class KubernetesResource {
     }
 
     public static DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding, String clientNamespace) {
+        LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
         ResourceManager.kubeClient().createOrReplaceClusterRoleBinding(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
         return new DoneableClusterRoleBinding(clusterRoleBinding);
@@ -198,45 +253,43 @@ public class KubernetesResource {
 
     public static DoneableService createServiceResource(String appName, int port, String clientNamespace, String transportProtocol) {
         Service service = getSystemtestsServiceResource(appName, port, clientNamespace, transportProtocol).build();
-        LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
+        LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createService(service);
         deleteLater(service);
         return new DoneableService(service);
     }
 
     public static DoneableService createServiceResource(Service service, String clientNamespace) {
-        LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
+        LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createService(service);
         deleteLater(service);
         return new DoneableService(service);
     }
 
-    public static Service createKeycloakNodePortHttpService(String namespace) {
+    public static Service deployKeycloakNodePortHttpService(String namespace) {
         String keycloakName = "keycloak";
 
         Map<String, String> keycloakLabels = new HashMap<>();
         keycloakLabels.put("app", keycloakName);
-        keycloakLabels.put("component", keycloakName);
 
-        return getSystemtestsServiceResource(keycloakName + "-service-http",
-            Constants.HTTP_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
-            .editSpec()
-                .withType("NodePort")
-                .withSelector(keycloakLabels)
-                .editFirstPort()
-                    .withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
-                .endPort()
-            .endSpec().build();
+        return getSystemtestsServiceResource(keycloakName + "service-http",
+                Constants.HTTP_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
+                .editSpec()
+                    .withType("NodePort")
+                    .withSelector(keycloakLabels)
+                    .editFirstPort()
+                        .withNodePort(Constants.HTTP_KEYCLOAK_DEFAULT_NODE_PORT)
+                    .endPort()
+                .endSpec().build();
     }
 
-    public static Service createKeycloakNodePortService(String namespace) {
+    public static Service deployKeycloakNodePortService(String namespace) {
         String keycloakName = "keycloak";
 
         Map<String, String> keycloakLabels = new HashMap<>();
         keycloakLabels.put("app", keycloakName);
-        keycloakLabels.put("component", keycloakName);
 
-        return getSystemtestsServiceResource(keycloakName + "-service-https",
+        return getSystemtestsServiceResource(keycloakName + "service-https",
             Constants.HTTPS_KEYCLOAK_DEFAULT_PORT, namespace, "TCP")
             .editSpec()
                 .withType("NodePort")
@@ -277,16 +330,16 @@ public class KubernetesResource {
      * @param resource mean Connect or ConnectS2I resource
      * @param deploymentName name of resource deployment - for setting strimzi.io/name
      */
-    public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName) {
-        LabelSelector labelSelector = new LabelSelectorBuilder()
-                .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
-                .build();
+    public static void allowNetworkPolicySettingsForResource(HasMetadata resource, String deploymentName, String clusterName) {
+        String clientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
 
-        if (kubeClient().listPods(labelSelector).size() == 0) {
-            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
+        if (kubeClient().getDeployment(clientsDeploymentName).getSpec().getSelector() == null) {
+            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the Kafka Connect");
         }
 
-        LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", deploymentName, labelSelector);
+        LabelSelector labelSelector = kubeClient().getDeployment(clientsDeploymentName).getSpec().getSelector();
+
+        LOGGER.info("Apply NetworkPolicy access to {} from {}", deploymentName, clientsDeploymentName);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewApiVersion("networking.k8s.io/v1")
@@ -323,7 +376,7 @@ public class KubernetesResource {
 
         LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
         deleteLater(kubeClient().getClient().network().networkPolicies().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(networkPolicy));
-        LOGGER.info("Network policy for LabelSelector {} successfully applied", labelSelector);
+        LOGGER.info("Network policy for {} successfully applied", clientsDeploymentName);
     }
 
     public static NetworkPolicy applyDefaultNetworkPolicy(String namespace, DefaultNetworkPolicy policy) {
@@ -356,7 +409,7 @@ public class KubernetesResource {
         return networkPolicy;
     }
 
-    public static Deployment getDeploymentFromYaml(String yamlPath) {
+    private static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
 
@@ -370,7 +423,10 @@ public class KubernetesResource {
 
     private static Deployment waitFor(Deployment deployment) {
         String deploymentName = deployment.getMetadata().getName();
-        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, deployment.getSpec().getReplicas());
+
+        LOGGER.info("Waiting for deployment {}", deploymentName);
+        DeploymentUtils.waitForDeploymentReady(deploymentName, deployment.getSpec().getReplicas());
+        LOGGER.info("Deployment {} is ready", deploymentName);
         return deployment;
     }
 
@@ -392,9 +448,5 @@ public class KubernetesResource {
 
     public static NetworkPolicy deleteLater(NetworkPolicy resource) {
         return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().network().networkPolicies(), resource);
-    }
-
-    public static Job deleteLater(Job resource) {
-        return ResourceManager.deleteLater(ResourceManager.kubeClient().getClient().batch().jobs(), resource);
     }
 }

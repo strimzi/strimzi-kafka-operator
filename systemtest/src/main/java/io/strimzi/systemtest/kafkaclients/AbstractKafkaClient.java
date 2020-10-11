@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +22,6 @@ public abstract class AbstractKafkaClient {
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClient.class);
 
     protected String topicName;
-    protected Integer partition;
     protected String namespaceName;
     protected String clusterName;
     protected int messageCount;
@@ -36,7 +34,6 @@ public abstract class AbstractKafkaClient {
     public abstract static class Builder<T extends Builder<T>> {
 
         private String topicName;
-        protected Integer partition;
         private String namespaceName;
         private String clusterName;
         private int messageCount;
@@ -48,11 +45,6 @@ public abstract class AbstractKafkaClient {
 
         public T withTopicName(String topicName) {
             this.topicName = topicName;
-            return self();
-        }
-
-        public T withPartition(Integer partition) {
-            this.partition = partition;
             return self();
         }
 
@@ -109,13 +101,8 @@ public abstract class AbstractKafkaClient {
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
         if (builder.clusterName == null  || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
-        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
-            LOGGER.info("Consumer group were not specified going to create the random one.");
-            builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
-        }
 
         topicName = builder.topicName;
-        partition = builder.partition;
         namespaceName = builder.namespaceName;
         clusterName = builder.clusterName;
         messageCount = builder.messageCount;
@@ -144,7 +131,7 @@ public abstract class AbstractKafkaClient {
      * @param clusterName kafka cluster name
      * @return bootstrap url as string
      */
-    public static String getExternalBootstrapConnect(String namespace, String clusterName) {
+    protected static String getExternalBootstrapConnect(String namespace, String clusterName) {
         if (kubeClient(namespace).getClient().isAdaptable(OpenShiftClient.class)) {
             Route route = kubeClient(namespace).getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
             if (route != null && !route.getStatus().getIngress().isEmpty()) {

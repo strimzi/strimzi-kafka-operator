@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
-import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
@@ -21,7 +20,6 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -29,7 +27,6 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
@@ -79,7 +76,6 @@ public class ResourceOperatorSupplier {
     public final CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge> kafkaBridgeOperator;
     public final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> kafkaConnectorOperator;
     public final CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2> mirrorMaker2Operator;
-    public final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance> kafkaRebalanceOperator;
     public final NetworkPolicyOperator networkPolicyOperator;
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     public final PodOperator podOperations;
@@ -91,7 +87,6 @@ public class ResourceOperatorSupplier {
     public final NodeOperator nodeOperator;
     public final ZookeeperScalerProvider zkScalerProvider;
     public final MetricsProvider metricsProvider;
-    public AdminClientProvider adminClientProvider;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client,
@@ -132,12 +127,10 @@ public class ResourceOperatorSupplier {
                 new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, Crds.kafkaBridge()),
                 new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class, Crds.kafkaConnector()),
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class, Crds.kafkaMirrorMaker2()),
-                new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, DoneableKafkaRebalance.class, Crds.kafkaRebalance()),
                 new StorageClassOperator(vertx, client, operationTimeoutMs),
                 new NodeOperator(vertx, client, operationTimeoutMs),
                 zkScalerProvider,
-                metricsProvider,
-                adminClientProvider);
+                metricsProvider);
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -165,12 +158,10 @@ public class ResourceOperatorSupplier {
                                     CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge> kafkaBridgeOperator,
                                     CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> kafkaConnectorOperator,
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2> mirrorMaker2Operator,
-                                    CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance> kafkaRebalanceOperator,
                                     StorageClassOperator storageClassOperator,
                                     NodeOperator nodeOperator,
                                     ZookeeperScalerProvider zkScalerProvider,
-                                    MetricsProvider metricsProvider,
-                                    AdminClientProvider adminClientProvider) {
+                                    MetricsProvider metricsProvider) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -197,10 +188,8 @@ public class ResourceOperatorSupplier {
         this.storageClassOperations = storageClassOperator;
         this.kafkaConnectorOperator = kafkaConnectorOperator;
         this.mirrorMaker2Operator = mirrorMaker2Operator;
-        this.kafkaRebalanceOperator = kafkaRebalanceOperator;
         this.nodeOperator = nodeOperator;
         this.zkScalerProvider = zkScalerProvider;
         this.metricsProvider = metricsProvider;
-        this.adminClientProvider = adminClientProvider;
     }
 }

@@ -4,17 +4,11 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
-import io.strimzi.kafka.config.model.ConfigModel;
-import io.strimzi.kafka.config.model.ConfigModels;
-import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -23,24 +17,15 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.time.Duration;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIXES;
-import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -52,37 +37,35 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, Ready);
+    public static void waitUntilKafkaCRIsReady(String clusterName) {
+        waitUntilKafkaStatus(clusterName, "Ready");
     }
 
-    public static void waitForKafkaNotReady(String clusterName) {
-        waitForKafkaStatus(clusterName, NotReady);
+    public static void waitUntilKafkaCRIsNotReady(String clusterName) {
+        waitUntilKafkaStatus(clusterName, "NotReady");
     }
 
-    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
-        Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
-    }
+    public static void waitUntilKafkaStatus(String clusterName, String state) {
+        LOGGER.info("Waiting till Kafka CR will be in state: {}", state);
+        TestUtils.waitFor("Waiting for Kafka resource status is: " + state, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            List<Condition> conditions =
+                    Crds.kafkaOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(clusterName)
+                            .get().getStatus().getConditions().stream().filter(condition -> !condition.getType().equals("Warning"))
+                            .collect(Collectors.toList());
 
-    /**
-     * Waits for the Kafka Status to be updated after changed. It checks the generation and observed generation to
-     * ensure the status is up to date.
-     *
-     * @param clusterName   Name of the Kafka cluster which should be checked
-     */
-    public static void waitForKafkaStatusUpdate(String clusterName)   {
-        LOGGER.info("Waiting for Kafka status to be updated");
-        TestUtils.waitFor("KafkaStatus update", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Kafka k = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-            return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
+            for (Condition condition : conditions) {
+                if (!condition.getType().matches(state))
+                    return false;
+            }
+
+            return true;
         });
+        LOGGER.info("Kafka CR is in state: {}", state);
     }
 
-
-    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message, long timeout) {
-        TestUtils.waitFor("Kafka Status with message [" + message + "]",
-            Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
+    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
+        TestUtils.waitFor("Kafka status contains exception with non-existing secret name",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     if (condition.getMessage().matches(message)) {
@@ -93,17 +76,13 @@ public class KafkaUtils {
             });
     }
 
-    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
-        waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, message, Constants.GLOBAL_STATUS_TIMEOUT);
-    }
-
     public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
 
         for (int podIndex : podIndexes) {
             String zookeeperPod = KafkaResources.zookeeperPodName(clusterName, podIndex);
-            String zookeeperPort = String.valueOf(12181);
+            String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                     try {
                         String output = cmdKubeClient().execInPod(zookeeperPod,
@@ -184,153 +163,5 @@ public class KafkaUtils {
             count[0] = 0;
             return false;
         });
-    }
-
-    /**
-     * Method which, update/replace Kafka configuration
-     * @param clusterName name of the cluster where Kafka resource can be found
-     * @param brokerConfigName key of specific property
-     * @param value value of specific property
-     */
-    public static void updateSpecificConfiguration(String clusterName, String brokerConfigName, Object value) {
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
-            LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-            Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
-            config.put(brokerConfigName, value);
-            kafka.getSpec().getKafka().setConfig(config);
-            LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-        });
-    }
-
-    /**
-     * Method which, extends the @link updateConfiguration(String clusterName, KafkaConfiguration kafkaConfiguration, Object value) method
-     * with stability and ensures after update of Kafka resource there will be not rolling update
-     * @param clusterName name of the cluster where Kafka resource can be found
-     * @param brokerConfigName key of specific property
-     * @param value value of specific property
-     */
-    public static void  updateConfigurationWithStabilityWait(String clusterName, String brokerConfigName, Object value) {
-        updateSpecificConfiguration(clusterName, brokerConfigName, value);
-    }
-
-    /**
-     * Verifies that updated configuration was successfully changed inside Kafka CR
-     * @param brokerConfigName key of specific property
-     * @param value value of specific property
-     */
-    public static boolean verifyCrDynamicConfiguration(String clusterName, String brokerConfigName, Object value) {
-        LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and excepted is {}={}",
-            brokerConfigName,
-            KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
-            brokerConfigName,
-            value);
-
-        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
-    }
-
-    /**
-     * Verifies that updated configuration was successfully changed inside Kafka pods
-     * @param kafkaPodNamePrefix prefix of Kafka pods
-     * @param brokerConfigName key of specific property
-     * @param value value of specific property
-     * @return
-     * true = if specific property match the excepted property
-     * false = if specific property doesn't match the excepted property
-     */
-    public static boolean verifyPodDynamicConfiguration(String kafkaPodNamePrefix, String brokerConfigName, Object value) {
-
-        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(kafkaPodNamePrefix);
-
-        for (Pod pod : kafkaPods) {
-
-            TestUtils.waitFor("Wait until dyn.configuration is changed", Constants.GLOBAL_POLL_INTERVAL, Constants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
-                () -> {
-                    String result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
-
-                    LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
-
-                    if (!result.contains(brokerConfigName + "=" + value)) {
-                        LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), brokerConfigName, value);
-                        LOGGER.error("Kafka configuration {}", result);
-                        return false;
-                    }
-                    return true;
-                });
-        }
-        return true;
-    }
-
-    /**
-     * Loads all kafka config parameters supported by the given {@code kafkaVersion}, as generated by #KafkaConfigModelGenerator in config-model-generator.
-     * @param kafkaVersion specific kafka version
-     * @return all supported kafka properties
-     */
-    public static Map<String, ConfigModel> readConfigModel(String kafkaVersion) {
-        String name = TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafka-" + kafkaVersion + "-config-model.json";
-        try {
-            try (InputStream in = new FileInputStream(name)) {
-                ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
-                if (!kafkaVersion.equals(configModels.getVersion())) {
-                    throw new RuntimeException("Incorrect version");
-                }
-                return configModels.getConfigs();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading from classpath resource " + name, e);
-        }
-    }
-
-    /**
-     * Return dynamic Kafka configs supported by the the given version of Kafka.
-     * @param kafkaVersion specific kafka version
-     * @return all dynamic properties for specific kafka version
-     */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:BooleanExpressionComplexity", "unchecked"})
-    public static Map<String, ConfigModel> getDynamicConfigurationProperties(String kafkaVersion)  {
-
-        Map<String, ConfigModel> configs = KafkaUtils.readConfigModel(kafkaVersion);
-
-        LOGGER.info("This is configs {}", configs.toString());
-
-        LOGGER.info("This is all kafka configs with size {}", configs.size());
-
-        Map<String, ConfigModel> dynamicConfigs = configs
-            .entrySet()
-            .stream()
-            .filter(a -> {
-                String[] prefixKey = a.getKey().split("\\.");
-
-                // filter all which is Scope = ClusterWide or PerBroker
-                boolean isClusterWideOrPerBroker = a.getValue().getScope() == Scope.CLUSTER_WIDE || a.getValue().getScope() == Scope.PER_BROKER;
-
-                if (prefixKey[0].equals("ssl") || prefixKey[0].equals("sasl") || prefixKey[0].equals("advertised") ||
-                    prefixKey[0].equals("listeners") || prefixKey[0].equals("listener")) {
-                    return isClusterWideOrPerBroker && !FORBIDDEN_PREFIXES.contains(prefixKey[0]);
-                }
-
-                return isClusterWideOrPerBroker;
-            })
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        LOGGER.info("This is dynamic-configs size {}", dynamicConfigs.size());
-
-        Map<String, ConfigModel> forbiddenExceptionsConfigs = configs
-            .entrySet()
-            .stream()
-            .filter(a -> FORBIDDEN_PREFIX_EXCEPTIONS.contains(a.getKey()))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        LOGGER.info("This is size of forbidden-exception-configs size {}", forbiddenExceptionsConfigs.size());
-
-        Map<String, ConfigModel> dynamicConfigsWithExceptions = new HashMap<>();
-
-        dynamicConfigsWithExceptions.putAll(dynamicConfigs);
-        dynamicConfigsWithExceptions.putAll(forbiddenExceptionsConfigs);
-
-        LOGGER.info("This is dynamic-configs with forbidden-exception-configs size {}", dynamicConfigsWithExceptions.size());
-
-        dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info(key + " -> "  + value));
-
-        return dynamicConfigsWithExceptions;
     }
 }

@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
@@ -16,8 +15,6 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -62,10 +59,10 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withListeners(new ArrayOrObjectKafkaListeners(null, new KafkaListenersBuilder()
-                                .withNewPlain()
-                                .endPlain()
-                                .build()))
+                        .withNewListeners()
+                            .withNewPlain()
+                            .endPlain()
+                        .endListeners()
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()
@@ -82,7 +79,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
-        when(mockClient.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(op);
+        when(mockClient.customResources(any(), any(), any(), any())).thenReturn(op);
     }
 
     @Override
@@ -108,7 +105,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
 
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .onComplete(context.succeeding(kafka -> async.flag()));
+            .setHandler(context.succeeding(kafka -> async.flag()));
     }
 
     @Test
@@ -128,7 +125,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .onComplete(context.succeeding(kafka -> async.flag()));
+            .setHandler(context.succeeding(kafka -> async.flag()));
 
     }
 
@@ -149,7 +146,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .onComplete(context.failing(e -> context.verify(() -> {
+            .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(KubernetesClientException.class));
                 async.flag();
             })));
@@ -173,7 +170,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .onComplete(context.failing(e -> context.verify(() -> {
+            .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(KubernetesClientException.class));
                 async.flag();
             })));
@@ -196,7 +193,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(resource())
-            .onComplete(context.failing(e -> context.verify(() -> {
+            .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(KubernetesClientException.class));
                 async.flag();
             })));

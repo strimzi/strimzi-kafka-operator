@@ -75,11 +75,11 @@ public class ZkTopicStoreTest {
 
         // Create the topic
         store.create(topic)
-            .onComplete(context.succeeding())
+            .setHandler(context.succeeding())
 
             // Read the topic
             .compose(v -> store.read(new TopicName("my_topic")))
-            .onComplete(context.succeeding(readTopic -> context.verify(() -> {
+            .setHandler(context.succeeding(readTopic -> context.verify(() -> {
                 // assert topics equal
                 assertThat(readTopic.getTopicName(), is(topic.getTopicName()));
                 assertThat(readTopic.getNumPartitions(), is(topic.getNumPartitions()));
@@ -89,7 +89,7 @@ public class ZkTopicStoreTest {
 
             // try to create it again: assert an error
             .compose(v -> store.create(topic))
-            .onComplete(context.failing(e -> context.verify(() -> {
+            .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TopicStore.EntityExistsException.class));
                 failedCreateCompleted.complete();
             })));
@@ -104,11 +104,11 @@ public class ZkTopicStoreTest {
                 // update my_topic
                 return store.update(updatedTopic);
             })
-            .onComplete(context.succeeding())
+            .setHandler(context.succeeding())
 
             // re-read it and assert equal
             .compose(v -> store.read(new TopicName("my_topic")))
-            .onComplete(context.succeeding(rereadTopic -> context.verify(() -> {
+            .setHandler(context.succeeding(rereadTopic -> context.verify(() -> {
                 // assert topics equal
                 assertThat(rereadTopic.getTopicName(), is(updatedTopic.getTopicName()));
                 assertThat(rereadTopic.getNumPartitions(), is(updatedTopic.getNumPartitions()));
@@ -118,17 +118,17 @@ public class ZkTopicStoreTest {
 
             // delete it
             .compose(v -> store.delete(updatedTopic.getTopicName()))
-            .onComplete(context.succeeding())
+            .setHandler(context.succeeding())
 
             // assert we can't read it again
             .compose(v -> store.read(new TopicName("my_topic")))
-            .onComplete(context.succeeding(deletedTopic -> context.verify(() -> {
+            .setHandler(context.succeeding(deletedTopic -> context.verify(() -> {
                 assertThat(deletedTopic, is(nullValue()));
             })))
 
             // delete it again: assert an error
             .compose(v -> store.delete(updatedTopic.getTopicName()))
-            .onComplete(context.failing(e -> context.verify(() -> {
+            .setHandler(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TopicStore.NoSuchEntityExistsException.class));
                 async.flag();
             })));

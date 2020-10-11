@@ -9,7 +9,7 @@ This procedure describes how to upgrade a Cluster Operator deployment to a later
 
 .Prerequisites
 
-* An existing Cluster Operator deployment is available.
+* An existing Cluster Operator deployment.
 * You have xref:downloads-{context}[downloaded the installation files for the new version].
 
 .Procedure
@@ -21,10 +21,10 @@ Any changes will be *overwritten* by the new version of the Cluster Operator.
 
 .. Modify the installation files for the new version according to the namespace the Cluster Operator is running in.
 +
-include::snip-cluster-operator-namespace-sed.adoc[]
+include::frag-cluster-operator-namespace-sed.adoc[]
 +
 .. If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit the
-`install/cluster-operator/060-Deployment-cluster-operator.yaml` file to use those environment variables.
+`install/cluster-operator/050-Deployment-cluster-operator.yaml` file to use those environment variables.
 
 . When you have an updated configuration, deploy it along with the rest of the installation resources:
 +
@@ -42,14 +42,14 @@ Wait for the rolling updates to complete.
 kubectl get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new Strimzi version followed by the Kafka version. For example, `_<New Strimzi version>_-kafka-_<Current Kafka version>_`.
+The image tag shows the new {ProductName} version followed by the Kafka version. For example, `_<New {ProductName} version>_-kafka-_<Current Kafka version>_`.
 
 . Update existing resources to handle deprecated custom resource properties.
 +
-* xref:assembly-upgrade-resources-{context}[Strimzi resource upgrades]
+* xref:assembly-upgrade-resources-{context}[{ProductName} resource upgrades]
 
 You now have an updated Cluster Operator, but the version of Kafka running in the cluster it manages is unchanged.
 
 .What to do next
 
-Following the Cluster Operator upgrade, you can perform a xref:assembly-upgrading-kafka-versions-str[Kafka upgrade].
+Following the Cluster Operator upgrade, perform a xref:assembly-upgrading-kafka-versions-str[Kafka upgrade].

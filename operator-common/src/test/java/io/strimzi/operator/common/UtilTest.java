@@ -4,15 +4,11 @@
  */
 package io.strimzi.operator.common;
 
-import io.strimzi.operator.cluster.model.InvalidResourceException;
-import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
@@ -77,46 +73,5 @@ public class UtilTest {
         assertThat(m, aMapWithSize(2));
         assertThat(m, hasEntry("key1", "value1"));
         assertThat(m, hasEntry("key2", "value2=value3"));
-    }
-
-    @Test
-    public void testMaskedPasswords()   {
-        String noPassword = "SOME_VARIABLE";
-        String passwordAtTheEnd = "SOME_PASSWORD";
-        String passwordInTheMiddle = "SOME_PASSWORD_TO_THE_BIG_SECRET";
-
-        assertThat(Util.maskPassword(noPassword, "123456"), is("123456"));
-        assertThat(Util.maskPassword(passwordAtTheEnd, "123456"), is("********"));
-        assertThat(Util.maskPassword(passwordInTheMiddle, "123456"), is("********"));
-    }
-
-    @Test
-    public void testMergeLabelsOrAnnotations()  {
-        Map<String, String> base = new HashMap<>();
-        base.put("label1", "value1");
-        base.put(Labels.STRIMZI_DOMAIN + "label2", "value2");
-
-        Map<String, String> overrides1 = new HashMap<>();
-        overrides1.put("override1", "value1");
-        overrides1.put(Labels.KUBERNETES_DOMAIN + "override2", "value2");
-
-        Map<String, String> overrides2 = new HashMap<>();
-        overrides2.put("override3", "value3");
-
-        Map<String, String> forbiddenOverrides = new HashMap<>();
-        forbiddenOverrides.put(Labels.STRIMZI_DOMAIN + "override4", "value4");
-
-        Map<String, String> expected = new HashMap<>();
-        expected.put("label1", "value1");
-        expected.put(Labels.STRIMZI_DOMAIN + "label2", "value2");
-        expected.put("override1", "value1");
-        expected.put("override3", "value3");
-
-        assertThat(Util.mergeLabelsOrAnnotations(base, overrides1, overrides2), is(expected));
-        assertThat(Util.mergeLabelsOrAnnotations(base, overrides1, null, overrides2), is(expected));
-        assertThat(Util.mergeLabelsOrAnnotations(base, null), is(base));
-        assertThat(Util.mergeLabelsOrAnnotations(base), is(base));
-        assertThat(Util.mergeLabelsOrAnnotations(null, overrides2), is(overrides2));
-        assertThrows(InvalidResourceException.class, () -> Util.mergeLabelsOrAnnotations(base, forbiddenOverrides));
     }
 }

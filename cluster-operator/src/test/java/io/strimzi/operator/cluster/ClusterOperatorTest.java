@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -22,13 +21,12 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import okhttp3.OkHttpClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,8 +37,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
@@ -56,7 +52,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static Vertx vertx;
-    private static final Logger log = LogManager.getLogger(ClusterOperatorTest.class);
 
     private static Map<String, String> buildEnv(String namespaces) {
         Map<String, String> env = new HashMap<>();
@@ -85,32 +80,32 @@ public class ClusterOperatorTest {
     }
 
     @Test
-    public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
+    public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) {
         startStop(context, "namespace", true);
     }
 
     @Test
-    public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
+    public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) {
         startStop(context, "namespace1,namespace2", true);
     }
 
     @Test
-    public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
+    public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) {
         startStop(context, "namespace", false);
     }
 
     @Test
-    public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
+    public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) {
         startStop(context, "namespace1,namespace2", false);
     }
 
     @Test
-    public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) throws InterruptedException {
+    public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) {
         startStopAllNamespaces(context, "*", true);
     }
 
     @Test
-    public void testStartStopAllNamespacesOnK8s(VertxTestContext context) throws InterruptedException {
+    public void testStartStopAllNamespacesOnK8s(VertxTestContext context) {
         startStopAllNamespaces(context, "*", false);
     }
 
@@ -119,7 +114,7 @@ public class ClusterOperatorTest {
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
+    private void startStop(VertxTestContext context, String namespaces, boolean openShift) {
         AtomicInteger numWatchers = new AtomicInteger(0);
 
         KubernetesClient client;
@@ -148,7 +143,7 @@ public class ClusterOperatorTest {
         }
         when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
-        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(mockCms);
+        when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
 
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
@@ -170,29 +165,21 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = buildEnv(namespaces);
 
-        CountDownLatch latch = new CountDownLatch(namespaceList.size() + 1);
-
+        Checkpoint async = context.checkpoint();
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
                     ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
-            .onComplete(context.succeeding(v -> context.verify(() -> {
+            .setHandler(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(namespaceList.size()));
+
                 for (String deploymentId: vertx.deploymentIDs()) {
-                    vertx.undeploy(deploymentId, asyncResult -> {
-                        if (asyncResult.failed()) {
-                            log.error("Failed to undeploy {}", deploymentId);
-                            context.failNow(asyncResult.cause());
-                        }
-                        latch.countDown();
-                    });
+                    vertx.undeploy(deploymentId, context.succeeding());
                 }
 
-                int maximumExpectedNumberOfWatchers = (openShift ? 9 : 7) * namespaceList.size(); // we do not have connectS2I on k8s
+                int maximumExpectedNumberOfWatchers = (openShift ? 8 : 6) * namespaceList.size(); // we do not have connectS2I on k8s
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
-                latch.countDown();
+                async.flag();
             })));
-        latch.await(10, TimeUnit.SECONDS);
-        context.completeNow();
     }
 
     /**
@@ -200,7 +187,7 @@ public class ClusterOperatorTest {
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
+    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) {
         AtomicInteger numWatchers = new AtomicInteger(0);
         KubernetesClient client;
         if (openShift) {
@@ -230,7 +217,7 @@ public class ClusterOperatorTest {
         }
         when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
-        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(mockCms);
+        when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
 
         FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
         when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);
@@ -247,26 +234,18 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = buildEnv(namespaces);
 
-        CountDownLatch latch = new CountDownLatch(2);
+        Checkpoint async = context.checkpoint();
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9),
                 ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
-            .onComplete(context.succeeding(v -> context.verify(() -> {
+            .setHandler(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(1));
                 for (String deploymentId: vertx.deploymentIDs()) {
-                    vertx.undeploy(deploymentId, asyncResult -> {
-                        if (asyncResult.failed()) {
-                            log.error("Failed to undeploy {}", deploymentId);
-                            context.failNow(asyncResult.cause());
-                        }
-                        latch.countDown();
-                    });
+                    vertx.undeploy(deploymentId, context.succeeding());
                 }
 
-                int maximumExpectedNumberOfWatchers = openShift ? 9 : 7; // we do not have connectS2I on k8s
+                int maximumExpectedNumberOfWatchers = openShift ? 8 : 6; // we do not have connectS2I on k8s
                 assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
-                latch.countDown();
+                async.flag();
             })));
-        latch.await(10, TimeUnit.SECONDS);
-        context.completeNow();
     }
 }

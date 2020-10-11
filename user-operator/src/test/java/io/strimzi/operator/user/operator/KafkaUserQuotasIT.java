@@ -339,7 +339,7 @@ public class KafkaUserQuotasIT {
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(username, quotas)
-            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
                 assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("2000000"));
                 assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("1000000"));
@@ -375,7 +375,7 @@ public class KafkaUserQuotasIT {
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(username, updatedQuotas)
-            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
                 assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
                 assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
@@ -410,7 +410,7 @@ public class KafkaUserQuotasIT {
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(username, updatedQuotas)
-            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
                 assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
                 assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
@@ -442,7 +442,7 @@ public class KafkaUserQuotasIT {
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(username, null)
-            .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
+            .setHandler(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(false));
                 async.flag();
             })));

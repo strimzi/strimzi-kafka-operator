@@ -6,16 +6,10 @@ package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.search.MeterNotFoundException;
-import io.strimzi.api.kafka.model.HasSpecAndStatus;
-import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -34,11 +28,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Collections.emptySet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
 public class OperatorMetricsTest {
@@ -62,32 +54,27 @@ public class OperatorMetricsTest {
     public void testSuccessfulReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
                 return Future.succeededFuture();
             }
 
-            public Set<Condition> validate(CustomResource resource) {
-                return emptySet();
+            protected void validate(HasMetadata resource) {
+                // Do nothing
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
             }
-
-            @Override
-            protected Status createStatus() {
-                return new Status() { };
-            }
         };
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
+                .setHandler(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -98,12 +85,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
-                            .tag("kind", "TestResource")
-                            .tag("name", "my-resource")
-                            .tag("resource-namespace", "my-namespace")
-                            .gauge().value(), is(1.0));
-
                     async.flag();
                 })));
     }
@@ -112,11 +93,11 @@ public class OperatorMetricsTest {
     public void testFailingReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
                 return Future.failedFuture(new RuntimeException("Test error"));
             }
 
@@ -128,16 +109,11 @@ public class OperatorMetricsTest {
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
             }
-
-            @Override
-            protected Status createStatus() {
-                return new Status() { };
-            }
         };
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .onComplete(context.failing(v -> context.verify(() -> {
+                .setHandler(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -148,12 +124,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
-                            .tag("kind", "TestResource")
-                            .tag("name", "my-resource")
-                            .tag("resource-namespace", "my-namespace")
-                            .gauge().value(), is(0.0));
-
                     async.flag();
                 })));
     }
@@ -162,32 +132,27 @@ public class OperatorMetricsTest {
     public void testFailingWithLockReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
                 return Future.failedFuture(new UnableToAcquireLockException());
             }
 
-            public Set<Condition> validate(CustomResource resource) {
-                return emptySet();
+            protected void validate(HasMetadata resource) {
+                // Do nothing
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
             }
-
-            @Override
-            protected Status createStatus() {
-                return new Status() { };
-            }
         };
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .onComplete(context.failing(v -> context.verify(() -> {
+                .setHandler(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -206,7 +171,7 @@ public class OperatorMetricsTest {
     public void testDeleteCountsReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+        AbstractWatchableResourceOperator resourceOperator = new AbstractWatchableResourceOperator(vertx, null, "TestResource") {
             @Override
             protected MixedOperation operation() {
                 return null;
@@ -216,37 +181,27 @@ public class OperatorMetricsTest {
             public HasMetadata get(String namespace, String name) {
                 return null;
             }
-
-            @Override
-            public Future updateStatusAsync(HasMetadata resource) {
-                return null;
-            }
         };
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
 
-            public Set<Condition> validate(CustomResource resource) {
-                return emptySet();
+            protected void validate(HasMetadata resource) {
+                // Do nothing
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return Future.succeededFuture(Boolean.TRUE);
             }
-
-            @Override
-            protected Status createStatus() {
-                return new Status() { };
-            }
         };
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
+                .setHandler(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -257,14 +212,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThrows(MeterNotFoundException.class, () -> {
-                        registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
-                                .tag("kind", "TestResource")
-                                .tag("name", "my-resource")
-                                .tag("resource-namespace", "my-namespace")
-                                .gauge();
-                    });
-
                     async.flag();
                 })));
     }
@@ -273,35 +220,30 @@ public class OperatorMetricsTest {
     public void testReconcileAll(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        Set<NamespaceAndName> resources = new HashSet<>(3);
-        resources.add(new NamespaceAndName("my-namespace", "avfc"));
-        resources.add(new NamespaceAndName("my-namespace", "vtid"));
-        resources.add(new NamespaceAndName("my-namespace", "utv"));
-
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Void> createOrUpdate(Reconciliation reconciliation, HasMetadata resource) {
                 return Future.succeededFuture();
             }
 
             public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
+                Set<NamespaceAndName> resources = new HashSet<>(3);
+                resources.add(new NamespaceAndName("my-namespace", "avfc"));
+                resources.add(new NamespaceAndName("my-namespace", "vtid"));
+                resources.add(new NamespaceAndName("my-namespace", "utv"));
+
                 return Future.succeededFuture(resources);
             }
 
-            public Set<Condition> validate(CustomResource resource) {
-                return emptySet();
+            protected void validate(HasMetadata resource) {
+                // Do nothing
             }
 
             @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
-            }
-
-            @Override
-            protected Status createStatus() {
-                return new Status() { };
             }
         };
 
@@ -309,7 +251,7 @@ public class OperatorMetricsTest {
         operator.reconcileAll("test", "my-namespace", reconcileAllPromise);
 
         Checkpoint async = context.checkpoint();
-        reconcileAllPromise.future().onComplete(context.succeeding(v -> context.verify(() -> {
+        reconcileAllPromise.future().setHandler(context.succeeding(v -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
 
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));
@@ -320,14 +262,6 @@ public class OperatorMetricsTest {
 
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(3L));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
-            for (NamespaceAndName resource : resources) {
-                assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
-                        .tag("kind", "TestResource")
-                        .tag("name", resource.getName())
-                        .tag("resource-namespace", resource.getNamespace())
-                        .gauge().value(), is(1.0));
-            }
 
             async.flag();
         })));
@@ -349,24 +283,16 @@ public class OperatorMetricsTest {
         return metrics;
     }
 
-    private abstract class MyResource extends CustomResource implements HasSpecAndStatus {
-    }
-
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
-        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
-            @Override
-            public Future updateStatusAsync(HasMetadata resource) {
-                return null;
-            }
-
+    private AbstractWatchableResourceOperator resourceOperatorWithExistingResource()    {
+        return new AbstractWatchableResourceOperator(vertx, null, "TestResource") {
             @Override
             protected MixedOperation operation() {
                 return null;
             }
 
             @Override
-            public CustomResource get(String namespace, String name) {
-                return new MyResource() {
+            public HasMetadata get(String namespace, String name) {
+                return new HasMetadata() {
                     @Override
                     public ObjectMeta getMetadata() {
                         return null;
@@ -389,26 +315,6 @@ public class OperatorMetricsTest {
 
                     @Override
                     public void setApiVersion(String s) {
-
-                    }
-
-                    @Override
-                    public Spec getSpec() {
-                        return new Spec() { };
-                    }
-
-                    @Override
-                    public void setSpec(Spec spec) {
-
-                    }
-
-                    @Override
-                    public Status getStatus() {
-                        return null;
-                    }
-
-                    @Override
-                    public void setStatus(Status status) {
 
                     }
                 };

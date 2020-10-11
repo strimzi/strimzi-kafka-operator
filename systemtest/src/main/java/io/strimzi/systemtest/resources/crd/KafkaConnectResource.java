@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -19,17 +18,19 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
-
 public class KafkaConnectResource {
-    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect.yaml";
-    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-connect-metrics.yaml";
+    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectResource.class);
+
+    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = "../examples/kafka-connect/kafka-connect.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = "../examples/metrics/kafka-connect-metrics.yaml";
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectClient() {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
@@ -41,16 +42,20 @@ public class KafkaConnectResource {
 
     public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
-        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build());
+        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build(), clusterName);
     }
 
     public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
-        return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas);
+        return kafkaConnectWithMetrics(name, kafkaConnectReplicas, true);
     }
 
-    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
+    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
+        return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas, allowNetworkPolicyAccess);
+    }
+
+    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas, boolean allowNetworkPolicyAccess) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
-        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build());
+        return deployKafkaConnect(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build(), clusterName);
     }
 
     public static KafkaConnectBuilder defaultKafkaConnect(String name, String kafkaClusterName, int kafkaConnectReplicas) {
@@ -64,6 +69,7 @@ public class KafkaConnectResource {
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withClusterName(kafkaClusterName)
+                .addToLabels("type", "kafka-connect")
             .endMetadata()
             .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
@@ -77,17 +83,17 @@ public class KafkaConnectResource {
                 .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(kafkaClusterName))
                 .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(kafkaClusterName))
                 .withNewInlineLogging()
-                    .addToLoggers("log4j.rootLogger", "DEBUG")
+                    .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
             .endSpec();
     }
 
-    private static DoneableKafkaConnect deployKafkaConnect(KafkaConnect kafkaConnect) {
+    private static DoneableKafkaConnect deployKafkaConnect(KafkaConnect kafkaConnect, String clusterName) {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
-            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
+            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()), clusterName);
         }
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
@@ -110,8 +116,8 @@ public class KafkaConnectResource {
         return kafkaConnect;
     }
 
-    public static void deleteKafkaConnectWithoutWait(String resourceName) {
-        kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+    public static void deleteKafkaConnectWithoutWait(KafkaConnect kafkaConnect) {
+        kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).delete(kafkaConnect);
     }
 
     private static KafkaConnect getKafkaConnectFromYaml(String yamlPath) {
@@ -119,7 +125,13 @@ public class KafkaConnectResource {
     }
 
     private static KafkaConnect waitFor(KafkaConnect kafkaConnect) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectClient(), kafkaConnect, Ready);
+        String kafkaConnectCrName = kafkaConnect.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka Connect {}", kafkaConnectCrName);
+        DeploymentUtils.waitForDeploymentReady(KafkaConnectResources.deploymentName(kafkaConnectCrName), kafkaConnect.getSpec().getReplicas());
+        LOGGER.info("Kafka Connect {} is ready", kafkaConnectCrName);
+
+        return kafkaConnect;
     }
 
     private static KafkaConnect deleteLater(KafkaConnect kafkaConnect) {

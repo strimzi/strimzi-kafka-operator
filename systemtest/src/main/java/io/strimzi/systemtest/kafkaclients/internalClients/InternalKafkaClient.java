@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -75,11 +76,15 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .withTopicName(topicName)
             .build();
 
-        LOGGER.info("Starting verifiableClient plain producer with the following configuration: {}", producer.toString());
-        LOGGER.info("Producing {} messages to {}:{} from pod {}", messageCount, producer.getBootstrapServer(), topicName, podName);
+        LOGGER.info("Starting verifiableClient plain producer with following configuration {}", producer.toString());
+        LOGGER.info("Sending {} messages to {}#{}", messageCount, producer.getBootstrapServer(), topicName);
 
-        boolean hasPassed = producer.run(Constants.PRODUCER_TIMEOUT);
-        LOGGER.info("Producer finished correctly: {}", hasPassed);
+        TestUtils.waitFor("Sending messages", Constants.PRODUCER_POLL_INTERVAL, Constants.GLOBAL_CLIENTS_TIMEOUT, () -> {
+            LOGGER.info("Sending {} messages to {}", messageCount, podName);
+            producer.run(Constants.PRODUCER_TIMEOUT);
+            int sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
+            return sent == messageCount;
+        });
 
         int sent = getSentMessagesCount(producer.getMessages().toString(), messageCount);
 
@@ -105,8 +110,8 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .withTopicName(topicName)
             .build();
 
-        LOGGER.info("Starting verifiableClient tls producer with the following configuration: {}", producerTls.toString());
-        LOGGER.info("Producing {} messages to {}:{} from pod {}", messageCount, producerTls.getBootstrapServer(), topicName, podName);
+        LOGGER.info("Starting verifiableClient tls producer with following configuration {}", producerTls.toString());
+        LOGGER.info("Sending {} messages to {}#{}", messageCount, producerTls.getBootstrapServer(), topicName);
 
         boolean hasPassed = producerTls.run(timeout);
         LOGGER.info("Producer finished correctly: {}", hasPassed);
@@ -138,8 +143,8 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .build();
 
 
-        LOGGER.info("Starting verifiableClient plain consumer with the following configuration: {}", consumer.toString());
-        LOGGER.info("Consuming {} messages from {}#{} from pod {}", messageCount, consumer.getBootstrapServer(), topicName, podName);
+        LOGGER.info("Starting verifiableClient plain consumer with following configuration {}", consumer.toString());
+        LOGGER.info("Wait for receive {} messages from {}#{}", messageCount, consumer.getBootstrapServer(), topicName);
 
         boolean hasPassed = consumer.run(timeout);
         LOGGER.info("Consumer finished correctly: {}", hasPassed);
@@ -173,8 +178,8 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .withConsumerInstanceId("instance" + new Random().nextInt(Integer.MAX_VALUE))
             .build();
 
-        LOGGER.info("Starting verifiableClient tls consumer with the following configuration: {}", consumerTls.toString());
-        LOGGER.info("Consuming {} messages from {}:{} from pod {}", messageCount, consumerTls.getBootstrapServer(), topicName, podName);
+        LOGGER.info("Starting verifiableClient tls consumer with following configuration {}", consumerTls.toString());
+        LOGGER.info("Wait for receive {} messages from {}#{}", messageCount, consumerTls.getBootstrapServer(), topicName);
 
         boolean hasPassed = consumerTls.run(timeoutMs);
         LOGGER.info("Consumer finished correctly: {}", hasPassed);

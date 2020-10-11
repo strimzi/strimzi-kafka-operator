@@ -12,9 +12,8 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
@@ -56,7 +55,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -98,12 +96,8 @@ public class KafkaStatusTest {
                     .withNewKafka()
                         .withReplicas(3)
                         .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                            .endGenericKafkaListener()
+                            .withNewPlain()
+                            .endPlain()
                         .endListeners()
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
@@ -134,7 +128,6 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -146,7 +139,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -156,12 +149,10 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().size(), is(2));
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(Integer.valueOf(9092)));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("my-service.my-namespace.svc:9092"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
             assertThat(status.getListeners().get(1).getType(), is("external"));
-            assertThat(status.getListeners().get(1).getAddresses().get(0).getHost(), is("my-route-address.domain.tld"));
-            assertThat(status.getListeners().get(1).getAddresses().get(0).getPort(), is(Integer.valueOf(443)));
-            assertThat(status.getListeners().get(1).getBootstrapServers(), is("my-route-address.domain.tld:443"));
+            assertThat(status.getListeners().get(1).getAddresses().get(0).getHost(),  is("my-route-address.domain.tld"));
+            assertThat(status.getListeners().get(1).getAddresses().get(0).getPort(), is(new Integer(443)));
 
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("Ready"));
@@ -216,7 +207,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
             // The status should not change => we test that updateStatusAsync was not called
             assertThat(kafkaCaptor.getAllValues().size(), is(0));
@@ -243,7 +234,6 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -257,7 +247,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(false));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -267,8 +257,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(Integer.valueOf(9092)));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("my-service.my-namespace.svc:9092"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
 
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("NotReady"));
@@ -314,7 +303,6 @@ public class KafkaStatusTest {
                 .build();
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(readyKafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(readyKafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -328,7 +316,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(false));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -338,8 +326,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(Integer.valueOf(9092)));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("my-service.my-namespace.svc:9092"));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(new Integer(9092)));
 
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("NotReady"));
@@ -416,13 +403,9 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                            .endGenericKafkaListener()
+                        .editOrNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -434,7 +417,6 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -495,7 +477,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -519,12 +501,12 @@ public class KafkaStatusTest {
 
     @Test
     public void testKafkaListenerNodePortAddressInStatusWithOverrides(VertxTestContext context) throws ParseException {
-        GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
+        NodePortListenerBrokerOverride broker0 = new NodePortListenerBrokerOverrideBuilder()
                 .withBroker(0)
                 .withAdvertisedHost("my-address-0")
                 .build();
 
-        GenericKafkaListenerConfigurationBroker broker1 = new GenericKafkaListenerConfigurationBrokerBuilder()
+        NodePortListenerBrokerOverride broker1 = new NodePortListenerBrokerOverrideBuilder()
                 .withBroker(1)
                 .withAdvertisedHost("my-address-1")
                 .build();
@@ -532,16 +514,12 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withNewConfiguration()
+                        .editOrNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewOverrides()
                                     .withBrokers(broker0, broker1)
-                                .endConfiguration()
-                            .endGenericKafkaListener()
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -553,7 +531,6 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -614,7 +591,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -641,16 +618,12 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
+                        .editOrNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
                                 .withNewConfiguration()
-                                    .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
+                                    .withPreferredAddressType(NodeAddressType.INTERNAL_DNS)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -662,7 +635,6 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -723,7 +695,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -750,13 +722,9 @@ public class KafkaStatusTest {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                            .endGenericKafkaListener()
+                        .editOrNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -768,7 +736,6 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -829,7 +796,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -855,13 +822,9 @@ public class KafkaStatusTest {
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withReplicas(1)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                            .endGenericKafkaListener()
+                        .editOrNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -873,7 +836,6 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -914,7 +876,7 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getValue(), is(notNullValue()));
@@ -924,8 +886,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getType(), is("external"));
 
-            assertThat(status.getListeners().get(0).getAddresses(), is(emptyList()));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is(nullValue()));
+            assertThat(status.getListeners().get(0).getAddresses(), is(nullValue()));
 
             async.flag();
         });
@@ -942,7 +903,6 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -953,7 +913,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getAllValues().size(), is(2));
@@ -980,7 +940,6 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -991,7 +950,7 @@ public class KafkaStatusTest {
                 supplier,
                 config);
 
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).setHandler(res -> {
             assertThat(res.succeeded(), is(true));
 
             assertThat(kafkaCaptor.getAllValues().size(), is(1));
@@ -1017,7 +976,6 @@ public class KafkaStatusTest {
         // Mock the CRD Operator for Kafka resources
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -1038,8 +996,8 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
+        kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
+                .setHandler(context.succeeding(v -> context.verify(() -> {
                     assertThat(kafkaCaptor.getValue(), is(notNullValue()));
                     assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
                     KafkaStatus status = kafkaCaptor.getValue().getStatus();
@@ -1132,7 +1090,7 @@ public class KafkaStatusTest {
 
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
-            reconcileState.kafkaBootstrapNodePorts.put("external-9094", 31234);
+            reconcileState.externalBootstrapNodePort = 31234;
 
             return reconcileState.getKafkaClusterDescription()
                     .compose(state -> state.kafkaNodePortExternalListenerStatus())

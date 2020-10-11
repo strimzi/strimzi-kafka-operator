@@ -4,37 +4,31 @@
  */
 package io.strimzi.systemtest.kafka;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.status.ListenerAddress;
-import io.strimzi.api.kafka.model.status.ListenerStatus;
-import io.strimzi.systemtest.AbstractST;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancerBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePortBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRouteBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerTlsBuilder;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.vertx.core.json.JsonArray;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,30 +36,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-public class ListenersST extends AbstractST {
+@Tag(INTERNAL_CLIENTS_USED)
+public class ListenersST extends BaseST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
     public static final String NAMESPACE = "kafka-listeners-cluster-test";
@@ -77,498 +64,18 @@ public class ListenersST extends AbstractST {
     private String customRootCA1 = "custom-certificate-root-1";
     private String customRootCA2 = "custom-certificate-root-2";
 
-    private String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-
-    /**
-     * Test sending messages over plain transport, without auth
-     */
-    @Test
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainAnonymous() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
-
-        final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none"), is(serviceDiscoveryArray));
-    }
-
-    /**
-     * Test sending messages over tls transport using mutual tls auth
-     */
-    @Test
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesTlsAuthenticated() {
-        String kafkaUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withName("plain")
-                                .withPort(9092)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withName("tls")
-                                .withPort(9093)
-                                .withTls(true)
-                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                .endKafkaListenerAuthenticationTlsAuth()
-                            .endGenericKafkaListener()
-                        .endListeners()
-                    .endKafka()
-                .endSpec().done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).done();
-
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-
-        final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUser)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        // Check brokers availability
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "tls"), is(serviceDiscoveryArray));
-    }
-
-    /**
-     * Test sending messages over plain transport using scram sha auth
-     */
-    @Test
-    @Tag(ACCEPTANCE)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainScramSha() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withName("plain")
-                                .withPort(9092)
-                                .withTls(false)
-                                .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                .endKafkaListenerAuthenticationScramSha512Auth()
-                            .endGenericKafkaListener()
-                        .endListeners()
-                    .endKafka()
-                .endSpec().done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
-
-        String brokerPodLog = kubeClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
-        Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUsername) + ".*$", Pattern.MULTILINE);
-        Matcher m = p.matcher(brokerPodLog);
-        boolean found = false;
-        while (m.find()) {
-            found = true;
-            LOGGER.info("Broker pod log line about user {}: {}", kafkaUsername, m.group());
-        }
-        if (!found) {
-            LOGGER.warn("No broker pod log lines about user {}", kafkaUsername);
-            LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
-        }
-
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
-
-        final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUsername)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        // Check brokers availability
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9092, "kafka", "scram-sha-512")));
-    }
-
-    /**
-     * Test sending messages over tls transport using scram sha auth
-     */
-    @Test
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesTlsScramSha() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withName("tls")
-                                .withPort(9093)
-                                .withTls(true)
-                                .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                .endKafkaListenerAuthenticationScramSha512Auth()
-                            .endGenericKafkaListener()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
-
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
-
-        final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUsername)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        // Check brokers availability
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
-
-        Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9093, "kafka", "scram-sha-512")));
-    }
+    private String userName = "alice";
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePort() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withName("tls")
-                            .withPort(9093)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withName("external")
-                            .withPort(9094)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
-        );
-
-        // Check that Kafka status has correct addresses in NodePort external listener part
-        for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(CLUSTER_NAME, NAMESPACE).getListeners()) {
-            if (listenerStatus.getType().equals("external")) {
-                List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
-                listStatusAddresses.sort(Comparator.comparing(String::toString));
-                List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
-                Integer nodePort = kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getPorts().get(0).getNodePort();
-
-                List<String> nodeIps = kubeClient().listPods(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getMetadata().getLabels())
-                        .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
-                nodeIps.sort(Comparator.comparing(String::toString));
-
-                assertThat(listStatusAddresses, is(nodeIps));
-                for (Integer port : listStatusPorts) {
-                    assertThat(port, is(nodePort));
-                }
-            }
-        }
-    }
-
-    @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testOverrideNodePortConfiguration() {
-        int brokerNodePort = 32000;
-        int brokerId = 0;
-
-        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
-        nodePortListenerBrokerOverride.setBroker(brokerId);
-        nodePortListenerBrokerOverride.setNodePort(brokerNodePort);
-        LOGGER.info("Setting nodePort to {} for broker {}", nodePortListenerBrokerOverride.getNodePort(),
-                nodePortListenerBrokerOverride.getBroker());
-
-        int clusterBootstrapNodePort = 32100;
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withName("tls")
-                                .withPort(9093)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withName("external")
-                                .withPort(9094)
-                                .withTls(false)
-                                .withNewConfiguration()
-                                    .withNewBootstrap()
-                                        .withNodePort(clusterBootstrapNodePort)
-                                    .endBootstrap()
-                                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
-                                            .withBroker(brokerId)
-                                            .withNodePort(brokerNodePort)
-                                            .build())
-                                .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
-                    .endKafka()
-                .endSpec()
-                .done();
-
-        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
-        LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
-                KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
-        assertThat(kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
-                .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
-        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
-                KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
-        );
-    }
-
-    @Test
-    @Tag(ACCEPTANCE)
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePortTls() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationTls())
-                        .endGenericKafkaListener()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(USER_NAME)
-                .withSecurityProtocol(SecurityProtocol.SSL)
-                .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesTls(),
-            basicExternalKafkaClient.receiveMessagesTls()
-        );
-    }
-
-    @Test
-    @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancer() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
-        );
-    }
-
-    @Test
-    @Tag(ACCEPTANCE)
-    @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancerTls() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationTls())
-                        .endGenericKafkaListener()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                .endKafka()
-            .endSpec()
-            .done();
-
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
-
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
-
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-                .withTopicName(TOPIC_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(USER_NAME)
-                .withSecurityProtocol(SecurityProtocol.SSL)
-                .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesTls(),
-            basicExternalKafkaClient.receiveMessagesTls()
-        );
-    }
-
-//    ##########################################
-//    #### Custom Certificates in Listeners ####
-//    ##########################################
-
-    @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomSoloCertificatesForNodePort() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomSoloCertificatesForNodePort() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -576,12 +83,8 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
+                        .endTls()
+                        .withNewKafkaListenerExternalNodePort()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -589,7 +92,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -602,6 +105,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -635,20 +139,14 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomChainCertificatesForNodePort() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomChainCertificatesForNodePort() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -656,12 +154,8 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
+                        .endTls()
+                        .withNewKafkaListenerExternalNodePort()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -669,12 +163,13 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
 
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -682,9 +177,19 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .build();
+            .withKafkaClientProperties(
+                new KafkaClientProperties.KafkaClientPropertiesBuilder()
+                    .withNamespaceName(NAMESPACE)
+                    .withClusterName(CLUSTER_NAME)
+                    .withBootstrapServerConfig(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                    .withKeySerializerConfig(StringSerializer.class)
+                    .withValueSerializerConfig(StringSerializer.class)
+                    .withClientIdConfig("kafka-user-producer")
+                    .build()
+            ).build();
 
         LOGGER.info("This is client configuration {}", basicExternalKafkaClient.getClientProperties());
 
@@ -693,7 +198,7 @@ public class ListenersST extends AbstractST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-        // Deploy client pod with custom certificates and collect messages from internal TLS listener
+// Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -717,20 +222,14 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomSoloCertificatesForLoadBalancer() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomSoloCertificatesForLoadBalancer() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -738,12 +237,8 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(true)
+                        .endTls()
+                        .withNewKafkaListenerExternalLoadBalancer()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -751,7 +246,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endKafkaListenerExternalLoadBalancer()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -764,6 +259,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -773,7 +269,7 @@ public class ListenersST extends AbstractST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-        // Deploy client pod with custom certificates and collect messages from internal TLS listener
+// Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -797,20 +293,14 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testCustomChainCertificatesForLoadBalancer() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomChainCertificatesForLoadBalancer() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -818,12 +308,8 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(true)
+                        .endTls()
+                        .withNewKafkaListenerExternalLoadBalancer()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -831,7 +317,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endKafkaListenerExternalLoadBalancer()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -848,6 +334,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -881,21 +368,15 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
-    void testCustomSoloCertificatesForRoute() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomSoloCertificatesForRoute() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                         .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -903,12 +384,8 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.ROUTE)
-                            .withTls(true)
+                        .endTls()
+                        .withNewKafkaListenerExternalRoute()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -916,7 +393,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endKafkaListenerExternalRoute()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -929,6 +406,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -938,7 +416,7 @@ public class ListenersST extends AbstractST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-        // Deploy client pod with custom certificates and collect messages from internal TLS listener
+// Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -961,21 +439,15 @@ public class ListenersST extends AbstractST {
     }
 
     @Test
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
-    void testCustomChainCertificatesForRoute() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomChainCertificatesForRoute() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -983,12 +455,8 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.ROUTE)
-                            .withTls(true)
+                        .endTls()
+                        .withNewKafkaListenerExternalRoute()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertChain1)
@@ -996,7 +464,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endKafkaListenerExternalRoute()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -1009,6 +477,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withCertificateAuthorityCertificateName(customRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
@@ -1018,7 +487,7 @@ public class ListenersST extends AbstractST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-        // Deploy client pod with custom certificates and collect messages from internal TLS listener
+// Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -1043,28 +512,16 @@ public class ListenersST extends AbstractST {
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertLoadBalancerAndTlsRollingUpdate() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomCertLoadBalancerAndTlsRollingUpdate() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(true)
-                        .endGenericKafkaListener()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -1088,6 +545,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -1100,40 +558,28 @@ public class ListenersST extends AbstractST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build(),
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build()
-            ), null));
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalLoadBalancerBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName(customCertServer1)
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
+            kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName(customCertServer2)
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
-
-        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
@@ -1152,6 +598,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
@@ -1210,44 +657,21 @@ public class ListenersST extends AbstractST {
         );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-71");
-        internalKafkaClient.setMessageCount(MESSAGE_COUNT);
+        internalKafkaClient.setMessageCount(MESSAGE_COUNT * 3);
 
         sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
-        internalKafkaClient.setMessageCount(MESSAGE_COUNT * 5);
-
+        assertThat(sent, is(3 * MESSAGE_COUNT));
         received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(5 * MESSAGE_COUNT));
+        assertThat(received, is(3 * MESSAGE_COUNT));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build(),
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(true)
-                            .build()
-            ), null));
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withTls(true)
+                .build());
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
-
-        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
@@ -1266,6 +690,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -1276,40 +701,26 @@ public class ListenersST extends AbstractST {
         );
 
         internalKafkaClient.setConsumerGroup("consumer-group-certs-83");
-        internalKafkaClient.setMessageCount(6 * MESSAGE_COUNT);
 
         received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(6 * MESSAGE_COUNT));
+        assertThat(received, is(3 * MESSAGE_COUNT));
     }
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertNodePortAndTlsRollingUpdate() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomCertNodePortAndTlsRollingUpdate() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
+            .editKafka()
+            .editListeners()
+            .withNewKafkaListenerExternalNodePort()
+            .endKafkaListenerExternalNodePort()
+            .endListeners()
+            .endKafka()
+            .endSpec().done();
 
         KafkaUser aliceUser = KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
 
@@ -1330,6 +741,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .build();
 
@@ -1341,40 +753,29 @@ public class ListenersST extends AbstractST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build(),
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build()
-            ), null));
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName(customCertServer1)
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
+
+            kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName(customCertServer2)
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
-
-        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
@@ -1393,6 +794,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
@@ -1459,33 +861,13 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(5 * MESSAGE_COUNT));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build(),
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
-                            .build()
-            ), null));
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalNodePortBuilder()
+                .withTls(true)
+                .build());
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
-
-        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
@@ -1504,6 +886,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -1520,29 +903,17 @@ public class ListenersST extends AbstractST {
     }
 
     @Test
-    @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testCustomCertRouteAndTlsRollingUpdate() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomCertRouteAndTlsRollingUpdate() throws Exception {
+        String topicName = "test-topic-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.ROUTE)
-                            .withTls(true)
-                        .endGenericKafkaListener()
+                    .editListeners()
+                        .withNewKafkaListenerExternalRoute()
+                        .endKafkaListenerExternalRoute()
                     .endListeners()
                 .endKafka()
             .endSpec().done();
@@ -1566,6 +937,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .build();
@@ -1578,40 +950,28 @@ public class ListenersST extends AbstractST {
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build(),
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.ROUTE)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build()
-            ), null));
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalRouteBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName(customCertServer1)
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
+            kafka.getSpec().getKafka().getListeners().setTls(new KafkaListenerTlsBuilder()
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName(customCertServer2)
+                        .withKey("ca.key")
+                        .withCertificate("ca.crt")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build());
         });
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
-
-        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
@@ -1625,7 +985,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient.setCaCertName(null);
-        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
@@ -1689,33 +1049,11 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(5 * MESSAGE_COUNT));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
-                    new GenericKafkaListenerBuilder()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewConfiguration()
-                                .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
-                                    .withKey("ca.key")
-                                    .withCertificate("ca.crt")
-                                .endBrokerCertChainAndKey()
-                            .endConfiguration()
-                            .build(),
-                    new GenericKafkaListenerBuilder()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.ROUTE)
-                            .withTls(true)
-                            .build()
-            ), null));
+            kafka.getSpec().getKafka().getListeners().setExternal(new KafkaListenerExternalRouteBuilder().build());
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
-
-        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
 
         externalCerts = getKafkaStatusCertificates("external", NAMESPACE, CLUSTER_NAME);
         externalSecretCerts = getKafkaSecretCertificates(CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
@@ -1729,7 +1067,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient.setCaCertName(null);
-        basicExternalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        basicExternalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
@@ -1751,12 +1089,8 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(nonExistingCertName)
@@ -1764,16 +1098,14 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endTls()
                     .endListeners()
                 .endKafka()
             .endSpec().build());
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, ".*Secret " + nonExistingCertName + " with custom TLS certificate does not exist.*");
-
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, "Secret " + nonExistingCertName + ".*does not exist.*");
     }
 
     @Test
@@ -1784,12 +1116,8 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -1797,7 +1125,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate(nonExistingCertName)
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endTls()
                     .endListeners()
                 .endKafka()
             .endSpec().build());
@@ -1805,9 +1133,7 @@ public class ListenersST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
-                ".*Secret " + customCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
-
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
+                "Secret " + customCertServer1 + ".*does not contain certificate under the key " + nonExistingCertName + ".*");
     }
 
     @Test
@@ -1818,12 +1144,8 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
+                    .editListeners()
+                        .withNewTls()
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
                                     .withSecretName(customCertServer1)
@@ -1831,7 +1153,7 @@ public class ListenersST extends AbstractST {
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
                             .endConfiguration()
-                        .endGenericKafkaListener()
+                        .endTls()
                     .endListeners()
                 .endKafka()
             .endSpec().build());
@@ -1839,19 +1161,17 @@ public class ListenersST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
-                ".*Secret " + customCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
-
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
+                "Secret " + customCertServer1 + ".*does not contain.*private key under the key " + nonExistingCertKey + ".*");
     }
 
     @BeforeEach
     void setupCertificates() {
-        SecretUtils.deleteSecretWithWait(customCertChain1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertChain2, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertServer1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertServer2, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customRootCA1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customRootCA2, NAMESPACE);
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertChain2).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customCertServer2).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA1).delete();
+        kubeClient().getClient().secrets().inNamespace(NAMESPACE).withName(customRootCA2).delete();
 
         SecretUtils.createCustomSecret(customCertChain1, CLUSTER_NAME, NAMESPACE,
                 Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-bundle.crt")).getFile(),
@@ -1879,9 +1199,15 @@ public class ListenersST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+
+        prepareEnvForOperator(NAMESPACE);
+
+        applyRoleBindings(NAMESPACE);
+        // 050-Deployment
+        KubernetesResource.clusterOperator(NAMESPACE).done();
+        cluster.setNamespace(NAMESPACE);
     }
 
     @Override

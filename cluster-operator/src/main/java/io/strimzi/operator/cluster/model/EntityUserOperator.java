@@ -25,11 +25,11 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -76,7 +76,7 @@ public class EntityUserOperator extends AbstractModel {
     protected SecurityContext templateContainerSecurityContext;
 
     /**
-     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
     protected EntityUserOperator(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
@@ -94,7 +94,7 @@ public class EntityUserOperator extends AbstractModel {
         this.zookeeperSessionTimeoutMs = EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
-        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
         this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
@@ -188,7 +188,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     @Override
-    public String getAncillaryConfigMapKeyLogConfig() {
+    String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
     }
 
@@ -255,8 +255,8 @@ public class EntityUserOperator extends AbstractModel {
                 .withArgs("/opt/strimzi/bin/user_operator_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
-                .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
-                .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME))
+                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessProbeOptions))
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
@@ -283,16 +283,13 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
-        // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
-
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
     }
 
     public List<Volume> getVolumes() {
-        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        return singletonList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -334,18 +331,5 @@ public class EntityUserOperator extends AbstractModel {
 
     public void setContainerSecurityContext(SecurityContext securityContext) {
         templateContainerSecurityContext = securityContext;
-    }
-
-    /**
-     * Transforms properties to log4j2 properties file format and adds property for reloading the config
-     * @param properties map with properties
-     * @return modified string with monitorInterval
-     */
-    @Override
-    public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().keySet().contains("monitorInterval")) {
-            properties.addPair("monitorInterval", "30");
-        }
-        return super.createLog4jProperties(properties);
     }
 }

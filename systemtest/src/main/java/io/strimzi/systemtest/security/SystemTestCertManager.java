@@ -13,13 +13,14 @@ import static java.util.Arrays.asList;
 public class SystemTestCertManager {
 
     private static final String KAFKA_CERT_FILE_PATH = "/opt/kafka/broker-certs/";
-    private static final String ZK_CERT_FILE_PATH = "/opt/kafka/zookeeper-node-certs/";
-    private static final String CA_FILE_PATH = "/opt/kafka/cluster-ca-certs/ca.crt";
+    private static final String ZK_CERT_FILE_PATH = "/etc/tls-sidecar/zookeeper-nodes/";
+    private static final String KAFKA_CA_FILE_PATH = "/opt/kafka/cluster-ca-certs/ca.crt";
+    private static final String ZK_CA_FILE_PATH = "/etc/tls-sidecar/cluster-ca-certs/ca.crt";
 
     public SystemTestCertManager() {}
 
     private static List<String> generateBaseSSLCommand(String server, String caFilePath, String hostname) {
-        return new ArrayList<>(asList("echo -n | openssl",
+        return new ArrayList<>(asList("openssl",
                 "s_client",
                 "-connect", server,
                 "-showcerts",
@@ -39,8 +40,9 @@ public class SystemTestCertManager {
 
     public static String generateOpenSslCommandByComponent(String server, String hostname, String podName, String component, boolean withCertAndKey) {
         String path = component.equals("kafka") ? KAFKA_CERT_FILE_PATH : ZK_CERT_FILE_PATH;
+        String caFilePath = component.equals("kafka") ? KAFKA_CA_FILE_PATH : ZK_CA_FILE_PATH;
 
-        List<String> cmd = generateBaseSSLCommand(server, CA_FILE_PATH, hostname);
+        List<String> cmd = generateBaseSSLCommand(server, caFilePath, hostname);
 
         if (withCertAndKey) {
             cmd.add("-cert " + path + podName + ".crt");
@@ -50,7 +52,7 @@ public class SystemTestCertManager {
         if (component.equals("kafka")) {
             return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", String.join(" ", cmd)).out();
         } else {
-            return cmdKubeClient().execInPod(podName,  "/bin/bash", "-c",
+            return cmdKubeClient().execInPodContainer(podName, "tls-sidecar",  "/bin/bash", "-c",
                     String.join(" ", cmd)).out();
         }
     }

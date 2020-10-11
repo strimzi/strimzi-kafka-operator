@@ -167,7 +167,7 @@ public class KafkaConnectorIT {
                 new ResourceOperatorSupplier(
                         null, null, null, null, null, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, null,
-                        null, connectCrdOperator, null, null, null, null, null, metrics, null),
+                        null, connectCrdOperator, null, null, null, null, metrics),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort() + 2
@@ -177,7 +177,7 @@ public class KafkaConnectorIT {
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                 "localhost", connectClient, true, connectorName,
                 connector)
-            .onComplete(context.succeeding(v -> assertConnectorIsRunning(context, client, namespace, connectorName)))
+            .setHandler(context.succeeding(v -> assertConnectorIsRunning(context, client, namespace, connectorName)))
             .compose(v -> {
                 config.remove(TestingConnector.START_TIME_MS, 1_000);
                 config.put(TestingConnector.START_TIME_MS, 1_000);
@@ -186,9 +186,10 @@ public class KafkaConnectorIT {
                         .withName(connectorName)
                         .patch(createKafkaConnector(namespace, connectorName, config));
                 return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
-                        "localhost", connectClient, true, connectorName, connector);
+                        "localhost", connectClient, true, connectorName,
+                        connector);
             })
-            .onComplete(context.succeeding(v -> context.verify(() -> {
+            .setHandler(context.succeeding(v -> context.verify(() -> {
                 assertConnectorIsRunning(context, client, namespace, connectorName);
                 // Assert metrics from Connector Operator
                 MeterRegistry registry = metrics.meterRegistry();
@@ -223,7 +224,6 @@ public class KafkaConnectorIT {
             KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();
             assertThat(kafkaConnector, notNullValue());
             assertThat(kafkaConnector.getStatus(), notNullValue());
-            assertThat(kafkaConnector.getStatus().getTasksMax(), is(1));
             assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
             assertThat(kafkaConnector.getStatus().getConnectorStatus().get("connector"), instanceOf(Map.class));
             assertThat(((Map) kafkaConnector.getStatus().getConnectorStatus().get("connector")).get("state"), is("RUNNING"));

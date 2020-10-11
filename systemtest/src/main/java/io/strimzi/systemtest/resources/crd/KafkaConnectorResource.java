@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -15,16 +14,18 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
-
 public class KafkaConnectorResource {
-    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../examples/connect/source-connector.yaml";
+    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectorResource.class);
+
+    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = "../examples/connector/source-connector.yaml";
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, DoneableKafkaConnector, Resource<KafkaConnector, DoneableKafkaConnector>> kafkaConnectorClient() {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
@@ -63,15 +64,12 @@ public class KafkaConnectorResource {
     public static KafkaConnector kafkaConnectorWithoutWait(KafkaConnector kafkaConnector) {
         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
         return kafkaConnector;
-    }
 
-    public static void deleteKafkaConnectorWithoutWait(String connectorName) {
-        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {
         return new DoneableKafkaConnector(kafkaConnector, kC -> {
-            TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
                 () -> {
                     try {
                         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
@@ -94,7 +92,13 @@ public class KafkaConnectorResource {
     }
 
     private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, Ready);
+        String kafkaConnectorCrName = kafkaConnector.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka Connector {}", kafkaConnectorCrName);
+        KafkaConnectorUtils.waitForConnectorStatus(kafkaConnectorCrName, "Ready");
+        LOGGER.info("Kafka Connector {} is ready", kafkaConnectorCrName);
+
+        return kafkaConnector;
     }
 
     private static KafkaConnector deleteLater(KafkaConnector kafkaConnector) {

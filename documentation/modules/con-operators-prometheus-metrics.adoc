@@ -1,12 +1,12 @@
 // Module included in the following assemblies:
 //
-// assembly-operators.adoc
+// assembly-operators-monitoring.adoc
 
 [id='con-operators-prometheus-metrics-{context}']
 
-= Monitoring operators using Prometheus metrics
+= Prometheus metrics
 
-Strimzi operators expose Prometheus metrics.
+{ProductName} operators expose Prometheus metrics.
 The metrics are automatically enabled and contain information about:
 
 * Number of reconciliations
@@ -16,4 +16,4 @@ The metrics are automatically enabled and contain information about:
 
 Additionally, we provide an example Grafana dashboard.
 
-For more information about Prometheus, see the link:{BookURLDeploying}#assembly-metrics-{context}[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
+For more information about Prometheus, see the xref:assembly-metrics-setup-{context}[introduction to metrics].

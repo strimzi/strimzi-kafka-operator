@@ -5,68 +5,76 @@
 package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
-import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
+import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.junit5.VertxExtension;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Tag(REGRESSION)
 @Tag(BRIDGE)
-@Tag(INTERNAL_CLIENTS_USED)
-class HttpBridgeST extends HttpBridgeAbstractST {
+@Tag(REGRESSION)
+@Tag(NODEPORT_SUPPORTED)
+@Tag(EXTERNAL_CLIENTS_USED)
+@ExtendWith(VertxExtension.class)
+class HttpBridgeST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
 
+    public static final String NAMESPACE = "bridge-cluster-test";
+    private String bridgeHost = "";
+    private int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
+
     @Test
-    void testSendSimpleMessage() {
+    void testSendSimpleMessage() throws Exception {
+        int messageCount = 50;
+        String topicName = "topic-simple-send";
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        kafkaBridgeClientJob.producerStrimziBridge().done();
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        JsonObject records = HttpUtils.generateHttpMessages(messageCount);
+        JsonObject response = HttpUtils.sendMessagesHttpRequest(records, bridgeHost, bridgePort, topicName, client);
+        KafkaBridgeUtils.checkSendResponse(response, messageCount);
 
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withUsingPodName(kafkaClientsPodName)
-            .build();
+        BasicExternalKafkaClient basicKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(messageCount)
+                .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
+                .build();
 
-        assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
+        assertThat(basicKafkaClient.receiveMessagesPlain(), is(messageCount));
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(CLUSTER_NAME, "my-bridge", null, "KafkaBridge");
@@ -74,24 +82,48 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     }
 
     @Test
-    void testReceiveSimpleMessage() {
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+    void testReceiveSimpleMessage() throws Exception {
+        String topicName = "topic-simple-receive";
+        // Create topic
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
 
-        kafkaBridgeClientJob.consumerStrimziBridge().done();
+        String name = "my-kafka-consumer";
+        String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
+
+        JsonObject config = new JsonObject();
+        config.put("name", name);
+        config.put("format", "json");
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        // Create consumer
+        JsonObject response = createBridgeConsumer(config, bridgeHost, bridgePort, groupId);
+        assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));
+        // Create topics json
+        JsonArray topic = new JsonArray();
+        topic.add(topicName);
+        JsonObject topics = new JsonObject();
+        topics.put("topics", topic);
+        // Subscribe
+        assertThat(HttpUtils.subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client), is(true));
+
+        BasicExternalKafkaClient basicKafkaClient = new BasicExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .build();
 
         // Send messages to Kafka
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withUsingPodName(kafkaClientsPodName)
-            .build();
+        assertThat(basicKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
 
-        assertThat(internalKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
-
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        // Try to consume messages
+        JsonArray bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+        if (bridgeResponse.size() == 0) {
+            // Real consuming
+            bridgeResponse = HttpUtils.receiveMessagesHttpRequest(bridgeHost, bridgePort, groupId, name, client);
+        }
+        assertThat("Sent message count is not equal with received message count", bridgeResponse.size(), is(MESSAGE_COUNT));
+        // Delete consumer
+        assertThat(deleteConsumer(bridgeHost, bridgePort, groupId, name), is(true));
     }
 
     @Test
@@ -124,6 +156,9 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         int updatedFailureThreshold = 1;
 
         KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-bridge")
+            .endMetadata()
             .editSpec()
                 .withNewTemplate()
                     .withNewBridgeContainer()
@@ -150,7 +185,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .endLivenessProbe()
             .endSpec().done();
 
-        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
@@ -161,7 +196,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(kubeClient().listPods("type", "kafka-bridge").get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -180,7 +215,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             kb.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
-        DeploymentUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, bridgeSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaBridgeResources.deploymentName(bridgeName), 1, connectSnapshot);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -198,78 +233,29 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none")));
     }
 
-    @Test
-    void testScaleBridgeToZero() {
-        String bridgeName = "scaling-bridge";
-
-        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
-
-        List<String> bridgePods = kubeClient().listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
-        String deploymentName = KafkaBridgeResources.deploymentName(bridgeName);
-
-        assertThat(bridgePods.size(), is(1));
-
-        LOGGER.info("Scaling KafkaBridge to zero replicas");
-        KafkaBridgeResource.replaceBridgeResource(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0));
-
-        KafkaBridgeUtils.waitForKafkaBridgeReady(CLUSTER_NAME);
-        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), 0, true);
-
-        bridgePods = kubeClient().listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
-        KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
-
-        assertThat(bridgePods.size(), is(0));
-        assertThat(bridgeStatus.getConditions().get(0).getType(), is(Ready.toString()));
-    }
-
-    @Test
-    void testScaleBridgeSubresource() {
-        String bridgeName = "scaling-bridge";
-
-        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
-
-        int scaleTo = 4;
-        long bridgeObsGen = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration();
-        String bridgeGenName = kubeClient().listPodsByPrefixInName(bridgeName).get(0).getMetadata().getGenerateName();
-
-        LOGGER.info("-------> Scaling KafkaBridge subresource <-------");
-        LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        cmdKubeClient().scaleByName(KafkaBridge.RESOURCE_KIND, bridgeName, scaleTo);
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaBridgeResources.deploymentName(bridgeName), scaleTo);
-
-        LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        List<String> bridgePods = kubeClient().listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
-        assertThat(bridgePods.size(), is(4));
-        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getSpec().getReplicas(), is(4));
-        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getReplicas(), is(4));
-        /*
-        observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
-        the observed generation is increased
-        */
-        assertThat(bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration(), is(true));
-        for (String pod : bridgePods) {
-            assertThat(pod.contains(bridgeGenName), is(true));
-        }
-    }
-
     @BeforeAll
-    void createClassResources() throws Exception {
-        deployClusterOperator(NAMESPACE);
-        LOGGER.info("Deploy Kafka and KafkaBridge before tests");
+    void createClassResources() throws InterruptedException {
+        LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
         // Deploy kafka
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
-
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
+            .endSpec().done();
 
         // Deploy http bridge
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
-            .editSpec()
-                .withNewConsumer()
-                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-                .endConsumer()
-            .endSpec()
-            .done();
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
+
+        Service service = KafkaBridgeUtils.createBridgeNodePortService(CLUSTER_NAME, NAMESPACE, bridgeExternalService);
+        KubernetesResource.createServiceResource(service, NAMESPACE).done();
+        ServiceUtils.waitForNodePortService(bridgeExternalService);
+
+        bridgePort = KafkaBridgeUtils.getBridgeNodePort(NAMESPACE, bridgeExternalService);
+        bridgeHost = kubeClient(NAMESPACE).getNodeAddress();
     }
 }

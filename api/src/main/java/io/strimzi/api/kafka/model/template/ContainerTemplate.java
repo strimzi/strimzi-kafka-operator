@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -28,7 +27,6 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@DescriptionFile
 @EqualsAndHashCode
 public class ContainerTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

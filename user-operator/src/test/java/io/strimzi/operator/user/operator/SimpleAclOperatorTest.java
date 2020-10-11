@@ -131,7 +131,7 @@ public class SimpleAclOperatorTest {
 
         Checkpoint async = context.checkpoint();
         aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
-                .onComplete(context.succeeding(rr -> context.verify(() -> {
+                .setHandler(context.succeeding(rr -> context.verify(() -> {
                     Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
                     assertThat(capturedAclBindings, hasSize(3));
                     assertThat(capturedAclBindings, hasItems(describeAclBinding, readAclBinding, writeAclBinding));
@@ -170,7 +170,7 @@ public class SimpleAclOperatorTest {
 
         Checkpoint async = context.checkpoint();
         aclOp.reconcile("CN=foo", new LinkedHashSet(asList(rule1)))
-                .onComplete(context.succeeding(rr -> context.verify(() -> {
+                .setHandler(context.succeeding(rr -> context.verify(() -> {
 
                     // Create Write rule for resource 2
                     Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
@@ -213,7 +213,7 @@ public class SimpleAclOperatorTest {
 
         Checkpoint async = context.checkpoint();
         aclOp.reconcile("CN=foo", null)
-                .onComplete(context.succeeding(rr -> context.verify(() -> {
+                .setHandler(context.succeeding(rr -> context.verify(() -> {
 
                     Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
                     assertThat(capturedAclBindingFilters, hasSize(1));

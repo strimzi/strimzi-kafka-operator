@@ -2,17 +2,17 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.operators.topic;
+package io.strimzi.systemtest.topic;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -28,6 +28,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +42,6 @@ import java.util.concurrent.TimeoutException;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonList;
@@ -56,7 +56,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
-    static final String NAMESPACE = "topic-cluster-test";
+    private static final String NAMESPACE = "topic-cluster-test";
 
     @Test
     void testMoreReplicasThanAvailableBrokers() {
@@ -106,61 +106,15 @@ public class TopicST extends AbstractST {
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
         verifyTopicViaKafkaTopicCRK8s(kafkaTopic, TOPIC_NAME, topicPartitions);
 
-        topicPartitions = 5;
-        LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
+            LOGGER.info("Creating async topic {} via Admin client", TOPIC_NAME);
+            CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(TOPIC_NAME, 1, (short) 1)));
+            crt.all().get();
 
         KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(CLUSTER_NAME, 0, TOPIC_NAME, topicPartitions);
         LOGGER.debug("Topic {} updated from {} to {} partitions", TOPIC_NAME, 3, topicPartitions);
 
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(TOPIC_NAME, topicPartitions);
         verifyTopicViaKafka(TOPIC_NAME, topicPartitions);
-    }
-
-    @Tag(NODEPORT_SUPPORTED)
-    @Test
-    void testCreateTopicViaAdminClient() throws ExecutionException, InterruptedException, TimeoutException {
-        String clusterName = CLUSTER_NAME + "-external-name";
-
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName("tls")
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName("external")
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
-
-        Properties properties = new Properties();
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, AbstractKafkaClient.getExternalBootstrapConnect(NAMESPACE, clusterName));
-
-        try (AdminClient adminClient = AdminClient.create(properties)) {
-
-            LOGGER.info("Creating async topic {} via Admin client", TOPIC_NAME);
-            CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(TOPIC_NAME, 1, (short) 1)));
-            crt.all().get();
-
-            Set<String> topics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
-
-            LOGGER.info("Verify that in Kafka cluster contains {} topics", 1);
-            assertThat(topics.size(), is(1));
-            assertThat(topics.contains(TOPIC_NAME), is(true));
-        }
-
-        LOGGER.info("Verify that corresponding {} KafkaTopic custom resources were created and topic is in Ready state", 1);
-        KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);
-        KafkaTopicUtils.waitForKafkaTopicReady(TOPIC_NAME);
     }
 
     @Test
@@ -177,7 +131,10 @@ public class TopicST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
 
         String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 3 and then the replication should be changed directly in Kafka.";
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage), is(true));
+
+        TestUtils.waitFor("Waiting for " + topicName + " to has to contains message" + exceptedMessage, Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
+            () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
+        );
 
         String topicCRDMessage = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
 
@@ -188,9 +145,8 @@ public class TopicST extends AbstractST {
     }
 
     @Test
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSendingMessagesToNonExistingTopic() {
-        int sent = 0;
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -199,41 +155,34 @@ public class TopicST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
-        boolean created = hasTopicInKafka(TOPIC_NAME);
+        LOGGER.info("Checking if {} is on topic list", topicName);
+        boolean created = hasTopicInKafka(topicName);
         assertThat(created, is(false));
-        LOGGER.info("Topic with name {} is not created yet", TOPIC_NAME);
+        LOGGER.info("Topic with name {} is not created yet", topicName);
 
-        LOGGER.info("Trying to send messages to non-existing topic {}", TOPIC_NAME);
-        // Try produce multiple times in case first try will fail because topic is not exists yet
-        for (int retry = 0; retry < 3; retry++) {
-            sent = internalKafkaClient.sendMessagesPlain();
-            if (MESSAGE_COUNT == sent) {
-                break;
-            }
-        }
-
+        LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
         internalKafkaClient.assertSentAndReceivedMessages(
-                sent,
+                internalKafkaClient.sendMessagesPlain(),
                 internalKafkaClient.receiveMessagesPlain()
         );
 
-        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
-        created = hasTopicInKafka(TOPIC_NAME);
+        LOGGER.info("Checking if {} is on topic list", topicName);
+        created = hasTopicInKafka(topicName);
         assertThat(created, is(true));
 
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is(Ready.toString()));
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
         LOGGER.info("Topic successfully created");
     }
 
     @Test
-    @Tag(INTERNAL_CLIENTS_USED)
+    @Order(5)
     void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
         String isolatedKafkaCluster = CLUSTER_NAME + "-isolated";
@@ -252,12 +201,15 @@ public class TopicST extends AbstractST {
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(isolatedKafkaCluster)
             .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesPlain();
@@ -321,6 +273,11 @@ public class TopicST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        deployTestSpecificResources();
+        applyRoleBindings(NAMESPACE);
+        // 050-Deployment
+        KubernetesResource.clusterOperator(NAMESPACE).done();
+
+        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
     }
 }

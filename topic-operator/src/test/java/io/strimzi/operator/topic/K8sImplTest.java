@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -58,7 +57,6 @@ public class K8sImplTest {
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         MixedOperation<KafkaTopic, KafkaTopicList, TopicOperator.DeleteKafkaTopic, Resource<KafkaTopic, TopicOperator.DeleteKafkaTopic>> mockResources = mock(MixedOperation.class);
-        when(mockClient.customResources(any(CustomResourceDefinitionContext.class), any(Class.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
         when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
         when(mockResources.withLabels(any())).thenReturn(mockResources);
         when(mockResources.inNamespace(any())).thenReturn(mockResources);
@@ -70,7 +68,7 @@ public class K8sImplTest {
 
         K8sImpl k8s = new K8sImpl(vertx, mockClient, new Labels("foo", "bar"), "default");
 
-        k8s.listResources().onComplete(context.succeeding(kafkaTopics -> context.verify(() -> {
+        k8s.listResources().setHandler(context.succeeding(kafkaTopics -> context.verify(() -> {
             assertThat(kafkaTopics, is(mockKafkaTopicsList));
             async.flag();
         })));

@@ -56,13 +56,13 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
-     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
     private KafkaMirrorMaker2Cluster(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
         this.name = KafkaMirrorMaker2Resources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
-        this.ancillaryConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
+        this.ancillaryConfigName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
     }
 
     /**
@@ -141,7 +141,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     @Override
-    public String getServiceAccountName() {
+    protected String getServiceAccountName() {
         return KafkaMirrorMaker2Resources.serviceAccountName(cluster);
     }
 
@@ -176,35 +176,26 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         List<VolumeMount> volumeMountList = super.getVolumeMounts();
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
-            String alias = mirrorMaker2Cluster.getAlias();
-            String tlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
-
             KafkaMirrorMaker2Tls tls = mirrorMaker2Cluster.getTls();
+
             if (tls != null) {
                 List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
     
                 if (trustedCertificates != null && trustedCertificates.size() > 0) {
                     for (CertSecretSource certSecretSource : trustedCertificates) {
-                        String volumeMountName = alias + '-' + certSecretSource.getSecretName();
+                        String volumeMountName = mirrorMaker2Cluster.getAlias() + '-' + certSecretSource.getSecretName();
                         // skipping if a volume mount with same Secret name was already added
                         if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
                             volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
-                                tlsVolumeMountPath + certSecretSource.getSecretName()));
+                                    MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                         }
                     }
                 }
             }
-
-            String passwordVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT, alias);
-            String oauthTlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
-            String oauthVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, alias);
-            AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
+    
+            AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT, MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT, MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + mirrorMaker2Cluster.getAlias() + "/", mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT + mirrorMaker2Cluster.getAlias() + "/");
         }
         return volumeMountList;
-    }
-
-    private String buildClusterVolumeMountPath(final String baseVolumeMount,  final String path) {
-        return baseVolumeMount + path + "/";
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})

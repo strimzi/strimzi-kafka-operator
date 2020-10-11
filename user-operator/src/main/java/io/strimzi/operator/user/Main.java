@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
@@ -35,6 +34,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.Security;
+import java.util.HashMap;
+import java.util.Map;
 
 @SuppressFBWarnings("DM_EXIT")
 @SuppressWarnings("deprecation")
@@ -57,14 +58,12 @@ public class Main {
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
-
         KubernetesClient client = new DefaultKubernetesClient();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
 
-        run(vertx, client, adminClientProvider, config).onComplete(ar -> {
+        run(vertx, client, adminClientProvider, config).setHandler(ar -> {
             if (ar.failed()) {
                 log.error("Unable to start operator", ar.cause());
                 System.exit(1);
@@ -73,7 +72,7 @@ public class Main {
     }
 
     static Future<String> run(Vertx vertx, KubernetesClient client, AdminClientProvider adminClientProvider, UserOperatorConfig config) {
-        Util.printEnvInfo();
+        printEnvInfo();
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
 
@@ -139,5 +138,14 @@ public class Main {
                 });
 
         return promise.future();
+    }
+
+    static void printEnvInfo() {
+        Map<String, String> m = new HashMap<>(System.getenv());
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry: m.entrySet()) {
+            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+        log.info("Using config:\n" + sb.toString());
     }
 }

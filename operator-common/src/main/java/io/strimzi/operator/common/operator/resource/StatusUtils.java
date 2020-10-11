@@ -28,23 +28,19 @@ public class StatusUtils {
         return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
     }
 
-    public static Condition buildConditionFromException(String type, String status, Throwable error) {
-        return buildCondition(type, status, error);
-    }
-
-    public static Condition buildCondition(String type, String status, Throwable error) {
+    public static Condition buildConditionFromException(Throwable error) {
         Condition readyCondition;
         if (error == null) {
             readyCondition = new ConditionBuilder()
                     .withLastTransitionTime(iso8601Now())
-                    .withType(type)
-                    .withStatus(status)
+                    .withType("Ready")
+                    .withStatus("True")
                     .build();
         } else {
             readyCondition = new ConditionBuilder()
                     .withLastTransitionTime(iso8601Now())
-                    .withType(type)
-                    .withStatus(status)
+                    .withType("NotReady")
+                    .withStatus("True")
                     .withReason(error.getClass().getSimpleName())
                     .withMessage(error.getMessage())
                     .build();
@@ -53,24 +49,12 @@ public class StatusUtils {
     }
 
     public static Condition buildWarningCondition(String reason, String message) {
-        return buildWarningCondition(reason, message, iso8601Now());
-    }
-
-    public static Condition buildWarningCondition(String reason, String message, String transitionTime) {
         return new ConditionBuilder()
-                .withLastTransitionTime(transitionTime)
+                .withLastTransitionTime(iso8601Now())
                 .withType("Warning")
                 .withStatus("True")
                 .withReason(reason)
                 .withMessage(message)
-                .build();
-    }
-
-    public static Condition buildRebalanceCondition(String type) {
-        return new ConditionBuilder()
-                .withLastTransitionTime(iso8601Now())
-                .withType(type)
-                .withStatus("True")
                 .build();
     }
 
@@ -79,31 +63,11 @@ public class StatusUtils {
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Throwable error) {
-        setStatusConditionAndObservedGeneration(resource, status, error == null ? "Ready" : "NotReady", "True", error);
-    }
-
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus, Throwable error) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        Condition readyCondition = StatusUtils.buildConditionFromException(type, conditionStatus, error);
+        Condition readyCondition = StatusUtils.buildConditionFromException(error);
         status.setConditions(Collections.singletonList(readyCondition));
-    }
-
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, Throwable error) {
-        setStatusConditionAndObservedGeneration(resource, status, type, "True", error);
-    }
-
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus) {
-        if (resource.getMetadata().getGeneration() != null)    {
-            status.setObservedGeneration(resource.getMetadata().getGeneration());
-        }
-        Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
-        status.setConditions(Collections.singletonList(condition));
-    }
-
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {
-        setStatusConditionAndObservedGeneration(resource, status, type, "True");
     }
 
     public static <R extends CustomResource> boolean isResourceV1alpha1(R resource) {

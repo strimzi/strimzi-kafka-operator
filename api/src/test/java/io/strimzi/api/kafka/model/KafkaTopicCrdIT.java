@@ -27,12 +27,6 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
         assumeKube1_11Plus();
         createDelete(KafkaTopic.class, "KafkaTopicV1alpha1.yaml");
     }
-
-    @Test
-    void testKafkaTopicIsNotScaling() {
-        assertThrows(KubeClusterException.class, () -> createScaleDelete(KafkaTopic.class, "KafkaTopic.yaml"));
-    }
-
     @Test
     void testKafkaTopicV1beta1() {
         createDelete(KafkaTopic.class, "KafkaTopicV1beta1.yaml");
@@ -61,7 +55,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_TOPIC);
-        waitForCrd("crd", "kafkatopics.kafka.strimzi.io");
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkatopics.kafka.strimzi.io");
     }
 
     @AfterAll

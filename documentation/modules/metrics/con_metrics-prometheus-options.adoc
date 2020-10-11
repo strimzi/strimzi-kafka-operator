@@ -1,12 +1,11 @@
 // This assembly is included in the following assemblies:
 //
-// metrics/assembly_metrics-prometheus-deploy.adoc/
-
+// assembly-metrics-prometheus.adoc
 [id='con-metrics-prometheus-options-{context}']
 
 = Prometheus configuration
 
-Strimzi provides xref:ref-metrics-config-files-{context}[example configuration files for the Prometheus server].
+{ProductName} provides xref:ref-metrics-config-files-{context}[example configuration files for the Prometheus server].
 
 A Prometheus image is provided for deployment:
 
@@ -17,6 +16,7 @@ Additional Prometheus-related configuration is also provided in the following fi
 * `prometheus-additional.yaml`
 * `prometheus-rules.yaml`
 * `strimzi-pod-monitor.yaml`
+* `strimzi-service-monitor.yaml`
 
 For Prometheus to obtain monitoring data:
 

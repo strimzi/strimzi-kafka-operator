@@ -6,35 +6,31 @@ package io.strimzi.systemtest.upgrade;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BaseST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.logs.TestExecutionWatcher;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
+import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import net.joshka.junit.json.params.JsonFileSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -42,18 +38,15 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -64,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(UPGRADE)
-public class StrimziUpgradeST extends AbstractST {
+public class StrimziUpgradeST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
@@ -76,7 +69,6 @@ public class StrimziUpgradeST extends AbstractST {
     private Map<String, String> zkPods;
     private Map<String, String> kafkaPods;
     private Map<String, String> eoPods;
-    private Map<String, String> coPods;
 
     private File coDir = null;
     private File kafkaYaml = null;
@@ -86,29 +78,21 @@ public class StrimziUpgradeST extends AbstractST {
     private final String kafkaClusterName = "my-cluster";
     private final String topicName = "my-topic";
     private final String userName = "my-user";
-    private final int upgradeTopicCount = 40;
-    // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
-    private final int expectedTopicCount = upgradeTopicCount + 3;
 
-    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip";
+    private final String latestReleasedOperator = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip";
+    private final String latestOperatorImage = "docker.io/strimzi/operator:latest";
 
+    @ParameterizedTest()
+    @JsonFileSource(resources = "/StrimziUpgradeST.json")
+    void testUpgradeStrimziVersion(JsonObject parameters) throws Exception {
 
-    @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
-    @MethodSource("loadJsonUpgradeData")
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String from, String to, JsonObject parameters) throws Exception {
-
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
-
-        LOGGER.debug("Running upgrade test from version {} to {}", from, to);
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("supportedK8sVersion").getString("version")));
 
         try {
             performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
             // Tidy up
-        } catch (Exception e) {
+        } catch (KubeClusterException e) {
             e.printStackTrace();
-            TestExecutionWatcher.collectLogs(testClass, testName);
             try {
                 if (kafkaYaml != null) {
                     cmdKubeClient().delete(kafkaYaml);
@@ -126,30 +110,40 @@ public class StrimziUpgradeST extends AbstractST {
 
             throw e;
         } finally {
+            // Get current date to create a unique folder
+            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            String logDir = Environment.TEST_LOG_DIR + testClass + currentDate;
+
+            LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
+            logCollector.collectEvents();
+            logCollector.collectConfigMaps();
+            logCollector.collectLogsFromPods();
+            logCollector.collectStrimzi();
+
             deleteInstalledYamls(coDir);
         }
     }
 
     @Test
-    @Tag(INTERNAL_CLIENTS_USED)
     void testChainUpgrade() throws Exception {
-        JsonArray parameters = readUpgradeJson();
+        ClassLoader classLoader = getClass().getClassLoader();
+        InputStream inputStream = classLoader.getResourceAsStream("StrimziUpgradeST.json");
+        JsonReader jsonReader = Json.createReader(inputStream);
+        JsonArray parameters = jsonReader.readArray();
 
         int consumedMessagesCount = MESSAGE_COUNT;
 
         try {
             for (JsonValue testParameters : parameters) {
-                if (StUtils.isAllowOnCurrentEnvironment(testParameters.asJsonObject().getJsonObject("environmentInfo").getString("flakyEnvVariable")) &&
-                    StUtils.isAllowedOnCurrentK8sVersion(testParameters.asJsonObject().getJsonObject("environmentInfo").getString("maxK8sVersion"))) {
+                if (StUtils.isAllowedOnCurrentK8sVersion(testParameters.asJsonObject().getJsonObject("supportedK8sVersion").getString("version"))) {
                     performUpgrade(testParameters.asJsonObject(), MESSAGE_COUNT, consumedMessagesCount);
                     consumedMessagesCount = consumedMessagesCount + MESSAGE_COUNT;
                 } else {
                     LOGGER.info("Upgrade of Cluster Operator from version {} to version {} is not allowed on this K8S version!", testParameters.asJsonObject().getString("fromVersion"), testParameters.asJsonObject().getString("toVersion"));
                 }
             }
-        } catch (Exception e) {
+        } catch (KubeClusterException e) {
             e.printStackTrace();
-            TestExecutionWatcher.collectLogs(testClass, testName);
             try {
                 if (kafkaYaml != null) {
                     cmdKubeClient().delete(kafkaYaml);
@@ -167,6 +161,15 @@ public class StrimziUpgradeST extends AbstractST {
 
             throw e;
         } finally {
+            // Get current date to create a unique folder
+            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            String logDir = Environment.TEST_LOG_DIR + testClass + currentDate;
+
+            LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
+            logCollector.collectEvents();
+            logCollector.collectConfigMaps();
+            logCollector.collectLogsFromPods();
+
             deleteInstalledYamls(coDir);
         }
     }
@@ -175,20 +178,20 @@ public class StrimziUpgradeST extends AbstractST {
     void testUpgradeKafkaWithoutVersion() throws IOException {
         File dir = FileUtils.downloadAndUnzip(latestReleasedOperator);
 
-        coDir = new File(dir, "strimzi-0.19.0/install/cluster-operator/");
+        coDir = new File(dir, "strimzi-0.15.0/install/cluster-operator/");
 
         // Modify + apply installation files
         copyModifyApply(coDir);
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion(null)
-                    .addToConfig("log.message.format.version", "2.5")
+                    .addToConfig("log.message.format.version", "2.3")
                 .endKafka()
             .endSpec().done();
 
-        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot("strimzi-cluster-operator");
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
@@ -196,25 +199,18 @@ public class StrimziUpgradeST extends AbstractST {
         cluster.applyClusterOperatorInstallFiles();
         applyRoleBindings(NAMESPACE);
 
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(BundleResource.defaultClusterOperator(NAMESPACE).build());
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").delete();
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName("strimzi-cluster-operator").create(KubernetesResource.defaultClusterOperator(NAMESPACE).build());
 
-        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+        DeploymentUtils.waitTillDepHasRolled("strimzi-cluster-operator", 1, operatorSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 1, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
 
         assertThat(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getContainers()
-                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.6.0"));
+                .stream().filter(c -> c.getName().equals("kafka")).findFirst().get().getImage(), containsString("2.4.0"));
     }
 
-    @SuppressWarnings("MethodLength")
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
-        String continuousTopicName = "continuous-topic";
-        int continuousClientsMessageCount = testParameters.getJsonObject("client").getInt("continuousClientsMessages");
-        String producerName = "hello-world-producer";
-        String consumerName = "hello-world-consumer";
-        String continuousConsumerGroup = "continuous-consumer-group";
-
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         cluster.setNamespace(NAMESPACE);
 
@@ -227,7 +223,7 @@ public class StrimziUpgradeST extends AbstractST {
         copyModifyApply(coDir);
 
         LOGGER.info("Waiting for CO deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
+        DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
         LOGGER.info("CO ready");
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
@@ -242,7 +238,7 @@ public class StrimziUpgradeST extends AbstractST {
             LOGGER.info("Waiting for Kafka StatefulSet");
             StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-kafka", 3);
             LOGGER.info("Waiting for EO Deployment");
-            DeploymentUtils.waitForDeploymentAndPodsReady(CLUSTER_NAME + "-entity-operator", 1);
+            DeploymentUtils.waitForDeploymentReady(CLUSTER_NAME + "-entity-operator", 1);
         }
         // We don't need to update KafkaUser during chain upgrade this way
         if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
@@ -256,40 +252,10 @@ public class StrimziUpgradeST extends AbstractST {
             LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
             cmdKubeClient().create(kafkaTopicYaml);
         }
-        // Create bunch of topics for upgrade if it's specified in configuration
-        if (testParameters.getBoolean("generateTopics")) {
-            for (int x = 0; x < upgradeTopicCount; x++) {
-                KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME, topicName + "-" + x, 1, 1, 1)
-                    .editSpec()
-                        .withTopicName(topicName + "-" + x)
-                    .endSpec()
-                    .build());
-            }
-        }
-
-        if (continuousClientsMessageCount != 0) {
-            // ##############################
-            // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
-            // ##############################
-            // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
-                KafkaTopicResource.topic(CLUSTER_NAME, continuousTopicName, 3, 3, 2).done();
-            }
-
-            String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
-
-            KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
-                KafkaResources.plainBootstrapAddress(CLUSTER_NAME), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, continuousConsumerGroup, 1000);
-
-            kafkaBasicClientJob.producerStrimzi().done();
-            kafkaBasicClientJob.consumerStrimzi().done();
-            // ##############################
-        }
 
         // Wait until user will be created
         SecretUtils.waitForSecretReady(userName);
-        TestUtils.waitFor("KafkaUser " + userName + " availability", Constants.GLOBAL_POLL_INTERVAL_MEDIUM,
-            ResourceOperation.getTimeoutForResourceReadiness(KafkaUser.RESOURCE_KIND),
+        TestUtils.waitFor("Kafka User " + userName + "availability", 10_000L, 120_000L,
             () -> !cmdKubeClient().getResourceAsYaml("kafkauser", userName).equals(""));
 
         // Deploy clients and exchange messages
@@ -306,6 +272,7 @@ public class StrimziUpgradeST extends AbstractST {
             .withClusterName(kafkaClusterName)
             .withKafkaUsername(userName)
             .withMessageCount(produceMessagesCount)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -325,7 +292,7 @@ public class StrimziUpgradeST extends AbstractST {
         // Modify + apply installation files
         LOGGER.info("Going to update CO from {} to {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         if ("HEAD".equals(testParameters.getString("toVersion"))) {
-            coDir = new File(TestUtils.USER_PATH + "/../install/cluster-operator");
+            coDir = new File("../install/cluster-operator");
         } else {
             url = testParameters.getString("urlTo");
             dir = FileUtils.downloadAndUnzip(url);
@@ -351,33 +318,10 @@ public class StrimziUpgradeST extends AbstractST {
                 kubeClient().listPodsByPrefixInName(kafkaClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         internalKafkaClient.setPodName(afterUpgradeKafkaClientsPodName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
-
-        if (testParameters.getBoolean("generateTopics")) {
-            // Check that topics weren't deleted/duplicated during upgrade procedures
-            assertThat("KafkaTopic list doesn't have expected size", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(expectedTopicCount));
-            List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
-            assertThat("KafkaTopic " + topicName + " is not in expected topic list",
-                    kafkaTopicList.contains(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get()), is(true));
-            for (int x = 0; x < upgradeTopicCount; x++) {
-                KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName + "-" + x).get();
-                assertThat("KafkaTopic " + topicName + "-" + x + " is not in expected topic list", kafkaTopicList.contains(kafkaTopic), is(true));
-            }
-        }
-
-        if (continuousClientsMessageCount != 0) {
-            // ##############################
-            // Validate that continuous clients finished successfully
-            // ##############################
-            ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
-            // ##############################
-            // Delete jobs to make same names available for next upgrade run during chain upgrade
-            kubeClient().deleteJob(producerName);
-            kubeClient().deleteJob(consumerName);
-        }
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
@@ -387,7 +331,7 @@ public class StrimziUpgradeST extends AbstractST {
         copyModifyApply(coInstallDir);
 
         LOGGER.info("Waiting for CO upgrade");
-        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coPods);
+        DeploymentUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
         LOGGER.info("Waiting for ZK StatefulSet roll");
         StatefulSetUtils.waitTillSsHasRolled(zkStsName, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
@@ -402,8 +346,8 @@ public class StrimziUpgradeST extends AbstractST {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
-            } else if (f.getName().matches(".*Deployment.*")) {
-                cmdKubeClient().applyContent(StUtils.changeDeploymentNamespace(f, NAMESPACE));
+            } else if (f.getName().matches("050-Deployment.*")) {
+                cmdKubeClient().applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
             } else {
                 cmdKubeClient().apply(f);
             }
@@ -412,15 +356,12 @@ public class StrimziUpgradeST extends AbstractST {
 
     private void deleteInstalledYamls(File root) {
         if (kafkaUserYaml != null) {
-            LOGGER.info("Deleting KafkaUser configuration files");
             cmdKubeClient().delete(kafkaUserYaml);
         }
         if (kafkaTopicYaml != null) {
-            LOGGER.info("Deleting KafkaTopic configuration files");
             cmdKubeClient().delete(kafkaTopicYaml);
         }
         if (kafkaYaml != null) {
-            LOGGER.info("Deleting Kafka configuration files");
             cmdKubeClient().delete(kafkaYaml);
         }
         if (root != null) {
@@ -439,7 +380,6 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
         kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         eoPods = DeploymentUtils.depSnapshot(eoDepName);
@@ -469,7 +409,7 @@ public class StrimziUpgradeST extends AbstractST {
         for (Pod pod : pods1) {
             if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
                 LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
-                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(image));
+                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), is(image));
             }
         }
     }
@@ -528,24 +468,6 @@ public class StrimziUpgradeST extends AbstractST {
             .endSpec().done();
     }
 
-    private static Stream<Arguments> loadJsonUpgradeData() throws FileNotFoundException {
-        JsonArray upgradeData = readUpgradeJson();
-        List<Arguments> parameters = new LinkedList<>();
-
-        upgradeData.forEach(jsonData -> {
-            JsonObject data = (JsonObject) jsonData;
-            parameters.add(Arguments.of(data.getString("fromVersion"), data.getString("toVersion"), data));
-        });
-
-        return parameters.stream();
-    }
-
-    private static JsonArray readUpgradeJson() throws FileNotFoundException {
-        InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json");
-        JsonReader reader = Json.createReader(fis);
-        return reader.readArray();
-    }
-
     @BeforeEach
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
@@ -560,5 +482,11 @@ public class StrimziUpgradeST extends AbstractST {
     // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
     @Override
     protected void tearDownEnvironmentAfterAll() {
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        cluster.deleteNamespaces();
+        cluster.createNamespace(NAMESPACE);
     }
 }

@@ -31,10 +31,11 @@ import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
-import io.strimzi.operator.common.Util;
 
 import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
@@ -48,7 +49,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
-     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param resource Kubernetes/OpenShift resource with metadata containing the namespace and cluster name
      */
     private KafkaConnectS2ICluster(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
@@ -82,8 +83,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withEnv(getEnvVars())
                 .withCommand("/opt/kafka/s2i/run")
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
-                .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
+                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessProbeOptions))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, image))
@@ -118,7 +119,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithStrimziName(name, templateDeploymentLabels).toMap())
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateDeploymentAnnotations))
+                    .withAnnotations(mergeLabelsOrAnnotations(null, templateDeploymentAnnotations))
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
@@ -127,7 +128,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withSelector(getSelectorLabels().toMap())
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templatePodAnnotations))
+                            .withAnnotations(mergeLabelsOrAnnotations(annotations, templatePodAnnotations))
                             .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
                         .endMetadata()
                         .withNewSpec()
@@ -140,7 +141,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withSecurityContext(templateSecurityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName)
-                            .withHostAliases(templatePodHostAliases)
                         .endSpec()
                     .endTemplate()
                     .withTriggers(configChangeTrigger, imageChangeTrigger)

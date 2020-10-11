@@ -2,20 +2,24 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.specific;
+package io.strimzi.systemtest;
 
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
+import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import org.apache.logging.log4j.LogManager;
@@ -24,12 +28,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -43,7 +48,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @OpenShiftOnly
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
-public class OpenShiftTemplatesST extends AbstractST {
+public class OpenShiftTemplatesST extends BaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 
@@ -51,21 +56,21 @@ public class OpenShiftTemplatesST extends AbstractST {
     private Oc oc = (Oc) cmdKubeClient(NAMESPACE);
 
     public Kafka getKafka(String clusterName) {
-        return KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get();
+        return kubeClient().getClient().customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     public KafkaConnect getKafkaConnect(String clusterName) {
-        return KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get();
+        return kubeClient().getClient().customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     public KafkaConnectS2I getKafkaConnectS2I(String clusterName) {
-        return KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(clusterName).get();
+        return kubeClient().getClient().customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @Test
     void testStrimziEphemeral() {
         String clusterName = "foo";
-        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
+        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -81,7 +86,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testStrimziPersistent() {
         String clusterName = "bar";
-        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
+        oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -96,7 +101,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
-        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
+        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -105,6 +110,7 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5",
                 "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
 
+        //TODO Add assertions to check that Kafka brokers have a custom configuration
         Kafka kafka = getKafka(clusterName);
         assertThat(kafka, is(notNullValue()));
 
@@ -124,7 +130,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
-        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
+        oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -155,10 +161,9 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(CONNECT)
     void testConnect() {
         String clusterName = "test-connect";
-        oc.createResourceAndApply("strimzi-connect", map("CLUSTER_NAME", clusterName,
+        oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnect connect = getKafkaConnect(clusterName);
@@ -167,10 +172,9 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(CONNECT_S2I)
-    void testConnectS2I() {
+    void testS2i() {
         String clusterName = "test-s2i";
-        oc.createResourceAndApply("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
+        oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnectS2I cm = getKafkaConnectS2I(clusterName);
@@ -181,12 +185,12 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testTopicOperator() {
         String topicName = "test-topic-topic";
-        oc.createResourceAndApply("strimzi-topic", map(
+        oc.newApp("strimzi-topic", map(
                 "TOPIC_NAME", topicName,
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));
 
-        KafkaTopic topic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get();
+        KafkaTopic topic = kubeClient().getClient().customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
         assertThat(topic, is(notNullValue()));
         assertThat(topic.getSpec(), is(notNullValue()));
         assertThat(topic.getSpec().getTopicName(), is(nullValue()));
@@ -198,18 +202,23 @@ public class OpenShiftTemplatesST extends AbstractST {
     void setup() {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        cluster.createCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator",
-                TestUtils.USER_PATH + "/../examples/templates/topic-operator",
+        cluster.createCustomResources("../examples/templates/cluster-operator",
+                "../examples/templates/topic-operator",
                 TestUtils.CRD_KAFKA,
                 TestUtils.CRD_KAFKA_CONNECT,
                 TestUtils.CRD_KAFKA_CONNECT_S2I,
                 TestUtils.CRD_TOPIC,
-                TestUtils.USER_PATH + "/src/rbac/role-edit-kafka.yaml");
+                "src/rbac/role-edit-kafka.yaml");
     }
 
     @Override
     protected void tearDownEnvironmentAfterAll() {
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        LOGGER.info("Skipping env recreation after each test - resources should be same for whole test class!");
     }
 }

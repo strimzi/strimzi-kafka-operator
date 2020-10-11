@@ -2,6 +2,7 @@
 //
 // assembly-upgrade.adoc
 
+
 [id='assembly-upgrading-kafka-versions-{context}']
 
 = Upgrading Kafka
@@ -22,11 +23,11 @@ When one or more of these versions differ, the Cluster Operator requires two or 
 
 * xref:assembly-upgrade-cluster-operator-str[]
 
-include::modules/con-upgrade-versions-and-images.adoc[leveloffset=+1]
+include::../modules/con-versions-and-images.adoc[leveloffset=+1]
 
-include::modules/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
+include::../modules/con-strategies-for-upgrading-clients.adoc[leveloffset=+1]
 
-include::modules/proc-upgrade-brokers-newer-kafka.adoc[leveloffset=+1]
+include::../modules/proc-upgrading-brokers-newer-kafka.adoc[leveloffset=+1]
 
 //upgrade clients and kafka streams to incremental cooperative rebalance protocol added in kafka 2.4
-include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]
+include::../modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]

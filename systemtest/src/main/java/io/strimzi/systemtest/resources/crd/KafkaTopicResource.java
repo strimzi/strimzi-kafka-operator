@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,12 +20,10 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-
 public class KafkaTopicResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicResource.class);
 
-    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
+    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = "../examples/topic/kafka-topic.yaml";
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopicClient() {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());
@@ -79,7 +78,13 @@ public class KafkaTopicResource {
     }
 
     private static KafkaTopic waitFor(KafkaTopic kafkaTopic) {
-        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), kafkaTopic, Ready);
+        String kafkaTopicCrName = kafkaTopic.getMetadata().getName();
+
+        LOGGER.info("Waiting for Kafka Topic {}", kafkaTopicCrName);
+        KafkaTopicUtils.waitForKafkaTopicCreation(kafkaTopicCrName);
+        LOGGER.info("Kafka Topic {} is ready", kafkaTopicCrName);
+
+        return kafkaTopic;
     }
 
     private static KafkaTopic deleteLater(KafkaTopic kafkaTopic) {

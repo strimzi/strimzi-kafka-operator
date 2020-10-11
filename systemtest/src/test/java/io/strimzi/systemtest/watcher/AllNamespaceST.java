@@ -2,17 +2,14 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.watcher;
+package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -23,7 +20,8 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,15 +30,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -64,8 +61,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
-        deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, EXAMPLE_TOPIC_NAME);
-        deleteNewTopic(SECOND_NAMESPACE, EXAMPLE_TOPIC_NAME);
+        deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
+        deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -83,9 +80,8 @@ class AllNamespaceST extends AbstractNamespaceST {
      * Test the case when MirrorMaker will be deployed in different namespace than CO when CO watches all namespaces
      */
     @Test
-    @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
-        LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
+        LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(SECOND_CLUSTER_NAME);
     }
 
@@ -94,6 +90,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
@@ -102,7 +99,7 @@ class AllNamespaceST extends AbstractNamespaceST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, topicName, "kafka-connect");
 
         cluster.setNamespace(previousNamespace);
     }
@@ -113,6 +110,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
@@ -121,7 +119,7 @@ class AllNamespaceST extends AbstractNamespaceST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata().done();
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, topicName, "kafka-connect-s2i");
 
         cluster.setNamespace(previousNamespace);
     }
@@ -132,6 +130,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
+        // Check that UO created a secret for new user
+        SecretUtils.waitForSecretReady(USER_NAME);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -140,12 +140,13 @@ class AllNamespaceST extends AbstractNamespaceST {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
+        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
-        LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
-        LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
+        LOGGER.info("Kafka User condition status: {}", kafkaCondition.getStatus());
+        LOGGER.info("Kafka User condition type: {}", kafkaCondition.getType());
 
-        assertThat(kafkaCondition.getType(), is(Ready.toString()));
+        assertThat(kafkaCondition.getType(), is("Ready"));
 
         List<Secret> secretsOfSecondNamespace = kubeClient(SECOND_NAMESPACE).listSecrets();
 
@@ -169,7 +170,7 @@ class AllNamespaceST extends AbstractNamespaceST {
             .withNamespaceName(THIRD_NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
+            .withConsumerGroupName(CONSUMER_GROUP_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
@@ -204,8 +205,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
                 KubernetesResource.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
-        // 060-Deployment
-        BundleResource.clusterOperator("*").done();
+        // 050-Deployment
+        KubernetesResource.clusterOperator("*").done();
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
@@ -232,5 +233,13 @@ class AllNamespaceST extends AbstractNamespaceST {
     @BeforeAll
     void setupEnvironment() {
         deployTestSpecificResources();
+    }
+
+    @Override
+    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        teardownEnvForOperator();
+        ResourceManager.setClassResources();
+        deployTestSpecificResources();
+        ResourceManager.setMethodResources();
     }
 }

@@ -30,11 +30,6 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaConnectScaling() {
-        createScaleDelete(KafkaConnect.class, "KafkaConnect.yaml");
-    }
-
-    @Test
     void testKafkaConnectV1beta1() {
         createDelete(KafkaConnect.class, "KafkaConnectV1beta1.yaml");
     }
@@ -115,7 +110,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        waitForCrd("crd", "kafkaconnects.kafka.strimzi.io");
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkaconnects.kafka.strimzi.io");
     }
 
     @AfterAll

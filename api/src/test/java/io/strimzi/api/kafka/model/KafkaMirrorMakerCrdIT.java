@@ -29,11 +29,6 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaMirrorMakerScaling() {
-        createScaleDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker.yaml");
-    }
-
-    @Test
     void testKafkaMirrorMakerV1beta1() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMakerV1beta1.yaml");
     }
@@ -103,7 +98,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
-        waitForCrd("crd", "kafkamirrormakers.kafka.strimzi.io");
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkamirrormakers.kafka.strimzi.io");
     }
 
     @AfterAll

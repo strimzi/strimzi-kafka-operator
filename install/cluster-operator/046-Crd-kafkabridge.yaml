@@ -34,10 +34,6 @@ spec:
     priority: 1
   subresources:
     status: {}
-    scale:
-      specReplicasPath: .spec.replicas
-      statusReplicasPath: .status.replicas
-      labelSelectorPath: .status.labelSelector
   validation:
     openAPIV3Schema:
       properties:
@@ -177,13 +173,6 @@ spec:
                   description: Link to Kubernetes Secret containing the refresh token
                     which can be used to obtain access token from the authorization
                     server.
-                scope:
-                  type: string
-                  description: OAuth scope to use when authenticating against the
-                    authorization server. Some authorization servers require this
-                    to be set. The possible values depend on how authorization server
-                    is configured. By default `scope` is not specified when doing
-                    the token endpoint request.
                 tlsTrustedCertificates:
                   type: array
                   items:
@@ -229,24 +218,6 @@ spec:
                   type: integer
                   minimum: 1023
                   description: The port which is the server listening on.
-                cors:
-                  type: object
-                  properties:
-                    allowedOrigins:
-                      type: array
-                      items:
-                        type: string
-                      description: List of allowed origins. Java regular expressions
-                        can be used.
-                    allowedMethods:
-                      type: array
-                      items:
-                        type: string
-                      description: List of allowed HTTP methods.
-                  required:
-                  - allowedOrigins
-                  - allowedMethods
-                  description: CORS configuration for the HTTP Bridge.
               description: The HTTP related configuration.
             consumer:
               type: object
@@ -329,9 +300,11 @@ spec:
               required:
               - type
               description: Logging configuration for Kafka Bridge.
-            enableMetrics:
-              type: boolean
-              description: Enable the metrics for the Kafka Bridge. Default is false.
+            metrics:
+              type: object
+              description: '**Currently not supported** The Prometheus JMX Exporter
+                configuration. See {JMXExporter} for details of the structure of this
+                configuration.'
             livenessProbe:
               type: object
               properties:
@@ -397,15 +370,15 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels added to the resource template. Can
-                            be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
+                          description: Labels which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations added to the resource template.
-                            Can be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
-                      description: Metadata applied to the resource.
+                          description: Annotations which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                      description: Metadata which should be applied to the resource.
                   description: Template for Kafka Bridge `Deployment`.
                 pod:
                   type: object
@@ -415,14 +388,14 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels added to the resource template. Can
-                            be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
+                          description: Labels which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations added to the resource template.
-                            Can be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
+                          description: Annotations which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                       description: Metadata applied to the resource.
                     imagePullSecrets:
                       type: array
@@ -432,18 +405,12 @@ spec:
                           name:
                             type: string
                       description: List of references to secrets in the same namespace
-                        to use for pulling any of the images used by this Pod. When
-                        the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster
-                        Operator and the `imagePullSecrets` option are specified,
-                        only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
-                        variable is ignored.
+                        to use for pulling any of the images used by this Pod.
                     securityContext:
                       type: object
                       properties:
                         fsGroup:
                           type: integer
-                        fsGroupChangePolicy:
-                          type: string
                         runAsGroup:
                           type: integer
                         runAsNonRoot:
@@ -481,23 +448,18 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
-                            runAsUserName:
-                              type: string
                       description: Configures pod-level security attributes and common
                         container settings.
                     terminationGracePeriodSeconds:
                       type: integer
                       minimum: 0
                       description: The grace period is the duration in seconds after
-                        the processes running in the pod are sent a termination signal,
+                        the processes running in the pod are sent a termination signal
                         and the time when the processes are forcibly halted with a
-                        kill signal. Set this value to longer than the expected cleanup
-                        time for your process. Value must be a non-negative integer.
-                        A zero value indicates delete immediately. You might need
-                        to increase the grace period for very large Kafka clusters,
-                        so that the Kafka brokers have enough time to transfer their
-                        work to another broker before they are terminated. Defaults
-                        to 30 seconds.
+                        kill signal. Set this value longer than the expected cleanup
+                        time for your process.Value must be non-negative integer.
+                        The value zero indicates delete immediately. Defaults to 30
+                        seconds.
                     affinity:
                       type: object
                       properties:
@@ -707,6 +669,14 @@ spec:
                                   topologyKey:
                                     type: string
                       description: The pod's affinity rules.
+                    priorityClassName:
+                      type: string
+                      description: The name of the Priority Class to which these pods
+                        will be assigned.
+                    schedulerName:
+                      type: string
+                      description: The name of the scheduler used to dispatch this
+                        `Pod`. If not specified, the default scheduler will be used.
                     tolerations:
                       type: array
                       items:
@@ -723,29 +693,6 @@ spec:
                           value:
                             type: string
                       description: The pod's tolerations.
-                    priorityClassName:
-                      type: string
-                      description: The name of the priority class used to assign priority
-                        to the pods. For more information about priority classes,
-                        see {K8sPriorityClass}.
-                    schedulerName:
-                      type: string
-                      description: The name of the scheduler used to dispatch this
-                        `Pod`. If not specified, the default scheduler will be used.
-                    hostAliases:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          hostnames:
-                            type: array
-                            items:
-                              type: string
-                          ip:
-                            type: string
-                      description: The pod's HostAliases. HostAliases is an optional
-                        list of hosts and IPs that will be injected into the pod's
-                        hosts file if specified.
                   description: Template for Kafka Bridge `Pods`.
                 apiService:
                   type: object
@@ -755,15 +702,15 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels added to the resource template. Can
-                            be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
+                          description: Labels which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations added to the resource template.
-                            Can be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
-                      description: Metadata applied to the resource.
+                          description: Annotations which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                      description: Metadata which should be applied to the resource.
                   description: Template for Kafka Bridge API `Service`.
                 bridgeContainer:
                   type: object
@@ -827,8 +774,6 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
-                            runAsUserName:
-                              type: string
                       description: Security context for the container.
                   description: Template for the Kafka Bridge container.
                 podDisruptionBudget:
@@ -839,14 +784,14 @@ spec:
                       properties:
                         labels:
                           type: object
-                          description: Labels added to the resource template. Can
-                            be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
+                          description: Labels which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                         annotations:
                           type: object
-                          description: Annotations added to the resource template.
-                            Can be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
+                          description: Annotations which should be added to the resource
+                            template. Can be applied to different resources such as
+                            `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                       description: Metadata to apply to the `PodDistruptionBugetTemplate`
                         resource.
                     maxUnavailable:
@@ -913,10 +858,4 @@ spec:
               type: string
               description: The URL at which external client applications can access
                 the Kafka Bridge.
-            labelSelector:
-              type: string
-              description: Label selector for pods providing this resource.
-            replicas:
-              type: integer
-              description: The current number of pods being used to provide this resource.
           description: The status of the Kafka Bridge.

@@ -32,11 +32,6 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaBridgeScaling() {
-        createScaleDelete(KafkaBridge.class, "KafkaBridge.yaml");
-    }
-
-    @Test
     void testKafkaBridgeMinimal() {
         createDelete(KafkaBridge.class, "KafkaBridge-minimal.yaml");
     }
@@ -110,16 +105,11 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.tracing.type");
     }
 
-    @Test
-    void testKafkaBridgeWithMetrics() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-metrics.yaml");
-    }
-
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
-        waitForCrd("crd", "kafkabridges.kafka.strimzi.io");
+        cluster.cmdClient().waitForResourceCreation("crd", "kafkabridges.kafka.strimzi.io");
     }
 
     @AfterAll
