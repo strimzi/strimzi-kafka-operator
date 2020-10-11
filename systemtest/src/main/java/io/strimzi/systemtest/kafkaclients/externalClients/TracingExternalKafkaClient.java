@@ -13,35 +13,39 @@ import org.apache.logging.log4j.Logger;
  * The TracingKafkaClient for sending and receiving messages using tracing properties.
  * The client is using an external listeners.
  */
-public class TracingExternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class TracingExternalKafkaClient extends AbstractKafkaClient<TracingExternalKafkaClient.Builder> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingExternalKafkaClient.class);
     private String serviceName;
 
-    public static class Builder extends AbstractKafkaClient.Builder<TracingExternalKafkaClient.Builder> {
+    public static class Builder extends AbstractKafkaClient.Builder<Builder> {
 
         private String serviceName;
 
         public Builder withServiceName(String serviceName) {
 
             this.serviceName = serviceName;
-            return self();
+            return this;
         }
 
         @Override
         public TracingExternalKafkaClient build() {
-
             return new TracingExternalKafkaClient(this);
-        }
-
-        @Override
-        protected TracingExternalKafkaClient.Builder self() {
-            return this;
         }
     }
 
-    private TracingExternalKafkaClient(TracingExternalKafkaClient.Builder builder) {
+    @Override
+    protected Builder newBuilder() {
+        return new Builder();
+    }
 
+    @Override
+    public Builder toBuilder() {
+        return ((Builder) super.toBuilder())
+            .withServiceName(serviceName);
+    }
+
+    private TracingExternalKafkaClient(TracingExternalKafkaClient.Builder builder) {
         super(builder);
         serviceName = builder.serviceName;
     }
@@ -65,6 +69,10 @@ public class TracingExternalKafkaClient extends AbstractKafkaClient implements K
     @Override
     public int receiveMessagesTls(long timeoutMs) {
         throw new UnsupportedOperationException();
+    }
+
+    public String getServiceName() {
+        return serviceName;
     }
 
     @Override

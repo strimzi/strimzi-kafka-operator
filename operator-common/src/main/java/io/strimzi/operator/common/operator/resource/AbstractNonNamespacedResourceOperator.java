@@ -263,7 +263,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
     @SuppressWarnings("unchecked") // due to L extends KubernetesResourceList/*<T>*/
     protected List<T> listInAnyNamespace(Labels selector) {
-        FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation();
+        FilterWatchListMultiDeletable<T, L, Boolean, Watch> operation = operation();
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();

@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -26,12 +28,12 @@ import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -120,6 +122,7 @@ class MirrorMaker2ST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterSourceName)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         // Check brokers availability
@@ -132,9 +135,11 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing consumer group",
             AVAILABILITY_TOPIC_TARGET_NAME, kafkaClusterTargetName);
-        internalKafkaClient.setTopicName(AVAILABILITY_TOPIC_TARGET_NAME);
-        internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(AVAILABILITY_TOPIC_TARGET_NAME)
+            .withClusterName(kafkaClusterTargetName)
+            .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             AVAILABILITY_TOPIC_TARGET_NAME, kafkaClusterTargetName, MESSAGE_COUNT);
@@ -171,9 +176,11 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing consumer group",
             topicSourceName, kafkaClusterSourceName);
-        internalKafkaClient.setTopicName(topicSourceName);
-        internalKafkaClient.setClusterName(kafkaClusterSourceName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(topicSourceName)
+            .withClusterName(kafkaClusterSourceName)
+            .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             topicSourceName, kafkaClusterSourceName, MESSAGE_COUNT);
@@ -187,9 +194,11 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Now setting topic to {} and cluster to {} - the messages should be mirrored",
             topicTargetName, kafkaClusterTargetName);
-        internalKafkaClient.setTopicName(topicTargetName);
-        internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(topicTargetName)
+            .withClusterName(kafkaClusterTargetName)
+            .build();
 
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", MESSAGE_COUNT);
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -198,8 +207,10 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Changing topic to {}", topicSourceNameMirrored);
-        internalKafkaClient.setTopicName(topicSourceNameMirrored);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(topicSourceNameMirrored)
+            .build();
 
         LOGGER.info("Check if mm2 mirror automatically created topic");
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -240,7 +251,7 @@ class MirrorMaker2ST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -256,7 +267,7 @@ class MirrorMaker2ST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -285,6 +296,7 @@ class MirrorMaker2ST extends AbstractST {
             .withClusterName(kafkaClusterSourceName)
             .withKafkaUsername(userSource.getMetadata().getName())
             .withMessageCount(messagesCount)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
@@ -297,9 +309,12 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             "my-topic-test-2", kafkaClusterTargetName, userTarget.getMetadata().getName());
-        internalKafkaClient.setTopicName("my-topic-test-2");
-        internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withClusterName(kafkaClusterTargetName)
+            .withTopicName("my-topic-test-2")
+            .withKafkaUsername(userTarget.getMetadata().getName())
+            .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             "my-topic-test-2", kafkaClusterTargetName, messagesCount);
@@ -363,9 +378,13 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             topicSourceName, kafkaClusterSourceName, userSource.getMetadata().getName());
-        internalKafkaClient.setTopicName(topicSourceName);
-        internalKafkaClient.setClusterName(kafkaClusterSourceName);
-        internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(topicSourceName)
+            .withClusterName(kafkaClusterSourceName)
+            .withKafkaUsername(userSource.getMetadata().getName())
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             topicSourceName, kafkaClusterSourceName, messagesCount);
@@ -380,9 +399,12 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Now setting topic to {}, cluster to {} and user to {} - the messages should be mirrored",
             topicTargetName, kafkaClusterTargetName, userTarget.getMetadata().getName());
-        internalKafkaClient.setTopicName(topicTargetName);
-        internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(topicTargetName)
+            .withClusterName(kafkaClusterTargetName)
+            .withKafkaUsername(userTarget.getMetadata().getName())
+            .build();
 
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -417,7 +439,7 @@ class MirrorMaker2ST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -433,7 +455,7 @@ class MirrorMaker2ST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -484,6 +506,7 @@ class MirrorMaker2ST extends AbstractST {
             .withClusterName(kafkaClusterSourceName)
             .withKafkaUsername(userSource.getMetadata().getName())
             .withMessageCount(messagesCount)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
@@ -496,10 +519,12 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             AVAILABILITY_TOPIC_TARGET_NAME, kafkaClusterTargetName, userTarget.getMetadata().getName());
-        internalKafkaClient.setTopicName(AVAILABILITY_TOPIC_TARGET_NAME);
-        internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(AVAILABILITY_TOPIC_TARGET_NAME)
+            .withClusterName(kafkaClusterTargetName)
+            .withKafkaUsername(userTarget.getMetadata().getName())
+            .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             AVAILABILITY_TOPIC_TARGET_NAME, kafkaClusterTargetName, messagesCount);
@@ -546,10 +571,12 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             topicSourceName, kafkaClusterSourceName, userSource.getMetadata().getName());
-        internalKafkaClient.setTopicName(topicSourceName);
-        internalKafkaClient.setClusterName(kafkaClusterSourceName);
-        internalKafkaClient.setKafkaUsername(userSource.getMetadata().getName());
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(topicSourceName)
+            .withClusterName(kafkaClusterSourceName)
+            .withKafkaUsername(userSource.getMetadata().getName())
+            .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             topicSourceName, kafkaClusterSourceName, messagesCount);
@@ -561,10 +588,12 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Changing to target - topic {}, cluster {}, user {}", topicTargetName, kafkaClusterTargetName, userTarget.getMetadata().getName());
-        internalKafkaClient.setTopicName(topicTargetName);
-        internalKafkaClient.setClusterName(kafkaClusterTargetName);
-        internalKafkaClient.setKafkaUsername(userTarget.getMetadata().getName());
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(topicTargetName)
+            .withClusterName(kafkaClusterTargetName)
+            .withKafkaUsername(userTarget.getMetadata().getName())
+            .build();
 
         LOGGER.info("Now messages should be mirrored to target topic and cluster");
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -649,12 +678,23 @@ class MirrorMaker2ST extends AbstractST {
 
         //deploying example clients for checking if mm2 will mirror messages with headers
 
-        KafkaBasicClientResource targetKafkaClientsJob = new KafkaBasicClientResource("", targetConsumerName,
-            KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), targetExampleTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 0);
+        KafkaBasicExampleClients targetKafkaClientsJob = new KafkaBasicExampleClients.Builder()
+            .withConsumerName(targetConsumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .withTopicName(targetExampleTopic)
+            .withMessageCount(MESSAGE_COUNT)
+            .withDelayMs(1000)
+            .build();
+
         targetKafkaClientsJob.consumerStrimzi().done();
 
-        KafkaBasicClientResource sourceKafkaClientsJob = new KafkaBasicClientResource(sourceProducerName, "",
-            KafkaResources.plainBootstrapAddress(kafkaClusterSourceName), sourceExampleTopic, MESSAGE_COUNT, "", ClientUtils.generateRandomConsumerGroup(), 0);
+        KafkaBasicExampleClients sourceKafkaClientsJob = new KafkaBasicExampleClients.Builder()
+            .withProducerName(sourceProducerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withTopicName(sourceExampleTopic)
+            .withMessageCount(MESSAGE_COUNT)
+            .withDelayMs(1000)
+            .build();
 
         sourceKafkaClientsJob.producerStrimzi()
             .editSpec()
@@ -743,6 +783,7 @@ class MirrorMaker2ST extends AbstractST {
             .withClusterName(kafkaClusterSourceName)
             .withMessageCount(MESSAGE_COUNT)
             .withUsingPodName(kafkaClientsPodName)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.assertSentAndReceivedMessages(
@@ -751,7 +792,10 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Changing to {} and will try to receive messages", kafkaClusterTargetName);
-        internalKafkaClient.setClusterName(kafkaClusterTargetName);
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withClusterName(kafkaClusterTargetName)
+            .build();
 
         assertThat(internalKafkaClient.receiveMessagesPlain(), equalTo(MESSAGE_COUNT));
 
@@ -763,6 +807,35 @@ class MirrorMaker2ST extends AbstractST {
         List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(kafkaClusterTargetName, 0, originalTopicName);
         assertThat(kafkaTopicSpec.get(0), equalTo("Topic:" + originalTopicName));
         assertThat(kafkaTopicSpec.get(1), equalTo("PartitionCount:3"));
+    }
+
+    @Test
+    void testHostAliases() {
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
+            .build();
+
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewPod()
+                        .withHostAliases(hostAlias)
+                    .endPod()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String mm2PodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Checking the /etc/hosts file");
+        String output = cmdKubeClient().execInPod(mm2PodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll

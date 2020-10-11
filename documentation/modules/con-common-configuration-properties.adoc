@@ -364,7 +364,6 @@ jvmOptions:
     "MaxGCPauseMillis": 20
     "InitiatingHeapOccupancyPercent": 35
     "ExplicitGCInvokesConcurrent": true
-    "UseParNewGC": false
 ----
 
 The example configuration above will result in the following JVM options:

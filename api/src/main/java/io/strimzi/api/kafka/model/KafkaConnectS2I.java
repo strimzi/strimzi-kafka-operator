@@ -34,7 +34,6 @@ import static java.util.Collections.unmodifiableList;
         using = JsonDeserializer.None.class
 )
 @Crd(
-        apiVersion = KafkaConnectS2I.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = KafkaConnectS2I.RESOURCE_KIND,
@@ -44,7 +43,6 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaConnectS2I.RESOURCE_GROUP,
                 scope = KafkaConnectS2I.SCOPE,
-                version = KafkaConnectS2I.V1BETA1,
                 versions = {
                         @Crd.Spec.Version(
                                 name = KafkaConnectS2I.V1BETA1,

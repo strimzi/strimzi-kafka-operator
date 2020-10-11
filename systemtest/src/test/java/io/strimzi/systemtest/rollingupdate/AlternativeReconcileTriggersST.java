@@ -12,11 +12,12 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicClientResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -75,8 +76,15 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaBasicClientResource kafkaBasicClientJob = new KafkaBasicClientResource(producerName, consumerName,
-            KafkaResources.plainBootstrapAddress(clusterName), continuousTopicName, continuousClientsMessageCount, producerAdditionConfiguration, ClientUtils.generateRandomConsumerGroup(), 1000);
+        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+            .withTopicName(continuousTopicName)
+            .withMessageCount(continuousClientsMessageCount)
+            .withAdditionalConfig(producerAdditionConfiguration)
+            .withDelayMs(1000)
+            .build();
 
         kafkaBasicClientJob.producerStrimzi().done();
         kafkaBasicClientJob.consumerStrimzi().done();
@@ -97,6 +105,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -148,7 +157,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
             () -> kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations() == null
                 || !kubeClient().getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -157,8 +168,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).done();
 
-        internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withTopicName(newTopicName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -202,6 +215,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));

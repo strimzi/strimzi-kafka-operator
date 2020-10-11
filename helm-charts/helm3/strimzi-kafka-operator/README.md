@@ -56,7 +56,7 @@ $ helm repo add strimzi https://strimzi.io/charts/
 To install the chart with the release name `my-release`:
 
 ```bash
-$ helm install --name my-release strimzi/strimzi-kafka-operator
+$ helm install my-release strimzi/strimzi-kafka-operator
 ```
 
 The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration.
@@ -126,7 +126,7 @@ the documentation for more details.
 | `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `latest`                                       |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
-| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.18.0`                                             |
+| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.19.0`                                             |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |

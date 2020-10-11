@@ -26,3 +26,8 @@ data:
     logger.zookeepertrustmanager.name = org.apache.zookeeper
     logger.zookeepertrustmanager.level = WARN
     logger.zookeepertrustmanager.additivity = false
+
+    # Keeps separate level for Netty logging -> to not be changed by the root logger
+    logger.netty.name = io.netty
+    logger.netty.level = INFO
+    logger.netty.additivity = false

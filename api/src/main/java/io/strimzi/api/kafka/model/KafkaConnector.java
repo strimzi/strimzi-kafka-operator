@@ -28,7 +28,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 
 @Crd(
-        apiVersion = KafkaConnector.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = KafkaConnector.RESOURCE_KIND,
@@ -38,7 +37,6 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaConnector.RESOURCE_GROUP,
                 scope = KafkaConnector.SCOPE,
-                version = KafkaConnector.V1ALPHA1,
                 versions = {
                         @Crd.Spec.Version(
                                 name = KafkaConnector.V1ALPHA1,

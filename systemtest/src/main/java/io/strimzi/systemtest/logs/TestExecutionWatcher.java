@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
+import org.opentest4j.TestAbortedException;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -25,24 +26,30 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
 
     @Override
     public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
-        String testClass = extensionContext.getRequiredTestClass().getName();
-        String testMethod = extensionContext.getRequiredTestMethod().getName();
-        collectLogs(testClass, testMethod);
+        if (!(throwable instanceof TestAbortedException)) {
+            String testClass = extensionContext.getRequiredTestClass().getName();
+            String testMethod = extensionContext.getRequiredTestMethod().getName();
+            collectLogs(testClass, testMethod);
+        }
         throw throwable;
     }
 
     @Override
     public void handleBeforeAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
-        String testClass = extensionContext.getRequiredTestClass().getName();
-        collectLogs(testClass, testClass);
+        if (!(throwable instanceof TestAbortedException)) {
+            String testClass = extensionContext.getRequiredTestClass().getName();
+            collectLogs(testClass, testClass);
+        }
         throw throwable;
     }
 
     @Override
     public void handleBeforeEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
-        String testClass = extensionContext.getRequiredTestClass().getName();
-        String testMethod = extensionContext.getRequiredTestMethod().getName();
-        collectLogs(testClass, testMethod);
+        if (!(throwable instanceof TestAbortedException)) {
+            String testClass = extensionContext.getRequiredTestClass().getName();
+            String testMethod = extensionContext.getRequiredTestMethod().getName();
+            collectLogs(testClass, testMethod);
+        }
         throw throwable;
     }
 

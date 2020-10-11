@@ -29,6 +29,7 @@
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
 
 //Monitoring links
+:ExampleMetrics: link:https://github.com/strimzi/strimzi-kafka-operator/tree/master/examples/metrics/
 :GrafanaHome: link:https://grafana.com/[Grafana Labs^]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :PrometheusHome: link:https://github.com/prometheus[Prometheus^]

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -22,8 +23,8 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeClientsResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthClientsResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -35,7 +36,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -58,7 +58,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class OauthTlsST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsST.class);
 
-    private KafkaOauthClientsResource oauthInternalClientJob;
+    private KafkaOauthExampleClients oauthInternalClientJob;
 
     @Description(
             "As an oauth producer, I am able to produce messages to the kafka broker\n" +
@@ -165,8 +165,15 @@ public class OauthTlsST extends OauthAbstractST {
 
         String producerName = "bridge-producer";
 
-        KafkaBridgeClientsResource kafkaBridgeClientJob = new KafkaBridgeClientsResource(producerName, "", KafkaBridgeResources.serviceName(CLUSTER_NAME),
-            TOPIC_NAME, 10, "", ClientUtils.generateRandomConsumerGroup(), HTTP_BRIDGE_DEFAULT_PORT, 1000, 1000);
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
+            .withProducerName(producerName)
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(CLUSTER_NAME))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(10)
+            .withPort(HTTP_BRIDGE_DEFAULT_PORT)
+            .withDelayMs(1000)
+            .withPollInterval(1000)
+            .build();
 
         kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
@@ -189,7 +196,7 @@ public class OauthTlsST extends OauthAbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -208,7 +215,7 @@ public class OauthTlsST extends OauthAbstractST {
                             .endKafkaListenerAuthenticationOAuth()
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
@@ -301,18 +308,78 @@ public class OauthTlsST extends OauthAbstractST {
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
 
-        KafkaOauthClientsResource kafkaOauthClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
-            KafkaResources.tlsBootstrapAddress(targetKafkaCluster), TOPIC_NAME, MESSAGE_COUNT, "",
-            ClientUtils.generateRandomConsumerGroup(), OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
+        KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(OAUTH_PRODUCER_NAME)
+            .withConsumerName(OAUTH_CONSUMER_NAME)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
         kafkaOauthClientJob.consumerStrimziOauthTls(CLUSTER_NAME);
 
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @BeforeEach
-    void setUpEach() {
-        oauthInternalClientJob = new KafkaOauthClientsResource(oauthInternalClientJob);
+    @Test
+    void testIntrospectionEndpoint() {
+        LOGGER.info("Deploying kafka...");
+
+        keycloakInstance.setIntrospectionEndpointUri("https://" + keycloakInstance.getHttpsUri() + "/auth/realms/internal/protocol/openid-connect/token/introspect");
+        String introspectionKafka = CLUSTER_NAME + "-intro";
+
+        CertSecretSource cert = new CertSecretSourceBuilder()
+                .withNewSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                .withNewCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                .build();
+
+        KafkaResource.kafkaEphemeral(introspectionKafka, 1)
+            .editSpec()
+                .editKafka()
+                    .withNewListeners()
+                    .addNewGenericKafkaListener()
+                        .withName("tls")
+                        .withPort(9093)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationOAuth()
+                            .withClientId(OAUTH_KAFKA_CLIENT_NAME)
+                            .withNewClientSecret()
+                                .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                                .withKey(OAUTH_KEY)
+                            .endClientSecret()
+                            .withAccessTokenIsJwt(false)
+                            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                            .withIntrospectionEndpointUri(keycloakInstance.getIntrospectionEndpointUri())
+                            .withTlsTrustedCertificates(cert)
+                            .withDisableTlsHostnameVerification(true)
+                        .endKafkaListenerAuthenticationOAuth()
+                    .endGenericKafkaListener()
+                    .endListeners()
+                .endKafka()
+            .endSpec()
+            .done();
+
+
+        KafkaOauthExampleClients oauthInternalClientIntrospectionJob = new KafkaOauthExampleClients.Builder()
+                .withProducerName(OAUTH_PRODUCER_NAME)
+                .withConsumerName(OAUTH_CONSUMER_NAME)
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(introspectionKafka))
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthClientId(OAUTH_CLIENT_NAME)
+                .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .build();
+
+        oauthInternalClientIntrospectionJob.producerStrimziOauthTls(introspectionKafka).done();
+        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+
+        oauthInternalClientIntrospectionJob.consumerStrimziOauthTls(introspectionKafka).done();
+        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
     @BeforeAll
@@ -321,16 +388,23 @@ public class OauthTlsST extends OauthAbstractST {
 
         LOGGER.info("Keycloak settings {}", keycloakInstance.toString());
 
-        oauthInternalClientJob = new KafkaOauthClientsResource(OAUTH_PRODUCER_NAME, OAUTH_CONSUMER_NAME,
-            KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), TOPIC_NAME, MESSAGE_COUNT, "",
-            ClientUtils.generateRandomConsumerGroup(), OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
+        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(OAUTH_PRODUCER_NAME)
+            .withConsumerName(OAUTH_CONSUMER_NAME)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -407,14 +408,15 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         return result.future();
     }
 
-    private Future<Void> updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers) {
+    private Future<Void> updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers, OrderedProperties defaultLogging) {
+        desiredLogging = Util.expandVars(desiredLogging);
         Map<String, String> updateLoggers = new LinkedHashMap<>();
-        fetchedLoggers.entrySet().forEach(entry -> {
-            // set all logger levels to OFF
-            if (entry.getKey().startsWith("log4j.logger.")) {
-                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), "OFF");
-            } else {
-                updateLoggers.put(entry.getKey(), "OFF");
+        defaultLogging.asMap().entrySet().forEach(entry -> {
+            // set all logger levels to default
+            if (entry.getKey().equals("log4j.rootLogger")) {
+                updateLoggers.put("root", entry.getValue());
+            } else if (entry.getKey().startsWith("log4j.logger.")) {
+                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
             }
         });
 
@@ -423,9 +425,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         ops.asMap().entrySet().forEach(entry -> {
             // set desired loggers to desired levels
             if (entry.getKey().equals("log4j.rootLogger")) {
-                updateLoggers.put("root", entry.getValue());
+                if (!entry.getValue().equals(fetchedLoggers.get("root"))) {
+                    updateLoggers.put("root", entry.getValue());
+                }
             } else if (entry.getKey().startsWith("log4j.logger.")) {
-                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
+                if (!entry.getValue().equals(fetchedLoggers.get(entry.getKey().substring("log4j.logger.".length())))) {
+                    updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
+                }
             }
         });
 
@@ -452,8 +458,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging) {
-        return listConnectLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers));
+    public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging, OrderedProperties defaultLogging) {
+        return listConnectLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers, defaultLogging));
     }
 
     /**

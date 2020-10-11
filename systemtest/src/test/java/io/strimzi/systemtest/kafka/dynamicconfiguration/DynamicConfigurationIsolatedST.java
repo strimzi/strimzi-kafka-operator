@@ -104,7 +104,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                 .editKafka()
                     .editListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
@@ -132,24 +132,24 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName("plain")
+                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(false)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("tls")
+                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(true)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
                     .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
@@ -183,18 +183,18 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName("plain")
+                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(false)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
                     .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
@@ -219,9 +219,9 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
+                    .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
@@ -237,13 +237,17 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
+        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
+        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+
         BasicExternalKafkaClient basicExternalKafkaClientTls = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
+            .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         BasicExternalKafkaClient basicExternalKafkaClientPlain = new BasicExternalKafkaClient.Builder()
@@ -252,12 +256,8 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
-
-        String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
-
-        basicExternalKafkaClientTls.setKafkaUsername(userName);
 
         basicExternalKafkaClientPlain.verifyProducedAndConsumedMessages(
             basicExternalKafkaClientPlain.sendMessagesPlain(),
@@ -274,20 +274,20 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName("tls")
+                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(true)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
                     .withNewKafkaListenerAuthenticationTlsAuth()
                     .endKafkaListenerAuthenticationTlsAuth()
                     .build()
-            ), null));
+            )));
         });
 
         // TODO: remove it ?
@@ -295,7 +295,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
                 basicExternalKafkaClientTls.sendMessagesTls(),
-                basicExternalKafkaClientTls.sendMessagesTls()
+                basicExternalKafkaClientTls.receiveMessagesTls()
         );
 
         assertThrows(Exception.class, () -> {
@@ -308,12 +308,12 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
-                    .withName("external")
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(false)
                     .build()
-            ), null));
+            )));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);

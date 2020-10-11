@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.debezium.kafka.KafkaCluster;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -262,7 +263,10 @@ public class KafkaConnectApiTest {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         Checkpoint async = context.checkpoint();
 
-        client.updateConnectLoggers("localhost", PORT, desired)
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(desired);
+
+        client.updateConnectLoggers("localhost", PORT, desired, ops)
                 .onComplete(context.succeeding())
                 .compose(a -> client.listConnectLoggers("localhost", PORT)
                         .onComplete(context.succeeding(map -> context.verify(() -> {
@@ -271,7 +275,7 @@ public class KafkaConnectApiTest {
                             assertThat(map.get("org.reflections").get("level"), is("FATAL"));
                             assertThat(map.get("org.reflections.Reflection").get("level"), is("INFO"));
                             assertThat(map.get("root").get("level"), is("INFO"));
-                            assertThat(map.get("io.debezium").get("level"), is("OFF"));
+                            assertThat(map.get("io.debezium").get("level"), is("INFO"));
                             assertThat(map.get("unknown"), is(nullValue()));
                             async.flag();
                         }))));

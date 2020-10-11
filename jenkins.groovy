@@ -156,11 +156,11 @@ def clearImages() {
 }
 
 def installHelm(String workspace) {
-    sh(script: "${workspace}/.travis/setup-helm.sh")
+    sh(script: "${workspace}/.azure/scripts/setup-helm.sh")
 }
 
 def installYq(String workspace) {
-    sh(script: "${workspace}/.travis/install_yq.sh")
+    sh(script: "${workspace}/.azure/scripts/install_yq.sh")
 }
 
 def buildStrimziImages() {
@@ -175,7 +175,7 @@ def buildStrimziImages() {
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
     withMaven(mavenOpts: '-Djansi.force=true') {
-        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress -Dfailsafe.rerunFailingTestsCount=2"
+        sh "mvn -f ${workspace}/systemtest/pom.xml -P all verify -Dgroups=${testProfile} -DexcludedGroups=${excludeGroups} -Dit.test=${testCases},!MirrorMaker2ST#testMirrorMaker2CorrectlyMirrorsHeaders,!LoggingChangeST#testJSONFormatLogging -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dstyle.color=always --no-transfer-progress -Dfailsafe.rerunFailingTestsCount=2"
     }
 }
 

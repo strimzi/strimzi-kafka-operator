@@ -10,6 +10,21 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   group: "crdgenerator.strimzi.io"
+  names:
+    kind: "Example"
+    listKind: "ExampleList"
+    singular: "example"
+    plural: "examples"
+    categories:
+    - "strimzi"
+  scope: "Namespaced"
+  additionalPrinterColumns:
+  - name: "Foo"
+    description: "The foo"
+    JSONPath: "..."
+    type: "integer"
+  conversion:
+    strategy: "None"
   versions:
   - name: "v1alpha1"
     served: true
@@ -18,19 +33,6 @@ spec:
     served: true
     storage: false
   version: "v1alpha1"
-  scope: "Namespaced"
-  names:
-    kind: "Example"
-    listKind: "ExampleList"
-    singular: "example"
-    plural: "examples"
-    categories:
-    - "strimzi"
-  additionalPrinterColumns:
-  - name: "Foo"
-    description: "The foo"
-    JSONPath: "..."
-    type: "integer"
   validation:
     openAPIV3Schema:
       properties:
@@ -278,6 +280,7 @@ spec:
             properties: {}
         arrayProperty:
           type: "array"
+          minItems: 1
           items:
             type: "string"
         arrayProperty2:

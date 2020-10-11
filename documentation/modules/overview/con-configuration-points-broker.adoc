@@ -65,11 +65,16 @@ spec:
   kafka:
     # ...
     listeners:
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
           type: tls
-      external:
+      - name: external1
+        port: 9094
         type: route
+        tls: true
         authentication:
           type: tls
     # ...

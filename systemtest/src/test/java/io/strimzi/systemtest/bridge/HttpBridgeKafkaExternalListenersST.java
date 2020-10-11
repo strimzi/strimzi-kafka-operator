@@ -108,14 +108,14 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withAuth(auth)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
-                            .withName("external")
+                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
@@ -130,7 +130,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
 
         // Create user
-        if (auth.getType().equals("tls")) {
+        if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
             KafkaUserResource.tlsUser(CLUSTER_NAME, weirdUserName).done();
             KafkaUserResource.tlsUser(CLUSTER_NAME, aliceUser).done();
         } else {
@@ -157,12 +157,13 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         kafkaBridgeClientJob.consumerStrimziBridge().done();
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(weirdUserName)
             .withSecurityProtocol(securityProtocol)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));

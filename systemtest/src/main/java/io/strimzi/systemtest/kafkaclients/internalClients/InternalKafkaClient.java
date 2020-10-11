@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
@@ -24,7 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * The InternalKafkaClient for sending and receiving messages using basic properties.
  * The client is using an internal listeners and communicate from the pod.
  */
-public class InternalKafkaClient extends AbstractKafkaClient implements KafkaClientOperations {
+public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient.Builder> implements KafkaClientOperations {
 
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
@@ -36,23 +35,29 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
 
         public Builder withUsingPodName(String podName) {
             this.podName = podName;
-            return self();
+            return this;
         }
 
         @Override
         public InternalKafkaClient build() {
             return new InternalKafkaClient(this);
         }
-
-        @Override
-        protected Builder self() {
-            return this;
-        }
     }
 
     private InternalKafkaClient(Builder builder) {
         super(builder);
         podName = builder.podName;
+    }
+
+    @Override
+    protected Builder newBuilder() {
+        return new Builder();
+    }
+
+    @Override
+    public Builder toBuilder() {
+        return ((Builder) super.toBuilder())
+            .withUsingPodName(podName);
     }
 
     public int sendMessagesPlain() {
@@ -72,7 +77,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(KafkaResources.plainBootstrapAddress(clusterName))
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .build();
 
@@ -106,7 +111,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(KafkaResources.tlsBootstrapAddress(clusterName))
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .build();
 
@@ -136,7 +141,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(KafkaResources.plainBootstrapAddress(clusterName))
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .withConsumerGroupName(consumerGroup)
             .withConsumerInstanceId("instance" + new Random().nextInt(Integer.MAX_VALUE))
@@ -172,7 +177,7 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
             .withKafkaUsername(kafkaUsername)
-            .withBootstrapServer(KafkaResources.tlsBootstrapAddress(clusterName))
+            .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .withConsumerGroupName(consumerGroup)
             .withConsumerInstanceId("instance" + new Random().nextInt(Integer.MAX_VALUE))
@@ -241,10 +246,6 @@ public class InternalKafkaClient extends AbstractKafkaClient implements KafkaCli
         }
 
         return receivedMessages;
-    }
-
-    public void setPodName(String podName) {
-        this.podName = podName;
     }
 
     public String getPodName() {

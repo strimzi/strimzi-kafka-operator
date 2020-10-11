@@ -11,6 +11,7 @@ import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
+import io.fabric8.openshift.client.internal.readiness.OpenShiftReadiness;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -102,6 +103,29 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
             return dep.getStatus().getConditions().stream().filter(condition -> "Progressing".equals(condition.getType())).findFirst().orElse(null);
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Due to the separation of Fabric8 Kubernetes and OpenShift clients, the DeploymentConfig needs its own isReady()
+     * method instead of using isReady() from AbstractReadyResourceOperator because it would not pass Readiness.isReadinessApplicable()
+     *
+     * @param namespace The namespace.
+     * @param name The resource name.
+     * @return Whether the resource is in the Ready state.
+     */
+    @Override
+    public boolean isReady(String namespace, String name) {
+        DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig> resourceOp = operation().inNamespace(namespace).withName(name);
+        DeploymentConfig resource = resourceOp.get();
+        
+        if (resource != null)   {
+            // resourceOp.isReady() does not work because of https://github.com/fabric8io/kubernetes-client/issues/2537
+            // This method provides a temporary workaround by calling OpenShiftReadiness.isDeploymentConfigReady(...) directly.
+            // TODO: This should be changed to resourceOp.isReady() after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed.
+            return Boolean.TRUE.equals(OpenShiftReadiness.isDeploymentConfigReady(resource));
+        } else {
+            return false;
         }
     }
 }

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.kafkaclients;
+package io.strimzi.systemtest.kafkaclients.clientproperties;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -13,14 +13,9 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.executor.Exec;
 import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -58,134 +53,71 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 //  This practically means, always make sure that before invoking this withSharedProperties(), you need first execute withCaSecretName().
 @SuppressFBWarnings({"NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
-public class KafkaClientProperties  {
+abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClientProperties<C>>  {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClientProperties.class);
 
     private String namespaceName;
     private String clusterName;
     private String caSecretName;
     private String kafkaUsername;
-    private Properties properties;
+    protected Properties properties;
 
-    public static class KafkaClientPropertiesBuilder {
+    public static abstract class KafkaClientPropertiesBuilder<T extends AbstractKafkaClientProperties.KafkaClientPropertiesBuilder<T>> {
 
         private static final String TRUSTSTORE_TYPE_CONFIG = "PKCS12";
 
-        private Properties properties = new Properties();
+        protected Properties properties = new Properties();
         private String namespaceName;
         private String clusterName;
         private String caSecretName;
         private String kafkaUsername = "";
 
-        public KafkaClientPropertiesBuilder withBootstrapServerConfig(String bootstrapServer) {
-
-            this.properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withKeySerializerConfig(Class<? extends Serializer> keySerializer) {
-
-            this.properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer.getName());
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withKeyDeserializerConfig(Class<? extends Deserializer> keyDeSerializer) {
-
-            this.properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, keyDeSerializer.getName());
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withValueSerializerConfig(Class<? extends Serializer> valueSerializer) {
-
-            this.properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer.getName());
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withValueDeserializerConfig(Class<? extends Deserializer> valueDeSerializer) {
-
-            this.properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDeSerializer.getName());
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withMaxBlockMsConfig(String maxBlockMsConfig) {
-
-            this.properties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, maxBlockMsConfig);
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withClientIdConfig(String clientId) {
-
-            this.properties.setProperty(ProducerConfig.CLIENT_ID_CONFIG, clientId);
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withAcksConfig(String acksConfig) {
-
-            this.properties.setProperty(ProducerConfig.ACKS_CONFIG, acksConfig);
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withGroupIdConfig(String groupIdConfig) {
-
-            this.properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupIdConfig);
-            return this;
-        }
-
-        @SuppressWarnings("Regexp") // for the `.toLowerCase()` because kafka needs this property as lower-case
-        @SuppressFBWarnings("DM_CONVERT_CASE")
-        public KafkaClientPropertiesBuilder withAutoOffsetResetConfig(OffsetResetStrategy offsetResetConfig) {
-
-            this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetResetConfig.name().toLowerCase());
-            return this;
-        }
-
-        public KafkaClientPropertiesBuilder withNamespaceName(String namespaceName) {
+        public T withNamespaceName(String namespaceName) {
 
             this.namespaceName = namespaceName;
-            return this;
+            return self();
         }
 
-        public KafkaClientPropertiesBuilder withClusterName(String clusterName) {
+        public T withClusterName(String clusterName) {
 
             this.clusterName = clusterName;
-            return this;
+            return self();
         }
 
-        public KafkaClientPropertiesBuilder withCaSecretName(String caSecretName) {
+        public T withCaSecretName(String caSecretName) {
 
             this.caSecretName = caSecretName;
-            return this;
+            return self();
         }
 
-        public KafkaClientPropertiesBuilder withKafkaUsername(String kafkaUsername) {
+        public T withKafkaUsername(String kafkaUsername) {
 
             this.kafkaUsername = kafkaUsername;
-            return this;
+            return self();
         }
 
-        public KafkaClientPropertiesBuilder withSecurityProtocol(SecurityProtocol securityProtocol) {
+        public T withSecurityProtocol(SecurityProtocol securityProtocol) {
 
             this.properties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol.name);
-            return this;
+            return self();
         }
 
-        public KafkaClientPropertiesBuilder withSaslMechanism(String saslMechanismType) {
+        public T withSaslMechanism(String saslMechanismType) {
 
             this.properties.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanismType);
-            return this;
+            return self();
         }
 
         // oauth properties
 
-
-        public KafkaClientPropertiesBuilder withSaslLoginCallbackHandlerClass() {
+        public T withSaslLoginCallbackHandlerClass() {
 
             this.properties.setProperty(SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
-            return this;
+            return self();
         }
 
-        public KafkaClientPropertiesBuilder withSaslJassConfig(String clientId, String clientSecretName, String oauthTokenEndpointUri) {
+        public T withSaslJassConfig(String clientId, String clientSecretName, String oauthTokenEndpointUri) {
             if (clientId.isEmpty() || clientSecretName.isEmpty() || oauthTokenEndpointUri.isEmpty()) {
                 throw new InvalidParameterException("You do not specify client-id, client-secret name or oauth-token-endpoint-uri inside kafka client!");
             }
@@ -197,10 +129,10 @@ public class KafkaClientProperties  {
                     "oauth.client.secret=\"" + clientSecretName + "\" " +
                     "oauth.token.endpoint.uri=\"" + oauthTokenEndpointUri + "\";");
 
-            return this;
+            return self();
         }
 
-        public KafkaClientPropertiesBuilder withSaslJassConfigAndTls(String clientId, String clientSecretName, String oauthTokenEndpointUri) {
+        public T withSaslJassConfigAndTls(String clientId, String clientSecretName, String oauthTokenEndpointUri) {
 
             try {
                 importKeycloakCertificateToTruststore(properties);
@@ -224,13 +156,13 @@ public class KafkaClientProperties  {
                     "oauth.ssl.truststore.password=\"" + properties.get(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG) + "\" " +
                     "oauth.ssl.truststore.type=\"" + properties.get(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG) + "\" ;");
 
-            return this;
+            return self();
         }
 
         /**
          * Create properties which are same pro producer and consumer
          */
-        public KafkaClientPropertiesBuilder withSharedProperties() {
+        public T withSharedProperties() {
             // For turn off hostname verification
             properties.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
 
@@ -239,7 +171,7 @@ public class KafkaClientProperties  {
                     !properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG).equals("SASL_" + CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
                 ) {
                     Secret clusterCaCertSecret = kubeClient(namespaceName).getSecret(caSecretName);
-                    File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
+                    File tsFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".truststore");
                     tsFile.deleteOnExit();
                     KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
                     String tsPassword = "foo";
@@ -299,22 +231,31 @@ public class KafkaClientProperties  {
                 throw new RuntimeException();
             }
 
-            return this;
+            return self();
         }
 
-        public KafkaClientProperties build() {
+        protected abstract AbstractKafkaClientProperties<?> build();
 
-            return new KafkaClientProperties(this);
-        }
+        // Subclasses must override this method to return "this" protected abstract T self();
+        // for not explicit casting..
+        protected abstract T self();
     }
 
-    private KafkaClientProperties(KafkaClientPropertiesBuilder builder) {
+    protected abstract KafkaClientPropertiesBuilder<?> toBuilder(C clientProperties) throws ClassNotFoundException;
 
-        this.properties = builder.properties;
-        this.caSecretName = builder.caSecretName;
-        this.kafkaUsername = builder.kafkaUsername;
-        this.namespaceName = builder.namespaceName;
-        this.clusterName = builder.clusterName;
+    protected AbstractKafkaClientProperties(KafkaClientPropertiesBuilder<?> builder) {
+
+        if (builder.namespaceName == null || builder.namespaceName.isEmpty()) throw new InvalidParameterException("Namespace name is not set.");
+        if (builder.clusterName == null || builder.clusterName.isEmpty()) throw  new InvalidParameterException("Cluster name is not set.");
+        if (builder.properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG) == null || builder.properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG).isEmpty()) {
+            throw new InvalidParameterException("Security protocol is not set.");
+        }
+
+        properties = builder.properties;
+        caSecretName = builder.caSecretName;
+        kafkaUsername = builder.kafkaUsername;
+        namespaceName = builder.namespaceName;
+        clusterName = builder.clusterName;
     }
 
     /**
@@ -330,16 +271,16 @@ public class KafkaClientProperties  {
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
 
-        File caFile = File.createTempFile(KafkaClientProperties.class.getName(), ".crt");
+        File caFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".crt");
         caFile.deleteOnExit();
         Files.write(caFile.toPath(), ca);
-        File certFile = File.createTempFile(KafkaClientProperties.class.getName(), ".crt");
+        File certFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".crt");
         certFile.deleteOnExit();
         Files.write(certFile.toPath(), cert);
-        File keyFile = File.createTempFile(KafkaClientProperties.class.getName(), ".key");
+        File keyFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".key");
         keyFile.deleteOnExit();
         Files.write(keyFile.toPath(), key);
-        File keystore = File.createTempFile(KafkaClientProperties.class.getName(), ".keystore");
+        File keystore = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".keystore");
         keystore.delete(); // Note horrible race condition, but this is only for testing
         // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1
         if (new ProcessBuilder("openssl",
@@ -451,6 +392,16 @@ public class KafkaClientProperties  {
         return properties;
     }
 
-
-
+    public String getNamespaceName() {
+        return namespaceName;
+    }
+    public String getClusterName() {
+        return clusterName;
+    }
+    public String getCaSecretName() {
+        return caSecretName;
+    }
+    public String getKafkaUsername() {
+        return kafkaUsername;
+    }
 }

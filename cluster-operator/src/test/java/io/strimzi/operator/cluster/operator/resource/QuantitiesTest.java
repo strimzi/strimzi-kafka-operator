@@ -26,6 +26,8 @@ public class QuantitiesTest {
         assertThat(parseMemory("1Ki"), is(1024L));
         assertThat(parseMemory("512Ki"), is(512 * 1024L));
         assertThat(parseMemory("1e6"), is(1_000_000L));
+        assertThat(parseMemory("3060164198400m"), is(parseMemory("2.85Gi")));
+        assertThat(parseMemory("3081639034880m"), is(parseMemory("2.87Gi")));
 
         assertThat(parseMemory("0"), is(0L));
         assertThat(parseMemory("0K"), is(0L));

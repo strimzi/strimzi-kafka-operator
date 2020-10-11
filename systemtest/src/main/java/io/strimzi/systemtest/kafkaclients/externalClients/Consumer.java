@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.externalClients;
 
-import io.strimzi.systemtest.kafkaclients.KafkaClientProperties;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
 import org.apache.logging.log4j.LogManager;
@@ -16,12 +16,12 @@ import java.util.function.IntPredicate;
 
 public class Consumer extends ClientHandlerBase<Integer> implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(Consumer.class);
-    private final KafkaClientProperties properties;
+    private final ConsumerProperties properties;
     private final AtomicInteger numReceived = new AtomicInteger(0);
     private final String topic;
     private final String clientName;
 
-    Consumer(KafkaClientProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+    Consumer(ConsumerProperties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
         super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;

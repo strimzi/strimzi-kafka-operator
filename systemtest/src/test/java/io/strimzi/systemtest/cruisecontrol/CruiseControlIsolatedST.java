@@ -4,10 +4,13 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
@@ -198,6 +201,32 @@ public class CruiseControlIsolatedST extends AbstractST {
         ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
         ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
+    }
+
+    @Test
+    void testHostAliases() {
+        HostAlias hostAlias = new HostAliasBuilder()
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
+            .build();
+
+        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
+            .editSpec()
+                .editCruiseControl()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withHostAliases(hostAlias)
+                        .endPod()
+                    .endTemplate()
+                .endCruiseControl()
+            .endSpec()
+            .done();
+
+        String ccPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-cruise-control").get(0).getMetadata().getName();
+
+        LOGGER.info("Checking the /etc/hosts file");
+        String output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll
