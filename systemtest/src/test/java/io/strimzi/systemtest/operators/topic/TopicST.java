@@ -7,7 +7,7 @@ package io.strimzi.systemtest.operators.topic;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.operator.common.model.Labels;
+import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -17,7 +17,6 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -69,15 +68,13 @@ public class TopicST extends AbstractST {
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName));
 
-        // Checking TO logs
-        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=my-cluster-entity-operator").get(0);
         String errorMessage = "Replication factor: 5 larger than available brokers: 3";
 
-        PodUtils.waitUntilMessageIsInLogs(tOPodName, "topic-operator", errorMessage);
+        KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
 
-        String tOlogs = kubeClient().logs(tOPodName, "topic-operator");
-
-        assertThat(tOlogs, containsString(errorMessage));
+        assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
+        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("InvalidReplicationFactorException"));
 
         LOGGER.info("Delete topic {}", topicName);
         cmdKubeClient().deleteByName("kafkatopic", topicName);
