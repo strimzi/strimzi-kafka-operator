@@ -146,7 +146,7 @@ public class KafkaAssemblyOperatorTest {
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
         LOG_ZOOKEEPER_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "INFO"));
-        LOG_CONNECT_CONFIG.setLoggers(singletonMap("log4j.rootLogger", "INFO"));
+        LOG_CONNECT_CONFIG.setLoggers(singletonMap("connect.root.logger.level", "INFO"));
     }
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;

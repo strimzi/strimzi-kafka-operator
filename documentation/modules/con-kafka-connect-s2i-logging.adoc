@@ -7,7 +7,7 @@
 
 Kafka Connect with Source2Image support has its own configurable loggers:
 
-* `log4j.rootLogger`
+* `connect.root.logger.level`
 * `log4j.logger.org.reflections`
 
 Kafka Connect uses the Apache `log4j` logger implementation.
@@ -29,7 +29,7 @@ spec:
   logging:
     type: inline
     loggers:
-      log4j.rootLogger: "INFO"
+      connect.root.logger.level: "INFO"
   # ...
 ----
 

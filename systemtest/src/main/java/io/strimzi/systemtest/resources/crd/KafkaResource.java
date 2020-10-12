@@ -171,7 +171,7 @@ public class KafkaResource {
                         .endGenericKafkaListener()
                     .endListeners()
                     .withNewInlineLogging()
-                        .addToLoggers("log4j.rootLogger", "DEBUG")
+                        .addToLoggers("kafka.root.logger.level", "DEBUG")
                     .endInlineLogging()
                 .endKafka()
                 .editZookeeper()

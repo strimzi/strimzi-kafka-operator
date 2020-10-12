@@ -131,7 +131,7 @@ spec:
   logging: <32>
     type: inline
     loggers:
-      log4j.rootLogger: "INFO"
+      connect.root.logger.level: "INFO"
   readinessProbe: <33>
     initialDelaySeconds: 15
     timeoutSeconds: 5
@@ -211,7 +211,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <30> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as regular expression patterns]. Here we request three consumer groups by name.
 You can use comma-separated lists.
 <31> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<32> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. Kafka Connect has a single logger called `log4j.rootLogger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<32> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. Kafka Connect has a single logger called `connect.root.logger.level`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <33> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <34> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <35> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
