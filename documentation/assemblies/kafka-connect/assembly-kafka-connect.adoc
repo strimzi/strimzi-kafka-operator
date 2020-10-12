@@ -3,7 +3,7 @@
 // assembly-deployment-configuration.adoc
 
 [id='assembly-kafka-connect-{context}']
-= Kafka Connect cluster configuration
+= Kafka Connect cluster configuration (plus S2I option)
 
 This section describes how to configure a Kafka Connect deployment in your Strimzi cluster.
 
