@@ -32,7 +32,7 @@ metadata:
   name: logging-configmap
 data:
   log4j.properties:
-    log4j.logger.kafka="INFO"
+    kafka.root.logger.level="INFO"
 ----
 +
 From the command line, using a properties file:
@@ -47,7 +47,7 @@ The properties file defines the logging configuration:
 [source,text]
 ----
 # Define the logger
-log4j.logger.kafka="INFO"
+kafka.root.logger.level="INFO"
 # ...
 ----
 
