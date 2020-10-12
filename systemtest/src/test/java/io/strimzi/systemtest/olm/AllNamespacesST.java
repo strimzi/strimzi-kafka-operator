@@ -69,6 +69,11 @@ public class AllNamespacesST extends OlmAbstractST {
         doTestDeployExampleKafkaMirrorMaker2();
     }
 
+    @Test
+    @Order(9)
+    void testDeployExampleKafkaRebalance() {
+        doTestDeployExampleKafkaRebalance();
+    }
 
     @BeforeAll
     void setup() throws Exception {
