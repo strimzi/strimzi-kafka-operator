@@ -4,7 +4,7 @@ Configures a Kafka Connect cluster.
 === `config`
 Use the `config` properties to configure Kafka options as keys.
 
-Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
+Standard Apache Kafka Connect configuration may be provided, restricted to those properties not managed directly by Strimzi.
 
 Configuration options that cannot be configured relate to:
 
