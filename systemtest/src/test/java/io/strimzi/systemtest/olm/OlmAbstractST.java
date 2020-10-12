@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.OlmResource;
@@ -45,8 +46,9 @@ public class OlmAbstractST extends AbstractST {
     }
 
     void doTestDeployExampleKafkaUser() {
+        String userKafkaName = "user-kafka";
         // KafkaUser example needs Kafka with authorization
-        KafkaResource.kafkaEphemeral("user-kafka", 1, 1)
+        KafkaResource.kafkaEphemeral(userKafkaName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -55,6 +57,7 @@ public class OlmAbstractST extends AbstractST {
             .endSpec()
             .done();
         JsonObject kafkaUserResource = OlmResource.getExampleResources().get(KafkaUser.RESOURCE_KIND);
+        kafkaUserResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, userKafkaName);
         cmdKubeClient().applyContent(kafkaUserResource.toString());
         KafkaUserUtils.waitForKafkaUserCreation(kafkaUserResource.getJsonObject("metadata").getString("name"));
     }
@@ -105,9 +108,12 @@ public class OlmAbstractST extends AbstractST {
     }
 
     void doTestDeployExampleKafkaRebalance() {
+        String cruiseControlClusterName = "cruise-control";
+        KafkaResource.kafkaWithCruiseControl(cruiseControlClusterName, 3, 3).done();
         JsonObject kafkaRebalanceResource = OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND);
+        kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
         cmdKubeClient().applyContent(kafkaRebalanceResource.toString());
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.PendingProposal);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState("my-rebalance", KafkaRebalanceState.PendingProposal);
     }
 
     @AfterAll
