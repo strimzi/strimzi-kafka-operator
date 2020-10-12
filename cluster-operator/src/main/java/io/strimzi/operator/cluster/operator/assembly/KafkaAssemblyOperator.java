@@ -46,6 +46,7 @@ import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -142,9 +143,7 @@ import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_TO_
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
+import static java.util.Collections.*;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -598,6 +597,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
 
+                        KafkaClusterTemplate kafkaClusterTemplate = kafkaAssembly.getSpec().getKafka().getTemplate();
+                        Map<String,String> clusterCaCertLabels = emptyMap();
+                        Map<String,String> clusterCaCertAnnotations = emptyMap();
+
+                        if (kafkaClusterTemplate != null && kafkaClusterTemplate.getClusterCaCert() != null
+                                && kafkaClusterTemplate.getClusterCaCert().getMetadata() != null) {
+                            clusterCaCertLabels = kafkaClusterTemplate.getClusterCaCert().getMetadata().getLabels();
+                            clusterCaCertAnnotations = kafkaClusterTemplate.getClusterCaCert().getMetadata().getAnnotations();
+                        }
+
                         this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
                                 ModelUtils.getRenewalDays(clusterCaConfig),
@@ -605,6 +614,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
+                                clusterCaCertLabels,clusterCaCertAnnotations,
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
@@ -622,7 +632,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                                 clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
                         clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
-                                caLabels.toMap(), ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
+                                caLabels.toMap(), emptyMap(), emptyMap(), ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         List<Future> secretReconciliations = new ArrayList<>(2);
 
@@ -2978,7 +2988,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(uoCm);
                             }
 
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), Collections.emptyMap(), imagePullPolicy, imagePullSecrets);
+                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), emptyMap(), imagePullPolicy, imagePullSecrets);
                             return Future.succeededFuture(this);
                         });
             } else {

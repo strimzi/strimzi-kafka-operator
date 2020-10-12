@@ -44,6 +44,8 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplateBuilder;
+import io.strimzi.api.kafka.model.template.ResourceTemplateBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -350,6 +352,33 @@ public class KafkaAssemblyOperatorTest {
                         .withData(Collections.singletonMap("foo", "bar"))
                         .build()
                 )); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testCreateClusterWithAnnotationsAndLabelsInCaCertSecret(Params params, VertxTestContext context) {
+        setFields(params);
+        Kafka kafka = getKafkaAssembly("foo");
+        kafka.getSpec()
+                .getKafka()
+                .setTemplate(new KafkaClusterTemplateBuilder()
+                        .withClusterCaCert(
+                                new ResourceTemplateBuilder()
+                                        .withNewMetadata()
+                                        .withLabels(Collections.singletonMap("foo", "bar"))
+                                        .withAnnotations(Collections.singletonMap("foo", "bar"))
+                                        .endMetadata()
+                                        .build())
+                        .build());
+
+        createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
+                .withNewMetadata()
+                .withName(KafkaCluster.jmxSecretName("foo"))
+                .withNamespace("test")
+                .endMetadata()
+                .withData(Collections.singletonMap("foo", "bar"))
+                .build()
+        ));
     }
 
     @ParameterizedTest
