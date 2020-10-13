@@ -21,7 +21,10 @@
   * Rearranged graphs
 * Make `listeners` configurable as an array and add support for more different listeners in single cluster
 * Add support for configuring `hostAliases` in Pod templates
-* Add new resource state metric in the operators for reflecting the reconcile result on a specific resource 
+* Add new resource state metric in the operators for reflecting the reconcile result on a specific resource
+* Add improvements for `oauth` authentication, and `keycloak` authorization:
+  * Support for re-authentication was added, which also enforces access token lifespan on the Kafka client session
+  * Permission changes through Keycloak Authorization Services are now detected by Kafka Brokers
 
 ### Deprecations and removals
 
