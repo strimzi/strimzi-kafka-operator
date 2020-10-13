@@ -23,10 +23,13 @@ See the _Using Strimzi_ guide for more information about configuring the `KafkaC
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:deploying-kafka-cluster-str[Running Kafka cluster.]
 
 .Procedure
 
 . Deploy Kafka Connect to your Kubernetes cluster.
+For a Kafka cluster with 3 or more brokers, `examples/connect/kafka-connect.yaml`.
+For a Kafka cluster with less nodes, please use `examples/connect/kafka-connect-single-node-kafka.yaml` instead of `examples/connect/kafka-connect.yaml`.
 +
 [source,shell,subs="attributes+"]
 ----
