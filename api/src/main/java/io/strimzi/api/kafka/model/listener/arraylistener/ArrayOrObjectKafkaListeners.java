@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.crdgenerator.annotations.Alternation;
 import io.strimzi.crdgenerator.annotations.Alternative;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.IOException;
@@ -39,17 +40,27 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
     private final List<GenericKafkaListener> genericKafkaListeners;
     private final KafkaListeners kafkaListeners;
 
-    public ArrayOrObjectKafkaListeners(List<GenericKafkaListener> genericKafkaListeners, KafkaListeners kafkaListeners)   {
+    ArrayOrObjectKafkaListeners(List<GenericKafkaListener> genericKafkaListeners, KafkaListeners kafkaListeners)   {
         this.genericKafkaListeners = genericKafkaListeners;
         this.kafkaListeners = kafkaListeners;
     }
 
-    @Alternative()
+    @Deprecated
+    public ArrayOrObjectKafkaListeners(KafkaListeners kafkaListeners)   {
+        this(null, kafkaListeners);
+    }
+
+    public ArrayOrObjectKafkaListeners(List<GenericKafkaListener> genericKafkaListeners)   {
+        this(genericKafkaListeners, null);
+    }
+
+    @Alternative(apiVersion = "v1alpha1+")
+    @MinimumItems(1)
     public List<GenericKafkaListener> getGenericKafkaListeners() {
         return genericKafkaListeners;
     }
 
-    @Alternative()
+    @Alternative(apiVersion = "v1alpha1-v1beta1")
     public KafkaListeners getKafkaListeners() {
         return kafkaListeners;
     }
@@ -92,9 +103,9 @@ public class ArrayOrObjectKafkaListeners implements Serializable {
             ObjectCodec oc = jsonParser.getCodec();
 
             if (jsonParser.currentToken() == JsonToken.START_ARRAY) {
-                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<List<GenericKafkaListener>>() { }), null);
+                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<List<GenericKafkaListener>>() { }));
             } else if (jsonParser.currentToken() == JsonToken.START_OBJECT) {
-                return new ArrayOrObjectKafkaListeners(null, oc.readValue(jsonParser, new TypeReference<KafkaListeners>() { }));
+                return new ArrayOrObjectKafkaListeners(oc.readValue(jsonParser, new TypeReference<KafkaListeners>() { }));
             } else {
                 throw new RuntimeException("Failed to deserialize ArrayOrObjectKafkaListeners. Please check .spec.kafka.listeners configuration.");
             }

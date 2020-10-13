@@ -131,7 +131,7 @@ spec:
   logging: <32>
     type: inline
     loggers:
-      log4j.rootLogger: "INFO"
+      connect.root.logger.level: "INFO"
   readinessProbe: <33>
     initialDelaySeconds: 15
     timeoutSeconds: 5
@@ -202,7 +202,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <21> Replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
 <22> When xref:con-mirrormaker-acls-{context}[ACL rules synchronization] is enabled, ACLs are applied to synchronized topics. The default is `true`.
 <23> Defines the separator used for the renaming of remote topics.
-<24> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. Useful for active/passive backups and data migration.
+<24> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. This optional setting is useful for active/passive backups and data migration.
 <25> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorHeartbeatConnector`] that performs connectivity checks. The `config` overrides the default configuration options.
 <26> Replication factor for the heartbeat topic created at the target cluster.
 <27> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorCheckpointConnector`] that tracks offsets. The `config` overrides the default configuration options.

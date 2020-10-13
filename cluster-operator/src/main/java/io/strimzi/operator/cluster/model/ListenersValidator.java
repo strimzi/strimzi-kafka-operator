@@ -14,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,7 +28,8 @@ import static java.util.Collections.unmodifiableList;
 public class ListenersValidator {
     protected static final Logger LOG = LogManager.getLogger(ListenersValidator.class.getName());
     private final static Pattern LISTENER_NAME_PATTERN = Pattern.compile(GenericKafkaListener.LISTENER_NAME_REGEX);
-    public final static List<Integer> FORBIDDEN_PORTS = unmodifiableList(Arrays.asList(9090, 9091, 9404, 9999));
+    public final static List<Integer> FORBIDDEN_PORTS = unmodifiableList(Arrays.asList(9404, 9999));
+    public final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
 
     /**
      * Validated the listener configuration. If the configuration is not valid, InvalidResourceException will be thrown.
@@ -64,11 +64,8 @@ public class ListenersValidator {
             errors.add("every listener needs to have a unique port number");
         }
 
-        if (!Collections.disjoint(ports, FORBIDDEN_PORTS))    {
-            errors.add("ports " + FORBIDDEN_PORTS + " are forbidden and cannot be used");
-        }
-
         for (GenericKafkaListener listener : listeners) {
+            validatePortNumbers(errors, listener);
             validateRouteAndIngressTlsOnly(errors, listener);
             validateTlsFeaturesOnNonTlsListener(errors, listener);
             validateOauth(errors, listener);
@@ -103,6 +100,21 @@ public class ListenersValidator {
         }
 
         return errors;
+    }
+
+    /**
+     * Validates that the listener has an allowed port number
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validatePortNumbers(Set<String> errors, GenericKafkaListener listener) {
+        int port = listener.getPort();
+
+        if (FORBIDDEN_PORTS.contains(port)
+                || port < LOWEST_ALLOWED_PORT_NUMBER)    {
+            errors.add("port " + port + " is forbidden and cannot be used");
+        }
     }
 
     /**

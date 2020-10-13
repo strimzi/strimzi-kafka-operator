@@ -206,8 +206,8 @@ public class CruiseControlIsolatedST extends AbstractST {
     @Test
     void testHostAliases() {
         HostAlias hostAlias = new HostAliasBuilder()
-            .withIp("34.89.152.196")
-            .withHostnames("strimzi")
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
             .build();
 
         KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
@@ -224,16 +224,9 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         String ccPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-cruise-control").get(0).getMetadata().getName();
 
-        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
-        String output = cmdKubeClient().execInPod(ccPodName, "ping", "-c", "5", "strimzi").out();
-
-        LOGGER.info("Checking output of ping");
-        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
-        assertThat(output, containsString("5 packets transmitted, 5 received"));
-
         LOGGER.info("Checking the /etc/hosts file");
-        output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+        String output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll

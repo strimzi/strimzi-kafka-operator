@@ -31,7 +31,6 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        apiVersion = KafkaBridge.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = KafkaBridge.RESOURCE_KIND,
@@ -41,7 +40,6 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaBridge.RESOURCE_GROUP,
                 scope = KafkaBridge.SCOPE,
-                version = KafkaBridge.V1ALPHA1,
                 versions = {
                         @Crd.Spec.Version(
                                 name = KafkaBridge.V1ALPHA1,

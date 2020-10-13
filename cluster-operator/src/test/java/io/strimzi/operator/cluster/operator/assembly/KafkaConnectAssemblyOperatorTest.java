@@ -32,6 +32,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -148,7 +149,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -292,7 +293,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -410,7 +411,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -568,7 +569,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -636,7 +637,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
@@ -816,7 +817,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .withVersion("1.0.0")
                 .build();
         when(mockConnectClient.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);

@@ -188,7 +188,7 @@ class ConnectS2IST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -241,6 +241,7 @@ class ConnectS2IST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         String kafkaConnectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
@@ -493,6 +494,7 @@ class ConnectS2IST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         String execConnectPod =  kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
@@ -716,8 +718,8 @@ class ConnectS2IST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         HostAlias hostAlias = new HostAliasBuilder()
-            .withIp("34.89.152.196")
-            .withHostnames("strimzi")
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
             .build();
 
         KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
@@ -732,16 +734,9 @@ class ConnectS2IST extends AbstractST {
 
         String connectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
-        String output = cmdKubeClient().execInPod(connectS2IPodName, "ping", "-c", "5", "strimzi").out();
-
-        LOGGER.info("Checking output of ping");
-        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
-        assertThat(output, containsString("5 packets transmitted, 5 received"));
-
         LOGGER.info("Checking the /etc/hosts file");
-        output = cmdKubeClient().execInPod(connectS2IPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+        String output = cmdKubeClient().execInPod(connectS2IPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString(etcHostsData));
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {

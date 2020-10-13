@@ -114,7 +114,7 @@ public class DeploymentConfigUtils {
 
         TestUtils.waitFor(String.format("Wait for DeploymentConfig: %s will be ready", depConfigName),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient().getDeploymentConfigStatus(depConfigName),
+            () -> kubeClient().getDeploymentConfigReadiness(depConfigName),
             () -> {
                 if (kubeClient().getDeploymentConfig(depConfigName) != null) {
                     LOGGER.info(kubeClient().getDeploymentConfig(depConfigName));

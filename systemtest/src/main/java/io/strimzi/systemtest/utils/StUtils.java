@@ -13,6 +13,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -191,7 +192,7 @@ public class StUtils {
     public static JsonArray expectedServiceDiscoveryInfo(int port, String protocol, String auth) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.put("port", port);
-        jsonObject.put("tls", port == 9093);
+        jsonObject.put(Constants.TLS_LISTENER_DEFAULT_NAME, port == 9093);
         jsonObject.put("protocol", protocol);
         jsonObject.put("auth", auth);
 

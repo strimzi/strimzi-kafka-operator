@@ -30,7 +30,6 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        apiVersion = KafkaUser.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = KafkaUser.RESOURCE_KIND,
@@ -40,7 +39,6 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaUser.RESOURCE_GROUP,
                 scope = KafkaUser.SCOPE,
-                version = KafkaUser.V1BETA1,
                 versions = {
                         @Crd.Spec.Version(
                                 name = KafkaUser.V1BETA1,

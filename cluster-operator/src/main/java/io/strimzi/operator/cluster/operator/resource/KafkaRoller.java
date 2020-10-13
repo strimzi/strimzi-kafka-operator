@@ -11,8 +11,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -26,6 +29,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
+import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -258,7 +263,7 @@ public class KafkaRoller {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
             } catch (FatalProblem e) {
-                log.info("{}: Could not restart pod {}, giving up after {} attempts/{}ms",
+                log.info("{}: Could not restart pod {}, giving up after {} attempts. Total delay between attempts {}ms",
                         reconciliation, podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                 ctx.promise.fail(e);
                 singleExecutor.shutdownNow();
@@ -267,7 +272,7 @@ public class KafkaRoller {
                 });
             } catch (Exception e) {
                 if (ctx.backOff.done()) {
-                    log.info("{}: Could not roll pod {}, giving up after {} attempts/{}ms",
+                    log.info("{}: Could not roll pod {}, giving up after {} attempts. Total delay between attempts {}ms",
                             reconciliation, podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                     ctx.promise.fail(e instanceof TimeoutException ?
                             new io.strimzi.operator.common.operator.resource.TimeoutException() :
@@ -308,6 +313,7 @@ public class KafkaRoller {
      * @throws UnforceableProblem Some error, still thrown when finalAttempt==true.
      */
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(int podId, RestartContext restartContext)
             throws Exception {
         Pod pod;
@@ -348,7 +354,7 @@ public class KafkaRoller {
                 log.debug("{}: Pod {} is now ready", reconciliation, podId);
             }
         } catch (ForceableProblem e) {
-            if (restartContext.backOff.done() || e.forceNow) {
+            if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
                 if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
                     log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
@@ -360,6 +366,35 @@ public class KafkaRoller {
                 throw e;
             }
         }
+    }
+
+    private boolean podWaitingBecauseOfAnyReasons(Pod pod, Set<String> reasons) {
+        if (pod != null && pod.getStatus() != null) {
+            Optional<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream()
+                    .filter(containerStatus -> containerStatus.getName().equals("kafka")).findFirst();
+            if (kafkaContainerStatus.isPresent()) {
+                ContainerStateWaiting waiting = kafkaContainerStatus.get().getState().getWaiting();
+                if (waiting != null) {
+                    return reasons.contains(waiting.getReason());
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isPending(Pod pod) {
+        if (pod != null && pod.getStatus() != null && "Pending".equals(pod.getStatus().getPhase())) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isPodStuck(Pod pod) {
+        Set<String> set = new HashSet<>();
+        set.add("CrashLoopBackOff");
+        set.add("ImagePullBackOff");
+        set.add("ContainerCreating");
+        return isPending(pod) || podWaitingBecauseOfAnyReasons(pod, set);
     }
 
     /**
@@ -425,15 +460,15 @@ public class KafkaRoller {
             loggingDiff = logging(podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
-                    log.info("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
+                    log.debug("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
                     needsReconfig = true;
                 } else {
-                    log.info("{}: Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", reconciliation, podId);
+                    log.debug("{}: Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", reconciliation, podId);
                     needsRestart = true;
                 }
             }
             if (loggingDiff.getDiffSize() > 0) {
-                log.info("{}: Pod {} logging needs to be reconfigured.", reconciliation, podId);
+                log.debug("{}: Pod {} logging needs to be reconfigured.", reconciliation, podId);
                 needsReconfig = true;
             }
         } else {
@@ -474,8 +509,8 @@ public class KafkaRoller {
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
         updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
-        log.info("{}: Altering broker {}", reconciliation, podId);
-        log.debug("{}: Altering broker {} with {}", reconciliation, podId, updatedConfig);
+        log.debug("{}: Altering broker configuration {}", reconciliation, podId);
+        log.trace("{}: Altering broker configuration {} with {}", reconciliation, podId, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
@@ -485,7 +520,7 @@ public class KafkaRoller {
         await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error performing dynamic logging update for pod " + podId, error));
 
-        log.info("{}: Dynamic AlterConfig for broker {} was successful.", reconciliation, podId);
+        log.info("{}: Dynamic reconfiguration for broker {} was successful.", reconciliation, podId);
     }
 
     private KafkaBrokerLoggingConfigurationDiff logging(int podId)

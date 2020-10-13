@@ -135,4 +135,83 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
 
         assertThat(current.getSpec().getHealthCheckNodePort(), is(desired.getSpec().getHealthCheckNodePort()));
     }
+
+    @Test
+    public void testIpFamilyPatching()  {
+        KubernetesClient client = mock(KubernetesClient.class);
+
+        Service current = new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withType("ClusterIp")
+                    .withPorts(
+                            new ServicePortBuilder()
+                                    .withName("port1")
+                                    .withPort(1234)
+                                    .withTargetPort(new IntOrString(1234))
+                                    .build(),
+                            new ServicePortBuilder()
+                                    .withName("port2")
+                                    .withPort(5678)
+                                    .withTargetPort(new IntOrString(5678))
+                                    .build()
+                    )
+                    .withNewIpFamily("IPv6")
+                .endSpec()
+                .build();
+
+        Service current2 = new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withType("ClusterIp")
+                    .withPorts(
+                            new ServicePortBuilder()
+                                    .withName("port1")
+                                    .withPort(1234)
+                                    .withTargetPort(new IntOrString(1234))
+                                    .build(),
+                            new ServicePortBuilder()
+                                    .withName("port2")
+                                    .withPort(5678)
+                                    .withTargetPort(new IntOrString(5678))
+                                    .build()
+                    )
+                    .withNewIpFamily("IPv6")
+                .endSpec()
+                .build();
+
+        Service desired = new ServiceBuilder()
+                .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                .withType("NodePort")
+                .withPorts(
+                        new ServicePortBuilder()
+                                .withName("port2")
+                                .withPort(5678)
+                                .withTargetPort(new IntOrString(5678))
+                                .build(),
+                        new ServicePortBuilder()
+                                .withName("port1")
+                                .withPort(1234)
+                                .withTargetPort(new IntOrString(1234))
+                                .build()
+                )
+                .endSpec()
+                .build();
+
+        ServiceOperator op = new ServiceOperator(vertx, client);
+        op.patchIpFamily(current, desired);
+
+        assertThat(current.getSpec().getIpFamily(), is(desired.getSpec().getIpFamily()));
+        assertThat(current2.getSpec().getIpFamily(), is(desired.getSpec().getIpFamily()));
+    }
 }

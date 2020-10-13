@@ -5,7 +5,7 @@
 [id='assembly-kafka-connect-{context}']
 = Kafka Connect/S2I cluster configuration
 
-This section describes how to configure a Kafka Connect deployment in your Strimzi cluster.
+This section describes how to configure a Kafka Connect or Kafka Connect with Source-to-Image (S2I) deployment in your Strimzi cluster.
 
 Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems using `Connector` plugins.
 Kafka Connect provides a framework for integrating Kafka with an external data source or target, such as a database, for import or export of data using connectors.

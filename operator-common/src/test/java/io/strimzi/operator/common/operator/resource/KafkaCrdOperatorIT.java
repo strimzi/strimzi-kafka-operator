@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
@@ -58,7 +58,7 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kuberne
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withListeners(new ArrayOrObjectKafkaListeners(null, new KafkaListenersBuilder()
+                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
                                 .withNewPlain()
                                 .endPlain()
                                 .build()))

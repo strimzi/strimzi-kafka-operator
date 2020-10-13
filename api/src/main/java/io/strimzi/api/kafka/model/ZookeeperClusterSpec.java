@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -100,6 +101,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
         this.logging = logging;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @DeprecatedProperty
     @Deprecated
     @Description("TLS sidecar configuration. " +
@@ -186,6 +188,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
         this.metrics = metrics;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -199,6 +202,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
         this.affinity = affinity;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

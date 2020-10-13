@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 oc_installed=false
 kubectl_installed=false
@@ -104,11 +104,12 @@ fi
 
 get_masked_secrets() {
 	mkdir -p $direct/reports/"$1"
+	echo "$1"
 	resources=$($platform get $1 -l strimzi.io/cluster=$cluster -o name -n $namespace)
 	for line in $resources; do
 		filename=`echo $line | cut -f 2 -d "/"`
 		echo "   "$line
-		original_data=`oc get $line -o=jsonpath='{.data}' | cut -c5-`
+		original_data=`oc get $line -o=jsonpath='{.data}' -n $namespace | cut -c5-`
 		SAVEIFS=$IFS
     IFS=$'\n'
     original_data=($original_data)

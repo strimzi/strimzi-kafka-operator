@@ -8,12 +8,6 @@ metadata:
     component: kafkabridges.kafka.strimzi.io-crd
 spec:
   group: kafka.strimzi.io
-  versions:
-    - name: v1alpha1
-      served: true
-      storage: true
-  version: v1alpha1
-  scope: Namespaced
   names:
     kind: KafkaBridge
     listKind: KafkaBridgeList
@@ -23,6 +17,7 @@ spec:
       - kb
     categories:
       - strimzi
+  scope: Namespaced
   additionalPrinterColumns:
     - name: Desired replicas
       description: The desired number of Kafka Bridge replicas
@@ -39,6 +34,13 @@ spec:
       specReplicasPath: .spec.replicas
       statusReplicasPath: .status.replicas
       labelSelectorPath: .status.labelSelector
+  conversion:
+    strategy: None
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  version: v1alpha1
   validation:
     openAPIV3Schema:
       properties:

@@ -181,9 +181,9 @@ public class MetricsST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(5000)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
-        internalKafkaClient.setPodName(defaultKafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()

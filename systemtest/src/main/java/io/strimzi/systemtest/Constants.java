@@ -264,4 +264,11 @@ public interface Constants {
     String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
     String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
+
+    /**
+     * Default listeners names
+     */
+    String PLAIN_LISTENER_DEFAULT_NAME = "plain";
+    String TLS_LISTENER_DEFAULT_NAME = "tls";
+    String EXTERNAL_LISTENER_DEFAULT_NAME = "external";
 }

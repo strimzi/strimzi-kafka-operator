@@ -15,7 +15,7 @@ import java.util.Map;
 public class PropertyTest {
 
     private static PropertyType propertyType(Class<?> cls, String propertyNAme) {
-        return properties(cls).get(propertyNAme).getType();
+        return properties(null, cls).get(propertyNAme).getType();
     }
 
     @Test
