@@ -9,12 +9,12 @@
 If an issue occurs when creating a `KafkaRebalance` resource or interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it. 
 The resource also moves to the `NotReady` state.
 
-To continue with the cluster rebalance operation, you must fix the problem in the `KafkaRebalance` resource itself or with the Cruise Control overall deployment.
+To continue with the cluster rebalance operation, you must fix the problem in the `KafkaRebalance` resource itself or with the overall Cruise Control deployment.
 Problems might include the following:
 
 * A misconfigured parameter in the `KafkaRebalance` resource.
-* The `strimzi.io/cluster` label, in the `KafkaRebalance` resource, for specifying the Kafka cluster is missing.
-* The Cruise Control server is not deployed. The `cruiseControl` field, in the `Kafka` resource, is missing.
+* The `strimzi.io/cluster` label for specifying the Kafka cluster in the `KafkaRebalance` resource is missing.
+* The Cruise Control server is not deployed as the `cruiseControl` property in the `Kafka` resource is missing.
 * The Cruise Control server is not reachable. 
 
 After fixing the issue, you need to add the `refresh` annotation to the `KafkaRebalance` resource.
