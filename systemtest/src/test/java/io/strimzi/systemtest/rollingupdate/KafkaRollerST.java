@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -150,11 +150,10 @@ class KafkaRollerST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()));
 
-        long startTime = System.currentTimeMillis();
+        // kafka should get back ready in some reasonable time frame.
+        // Current timeout for wait is set to 14 minutes, which should be enough.
+        // No additional checks are needed, because in case of wait failure, the test will not continue.
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
-        long endTime = System.currentTimeMillis();
-
-        assertThat(Duration.ofMillis(endTime - startTime).toMinutes(), is(lessThan(20L)));
     }
 
     @Test
@@ -167,13 +166,12 @@ class KafkaRollerST extends AbstractST {
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
-                kafka.getSpec().getKafka().setImage("strimzi/kafka:latest-kafka-2.6.0"));
+                kafka.getSpec().getKafka().setImage("strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION));
 
-        long startTime = System.currentTimeMillis();
+        // kafka should get back ready in some reasonable time frame.
+        // Current timeout for wait is set to 14 minutes, which should be enough.
+        // No additional checks are needed, because in case of wait failure, the test will not continue.
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
-        long endTime = System.currentTimeMillis();
-
-        assertThat(Duration.ofMillis(endTime - startTime).toMinutes(), is(lessThan(20L)));
     }
 
     @Test
@@ -190,7 +188,7 @@ class KafkaRollerST extends AbstractST {
                 .done();
 
         Map<String, Quantity> requests = new HashMap<>(2);
-        requests.put("cpu", new Quantity("10"));
+        requests.put("cpu", new Quantity("10000"));
         requests.put("memory", new Quantity("512Mi"));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
@@ -202,11 +200,10 @@ class KafkaRollerST extends AbstractST {
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
 
-        long startTime = System.currentTimeMillis();
+        // kafka should get back ready in some reasonable time frame.
+        // Current timeout for wait is set to 14 minutes, which should be enough.
+        // No additional checks are needed, because in case of wait failure, the test will not continue.
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
-        long endTime = System.currentTimeMillis();
-
-        assertThat(Duration.ofMillis(endTime - startTime).toMinutes(), is(lessThan(20L)));
     }
 
     @BeforeAll
