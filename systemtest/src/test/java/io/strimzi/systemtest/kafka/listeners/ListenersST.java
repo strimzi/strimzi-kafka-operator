@@ -500,7 +500,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .done();
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getBootstrapServers());
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -540,7 +540,7 @@ public class ListenersST extends AbstractST {
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getBootstrapServers());
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)

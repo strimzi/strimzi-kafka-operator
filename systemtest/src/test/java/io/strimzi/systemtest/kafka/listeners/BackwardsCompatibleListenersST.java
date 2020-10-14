@@ -220,7 +220,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getBootstrapServers());
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(topicName)
