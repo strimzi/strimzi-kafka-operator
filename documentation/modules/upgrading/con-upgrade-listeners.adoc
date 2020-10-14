@@ -68,7 +68,7 @@ Changes introduced to the listener `configuration`:
 * `overrides` is merged with the `configuration` section
 * `dnsAnnotations` has been renamed `annotations`
 * `preferredAddressType` has been renamed `preferredNodePortAddressType`
-* `address` has been renamed `alternativenames`
+* `address` has been renamed `alternativeNames`
 * `loadBalancerSourceRanges` and `externalTrafficPolicy` move to the listener configuration from the now deprecated `template`
 
 For example, this configuration:
