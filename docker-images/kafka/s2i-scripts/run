@@ -11,6 +11,7 @@ then
 fi
 
 export KAFKA_CONNECT_PLUGIN_PATH=/tmp/kafka-plugins
-export KAFKA_CONNECT_S2I=true
 echo "Starting Kafka Connect with custom plugin directory $KAFKA_CONNECT_PLUGIN_PATH"
-exec /usr/bin/tini -w -e 143 -- /opt/kafka/kafka_connect_run.sh
+# shellcheck source=/opt/kafka/kafka_connect_run.sh
+# shellcheck disable=SC1091
+source /opt/kafka/kafka_connect_run.sh
