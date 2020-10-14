@@ -28,8 +28,8 @@ See the _Using Strimzi_ guide for more information about configuring the `KafkaC
 .Procedure
 
 . Deploy Kafka Connect to your Kubernetes cluster.
-For a Kafka cluster with 3 or more brokers, `examples/connect/kafka-connect.yaml`.
-For a Kafka cluster with less nodes, please use `examples/connect/kafka-connect-single-node-kafka.yaml` instead of `examples/connect/kafka-connect.yaml`.
+For a Kafka cluster with 3 or more brokers, use the `examples/connect/kafka-connect.yaml` file.
+For a Kafka cluster with less than 3 brokers, use the `examples/connect/kafka-connect-single-node-kafka.yaml` file.
 +
 [source,shell,subs="attributes+"]
 ----
