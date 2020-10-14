@@ -11,7 +11,7 @@ Kafka Connect is an integration toolkit for streaming data between Kafka brokers
 Kafka Connect provides a framework for integrating Kafka with an external data source or target, such as a database, for import or export of data using connectors.
 Connectors are plugins that provide the connection configuration needed.
 
-If you are using Kafka Connect, you configure either the `KafkaConnect` and `KafkaConnectS2I` resource.
+If you are using Kafka Connect, you configure either the `KafkaConnect` or the `KafkaConnectS2I` resource.
 Use the `KafkaConnectS2I` resource if you are using the {docs-okd-s2i} framework to deploy Kafka Connect.
 
 * The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].

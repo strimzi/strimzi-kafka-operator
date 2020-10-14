@@ -5,13 +5,15 @@
 [id='proc-kafka-connect-config-{context}']
 = Configuring Kafka Connect
 
-Use Kafka Connect to make external data connections to your Kafka clusters through configuration.
+Use Kafka Connect to set up external data connections to your Kafka cluster.
 
 Use the properties of the `KafkaConnect` or `KafkaConnectS2I` resource to configure your Kafka Connect deployment.
-The example shown in this procedure is for the `KafkaConnect`, but the properties are applicable to the `KafkaConnectS2I` resource.
+The example shown in this procedure is for the `KafkaConnect` resource, but the properties are the same for the `KafkaConnectS2I` resource.
 
 .Kafka connector configuration
-In the configuration, you enable `KafkaConnectors` for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources`.
+`KafkaConnector` resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
+
+In the configuration, you enable `KafkaConnectors` for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources` annotation.
 You can also specify external configuration for Kafka Connect connectors through the `externalConfiguration` property.
 
 Connectors are created, reconfigured, and deleted using the Kafka Connect HTTP REST interface, or by using `KafkaConnectors`.
