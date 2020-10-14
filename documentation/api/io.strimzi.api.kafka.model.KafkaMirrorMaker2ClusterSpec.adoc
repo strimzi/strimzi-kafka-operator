@@ -4,7 +4,7 @@ Configures Kafka clusters for mirroring.
 === `config`
 Use the `config` properties to configure Kafka options.
 
-Standard Apache Kafka configuration may be provided, xref:assembly-kafka-connect-configuration-deployment-configuration-kafka-connect[restricted to those properties not managed directly by Strimzi].
+Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
 
 For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
 You can also xref:con-common-configuration-ssl-reference[configure the `ssl.endpoint.identification.algorithm` property] to enable or disable hostname verification.

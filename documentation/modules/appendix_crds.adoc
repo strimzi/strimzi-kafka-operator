@@ -1877,6 +1877,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaConnectTls.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2037,6 +2038,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2160,6 +2162,7 @@ Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xre
 
 Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====

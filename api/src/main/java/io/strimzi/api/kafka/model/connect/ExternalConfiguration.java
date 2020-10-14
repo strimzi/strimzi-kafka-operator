@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -20,6 +21,7 @@ import java.util.Map;
 /**
  * Representation for external configuration for Kafka Connect connectors passed from Secrets or ConfigMaps
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -66,4 +68,3 @@ public class ExternalConfiguration implements Serializable, UnknownPropertyPrese
     }
 
 }
-
