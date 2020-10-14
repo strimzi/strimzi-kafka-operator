@@ -69,4 +69,10 @@ fi
 . ./set_kafka_gc_options.sh
 
 # starting Kafka server with final configuration
-exec /usr/bin/tini -w -e 143 -- "${KAFKA_HOME}/bin/connect-distributed.sh" /tmp/strimzi-connect.properties
+
+if [ "$KAFKA_CONNECT_S2I" = "true" ]; then
+    # this script already run via tini
+    "${KAFKA_HOME}/bin/connect-distributed.sh" /tmp/strimzi-connect.properties
+  else
+    exec /usr/bin/tini -w -e 143 -- "${KAFKA_HOME}/bin/connect-distributed.sh" /tmp/strimzi-connect.properties
+fi

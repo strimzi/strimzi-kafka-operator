@@ -353,7 +353,7 @@ class LogSettingST extends AbstractST {
 
         for (Pod pod : kubeClient().listPods()) {
             String podName = pod.getMetadata().getName();
-            if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients") && !podName.contains(CONNECTS2I_NAME)) {
+            if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients")) {
                 for (Container container : pod.getSpec().getContainers()) {
                     LOGGER.info("Checking tini process for pod {} with container {}", pod, container);
                     boolean isPresent = cmdKubeClient().execInPodContainer(false, podName, container.getName(), "/bin/bash", "-c", command).out().trim().equals("1");
