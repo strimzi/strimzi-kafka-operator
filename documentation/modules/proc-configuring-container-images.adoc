@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Edit the `image` property in the `Kafka`, `KafkaConnect` or `KafkaConnectS2I` resource.
+. Edit the `image` property in the `Kafka` resource.
 For example:
 +
 [source,yaml,subs=attributes+]

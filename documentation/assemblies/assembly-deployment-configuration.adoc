@@ -21,9 +21,7 @@ This chapter describes how to configure different aspects of the supported deplo
 
 include::assembly-deployment-configuration-kafka.adoc[leveloffset=+1]
 
-include::assembly-deployment-configuration-kafka-connect.adoc[leveloffset=+1]
-
-include::assembly-deployment-configuration-kafka-connect-s2i.adoc[leveloffset=+1]
+include::kafka-connect/assembly-kafka-connect.adoc[leveloffset=+1]
 
 include::assembly-deployment-configuration-kafka-mirror-maker.adoc[leveloffset=+1]
 

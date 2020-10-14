@@ -15,10 +15,8 @@ In this procedure, we use the example file provided with Strimzi:
 
 * `examples/connect/kafka-connect.yaml`
 
-See the _Using Strimzi_ guide for more information about configuring the `KafkaConnect` resource:
-
-* link:{BookURLUsing}#assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration^]
-* link:{BookURLUsing}#assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster configuration with Source2Image support^]
+For information about configuring the `KafkaConnect` resource (or the `KafkaConnectS2I` resource with Source-to-Image (S2I) support),
+see link:{BookURLUsing}#assembly-kafka-connect-str[Kafka Connect cluster configuration^] in the _Using Strimzi_ guide.
 
 .Prerequisites
 

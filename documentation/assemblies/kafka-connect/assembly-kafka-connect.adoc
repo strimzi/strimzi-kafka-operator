@@ -1,0 +1,34 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-kafka-connect-{context}']
+= Kafka Connect/S2I cluster configuration
+
+This section describes how to configure a Kafka Connect or Kafka Connect with Source-to-Image (S2I) deployment in your Strimzi cluster.
+
+Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems using `Connector` plugins.
+Kafka Connect provides a framework for integrating Kafka with an external data source or target, such as a database, for import or export of data using connectors.
+Connectors are plugins that provide the connection configuration needed.
+
+If you are using Kafka Connect, you configure either the `KafkaConnect` or the `KafkaConnectS2I` resource.
+Use the `KafkaConnectS2I` resource if you are using the {docs-okd-s2i} framework to deploy Kafka Connect.
+
+* The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
+* The full schema of the `KafkaConnectS2I` resource is described in xref:type-KafkaConnectS2I-reference[].
+
+.Additional resources
+
+* link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^]
+* link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying a `KafkaConnector` resource to Kafka Connect^]
+
+//procedure to configure Kafka Connect
+include::../../modules/kafka-connect/proc-kafka-connect-config.adoc[leveloffset=+1]
+//Config properties to check when running multiple Kafka Connect instances
+include::../../modules/kafka-connect/con-kafka-connect-multiple-instances.adoc[leveloffset=+1]
+//If authorization is enabled, configure the Kafka Connect user for read/write access rights
+include::../../modules/kafka-connect/proc-configuring-kafka-connect-user-authorization.adoc[leveloffset=+1]
+//Resources created for Kafka Connect
+include::../../modules/kafka-connect/ref-list-of-kafka-connect-resources.adoc[leveloffset=+1]
+//Resource created for Kafka Connect S2I
+include::../../modules/kafka-connect/ref-list-of-kafka-connect-s2i-resources.adoc[leveloffset=+1]
