@@ -74,7 +74,7 @@ storage:
 
 == Storage class overrides
 
-You can specify a different storage class for one or more Kafka brokers, instead of using the default storage class.
+You can specify a different storage class for one or more Kafka brokers or ZooKeeper nodes, instead of using the default storage class.
 This is useful if, for example, storage classes are restricted to different availability zones or data centers.
 You can use the `overrides` field for this purpose.
 
@@ -107,13 +107,31 @@ spec:
         - broker: 2
           class: my-storage-class-zone-1c
   # ...
+  zookeeper:
+    replicas: 3
+    storage:
+      deleteClaim: true
+      size: 100Gi
+      type: persistent-claim
+      class: my-storage-class
+      overrides:
+        - broker: 0
+          class: my-storage-class-zone-1a
+        - broker: 1
+          class: my-storage-class-zone-1b
+        - broker: 2
+          class: my-storage-class-zone-1c
+  # ...
 ----
 
-As a result of the configured `overrides` property, the broker volumes use the following storage classes:
+As a result of the configured `overrides` property, the volumes use the following storage classes:
 
-* The persistent volumes of broker 0 will use `my-storage-class-zone-1a`.
-* The persistent volumes of broker 1 will use `my-storage-class-zone-1b`.
-* The persistent volumes of broker 2 will use `my-storage-class-zone-1c`.
+* The persistent volumes of ZooKeeper node 0 will use `my-storage-class-zone-1a`.
+* The persistent volumes of ZooKeeper node 1 will use `my-storage-class-zone-1b`.
+* The persistent volumes of ZooKeeepr node 2 will use `my-storage-class-zone-1c`.
+* The persistent volumes of Kafka broker 0 will use `my-storage-class-zone-1a`.
+* The persistent volumes of Kafka broker 1 will use `my-storage-class-zone-1b`.
+* The persistent volumes of Kafka broker 2 will use `my-storage-class-zone-1c`.
 
 The `overrides` property is currently used only to override storage class configurations. Overriding other storage configuration fields is not currently supported.
 Other fields from the storage configuration are currently not supported.
