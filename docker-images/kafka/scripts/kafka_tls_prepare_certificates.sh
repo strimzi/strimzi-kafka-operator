@@ -77,8 +77,8 @@ for CERT_DIR in /opt/kafka/certificates/*; do
   if [[ $CERT_DIR =~ $regex ]]; then
     echo "Preparing store for ${BASH_REMATCH[1]} ${BASH_REMATCH[2]} listener"
     if [[ ${BASH_REMATCH[1]} == "custom"  ]]; then
-      echo /tmp/kafka/${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}.keystore.p12
-      create_keystore_without_ca_file /tmp/kafka/${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}.keystore.p12 "$CERTS_STORE_PASSWORD" "${CERT_DIR}/tls.crt" "${CERT_DIR}/tls.key" custom-key
+      echo /tmp/kafka/"${BASH_REMATCH[1]}"-"${BASH_REMATCH[2]}"-"${BASH_REMATCH[3]}".keystore.p12
+      create_keystore_without_ca_file /tmp/kafka/"${BASH_REMATCH[1]}"-"${BASH_REMATCH[2]}"-"${BASH_REMATCH[3]}".keystore.p12 "$CERTS_STORE_PASSWORD" "${CERT_DIR}/tls.crt" "${CERT_DIR}/tls.key" custom-key
     fi
     if [[ ${BASH_REMATCH[1]} == "oauth"  ]]; then
       OAUTH_STORE="/tmp/kafka/${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}.truststore.p12"
