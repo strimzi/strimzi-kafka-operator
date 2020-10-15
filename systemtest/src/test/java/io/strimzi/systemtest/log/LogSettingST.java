@@ -100,7 +100,7 @@ class LogSettingST extends AbstractST {
         .withGcLoggingEnabled(false)
         .build();
 
-    private static final Map<String, String> KAFKA_LOGGERS = new HashMap<>() {
+    private static final Map<String, String> KAFKA_LOGGERS = new HashMap<String, String>() {
         {
             put("kafka.root.logger.level", INFO);
             put("test.kafka.logger.level", INFO);
@@ -120,14 +120,14 @@ class LogSettingST extends AbstractST {
         }
     };
 
-    private static final Map<String, String> ZOOKEEPER_LOGGERS = new HashMap<>() {
+    private static final Map<String, String> ZOOKEEPER_LOGGERS = new HashMap<String, String>() {
         {
             put("zookeeper.root.logger", OFF);
             put("test.zookeeper.logger.level", DEBUG);
         }
     };
 
-    private static final Map<String, String> CONNECT_LOGGERS = new HashMap<>() {
+    private static final Map<String, String> CONNECT_LOGGERS = new HashMap<String, String>() {
         {
             put("connect.root.logger.level", INFO);
             put("test.connect.logger.level", DEBUG);
@@ -136,21 +136,21 @@ class LogSettingST extends AbstractST {
         }
     };
 
-    private static final Map<String, String> OPERATORS_LOGGERS = new HashMap<>() {
+    private static final Map<String, String> OPERATORS_LOGGERS = new HashMap<String, String>() {
         {
             put("rootLogger.level", DEBUG);
             put("test.operator.logger.level", DEBUG);
         }
     };
 
-    private static final Map<String, String> MIRROR_MAKER_LOGGERS = new HashMap<>() {
+    private static final Map<String, String> MIRROR_MAKER_LOGGERS = new HashMap<String, String>() {
         {
             put("mirrormaker.root.logger", TRACE);
             put("test.mirrormaker.logger.level", TRACE);
         }
     };
 
-    private static final Map<String, String> BRIDGE_LOGGERS = new HashMap<>() {
+    private static final Map<String, String> BRIDGE_LOGGERS = new HashMap<String, String>() {
         {
             put("logger.createConsumer.name", "http.openapi.operation.createConsumer");
             put("logger.createConsumer.level", INFO);
@@ -400,8 +400,9 @@ class LogSettingST extends AbstractST {
             String podName = pod.getMetadata().getName();
             if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients")) {
                 for (Container container : pod.getSpec().getContainers()) {
-                    LOGGER.info("Checking tini process for pod {} with container {}", pod, container);
-                    boolean isPresent = cmdKubeClient().execInPodContainer(false, podName, container.getName(), "/bin/bash", "-c", command).out().trim().equals("1");
+                    String containerName = container.getName();
+                    LOGGER.info("Checking tini process for pod {} with container {}", podName, containerName);
+                    boolean isPresent = cmdKubeClient().execInPodContainer(false, podName, containerName, "/bin/bash", "-c", command).out().trim().equals("1");
                     assertThat(isPresent, is(true));
                 }
             }
