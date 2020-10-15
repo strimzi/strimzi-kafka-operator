@@ -10,7 +10,7 @@
 
 [id='assembly-kafka-bridge-overview-{context}']
 = Kafka Bridge overview
-You can use the Kafka Bridge as an interface to make specific types of request to the Kafka cluster.
+You can use the Strimzi Kafka Bridge as an interface to make specific types of HTTP requests to the Kafka cluster.
 
 :context: kafka-bridge-overview
 
