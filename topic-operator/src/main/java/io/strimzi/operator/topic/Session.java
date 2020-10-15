@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
@@ -45,7 +46,7 @@ public class Session extends AbstractVerticle {
     private AdminClient adminClient;
     /*test*/ K8sImpl k8s;
     /*test*/ TopicOperator topicOperator;
-    private Watch topicWatch;
+    /*test*/ Watch topicWatch;
     /*test*/ ZkTopicsWatcher topicsWatcher;
     /*test*/ TopicConfigsWatcher topicConfigsWatcher;
     /*test*/ ZkTopicWatcher topicWatcher;
@@ -188,28 +189,11 @@ public class Session extends AbstractVerticle {
                 LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
                 topicsWatcher.start(zk);
 
-                Promise<Void> promise = Promise.promise();
                 Promise<Void> initReconcilePromise = Promise.promise();
-                Thread resourceThread = new Thread(() -> {
-                    try {
-                        LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
 
-                        Session.this.topicWatch = kubeClient.customResources(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
-                                .inNamespace(namespace).withLabels(labels.labels()).watch(watcher);
-                        LOGGER.debug("Watching setup");
-
-                        // start the HTTP server for healthchecks
-                        healthServer = this.startHealthServer();
-                        promise.complete();
-                    } catch (Throwable t) {
-                        promise.fail(t);
-                    }
-
-                }, "resource-watcher");
-                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), resourceThread);
-
-                LOGGER.debug("Starting {}", resourceThread);
-                resourceThread.start();
+                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), () -> startWatcher(null));
+                LOGGER.debug("Starting watcher");
+                startWatcher(start);
 
                 final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
                 Handler<Long> periodic = new Handler<Long>() {
@@ -231,9 +215,27 @@ public class Session extends AbstractVerticle {
                     }
                 };
                 periodic.handle(null);
-                promise.future().onComplete(start);
                 LOGGER.info("Started");
             });
+    }
+
+    void startWatcher(Promise<Void> start) {
+        Promise<Void> promise = Promise.promise();
+        try {
+            LOGGER.debug("Watching KafkaTopics matching {}", config.get(Config.LABELS).labels());
+
+            Session.this.topicWatch = kubeClient.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
+                    .inNamespace(config.get(Config.NAMESPACE)).withLabels(config.get(Config.LABELS).labels()).watch(watcher);
+            LOGGER.debug("Watching setup");
+            // start the HTTP server for healthchecks
+            healthServer = this.startHealthServer();
+            promise.complete();
+            if (start != null) {
+                promise.future().onComplete(start);
+            }
+        } catch (Throwable t) {
+            promise.fail(t);
+        }
     }
 
     /**
