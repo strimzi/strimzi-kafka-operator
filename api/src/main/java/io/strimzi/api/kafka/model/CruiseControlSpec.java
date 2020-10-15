@@ -38,7 +38,8 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         + "webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,"
         + "metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,"
         + "capacity.config.file, self.healing., anomaly.detection., ssl.";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled" +
+            "webserver.http.cors.origin, webserver.http.cors.exposeheaders";
 
     private String image;
     private TlsSidecar tlsSidecar;
