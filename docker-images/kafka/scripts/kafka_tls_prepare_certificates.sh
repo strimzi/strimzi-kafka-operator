@@ -72,19 +72,31 @@ create_keystore /tmp/kafka/cluster.keystore.p12 "$CERTS_STORE_PASSWORD" \
     "$HOSTNAME"
 echo "Preparing keystore for replication and clienttls listener is complete"
 
-CUSTOM_CERT_DIR="/opt/kafka/certificates/custom-tls-9093-certs"
-if [ -d "$CUSTOM_CERT_DIR" ]; then
-    echo "Preparing custom keystore for tls listener"
-    create_keystore_without_ca_file /tmp/kafka/custom-tls-9093.keystore.p12 "$CERTS_STORE_PASSWORD" "${CUSTOM_CERT_DIR}/tls.crt" "${CUSTOM_CERT_DIR}/tls.key" custom-key
-    echo "Preparing custom keystore for tls listener is complete"
-fi
+regex="^\/opt\/kafka\/certificates\/custom-([a-z0-9]{1,11})-([0-9]+)-certs$"
+for CUSTOM_CERT_DIR in /opt/kafka/certificates/custom-*; do
+    echo "dir=$CUSTOM_CERT_DIR"
+    if [[ $CUSTOM_CERT_DIR =~ $regex ]];
+    then
+      echo "listener=${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+      echo "Preparing custom keystore for ${BASH_REMATCH[1]} listener"
+      create_keystore_without_ca_file /tmp/kafka/custom-${BASH_REMATCH[1]}-${BASH_REMATCH[2]}.keystore.p12 "$CERTS_STORE_PASSWORD" "${CUSTOM_CERT_DIR}/tls.crt" "${CUSTOM_CERT_DIR}/tls.key" custom-key
+      echo "Preparing custom keystore for ${BASH_REMATCH[1]} listener is complete"  
+    fi
+done
 
-CUSTOM_CERT_DIR="/opt/kafka/certificates/custom-external-9094-certs"
-if [ -d "$CUSTOM_CERT_DIR" ]; then
-    echo "Preparing custom keystore for external listener"
-    create_keystore_without_ca_file /tmp/kafka/custom-external-9094.keystore.p12 "$CERTS_STORE_PASSWORD" "${CUSTOM_CERT_DIR}/tls.crt" "${CUSTOM_CERT_DIR}/tls.key" custom-key
-    echo "Preparing custom keystore for external listener is complete"
-fi
+#CUSTOM_CERT_DIR="/opt/kafka/certificates/custom-tls-9093-certs"
+#if [ -d "$CUSTOM_CERT_DIR" ]; then
+#    echo "Preparing custom keystore for tls listener"
+#    create_keystore_without_ca_file /tmp/kafka/custom-tls-9093.keystore.p12 "$CERTS_STORE_PASSWORD" "${CUSTOM_CERT_DIR}/tls.crt" "${CUSTOM_CERT_DIR}/tls.key" custom-key
+#    echo "Preparing custom keystore for tls listener is complete"
+#fi
+
+#CUSTOM_CERT_DIR="/opt/kafka/certificates/custom-external-9094-certs"
+#if [ -d "$CUSTOM_CERT_DIR" ]; then
+#    echo "Preparing custom keystore for external listener"
+#    create_keystore_without_ca_file /tmp/kafka/custom-external-9094.keystore.p12 "$CERTS_STORE_PASSWORD" "${CUSTOM_CERT_DIR}/tls.crt" "${CUSTOM_CERT_DIR}/tls.key" custom-key
+#    echo "Preparing custom keystore for external listener is complete"
+#fi
 
 echo "Preparing truststore for clienttls listener"
 # Add each certificate to the trust store
