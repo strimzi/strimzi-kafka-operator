@@ -100,6 +100,10 @@ public class Producer extends ClientHandlerBase<Integer> implements AutoCloseabl
                         sendNext(topic);
                     }
                 } else {
+                    // Stop recursion in case the vertx is closed
+                    if (vertx == null || done.cause() instanceof IllegalStateException) {
+                        return;
+                    }
                     LOGGER.debug("Producer cannot connect to topic {}: {}", topic, done.cause().toString());
                     sendNext(topic);
                 }
