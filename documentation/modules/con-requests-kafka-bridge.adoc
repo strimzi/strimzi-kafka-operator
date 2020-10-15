@@ -18,7 +18,7 @@ API request and response bodies are always encoded as JSON.
 Content-Type: application/vnd.kafka.v2+json
 ----
 
-* When performing producer operations, `POST` requests must provide `Content-Type` headers specifying the desired _embedded data format_ of the messages produced. This can be either `json` or `binary`.
+* When performing producer operations, `POST` requests must provide `Content-Type` headers specifying the _embedded data format_ of the messages produced. This can be either `json` or `binary`.
 +
 [cols="35,65",options="header",stripes="none",separator=¦]
 |===
