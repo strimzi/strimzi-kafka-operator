@@ -63,36 +63,37 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         Buffer data = configJson.toBuffer();
         String path = "/connectors/" + connectorName + "/config";
         log.debug("Making PUT request to {} with body {}", path, configJson);
-        return withHttpClient((httpClient, result) -> httpClient.put(port, host, path, response -> {
-                    response.exceptionHandler(error -> {
-                        result.fail(error);
+        return withHttpClient((httpClient, result) ->
+            httpClient.put(port, host, path, response -> {
+                response.exceptionHandler(error -> {
+                    result.fail(error);
+                });
+                if (response.statusCode() == 200 || response.statusCode() == 201) {
+                    response.bodyHandler(buffer -> {
+                        try {
+                            Map t = mapper.readValue(buffer.getBytes(), Map.class);
+                            log.debug("Got {} response to PUT request to {}: {}", response.statusCode(), path, t);
+                            result.complete(t);
+                        } catch (IOException e) {
+                            result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
+                        }
                     });
-                    if (response.statusCode() == 200 || response.statusCode() == 201) {
-                        response.bodyHandler(buffer -> {
-                            try {
-                                Map t = mapper.readValue(buffer.getBytes(), Map.class);
-                                log.debug("Got {} response to PUT request to {}: {}", response.statusCode(), path, t);
-                                result.complete(t);
-                            } catch (IOException e) {
-                                result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
-                            }
-                        });
-                    } else {
-                        // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                        log.debug("Got {} response to PUT request to {}", response.statusCode(), path);
-                        response.bodyHandler(buffer -> {
-                            JsonObject x = buffer.toJsonObject();
-                            result.fail(new ConnectRestException(response, x.getString("message")));
-                        });
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .putHeader("Content-Type", "application/json")
-                .putHeader("Content-Length", String.valueOf(data.length()))
-                .write(data)
-                .end());
+                } else {
+                    // TODO Handle 409 (Conflict) indicating a rebalance in progress
+                    log.debug("Got {} response to PUT request to {}", response.statusCode(), path);
+                    response.bodyHandler(buffer -> {
+                        JsonObject x = buffer.toJsonObject();
+                        result.fail(new ConnectRestException(response, x.getString("message")));
+                    });
+                }
+            })
+            .exceptionHandler(result::fail)
+            .setFollowRedirects(true)
+            .putHeader("Accept", "application/json")
+            .putHeader("Content-Type", "application/json")
+            .putHeader("Content-Length", String.valueOf(data.length()))
+            .write(data)
+            .end());
     }
 
     /**
@@ -104,15 +105,17 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
      */
     private <T> Future<T> withHttpClient(BiConsumer<HttpClient, Promise<T>> operation) {
         HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions().setLogActivity(true));
-        Promise<T> result = Promise.promise();
-        operation.accept(httpClient, result);
-        return result.future().compose(result1 -> {
-            httpClient.close();
-            return Future.succeededFuture(result1);
-        }, error -> {
-            httpClient.close();
-            return Future.failedFuture(error);
-        });
+        Promise<T> promise = Promise.promise();
+        operation.accept(httpClient, promise);
+        return promise.future().compose(
+            result -> {
+                httpClient.close();
+                return Future.succeededFuture(result);
+            },
+            error -> {
+                httpClient.close();
+                return Future.failedFuture(error);
+            });
     }
 
     @Override
@@ -173,7 +176,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Void> delete(String host, int port, String connectorName) {
         String path = "/connectors/" + connectorName;
-        return withHttpClient((httpClient, result) -> httpClient.delete(port, host, path, response -> {
+        return withHttpClient((httpClient, result) ->
+            httpClient.delete(port, host, path, response -> {
                 if (response.statusCode() == 204) {
                     result.complete();
                 } else {
