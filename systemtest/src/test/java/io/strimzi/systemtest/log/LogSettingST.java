@@ -371,7 +371,7 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .done();
 
-        String bridgeDepName = KafkaMirrorMaker2Resources.deploymentName(BRIDGE_NAME);
+        String bridgeDepName = KafkaBridgeResources.deploymentName(BRIDGE_NAME);
         Map<String, String> bridgePods = DeploymentUtils.depSnapshot(bridgeDepName);
 
         LOGGER.info("Checking if Bridge has log level set properly");
