@@ -75,12 +75,11 @@ echo "Preparing keystore for replication and clienttls listener is complete"
 regex="^\/opt\/kafka\/certificates\/(custom|oauth)-([a-z0-9]{1,11})-([0-9]+)-certs$"
 for CERT_DIR in /opt/kafka/certificates/*; do
   if [[ $CERT_DIR =~ $regex ]]; then
-    echo "Preparing store for ${BASH_REMATCH[1]} ${BASH_REMATCH[2]} listener"
+    echo "Preparing store for ${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]} listener"
     if [[ ${BASH_REMATCH[1]} == "custom"  ]]; then
       echo /tmp/kafka/"${BASH_REMATCH[1]}"-"${BASH_REMATCH[2]}"-"${BASH_REMATCH[3]}".keystore.p12
       create_keystore_without_ca_file /tmp/kafka/"${BASH_REMATCH[1]}"-"${BASH_REMATCH[2]}"-"${BASH_REMATCH[3]}".keystore.p12 "$CERTS_STORE_PASSWORD" "${CERT_DIR}/tls.crt" "${CERT_DIR}/tls.key" custom-key
-    fi
-    if [[ ${BASH_REMATCH[1]} == "oauth"  ]]; then
+    elif [[ ${BASH_REMATCH[1]} == "oauth"  ]]; then
       OAUTH_STORE="/tmp/kafka/${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}.truststore.p12"
       # Add each certificate to the trust store
       declare -i INDEX=0
@@ -95,7 +94,7 @@ for CERT_DIR in /opt/kafka/certificates/*; do
   fi
 done
 
-echo "Preparing truststore for clienttls listener"
+echo "Preparing truststore for client authentication"
 # Add each certificate to the trust store
 STORE=/tmp/kafka/clients.truststore.p12
 for CRT in /opt/kafka/client-ca-certs/*.crt; do
@@ -103,7 +102,7 @@ for CRT in /opt/kafka/client-ca-certs/*.crt; do
   echo "Adding $CRT to truststore $STORE with alias $ALIAS"
   create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
 done
-echo "Preparing truststore for clienttls listener is complete"
+echo "Preparing truststore for client authentication is complete"
 
 AUTHZ_KEYCLOAK_DIR="/opt/kafka/certificates/authz-keycloak-certs"
 AUTHZ_KEYCLOAK_STORE="/tmp/kafka/authz-keycloak.truststore.p12"
