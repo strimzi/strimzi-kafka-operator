@@ -23,11 +23,11 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
     private final Future<Void> initReconcileFuture;
-    private final Runnable onHttpGoneTask;
+    private final Thread onHttpGoneTask;
 
     private TopicOperator topicOperator;
 
-    public K8sTopicWatcher(TopicOperator topicOperator, Future<Void> initReconcileFuture, Runnable onHttpGoneTask) {
+    public K8sTopicWatcher(TopicOperator topicOperator, Future<Void> initReconcileFuture, Thread onHttpGoneTask) {
         this.topicOperator = topicOperator;
         this.initReconcileFuture = initReconcileFuture;
         this.onHttpGoneTask = onHttpGoneTask;
@@ -82,6 +82,6 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                 .map(KubernetesClientException::getStatus)
                 .map(Status::getCode)
                 .filter(c -> c.equals(HttpURLConnection.HTTP_GONE))
-                .ifPresent(c -> onHttpGoneTask.run());
+                .ifPresent(c -> onHttpGoneTask.start());
     }
 }

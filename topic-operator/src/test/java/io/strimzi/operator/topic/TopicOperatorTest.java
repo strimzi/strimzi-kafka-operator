@@ -139,7 +139,7 @@ public class TopicOperatorTest {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("non-topic").build()).build();
 
         Checkpoint async = context.checkpoint();
-        K8sTopicWatcher w = new K8sTopicWatcher(topicOperator, Future.succeededFuture(), () -> { });
+        K8sTopicWatcher w = new K8sTopicWatcher(topicOperator, Future.succeededFuture(), new Thread());
         w.eventReceived(ADDED, kafkaTopic);
         mockKafka.assertEmpty(context);
         mockTopicStore.assertEmpty(context);
