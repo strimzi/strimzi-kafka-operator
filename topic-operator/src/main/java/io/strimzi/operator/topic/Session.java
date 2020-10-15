@@ -50,6 +50,7 @@ public class Session extends AbstractVerticle {
     /*test*/ TopicConfigsWatcher topicConfigsWatcher;
     /*test*/ ZkTopicWatcher topicWatcher;
     /*test*/ PrometheusMeterRegistry metricsRegistry;
+    K8sTopicWatcher watcher;
     /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
     private volatile Long timerId;
     private volatile boolean stopped = false;
@@ -189,7 +190,6 @@ public class Session extends AbstractVerticle {
 
                 Promise<Void> promise = Promise.promise();
                 Promise<Void> initReconcilePromise = Promise.promise();
-                K8sTopicWatcher watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future());
                 Thread resourceThread = new Thread(() -> {
                     try {
                         LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
@@ -206,6 +206,8 @@ public class Session extends AbstractVerticle {
                     }
 
                 }, "resource-watcher");
+                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), resourceThread);
+
                 LOGGER.debug("Starting {}", resourceThread);
                 resourceThread.start();
 
