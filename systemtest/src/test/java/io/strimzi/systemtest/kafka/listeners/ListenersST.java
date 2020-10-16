@@ -1698,7 +1698,7 @@ public class ListenersST extends AbstractST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+        internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName("consumer-group-certs-92")
             .withMessageCount(MESSAGE_COUNT * 5)
             .build();

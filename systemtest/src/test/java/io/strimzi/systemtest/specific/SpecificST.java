@@ -154,6 +154,7 @@ public class SpecificST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
