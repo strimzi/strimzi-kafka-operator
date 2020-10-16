@@ -72,15 +72,16 @@ create_keystore /tmp/kafka/cluster.keystore.p12 "$CERTS_STORE_PASSWORD" \
     "$HOSTNAME"
 echo "Preparing keystore for replication and clienttls listener is complete"
 
-regex="^\/opt\/kafka\/certificates\/(custom|oauth)-([a-z0-9]{1,11})-([0-9]+)-certs$"
+regex="^\/opt\/kafka\/certificates\/(custom|oauth)-(.+)-(.+)-certs$"
 for CERT_DIR in /opt/kafka/certificates/*; do
   if [[ $CERT_DIR =~ $regex ]]; then
-    echo "Preparing store for ${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]} listener"
+    listener=${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}
+    echo "Preparing store for $listener listener"
     if [[ ${BASH_REMATCH[1]} == "custom"  ]]; then
-      echo /tmp/kafka/"${BASH_REMATCH[1]}"-"${BASH_REMATCH[2]}"-"${BASH_REMATCH[3]}".keystore.p12
-      create_keystore_without_ca_file /tmp/kafka/"${BASH_REMATCH[1]}"-"${BASH_REMATCH[2]}"-"${BASH_REMATCH[3]}".keystore.p12 "$CERTS_STORE_PASSWORD" "${CERT_DIR}/tls.crt" "${CERT_DIR}/tls.key" custom-key
+      echo "Creating keystore /tmp/kafka/$listener.keystore.p12"
+      create_keystore_without_ca_file /tmp/kafka/"$listener".keystore.p12 "$CERTS_STORE_PASSWORD" "${CERT_DIR}/tls.crt" "${CERT_DIR}/tls.key" custom-key
     elif [[ ${BASH_REMATCH[1]} == "oauth"  ]]; then
-      OAUTH_STORE="/tmp/kafka/${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}.truststore.p12"
+      OAUTH_STORE="/tmp/kafka/$listener.truststore.p12"
       # Add each certificate to the trust store
       declare -i INDEX=0
       for CRT in "$CERT_DIR"/**/*; do
