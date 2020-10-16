@@ -71,6 +71,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -664,11 +665,42 @@ public class KafkaConnectClusterTest {
         assertThat(selected.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
         assertThat(selected.get(0).getSecret(), is(volume.getSecret()));
 
-        List<VolumeMount> volumeMounths = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
-        List<VolumeMount> selectedVolumeMounths = volumeMounths.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        List<VolumeMount> volumeMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
+        List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
         assertThat(selected.size(), is(1));
-        assertThat(selectedVolumeMounths.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
-        assertThat(selectedVolumeMounths.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
+        assertThat(selectedVolumeMounts.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
+        assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
+    }
+
+    @Test
+    public void testExternalConfigurationSecretVolumesWithDots() {
+        ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
+                .withName("my.volume")
+                .withSecret(new SecretVolumeSourceBuilder().withSecretName("my.secret").build())
+                .build();
+
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewExternalConfiguration()
+                        .withVolumes(volume)
+                    .endExternalConfiguration()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
+        List<Volume> selected = volumes.stream().filter(vol -> vol.getName().startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertThat(selected.size(), is(1));
+        assertThat(selected.get(0).getName(), startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
+        assertThat(selected.get(0).getSecret(), is(volume.getSecret()));
+
+        List<VolumeMount> volumeMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
+        List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertThat(selected.size(), is(1));
+        assertThat(selectedVolumeMounts.get(0).getName(), startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
+        assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my.volume"));
     }
 
     @Test
@@ -680,9 +712,9 @@ public class KafkaConnectClusterTest {
 
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                    .withVolumes(volume)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withVolumes(volume)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
@@ -695,11 +727,42 @@ public class KafkaConnectClusterTest {
         assertThat(selected.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
         assertThat(selected.get(0).getConfigMap(), is(volume.getConfigMap()));
 
-        List<VolumeMount> volumeMounths = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
-        List<VolumeMount> selectedVolumeMounths = volumeMounths.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        List<VolumeMount> volumeMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
+        List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
         assertThat(selected.size(), is(1));
-        assertThat(selectedVolumeMounths.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
-        assertThat(selectedVolumeMounths.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
+        assertThat(selectedVolumeMounts.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
+        assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
+    }
+
+    @Test
+    public void testExternalConfigurationConfigVolumesWithDots() {
+        ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
+                .withName("my.volume")
+                .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my.map").build())
+                .build();
+
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewExternalConfiguration()
+                        .withVolumes(volume)
+                    .endExternalConfiguration()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
+        List<Volume> selected = volumes.stream().filter(vol -> vol.getName().startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertThat(selected.size(), is(1));
+        assertThat(selected.get(0).getName(), startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
+        assertThat(selected.get(0).getConfigMap(), is(volume.getConfigMap()));
+
+        List<VolumeMount> volumeMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
+        List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertThat(selected.size(), is(1));
+        assertThat(selectedVolumeMounts.get(0).getName(), startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
+        assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my.volume"));
     }
 
     @Test
