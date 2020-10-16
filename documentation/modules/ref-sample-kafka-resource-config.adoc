@@ -52,7 +52,7 @@ spec:
       - name: external <13>
         port: 9094
         type: route
-        tls: false
+        tls: true
         configuration:
           brokerCertChainAndKey: <14>
             secretName: my-secret
