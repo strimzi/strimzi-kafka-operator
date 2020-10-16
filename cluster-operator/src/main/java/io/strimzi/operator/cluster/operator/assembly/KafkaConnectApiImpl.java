@@ -346,25 +346,26 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         JsonObject levelJO = new JsonObject();
         levelJO.put("level", level);
         log.debug("Making PUT request to {} with body {}", path, levelJO);
-        return withHttpClient((httpClient, result) -> httpClient
-                .put(port, host, path, response -> {
-                    response.exceptionHandler(result::fail);
-                    response.bodyHandler(body -> {
-                    });
-                    if (response.statusCode() == 200) {
-                        log.debug("Logger {} updated to level {}", logger, level);
-                        result.complete();
-                    } else {
-                        log.debug("Logger {} did not update to level {} (http code {})", logger, level, response.statusCode());
-                        result.fail(new ConnectRestException(response, "Unexpected status code"));
-                    }
-                })
-                .exceptionHandler(result::fail)
-                .putHeader("Content-Type", "application/json")
-                .putHeader("Content-Length", String.valueOf(levelJO.toBuffer().length()))
-                .setFollowRedirects(true)
-                .write(levelJO.toBuffer())
-                .end());
+        return withHttpClient((httpClient, result) -> {
+            Buffer buffer = levelJO.toBuffer();
+            httpClient
+                    .put(port, host, path, response -> {
+                        response.exceptionHandler(result::tryFail);
+                        response.bodyHandler(body -> {
+                        });
+                        if (response.statusCode() == 200) {
+                            log.debug("Logger {} updated to level {}", logger, level);
+                            result.complete();
+                        } else {
+                            log.debug("Logger {} did not update to level {} (http code {})", logger, level, response.statusCode());
+                            result.fail(new ConnectRestException(response, "Unexpected status code"));
+                        }
+                    })
+                    .exceptionHandler(result::tryFail)
+                    .putHeader("Content-Type", "application/json")
+                    .setFollowRedirects(true)
+                    .end(buffer);
+        });
     }
 
     @Override
@@ -372,7 +373,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         String path = "/admin/loggers/";
         return withHttpClient((httpClient, result) -> httpClient
                 .get(port, host, path, response -> {
-                    response.exceptionHandler(result::fail);
+                    response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
                             try {
@@ -387,7 +388,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         result.fail(new ConnectRestException(response, "Unexpected status code"));
                     }
                 })
-                .exceptionHandler(result::fail)
+                .exceptionHandler(result::tryFail)
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end());
@@ -444,7 +445,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @Override
     public Future<Void> updateConnectLoggers(String host, int port, String desiredLogging, OrderedProperties defaultLogging) {
-        return listConnectLoggers(host, port).compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers, defaultLogging));
+        return listConnectLoggers(host, port)
+                .compose(fetchedLoggers -> updateLoggers(host, port, desiredLogging, fetchedLoggers, defaultLogging));
     }
 
     /**
