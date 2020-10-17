@@ -65,9 +65,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         log.debug("Making PUT request to {} with body {}", path, configJson);
         return withHttpClient((httpClient, result) ->
             httpClient.put(port, host, path, response -> {
-                response.exceptionHandler(error -> {
-                    result.fail(error);
-                });
+                response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 200 || response.statusCode() == 201) {
                     response.bodyHandler(buffer -> {
                         try {
@@ -87,7 +85,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                 }
             })
-            .exceptionHandler(result::fail)
+            .exceptionHandler(result::tryFail)
             .setFollowRedirects(true)
             .putHeader("Accept", "application/json")
             .putHeader("Content-Type", "application/json")
@@ -132,7 +130,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         log.debug("Making GET request to {}", path);
         return withHttpClient((httpClient, result) ->
             httpClient.get(port, host, path, response -> {
-                response.exceptionHandler(result::fail);
+                response.exceptionHandler(result::tryFail);
                 if (okStatusCodes.contains(response.statusCode())) {
                     response.bodyHandler(buffer -> {
                         try {
@@ -152,7 +150,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                 }
             })
-            .exceptionHandler(result::fail)
+            .exceptionHandler(result::tryFail)
             .setFollowRedirects(true)
             .putHeader("Accept", "application/json")
             .end());
@@ -178,6 +176,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         String path = "/connectors/" + connectorName;
         return withHttpClient((httpClient, result) ->
             httpClient.delete(port, host, path, response -> {
+                response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 204) {
                     result.complete();
                 } else {
@@ -188,7 +187,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     });
                 }
             })
-            .exceptionHandler(result::fail)
+            .exceptionHandler(result::tryFail)
             .setFollowRedirects(true)
             .putHeader("Accept", "application/json")
             .putHeader("Content-Type", "application/json")
@@ -273,7 +272,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     private Future<Void> pauseResume(String host, int port, String path) {
         return withHttpClient((httpClient, result) -> httpClient
                 .put(port, host, path, response -> {
-                    response.exceptionHandler(result::fail);
+                    response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 202) {
                         result.complete();
                     } else {
@@ -281,7 +280,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 + " for GET request to " + host + ":" + port + path);
                     }
                 })
-                .exceptionHandler(result::fail)
+                .exceptionHandler(result::tryFail)
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end());
@@ -292,7 +291,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         String path = "/connectors";
         return withHttpClient((httpClient, result) -> httpClient
                 .get(port, host, path, response -> {
-                    response.exceptionHandler(result::fail);
+                    response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
                             JsonArray objects = buffer.toJsonArray();
@@ -310,7 +309,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         result.fail(new ConnectRestException(response, "Unexpected status code"));
                     }
                 })
-                .exceptionHandler(result::fail)
+                .exceptionHandler(result::tryFail)
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end());
@@ -321,7 +320,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         String path = "/connector-plugins";
         return withHttpClient((httpClient, result) -> httpClient
                 .get(port, host, path, response -> {
-                    response.exceptionHandler(result::fail);
+                    response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
                             try {
@@ -335,7 +334,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         result.fail(new ConnectRestException(response, "Unexpected status code"));
                     }
                 })
-                .exceptionHandler(result::fail)
+                .exceptionHandler(result::tryFail)
                 .setFollowRedirects(true)
                 .putHeader("Accept", "application/json")
                 .end());
