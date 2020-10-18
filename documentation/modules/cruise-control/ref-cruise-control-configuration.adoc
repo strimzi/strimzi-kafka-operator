@@ -17,22 +17,25 @@ You can specify and configure all the options listed in the "Configurations" sec
 Specifically, you *cannot* modify configuration options with keys equal to or starting with one of the following strings:
 
 * `bootstrap.servers`
+* `client.id`
 * `zookeeper.`
-* `ssl.`
+* `network.`
 * `security.`
 * `failed.brokers.zk.path`
-* `webserver.http.port`
-* `webserver.http.address`
+* `webserver.http.`
 * `webserver.api.urlprefix`
+* `webserver.session.path`
+* `webserver.accesslog.`
+* `two.step.`
+* `request.reason.required`
 * `metric.reporter.sampler.bootstrap.servers`
 * `metric.reporter.topic`
-* `metric.reporter.topic.pattern`
 * `partition.metric.sample.store.topic`
 * `broker.metric.sample.store.topic`
 * `capacity.config.file`
-* `skip.sample.store.topic.rack.awareness.check`
-* `cruise.control.metrics.topic`
-* `sasl.`
+* `self.healing.`
+* `anomaly.detection.`
+* `ssl.`
 
 If restricted options are specified, they are ignored and a warning message is printed to the Cluster Operator log file.
 All the supported options are passed to Cruise Control.
