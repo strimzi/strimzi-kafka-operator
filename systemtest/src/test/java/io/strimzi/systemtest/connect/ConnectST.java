@@ -1031,6 +1031,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
         String secretPassword = "password";
         String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
@@ -1038,8 +1039,14 @@ class ConnectST extends AbstractST {
         String secretEnv = "MY_CONNECTOR_SECRET";
         String configMapEnv = "MY_CONNECT_CONFIG_MAP";
 
+        String dotedSecretEnv = "MY_DOTED_CONNECTOR_SECRET";
+        String dotedConfigMapEnv = "MY_DOTED_CONNECT_CONFIG_MAP";
+
         String configMapVolumeName = "connect-config-map";
         String secretVolumeName = "connect-secret";
+
+        String dotedConfigMapVolumeName = "connect.config.map";
+        String dotedSecretVolumeName = "connect.secret";
 
         String configMapKey = "my-key";
         String secretKey = "my-secret-key";
@@ -1059,8 +1066,25 @@ class ConnectST extends AbstractST {
             .addToData(configMapKey, "my-value")
             .build();
 
+        Secret dotedConnectSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName("my.secret")
+            .endMetadata()
+            .withType("Opaque")
+            .addToData(secretKey, encodedPassword)
+            .build();
+
+        ConfigMap dotedConfigMap = new ConfigMapBuilder()
+            .editOrNewMetadata()
+                .withName("my.config.map")
+            .endMetadata()
+            .addToData(configMapKey, "my-value")
+            .build();
+
         kubeClient().createSecret(connectSecret);
+        kubeClient().createSecret(dotedConnectSecret);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(dotedConfigMap);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -1077,6 +1101,14 @@ class ConnectST extends AbstractST {
                     .addNewVolume()
                         .withNewName(configMapVolumeName)
                         .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-config-map").build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(dotedSecretVolumeName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName("my.secret").build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(dotedConfigMapVolumeName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my.config.map").build())
                     .endVolume()
                     .addNewEnv()
                         .withNewName(secretEnv)
@@ -1100,6 +1132,28 @@ class ConnectST extends AbstractST {
                                     .build())
                         .endValueFrom()
                     .endEnv()
+                    .addNewEnv()
+                        .withNewName(dotedSecretEnv)
+                        .withNewValueFrom()
+                            .withSecretKeyRef(
+                                new SecretKeySelectorBuilder()
+                                    .withKey(secretKey)
+                                    .withName(dotedConnectSecret.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                    .addNewEnv()
+                        .withNewName(dotedConfigMapEnv)
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(
+                                new ConfigMapKeySelectorBuilder()
+                                    .withKey(configMapKey)
+                                    .withName(dotedConfigMap.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
                 .endExternalConfiguration()
             .endSpec()
             .done();
@@ -1109,6 +1163,8 @@ class ConnectST extends AbstractST {
         LOGGER.info("Check if the ENVs contains desired values");
         assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo(secretPassword));
         assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo("my-value"));
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + dotedSecretEnv).out().trim(), equalTo(secretPassword));
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + dotedConfigMapEnv).out().trim(), equalTo("my-value"));
 
         LOGGER.info("Check if volumes contains desired values");
         assertThat(
@@ -1117,6 +1173,14 @@ class ConnectST extends AbstractST {
         );
         assertThat(
             cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + secretVolumeName + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedConfigMapVolumeName + "/" + configMapKey).out().trim(),
+            equalTo("my-value")
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretVolumeName + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
         );
     }
