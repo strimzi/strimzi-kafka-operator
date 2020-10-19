@@ -21,11 +21,11 @@ This chapter describes how to configure different aspects of the supported deplo
 
 include::assembly-deployment-configuration-kafka.adoc[leveloffset=+1]
 
-include::kafka-connect/assembly-kafka-connect.adoc[leveloffset=+1]
+include::configuring/assembly-config-kafka-connect.adoc[leveloffset=+1]
 
-include::assembly-deployment-configuration-kafka-mirror-maker.adoc[leveloffset=+1]
+include::configuring/assembly-config-mirrormaker.adoc[leveloffset=+1]
 
-include::mirrormaker2/assembly-mirrormaker.adoc[leveloffset=+1]
+include::configuring/assembly-config-mirrormaker2.adoc[leveloffset=+1]
 
 include::assembly-deployment-configuration-kafka-bridge.adoc[leveloffset=+1]
 
