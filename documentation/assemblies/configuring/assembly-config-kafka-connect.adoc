@@ -23,12 +23,12 @@ Use the `KafkaConnectS2I` resource if you are using the {docs-okd-s2i} framework
 * link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying a `KafkaConnector` resource to Kafka Connect^]
 
 //procedure to configure Kafka Connect
-include::../../modules/kafka-connect/proc-kafka-connect-config.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-config-kafka-connect.adoc[leveloffset=+1]
 //Config properties to check when running multiple Kafka Connect instances
-include::../../modules/kafka-connect/con-kafka-connect-multiple-instances.adoc[leveloffset=+1]
+include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 //If authorization is enabled, configure the Kafka Connect user for read/write access rights
-include::../../modules/kafka-connect/proc-configuring-kafka-connect-user-authorization.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+1]
 //Resources created for Kafka Connect
-include::../../modules/kafka-connect/ref-list-of-kafka-connect-resources.adoc[leveloffset=+1]
+include::../../modules/configuring/ref-config-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 //Resource created for Kafka Connect S2I
-include::../../modules/kafka-connect/ref-list-of-kafka-connect-s2i-resources.adoc[leveloffset=+1]
+include::../../modules/configuring/ref-config-list-of-kafka-connect-s2i-resources.adoc[leveloffset=+1]

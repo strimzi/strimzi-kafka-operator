@@ -27,6 +27,6 @@ The full schema of the `KafkaMirrorMaker` resource is described in the xref:type
 NOTE: Labels applied to a `KafkaMirrorMaker` resource are also applied to the Kubernetes resources comprising Kafka MirrorMaker.
 This provides a convenient mechanism for resources to be labeled as required.
 
-include::../modules/proc-configuring-mirror-maker.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-config-mirrormaker.adoc[leveloffset=+1]
 
-include::../modules/ref-list-of-kafka-mirror-maker-resources.adoc[leveloffset=+1]
+include::../../modules/configuring/ref-list-of-mirrormaker-resources.adoc[leveloffset=+1]
