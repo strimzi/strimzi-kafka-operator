@@ -31,6 +31,7 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -238,8 +239,8 @@ class LogSettingST extends AbstractST {
         assertThat("TO GC logging is enabled", checkGcLoggingDeployments(eoDepName, "topic-operator"), is(false));
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(eoDepName, "user-operator"), is(false));
 
-        kubectlGetStrimzi(CLUSTER_NAME);
-        kubectlGetStrimzi(GC_LOGGING_SET_NAME);
+//        kubectlGetStrimzi(CLUSTER_NAME);
+//        kubectlGetStrimzi(GC_LOGGING_SET_NAME);
 
         checkContainersHaveProcessOneAsTini(CLUSTER_NAME);
         checkContainersHaveProcessOneAsTini(GC_LOGGING_SET_NAME);
@@ -401,6 +402,8 @@ class LogSettingST extends AbstractST {
             if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients")) {
                 for (Container container : pod.getSpec().getContainers()) {
                     String containerName = container.getName();
+
+                    PodUtils.waitForPodContainerReady(podName, containerName);
                     LOGGER.info("Checking tini process for pod {} with container {}", podName, containerName);
                     boolean isPresent = cmdKubeClient().execInPodContainer(false, podName, containerName, "/bin/bash", "-c", command).out().trim().equals("1");
                     assertThat(isPresent, is(true));

@@ -27,6 +27,7 @@ public class PodUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(Constants.POD);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.POD);
 
     private PodUtils() { }
 
@@ -308,5 +309,13 @@ public class PodUtils {
                 }
                 return false;
             });
+    }
+
+    public static void waitForPodContainerReady(String podName, String containerName) {
+        LOGGER.info("Waiting for Pod {} container {} will be ready", podName, containerName);
+        TestUtils.waitFor("Pod " + podName + " container " + containerName + "will be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT, () ->
+            kubeClient().getPod(podName).getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().get().getReady()
+        );
+        LOGGER.info("Pod {} container {} is ready", podName, containerName);
     }
 }
