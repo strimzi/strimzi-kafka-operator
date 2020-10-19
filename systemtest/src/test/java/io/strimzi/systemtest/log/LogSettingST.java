@@ -239,8 +239,8 @@ class LogSettingST extends AbstractST {
         assertThat("TO GC logging is enabled", checkGcLoggingDeployments(eoDepName, "topic-operator"), is(false));
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(eoDepName, "user-operator"), is(false));
 
-//        kubectlGetStrimzi(CLUSTER_NAME);
-//        kubectlGetStrimzi(GC_LOGGING_SET_NAME);
+        kubectlGetStrimzi(CLUSTER_NAME);
+        kubectlGetStrimzi(GC_LOGGING_SET_NAME);
 
         checkContainersHaveProcessOneAsTini(CLUSTER_NAME);
         checkContainersHaveProcessOneAsTini(GC_LOGGING_SET_NAME);
