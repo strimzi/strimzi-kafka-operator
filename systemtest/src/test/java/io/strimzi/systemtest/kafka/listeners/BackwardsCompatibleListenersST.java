@@ -220,7 +220,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
         KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
 
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(topicName)
@@ -229,6 +229,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
+                .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                 .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -268,6 +269,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
+                .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                 .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(

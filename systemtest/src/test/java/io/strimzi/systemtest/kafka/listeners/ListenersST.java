@@ -500,7 +500,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .done();
 
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -540,7 +540,7 @@ public class ListenersST extends AbstractST {
 
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        ServiceUtils.waitUntilAddressIsReachable(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -1698,7 +1698,7 @@ public class ListenersST extends AbstractST {
             basicExternalKafkaClient.receiveMessagesTls()
         );
 
-        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+        internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName("consumer-group-certs-92")
             .withMessageCount(MESSAGE_COUNT * 5)
             .build();

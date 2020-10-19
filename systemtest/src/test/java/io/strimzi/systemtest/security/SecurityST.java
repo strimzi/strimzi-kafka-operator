@@ -756,6 +756,7 @@ class SecurityST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -844,6 +845,7 @@ class SecurityST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
