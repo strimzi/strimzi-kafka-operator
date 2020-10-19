@@ -98,7 +98,7 @@ public class ServiceUtils {
         TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 try {
-                    InetAddress.getByName(kubeClient().getService("my-cluster-kafka-external-bootstrap").getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+                    InetAddress.getByName(address);
                     return true;
                 } catch (IOException e) {
                     return false;

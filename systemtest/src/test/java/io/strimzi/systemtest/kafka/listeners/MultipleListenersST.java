@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -46,7 +45,6 @@ public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
     public static final String NAMESPACE = "multi-listener-namespace";
-    public final PasswordGenerator passwordGenerator = new PasswordGenerator(9, "a", "abcdefghilkfmnoprstwxyz");
 
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
@@ -279,7 +277,7 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(passwordGenerator.generate())
+                            .withName(KafkaListenerType.NODEPORT.toValue() + j)
                             .withPort(10900 + j)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(stochasticCommunication)
@@ -294,7 +292,7 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(passwordGenerator.generate())
+                            .withName(KafkaListenerType.LOADBALANCER.toValue() + j)
                             .withPort(11900 + j)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(stochasticCommunication)
@@ -304,7 +302,7 @@ public class MultipleListenersST extends AbstractST {
                 case ROUTE:
                     // TODO: bug with unique ports per listener which should be fixed now in Kafka 2.7.0
                     testCaseListeners.add(new GenericKafkaListenerBuilder()
-                        .withName(passwordGenerator.generate())
+                        .withName(KafkaListenerType.ROUTE.toValue())
                         .withPort(12091)
                         .withType(KafkaListenerType.ROUTE)
                         // Route or Ingress type listener and requires enabled TLS encryption
@@ -319,7 +317,7 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(passwordGenerator.generate())
+                            .withName(KafkaListenerType.INTERNAL.toValue() + j)
                             .withPort(13900 + j)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(stochasticCommunication)
