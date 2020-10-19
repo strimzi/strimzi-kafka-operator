@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -15,9 +14,7 @@ import io.vertx.core.Handler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.HttpURLConnection;
 import java.util.Map;
-import java.util.Optional;
 
 class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
@@ -74,14 +71,9 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     @Override
     public void onClose(KubernetesClientException exception) {
         LOGGER.debug("Closing {}", this);
-        Optional.ofNullable(exception)
-                .map(e -> {
-                    LOGGER.info("Exception received during watch", e);
-                    return exception;
-                })
-                .map(KubernetesClientException::getStatus)
-                .map(Status::getCode)
-                .filter(c -> c.equals(HttpURLConnection.HTTP_GONE))
-                .ifPresent(c -> onHttpGoneTask.run());
+        if (exception != null) {
+            LOGGER.debug("Restarting  topic watcher due to ", exception);
+            onHttpGoneTask.run();
+        }
     }
 }

@@ -191,9 +191,9 @@ public class Session extends AbstractVerticle {
 
                 Promise<Void> initReconcilePromise = Promise.promise();
 
-                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), () -> startWatcher(null));
+                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), () -> startWatcher(false));
                 LOGGER.debug("Starting watcher");
-                startWatcher(start);
+                startWatcher(true).onComplete(start);
 
                 final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
                 Handler<Long> periodic = new Handler<Long>() {
@@ -219,7 +219,7 @@ public class Session extends AbstractVerticle {
             });
     }
 
-    void startWatcher(Promise<Void> start) {
+    Future<Void> startWatcher(boolean firstTime) {
         Promise<Void> promise = Promise.promise();
         try {
             LOGGER.debug("Watching KafkaTopics matching {}", config.get(Config.LABELS).labels());
@@ -227,15 +227,15 @@ public class Session extends AbstractVerticle {
             Session.this.topicWatch = kubeClient.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
                     .inNamespace(config.get(Config.NAMESPACE)).withLabels(config.get(Config.LABELS).labels()).watch(watcher);
             LOGGER.debug("Watching setup");
-            // start the HTTP server for healthchecks
-            healthServer = this.startHealthServer();
-            promise.complete();
-            if (start != null) {
-                promise.future().onComplete(start);
+            if (firstTime) {
+                // start the HTTP server for healthchecks
+                healthServer = this.startHealthServer();
             }
+            promise.complete();
         } catch (Throwable t) {
             promise.fail(t);
         }
+        return promise.future();
     }
 
     /**
