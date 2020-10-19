@@ -4,6 +4,10 @@
  */
 package io.strimzi.systemtest.connect;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
@@ -13,6 +17,8 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -90,6 +96,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
 @OpenShiftOnly
 @Tag(REGRESSION)
@@ -737,6 +744,160 @@ class ConnectS2IST extends AbstractST {
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(connectS2IPodName, "cat", "/etc/hosts").out();
         assertThat(output, containsString(etcHostsData));
+    }
+
+    @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
+        String secretPassword = "password";
+        String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
+
+        String secretEnv = "MY_CONNECTS2I_SECRET";
+        String configMapEnv = "MY_CONNECTS2I_CONFIG_MAP";
+
+        String dotedSecretEnv = "MY_DOTED_CONNECTS2I_SECRET";
+        String dotedConfigMapEnv = "MY_DOTED_CONNECTS2I_CONFIG_MAP";
+
+        String configMapName = "connect-config-map";
+        String secretName = "connect-secret";
+
+        String dotedConfigMapName = "connect.config.map";
+        String dotedSecretName = "connect.secret";
+
+        String configMapKey = "my-key";
+        String secretKey = "my-secret-key";
+
+        String configMapValue = "my-value";
+
+        Secret connectSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName(secretName)
+            .endMetadata()
+            .withType("Opaque")
+            .addToData(secretKey, encodedPassword)
+            .build();
+
+        ConfigMap configMap = new ConfigMapBuilder()
+            .editOrNewMetadata()
+                .withName(configMapName)
+            .endMetadata()
+            .addToData(configMapKey, configMapValue)
+            .build();
+
+        Secret dotedConnectSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName(dotedSecretName)
+            .endMetadata()
+            .withType("Opaque")
+            .addToData(secretKey, encodedPassword)
+            .build();
+
+        ConfigMap dotedConfigMap = new ConfigMapBuilder()
+            .editOrNewMetadata()
+                .withName(dotedConfigMapName)
+            .endMetadata()
+            .addToData(configMapKey, configMapValue)
+            .build();
+
+        kubeClient().createSecret(connectSecret);
+        kubeClient().createSecret(dotedConnectSecret);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(dotedConfigMap);
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editSpec()
+                .withNewExternalConfiguration()
+                    .addNewVolume()
+                        .withNewName(secretName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(secretName).build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(configMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(dotedSecretName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(dotedSecretName).build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(dotedConfigMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(dotedConfigMapName).build())
+                    .endVolume()
+                    .addNewEnv()
+                        .withNewName(secretEnv)
+                        .withNewValueFrom()
+                            .withSecretKeyRef(
+                                new SecretKeySelectorBuilder()
+                                    .withKey(secretKey)
+                                    .withName(connectSecret.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                    .addNewEnv()
+                        .withNewName(configMapEnv)
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(
+                                new ConfigMapKeySelectorBuilder()
+                                    .withKey(configMapKey)
+                                    .withName(configMap.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                    .addNewEnv()
+                        .withNewName(dotedSecretEnv)
+                        .withNewValueFrom()
+                            .withSecretKeyRef(
+                                new SecretKeySelectorBuilder()
+                                    .withKey(secretKey)
+                                    .withName(dotedConnectSecret.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                    .addNewEnv()
+                        .withNewName(dotedConfigMapEnv)
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(
+                                new ConfigMapKeySelectorBuilder()
+                                    .withKey(configMapKey)
+                                    .withName(dotedConfigMap.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                .endExternalConfiguration()
+            .endSpec()
+            .done();
+
+        String connectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        LOGGER.info("Check if the ENVs contains desired values");
+        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo(secretPassword));
+        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo(configMapValue));
+        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + dotedSecretEnv).out().trim(), equalTo(secretPassword));
+        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + dotedConfigMapEnv).out().trim(), equalTo(configMapValue));
+
+        LOGGER.info("Check if volumes contains desired values");
+        assertThat(
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapName + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + secretName + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedConfigMapName + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretName + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
