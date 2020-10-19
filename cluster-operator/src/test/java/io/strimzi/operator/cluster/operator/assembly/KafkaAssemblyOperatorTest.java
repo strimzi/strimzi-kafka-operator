@@ -356,33 +356,6 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testCreateClusterWithAnnotationsAndLabelsInCaCertSecret(Params params, VertxTestContext context) {
-        setFields(params);
-        Kafka kafka = getKafkaAssembly("foo");
-        kafka.getSpec()
-                .getKafka()
-                .setTemplate(new KafkaClusterTemplateBuilder()
-                        .withClusterCaCert(
-                                new ResourceTemplateBuilder()
-                                        .withNewMetadata()
-                                        .withLabels(Collections.singletonMap("foo", "bar"))
-                                        .withAnnotations(Collections.singletonMap("foo", "bar"))
-                                        .endMetadata()
-                                        .build())
-                        .build());
-
-        createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
-                .withNewMetadata()
-                .withName(KafkaCluster.jmxSecretName("foo"))
-                .withNamespace("test")
-                .endMetadata()
-                .withData(Collections.singletonMap("foo", "bar"))
-                .build()
-        ));
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
     public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");
