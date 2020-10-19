@@ -752,24 +752,26 @@ class ConnectS2IST extends AbstractST {
         String secretPassword = "password";
         String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
 
-        String secretEnv = "MY_CONNECTOR_SECRET";
-        String configMapEnv = "MY_CONNECT_CONFIG_MAP";
+        String secretEnv = "MY_CONNECTS2I_SECRET";
+        String configMapEnv = "MY_CONNECTS2I_CONFIG_MAP";
 
-        String dotedSecretEnv = "MY_DOTED_CONNECTOR_SECRET";
-        String dotedConfigMapEnv = "MY_DOTED_CONNECT_CONFIG_MAP";
+        String dotedSecretEnv = "MY_DOTED_CONNECTS2I_SECRET";
+        String dotedConfigMapEnv = "MY_DOTED_CONNECTS2I_CONFIG_MAP";
 
-        String configMapVolumeName = "connect-config-map";
-        String secretVolumeName = "connect-secret";
+        String configMapName = "connect-config-map";
+        String secretName = "connect-secret";
 
-        String dotedConfigMapVolumeName = "connect.config.map";
-        String dotedSecretVolumeName = "connect.secret";
+        String dotedConfigMapName = "connect.config.map";
+        String dotedSecretName = "connect.secret";
 
         String configMapKey = "my-key";
         String secretKey = "my-secret-key";
 
+        String configMapValue = "my-value";
+
         Secret connectSecret = new SecretBuilder()
             .withNewMetadata()
-            .withName("my-secret")
+                .withName(secretName)
             .endMetadata()
             .withType("Opaque")
             .addToData(secretKey, encodedPassword)
@@ -777,14 +779,14 @@ class ConnectS2IST extends AbstractST {
 
         ConfigMap configMap = new ConfigMapBuilder()
             .editOrNewMetadata()
-            .withName("my-config-map")
+                .withName(configMapName)
             .endMetadata()
-            .addToData(configMapKey, "my-value")
+            .addToData(configMapKey, configMapValue)
             .build();
 
         Secret dotedConnectSecret = new SecretBuilder()
             .withNewMetadata()
-            .withName("my.secret")
+                .withName(dotedSecretName)
             .endMetadata()
             .withType("Opaque")
             .addToData(secretKey, encodedPassword)
@@ -792,9 +794,9 @@ class ConnectS2IST extends AbstractST {
 
         ConfigMap dotedConfigMap = new ConfigMapBuilder()
             .editOrNewMetadata()
-            .withName("my.config.map")
+                .withName(dotedConfigMapName)
             .endMetadata()
-            .addToData(configMapKey, "my-value")
+            .addToData(configMapKey, configMapValue)
             .build();
 
         kubeClient().createSecret(connectSecret);
@@ -808,20 +810,20 @@ class ConnectS2IST extends AbstractST {
             .editSpec()
                 .withNewExternalConfiguration()
                     .addNewVolume()
-                        .withNewName(secretVolumeName)
-                        .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret").build())
+                        .withNewName(secretName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(secretName).build())
                     .endVolume()
                     .addNewVolume()
-                        .withNewName(configMapVolumeName)
-                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-config-map").build())
+                        .withNewName(configMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build())
                     .endVolume()
                     .addNewVolume()
-                        .withNewName(dotedSecretVolumeName)
-                        .withSecret(new SecretVolumeSourceBuilder().withSecretName("my.secret").build())
+                        .withNewName(dotedSecretName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(dotedSecretName).build())
                     .endVolume()
                     .addNewVolume()
-                        .withNewName(dotedConfigMapVolumeName)
-                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my.config.map").build())
+                        .withNewName(dotedConfigMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(dotedConfigMapName).build())
                     .endVolume()
                     .addNewEnv()
                         .withNewName(secretEnv)
@@ -875,25 +877,25 @@ class ConnectS2IST extends AbstractST {
 
         LOGGER.info("Check if the ENVs contains desired values");
         assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo(secretPassword));
-        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo("my-value"));
+        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo(configMapValue));
         assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + dotedSecretEnv).out().trim(), equalTo(secretPassword));
-        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + dotedConfigMapEnv).out().trim(), equalTo("my-value"));
+        assertThat(cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "printenv " + dotedConfigMapEnv).out().trim(), equalTo(configMapValue));
 
         LOGGER.info("Check if volumes contains desired values");
         assertThat(
-            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapVolumeName + "/" + configMapKey).out().trim(),
-            equalTo("my-value")
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapName + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
         );
         assertThat(
-            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + secretVolumeName + "/" + secretKey).out().trim(),
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + secretName + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
         );
         assertThat(
-            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedConfigMapVolumeName + "/" + configMapKey).out().trim(),
-            equalTo("my-value")
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedConfigMapName + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
         );
         assertThat(
-            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretVolumeName + "/" + secretKey).out().trim(),
+            cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretName + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
         );
     }
