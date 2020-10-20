@@ -4,12 +4,24 @@
  */
 package io.strimzi.systemtest.rollingupdate;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.NodeAffinity;
+import io.fabric8.kubernetes.api.model.NodeAffinityBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.PodTemplateBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplateBuilder;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -17,10 +29,12 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,6 +55,7 @@ import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -202,6 +217,69 @@ class KafkaRollerST extends AbstractST {
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
         // No additional checks are needed, because in case of wait failure, the test will not continue.
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+    }
+
+    @Test
+
+    void testKafkaPodPendingDueToRack() {
+        cmdKubeClient().exec("label", "nodes", "localhost", "dedicated=Kafka_correct", "--overwrite");
+
+        NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
+                .withKey("dedicated")
+                .withNewOperator("In")
+                .withValues("Kafka_bad")
+                .build();
+
+        NodeSelectorTerm nst = new NodeSelectorTermBuilder()
+                .withMatchExpressions(nsr)
+                .build();
+
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(nst)
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        PodTemplate pt = new PodTemplate();
+        pt.setAffinity(affinity);
+
+        KafkaClusterTemplate kct = new KafkaClusterTemplateBuilder()
+                .withPod(pt)
+                .build();
+
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 3, 3)
+                .editSpec()
+                    .editKafka()
+                        .withTemplate(kct)
+                    .endKafka()
+                .endSpec()
+                .build());
+
+        NodeSelectorRequirement nsr2 = new NodeSelectorRequirementBuilder()
+                .withKey("dedicated")
+                .withNewOperator("In")
+                .withValues("Kafka_correct")
+                .build();
+
+        NodeSelectorTerm nst2 = new NodeSelectorTermBuilder()
+                .withMatchExpressions(nsr2)
+                .build();
+
+        NodeAffinity na = new NodeAffinityBuilder()
+                .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                    .withNodeSelectorTerms(nst2)
+                .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .build();
+
+        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+        LOGGER.info("Setting affinity to the correct one");
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().getTemplate().getPod().getAffinity().setNodeAffinity(na));
+
+        // kafka should get back ready in some reasonable time frame
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
     }
 
