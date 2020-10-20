@@ -599,14 +599,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
 
-                        KafkaClusterTemplate kafkaClusterTemplate = kafkaAssembly.getSpec().getKafka().getTemplate();
                         Map<String, String> clusterCaCertLabels = emptyMap();
                         Map<String, String> clusterCaCertAnnotations = emptyMap();
 
-                        if (kafkaClusterTemplate != null && kafkaClusterTemplate.getClusterCaCert() != null
-                                && kafkaClusterTemplate.getClusterCaCert().getMetadata() != null) {
-                            clusterCaCertLabels = kafkaClusterTemplate.getClusterCaCert().getMetadata().getLabels();
-                            clusterCaCertAnnotations = kafkaClusterTemplate.getClusterCaCert().getMetadata().getAnnotations();
+                        if (kafkaAssembly.getSpec().getKafka() != null
+                                && kafkaAssembly.getSpec().getKafka().getTemplate() != null
+                                && kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert() != null
+                                && kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata() != null) {
+                            clusterCaCertLabels = kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata().getLabels();
+                            clusterCaCertAnnotations = kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata().getAnnotations();
                         }
 
                         this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
