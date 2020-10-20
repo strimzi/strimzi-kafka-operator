@@ -255,7 +255,7 @@ class LoggingChangeST extends AbstractST {
                         "appender.console.type=Console\n" +
                         "appender.console.name=STDOUT\n" +
                         "appender.console.layout.type=PatternLayout\n" +
-                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "appender.console.layout.pattern=[%d] %highlight{%-5p} <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
                         "rootLogger.level=OFF\n" +
                         "rootLogger.appenderRefs=stdout\n" +
                         "rootLogger.appenderRef.console.ref=STDOUT\n" +
@@ -271,7 +271,7 @@ class LoggingChangeST extends AbstractST {
                         "appender.console.type=Console\n" +
                         "appender.console.name=STDOUT\n" +
                         "appender.console.layout.type=PatternLayout\n" +
-                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "appender.console.layout.pattern=[%d] %highlight{%-5p} <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
                         "rootLogger.level=OFF\n" +
                         "rootLogger.appenderRefs=stdout\n" +
                         "rootLogger.appenderRef.console.ref=STDOUT\n" +
@@ -321,7 +321,7 @@ class LoggingChangeST extends AbstractST {
                         "appender.console.type=Console\n" +
                         "appender.console.name=STDOUT\n" +
                         "appender.console.layout.type=PatternLayout\n" +
-                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "appender.console.layout.pattern=[%d] %highlight{%-5p} <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
                         "rootLogger.level=DEBUG\n" +
                         "rootLogger.appenderRefs=stdout\n" +
                         "rootLogger.appenderRef.console.ref=STDOUT\n" +
@@ -337,7 +337,7 @@ class LoggingChangeST extends AbstractST {
                         "appender.console.type=Console\n" +
                         "appender.console.name=STDOUT\n" +
                         "appender.console.layout.type=PatternLayout\n" +
-                        "appender.console.layout.pattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                        "appender.console.layout.pattern=[%d] %highlight{%-5p} <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
                         "rootLogger.level=DEBUG\n" +
                         "rootLogger.appenderRefs=stdout\n" +
                         "rootLogger.appenderRef.console.ref=STDOUT\n" +
@@ -425,7 +425,7 @@ class LoggingChangeST extends AbstractST {
                                 "appender.console.type = Console\n" +
                                 "appender.console.name = STDOUT\n" +
                                 "appender.console.layout.type = PatternLayout\n" +
-                                "appender.console.layout.pattern = [%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
+                                "appender.console.layout.pattern = [%d] %highlight{%-5p} <%-12.12c{1}:%L> [%-12.12t] %m%n\n" +
                                 "\n" +
                                 "rootLogger.level = OFF\n" +
                                 "rootLogger.appenderRefs = console\n" +
@@ -488,7 +488,7 @@ class LoggingChangeST extends AbstractST {
             "    appender.console.type = Console\n" +
             "    appender.console.name = STDOUT\n" +
             "    appender.console.layout.type = PatternLayout\n" +
-            "    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n\n" +
+            "    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %highlight{%-5p} %c{1}:%L - %m%n\n" +
             "\n" +
             "    rootLogger.level = OFF\n" +
             "    rootLogger.appenderRefs = stdout\n" +
