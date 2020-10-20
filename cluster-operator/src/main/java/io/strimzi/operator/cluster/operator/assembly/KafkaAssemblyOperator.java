@@ -121,7 +121,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -601,8 +600,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
 
                         KafkaClusterTemplate kafkaClusterTemplate = kafkaAssembly.getSpec().getKafka().getTemplate();
-                        Map<String,String> clusterCaCertLabels = emptyMap();
-                        Map<String,String> clusterCaCertAnnotations = emptyMap();
+                        Map<String, String> clusterCaCertLabels = emptyMap();
+                        Map<String, String> clusterCaCertAnnotations = emptyMap();
 
                         if (kafkaClusterTemplate != null && kafkaClusterTemplate.getClusterCaCert() != null
                                 && kafkaClusterTemplate.getClusterCaCert().getMetadata() != null) {
@@ -617,7 +616,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
-                                clusterCaCertLabels,clusterCaCertAnnotations,
+                                clusterCaCertLabels, clusterCaCertAnnotations,
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
