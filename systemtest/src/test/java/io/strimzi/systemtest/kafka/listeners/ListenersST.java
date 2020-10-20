@@ -68,7 +68,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
-    public static final String NAMESPACE = "kafka-listeners-cluster-test";
+    public static final String NAMESPACE = "listeners";
 
     private String customCertChain1 = "custom-certificate-chain-1";
     private String customCertChain2 = "custom-certificate-chain-2";
@@ -76,6 +76,7 @@ public class ListenersST extends AbstractST {
     private String customCertServer2 = "custom-certificate-server-2";
     private String customRootCA1 = "custom-certificate-root-1";
     private String customRootCA2 = "custom-certificate-root-2";
+    private String customListenerName = "randname";
 
     private String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
@@ -114,7 +115,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none"), is(serviceDiscoveryArray));
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none", false), is(serviceDiscoveryArray));
     }
 
     /**
@@ -178,7 +179,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", Constants.TLS_LISTENER_DEFAULT_NAME), is(serviceDiscoveryArray));
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", Constants.TLS_LISTENER_DEFAULT_NAME, true), is(serviceDiscoveryArray));
     }
 
     /**
@@ -198,7 +199,7 @@ public class ListenersST extends AbstractST {
                         .withNewListeners()
                             .addNewGenericKafkaListener()
                                 .withType(KafkaListenerType.INTERNAL)
-                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withName(customListenerName)
                                 .withPort(9095)
                                 .withTls(false)
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
@@ -237,7 +238,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withListenerName(customListenerName)
             .build();
 
         // Check brokers availability
@@ -251,7 +252,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9095, "kafka", "scram-sha-512")));
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9095, "kafka", "scram-sha-512", false)));
     }
 
     /**
@@ -311,7 +312,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512")));
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
     }
 
     @Test
@@ -587,7 +588,7 @@ public class ListenersST extends AbstractST {
                             .endConfiguration()
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                            .withName(customListenerName)
                             .withPort(9105)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
@@ -613,7 +614,7 @@ public class ListenersST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withListenerName(customListenerName)
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -656,7 +657,7 @@ public class ListenersST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(customListenerName)
                             .withPort(9106)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -714,7 +715,7 @@ public class ListenersST extends AbstractST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName("consumer-group-certs-2")
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withListenerName(customListenerName)
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
