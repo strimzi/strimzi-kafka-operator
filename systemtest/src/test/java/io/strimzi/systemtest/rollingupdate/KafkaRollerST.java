@@ -4,12 +4,21 @@
  */
 package io.strimzi.systemtest.rollingupdate;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplateBuilder;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -202,6 +211,58 @@ class KafkaRollerST extends AbstractST {
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
         // No additional checks are needed, because in case of wait failure, the test will not continue.
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+    }
+
+    @Test
+    void testKafkaPodPendingDueToRack() {
+        // Testing this scenario
+        // 1. deploy Kafka with wrong pod template (looking for nonexistent node) kafka pods should not exist
+        // 2. wait for Kafka not ready, kafka pods should be in the pending state
+        // 3. fix the Kafka CR, kafka pods should be in the pending state
+        // 4. wait for Kafka ready, kafka pods should NOT be in the pending state
+
+        NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
+                .withKey("dedicated_test")
+                .withNewOperator("In")
+                .withValues("Kafka")
+                .build();
+
+        NodeSelectorTerm nst = new NodeSelectorTermBuilder()
+                .withMatchExpressions(nsr)
+                .build();
+
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(nst)
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        PodTemplate pt = new PodTemplate();
+        pt.setAffinity(affinity);
+
+        KafkaClusterTemplate kct = new KafkaClusterTemplateBuilder()
+                .withPod(pt)
+                .build();
+
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 3, 3)
+                .editSpec()
+                    .editKafka()
+                        .withTemplate(kct)
+                    .endKafka()
+                .endSpec()
+                .build());
+
+        // pods are stable in the Pending state
+        PodUtils.waitUntilPodStabilityReplicasCount(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
+        LOGGER.info("Removing requirement for the affinity");
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+                kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null));
+
+        // kafka should get back ready in some reasonable time frame
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
     }
 
