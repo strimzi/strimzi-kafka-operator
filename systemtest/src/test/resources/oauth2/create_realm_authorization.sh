@@ -460,16 +460,6 @@ curl -v --insecure "https://$URL/auth/admin/realms" \
             }
           },
           {
-            "name": "Default Policy",
-            "description": "A policy that grants access only for users within this realm",
-            "type": "js",
-            "logic": "POSITIVE",
-            "decisionStrategy": "AFFIRMATIVE",
-            "config": {
-              "code": "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
-            }
-          },
-          {
             "name": "Dev Team B",
             "type": "role",
             "logic": "POSITIVE",

@@ -4,24 +4,16 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.HttpUtils;
-import io.vertx.core.MultiMap;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.codec.BodyCodec;
+import io.strimzi.test.TestUtils;
+import io.vertx.core.http.HttpMethod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collections;
+import java.io.InputStream;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BridgeUtils {
 
@@ -29,146 +21,62 @@ public class BridgeUtils {
 
     private BridgeUtils() { }
 
-    public static JsonObject generateHttpMessages(int messageCount) {
-        LOGGER.info("Creating {} records for KafkaBridge", messageCount);
-        JsonArray records = new JsonArray();
-        JsonObject json = new JsonObject();
-        for (int i = 0; i < messageCount; i++) {
-            json.put("value", "msg_" + i);
-            records.add(json);
+    public static String buildCurlCommand(HttpMethod httpMethod, String url, String headers, String data) {
+        String command = "curl -X " + httpMethod.toString() + " -D - " + url + " " + headers;
+
+        if (!data.isEmpty() && (httpMethod == HttpMethod.POST || httpMethod == HttpMethod.PUT)) {
+            command += " -d " + "'" + data + "'";
         }
-        JsonObject root = new JsonObject();
-        root.put("records", records);
-        return root;
+
+        return command;
     }
 
-    public static JsonObject sendMessagesHttpRequest(JsonObject records, String bridgeHost, int bridgePort, String topicName, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
-        LOGGER.info("Sending records to KafkaBridge");
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        client.post(bridgePort, bridgeHost, "/topics/" + topicName)
-            .putHeader("Content-length", String.valueOf(records.toBuffer().length()))
-            .putHeader("Content-Type", Constants.KAFKA_BRIDGE_JSON_JSON)
-            .as(BodyCodec.jsonObject())
-            .sendJsonObject(records, ar -> {
-                if (ar.succeeded()) {
-                    HttpResponse<JsonObject> response = ar.result();
-                    if (response.statusCode() == HttpResponseStatus.OK.code()) {
-                        LOGGER.debug("Server accepted post");
-                        future.complete(response.body());
-                    } else {
-                        LOGGER.error("Server didn't accept post", ar.cause());
-                    }
-                } else {
-                    LOGGER.error("Server didn't accept post", ar.cause());
-                    future.completeExceptionally(ar.cause());
-                }
-            });
-        return future.get(1, TimeUnit.MINUTES);
+    public static String addHeadersToString(Map<String, String> additionalHeaders) {
+        return addHeadersToString(additionalHeaders, "",  "");
     }
 
-    public static JsonArray receiveMessagesHttpRequest(String bridgeHost, int bridgePort, String groupID, String name, WebClient client) throws Exception {
-        CompletableFuture<JsonArray> future = new CompletableFuture<>();
-        client.get(bridgePort, bridgeHost, "/consumers/" + groupID + "/instances/" + name + "/records?timeout=" + 1000)
-            .putHeader("Accept", Constants.KAFKA_BRIDGE_JSON_JSON)
-            .as(BodyCodec.jsonArray())
-            .send(ar -> {
-                if (ar.succeeded() && ar.result().statusCode() == 200) {
-                    HttpResponse<JsonArray> response = ar.result();
-                    if (response.body().size() > 0) {
-                        for (int i = 0; i < response.body().size(); i++) {
-                            JsonObject jsonResponse = response.body().getJsonObject(i);
-                            LOGGER.info("JsonResponse: {}", jsonResponse.toString());
-                            String kafkaTopic = jsonResponse.getString("topic");
-                            int kafkaPartition = jsonResponse.getInteger("partition");
-                            String key = jsonResponse.getString("key");
-                            String value = jsonResponse.getString("value");
-                            long offset = jsonResponse.getLong("offset");
-                            LOGGER.debug("Received msg: topic:{} partition:{} key:{} value:{} offset{}", kafkaTopic, kafkaPartition, key, value, offset);
-                        }
-                        LOGGER.info("Received {} messages from KafkaBridge", response.body().size());
-                    } else {
-                        LOGGER.warn("Received body 0 messages: {}", response.body());
-                    }
-                    future.complete(response.body());
-                } else {
-                    LOGGER.info("Cannot consume any messages!", ar.cause());
-                    future.completeExceptionally(ar.cause());
-                }
-            });
-        return future.get(1, TimeUnit.MINUTES);
+    public static String addHeadersToString(Map<String, String> additionalHeaders, String contentType) {
+        return addHeadersToString(additionalHeaders, contentType,  "");
     }
 
-    public static boolean subscribeHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId,
-                                                String name, WebClient client, Map<String, String> additionalHeaders) throws InterruptedException, ExecutionException, TimeoutException {
+    public static String addHeadersToString(Map<String, String> additionalHeaders,  String contentType, String content) {
+        StringBuilder headerString = new StringBuilder();
 
-        MultiMap headers = MultiMap.caseInsensitiveMultiMap()
-            .add("Content-length", String.valueOf(topics.toBuffer().length()))
-            .add("Content-type", Constants.KAFKA_BRIDGE_JSON);
+        if (!content.isEmpty()) {
+            headerString.append(" -H 'Content-length: ").append(content.length()).append("'");
+        }
+
+        if (!contentType.isEmpty()) {
+            headerString.append(" -H 'Content-type: ").append(contentType).append("'");
+        }
 
         for (Map.Entry<String, String> header : additionalHeaders.entrySet()) {
             LOGGER.info("Adding header {} -> {}", header.getKey(), header.getValue());
-            headers.add(header.getKey(), header.getValue());
+            headerString.append(" -H '").append(header.getKey()).append(": ").append(header.getValue()).append("'");
         }
 
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-        client.post(bridgePort, bridgeHost,  "/consumers/" + groupId + "/instances/" + name + "/subscription")
-            .putHeaders(headers)
-            .as(BodyCodec.jsonObject())
-            .sendJsonObject(topics, ar -> {
-                LOGGER.info(ar.result());
-
-                if (ar.succeeded() && ar.result().statusCode() == 204) {
-                    LOGGER.info("Consumer subscribed");
-                    future.complete(ar.succeeded());
-                } else {
-                    LOGGER.error("Cannot subscribe consumer", ar.cause());
-                    future.completeExceptionally(ar.cause());
-                }
-            });
-        return future.get(1, TimeUnit.MINUTES);
+        return headerString.toString();
     }
 
-    public static boolean subscribeHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId,
-                                                String name, WebClient client) throws InterruptedException, ExecutionException, TimeoutException {
-        return subscribeHttpConsumer(topics, bridgeHost, bridgePort, groupId, name, client, Collections.emptyMap());
-    }
+    public static String getHeaderValue(String expectedHeader, String response) {
+        Pattern headerPattern = Pattern.compile(expectedHeader + ": \\s*([^\\n\\r]*)");
+        Matcher matcher = headerPattern.matcher(response);
 
-    public static JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
-                                                  WebClient client, Map<String, String> additionalHeaders) throws InterruptedException, ExecutionException, TimeoutException {
-
-        MultiMap headers = MultiMap.caseInsensitiveMultiMap()
-            .add("Content-length", String.valueOf(config.toBuffer().length()))
-            .add("Content-type", Constants.KAFKA_BRIDGE_JSON);
-
-        for (Map.Entry<String, String> header : additionalHeaders.entrySet()) {
-            LOGGER.info("Adding header {} -> {}", header.getKey(), header.getValue());
-            headers.add(header.getKey(), header.getValue());
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            LOGGER.error("Cannot find value for header: {}", expectedHeader);
+            return "";
         }
-
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        client.post(bridgePort, bridgeHost, "/consumers/" + groupId)
-            .putHeaders(headers)
-            .as(BodyCodec.jsonObject())
-            .sendJsonObject(config, ar -> {
-                if (ar.succeeded()) {
-                    HttpResponse<JsonObject> response = ar.result();
-                    JsonObject bridgeResponse = response.body();
-                    String consumerInstanceId = bridgeResponse.getString("instance_id");
-                    String consumerBaseUri = bridgeResponse.getString("base_uri");
-                    LOGGER.debug("ConsumerInstanceId: {}", consumerInstanceId);
-                    LOGGER.debug("ConsumerBaseUri: {}", consumerBaseUri);
-                    future.complete(response.body());
-                } else {
-                    LOGGER.error("Cannot create consumer", ar.cause());
-                    future.completeExceptionally(ar.cause());
-                }
-            });
-        return future.get(1, TimeUnit.MINUTES);
     }
 
-    public static JsonObject createBridgeConsumer(JsonObject config, String bridgeHost, int bridgePort, String groupId,
-                                                  WebClient webClient) throws InterruptedException, ExecutionException, TimeoutException {
-        return createBridgeConsumer(config, bridgeHost, bridgePort, groupId, webClient, Collections.emptyMap());
+    /**
+     * Returns Strimzi Kafka Bridge version which is associated with Strimzi Kafka Operator.
+     * The value is parsed from {@code /bridge.version} classpath resource and return it as a string.
+     * @return bridge version
+     */
+    public static String getBridgeVersion() {
+        InputStream bridgeVersionInputStream = BridgeUtils.class.getResourceAsStream("/bridge.version");
+        return TestUtils.readResource(bridgeVersionInputStream).replace("\n", "");
     }
 }

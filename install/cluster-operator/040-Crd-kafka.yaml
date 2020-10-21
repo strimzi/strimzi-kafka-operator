@@ -258,6 +258,13 @@ spec:
                                 least 60 seconds longer then the refresh interval
                                 specified in `jwksRefreshSeconds`. Defaults to 360
                                 seconds.
+                            jwksMinRefreshPauseSeconds:
+                              type: integer
+                              minimum: 0
+                              description: The minimum pause between two consecutive
+                                refreshes. When an unknown signing key is encountered
+                                the refresh is scheduled immediately, but will always
+                                wait for this minimum pause. Defaults to 1 second.
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
@@ -265,6 +272,17 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            maxSecondsWithoutReauthentication:
+                              type: integer
+                              description: Maximum number of seconds the authenticated
+                                session remains valid without re-authentication. This
+                                enables Apache Kafka re-authentication feature, and
+                                causes sessions to expire when the access token expires.
+                                If the access token expires before max time or if
+                                max time is reached, the client has to re-authenticate,
+                                otherwise the server will drop the connection. Not
+                                set by default - the authenticated session does not
+                                expire when the access token expires.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -462,6 +480,13 @@ spec:
                                 least 60 seconds longer then the refresh interval
                                 specified in `jwksRefreshSeconds`. Defaults to 360
                                 seconds.
+                            jwksMinRefreshPauseSeconds:
+                              type: integer
+                              minimum: 0
+                              description: The minimum pause between two consecutive
+                                refreshes. When an unknown signing key is encountered
+                                the refresh is scheduled immediately, but will always
+                                wait for this minimum pause. Defaults to 1 second.
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
@@ -469,6 +494,17 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            maxSecondsWithoutReauthentication:
+                              type: integer
+                              description: Maximum number of seconds the authenticated
+                                session remains valid without re-authentication. This
+                                enables Apache Kafka re-authentication feature, and
+                                causes sessions to expire when the access token expires.
+                                If the access token expires before max time or if
+                                max time is reached, the client has to re-authenticate,
+                                otherwise the server will drop the connection. Not
+                                set by default - the authenticated session does not
+                                expire when the access token expires.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -690,6 +726,13 @@ spec:
                                 least 60 seconds longer then the refresh interval
                                 specified in `jwksRefreshSeconds`. Defaults to 360
                                 seconds.
+                            jwksMinRefreshPauseSeconds:
+                              type: integer
+                              minimum: 0
+                              description: The minimum pause between two consecutive
+                                refreshes. When an unknown signing key is encountered
+                                the refresh is scheduled immediately, but will always
+                                wait for this minimum pause. Defaults to 1 second.
                             jwksRefreshSeconds:
                               type: integer
                               minimum: 1
@@ -697,6 +740,17 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            maxSecondsWithoutReauthentication:
+                              type: integer
+                              description: Maximum number of seconds the authenticated
+                                session remains valid without re-authentication. This
+                                enables Apache Kafka re-authentication feature, and
+                                causes sessions to expire when the access token expires.
+                                If the access token expires before max time or if
+                                max time is reached, the client has to re-authenticate,
+                                otherwise the server will drop the connection. Not
+                                set by default - the authenticated session does not
+                                expire when the access token expires.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -973,7 +1027,7 @@ spec:
                       type: boolean
                       description: Whether authorization decision should be delegated
                         to the 'Simple' authorizer if DENIED by Keycloak Authorization
-                        Services policies.Default value is `false`.
+                        Services policies. Default value is `false`.
                     disableTlsHostnameVerification:
                       type: boolean
                       description: Enable or disable TLS hostname verification. Default
@@ -985,6 +1039,19 @@ spec:
                         Defines how often the cached authorization decisions are reloaded
                         from the Open Policy Agent server. In milliseconds. Defaults
                         to `3600000`.
+                    grantsRefreshPeriodSeconds:
+                      type: integer
+                      minimum: 0
+                      description: The time between two consecutive grants refresh
+                        runs in seconds. The default value is 60.
+                    grantsRefreshPoolSize:
+                      type: integer
+                      minimum: 1
+                      description: The number of threads to use to refresh grants
+                        for active sessions. The more threads, the more parallelism,
+                        so the sooner the job completes. However, using more threads
+                        places a heavier load on the authorization server. The default
+                        value is 5.
                     initialCacheCapacity:
                       type: integer
                       description: Initial capacity of the local cache used by the
@@ -1028,7 +1095,7 @@ spec:
                       - keycloak
                       description: Authorization type. Currently, the supported types
                         are `simple`, `keycloak`, and `opa`. `simple` authorization
-                        type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer`
+                        type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
                         class for authorization. `keycloak` authorization type uses
                         Keycloak Authorization Services for authorization. `opa` authorization
                         type uses Open Policy Agent based authorization.
@@ -1047,10 +1114,10 @@ spec:
                     prefixes cannot be set: listeners, advertised., broker., listener.,
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
-                    zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic,
-                    cruise.control.metrics.reporter.bootstrap.servers (with the exception
-                    of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol,
-                    ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
+                    zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
+                    authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
+                    (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
+                    ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
                     cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
                     cruise.control.metrics.topic.auto.create.timeout.ms).'
                 rack:
@@ -1576,6 +1643,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -1612,6 +1681,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -2167,6 +2238,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Kafka broker container.
                     tlsSidecarContainer:
@@ -2231,6 +2304,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Kafka broker TLS sidecar container.
                     initContainer:
@@ -2294,6 +2369,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Kafka init container.
@@ -2791,6 +2868,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -2827,6 +2906,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -3223,6 +3304,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the ZooKeeper container.
                     tlsSidecarContainer:
@@ -3286,6 +3369,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Zookeeper server TLS sidecar container.
@@ -4440,6 +4525,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -4476,6 +4563,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -4790,6 +4879,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Entity Operator TLS sidecar container.
                     topicOperatorContainer:
@@ -4854,6 +4945,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Entity Topic Operator container.
                     userOperatorContainer:
@@ -4917,6 +5010,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Entity User Operator container.
@@ -4993,16 +5088,97 @@ spec:
                 image:
                   type: string
                   description: The docker image for the pods.
-                config:
+                tlsSidecar:
                   type: object
-                  description: 'The Cruise Control configuration. For a full list
-                    of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations.
-                    Note that properties with the following prefixes cannot be set:
-                    bootstrap.servers, client.id, zookeeper., network., security.,
-                    failed.brokers.zk.path,webserver.http., webserver.api.urlprefix,
-                    webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
-                    metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file,
-                    self.healing., anomaly.detection., ssl.'
+                  properties:
+                    image:
+                      type: string
+                      description: The docker image for the container.
+                    livenessProbe:
+                      type: object
+                      properties:
+                        failureThreshold:
+                          type: integer
+                          description: Minimum consecutive failures for the probe
+                            to be considered failed after having succeeded. Defaults
+                            to 3. Minimum value is 1.
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is
+                            first checked.
+                        periodSeconds:
+                          type: integer
+                          description: How often (in seconds) to perform the probe.
+                            Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          description: Minimum consecutive successes for the probe
+                            to be considered successful after having failed. Defaults
+                            to 1. Must be 1 for liveness. Minimum value is 1.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                          description: The timeout for each attempted health check.
+                      description: Pod liveness checking.
+                    logLevel:
+                      type: string
+                      enum:
+                      - emerg
+                      - alert
+                      - crit
+                      - err
+                      - warning
+                      - notice
+                      - info
+                      - debug
+                      description: The log level for the TLS sidecar. Default value
+                        is `notice`.
+                    readinessProbe:
+                      type: object
+                      properties:
+                        failureThreshold:
+                          type: integer
+                          description: Minimum consecutive failures for the probe
+                            to be considered failed after having succeeded. Defaults
+                            to 3. Minimum value is 1.
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                          description: The initial delay before first the health is
+                            first checked.
+                        periodSeconds:
+                          type: integer
+                          description: How often (in seconds) to perform the probe.
+                            Default to 10 seconds. Minimum value is 1.
+                        successThreshold:
+                          type: integer
+                          description: Minimum consecutive successes for the probe
+                            to be considered successful after having failed. Defaults
+                            to 1. Must be 1 for liveness. Minimum value is 1.
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                          description: The timeout for each attempted health check.
+                      description: Pod readiness checking.
+                    resources:
+                      type: object
+                      properties:
+                        limits:
+                          type: object
+                        requests:
+                          type: object
+                      description: CPU and memory resources to reserve.
+                  description: TLS sidecar configuration.
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                  description: CPU and memory resources to reserve for the Cruise
+                    Control container.
                 livenessProbe:
                   type: object
                   properties:
@@ -5089,15 +5265,6 @@ spec:
                       description: A map of additional system properties which will
                         be passed using the `-D` option to the JVM.
                   description: JVM Options for the Cruise Control container.
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                    requests:
-                      type: object
-                  description: CPU and memory resources to reserve for the Cruise
-                    Control container.
                 logging:
                   type: object
                   properties:
@@ -5117,88 +5284,6 @@ spec:
                   required:
                   - type
                   description: Logging configuration (log4j1) for Cruise Control.
-                tlsSidecar:
-                  type: object
-                  properties:
-                    image:
-                      type: string
-                      description: The docker image for the container.
-                    livenessProbe:
-                      type: object
-                      properties:
-                        failureThreshold:
-                          type: integer
-                          description: Minimum consecutive failures for the probe
-                            to be considered failed after having succeeded. Defaults
-                            to 3. Minimum value is 1.
-                        initialDelaySeconds:
-                          type: integer
-                          minimum: 0
-                          description: The initial delay before first the health is
-                            first checked.
-                        periodSeconds:
-                          type: integer
-                          description: How often (in seconds) to perform the probe.
-                            Default to 10 seconds. Minimum value is 1.
-                        successThreshold:
-                          type: integer
-                          description: Minimum consecutive successes for the probe
-                            to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
-                          type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
-                      description: Pod liveness checking.
-                    logLevel:
-                      type: string
-                      enum:
-                      - emerg
-                      - alert
-                      - crit
-                      - err
-                      - warning
-                      - notice
-                      - info
-                      - debug
-                      description: The log level for the TLS sidecar. Default value
-                        is `notice`.
-                    readinessProbe:
-                      type: object
-                      properties:
-                        failureThreshold:
-                          type: integer
-                          description: Minimum consecutive failures for the probe
-                            to be considered failed after having succeeded. Defaults
-                            to 3. Minimum value is 1.
-                        initialDelaySeconds:
-                          type: integer
-                          minimum: 0
-                          description: The initial delay before first the health is
-                            first checked.
-                        periodSeconds:
-                          type: integer
-                          description: How often (in seconds) to perform the probe.
-                            Default to 10 seconds. Minimum value is 1.
-                        successThreshold:
-                          type: integer
-                          description: Minimum consecutive successes for the probe
-                            to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
-                        timeoutSeconds:
-                          type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
-                      description: Pod readiness checking.
-                    resources:
-                      type: object
-                      properties:
-                        limits:
-                          type: object
-                        requests:
-                          type: object
-                      description: CPU and memory resources to reserve.
-                  description: TLS sidecar configuration.
                 template:
                   type: object
                   properties:
@@ -5256,6 +5341,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -5292,6 +5379,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -5652,6 +5741,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Cruise Control container.
                     tlsSidecarContainer:
@@ -5716,6 +5807,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for the Cruise Control TLS sidecar container.
                   description: Template to specify how Cruise Control resources, `Deployments`
@@ -5745,6 +5838,20 @@ spec:
                       description: Broker capacity for outbound network throughput
                         in bytes per second, for example 10000KB/s.
                   description: The Cruise Control `brokerCapacity` configuration.
+                config:
+                  type: object
+                  description: 'The Cruise Control configuration. For a full list
+                    of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations.
+                    Note that properties with the following prefixes cannot be set:
+                    bootstrap.servers, client.id, zookeeper., network., security.,
+                    failed.brokers.zk.path,webserver.http., webserver.api.urlprefix,
+                    webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
+                    metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file,
+                    self.healing., anomaly.detection., ssl.'
+                metrics:
+                  type: object
+                  description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
+                    for details of the structure of this configuration.
               description: Configuration for Cruise Control deployment. Deploys a
                 Cruise Control instance when specified.
             jmxTrans:
@@ -5895,6 +6002,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -5931,6 +6040,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -6245,6 +6356,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                runAsUserName:
+                                  type: string
                           description: Security context for the container.
                       description: Template for JmxTrans container.
                   description: Template for JmxTrans resources.
@@ -6343,6 +6456,8 @@ spec:
                           properties:
                             fsGroup:
                               type: integer
+                            fsGroupChangePolicy:
+                              type: string
                             runAsGroup:
                               type: integer
                             runAsNonRoot:
@@ -6379,6 +6494,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Configures pod-level security attributes and
                             common container settings.
@@ -6710,6 +6827,8 @@ spec:
                                 gmsaCredentialSpec:
                                   type: string
                                 gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Kafka Exporter container.

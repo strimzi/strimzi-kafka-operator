@@ -26,6 +26,7 @@ public class StatefulSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(Constants.STATEFUL_SET);
 
     private StatefulSetUtils() { }
 
@@ -102,7 +103,7 @@ public class StatefulSetUtils {
     public static Map<String, String> waitTillSsHasRolled(String name, Map<String, String> snapshot) {
         LOGGER.info("Waiting for StatefulSet {} rolling update", name);
         TestUtils.waitFor("StatefulSet " + name + " rolling update",
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.rollingUpdateTimeout(snapshot.size()), () -> {
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
                 try {
                     return ssHasRolled(name, snapshot);
                 } catch (Exception e) {
@@ -153,7 +154,7 @@ public class StatefulSetUtils {
      */
     public static void waitForStatefulSetDeletion(String name) {
         LOGGER.debug("Waiting for StatefulSet {} deletion", name);
-        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_RESOURCE_DELETION,
+        TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 if (kubeClient().getStatefulSet(name) == null) {
                     return true;
@@ -172,7 +173,7 @@ public class StatefulSetUtils {
      */
     public static void waitForStatefulSetRecovery(String name, String statefulSetUid) {
         LOGGER.info("Waiting for StatefulSet {}-{} recovery in namespace {}", name, statefulSetUid, kubeClient().getNamespace());
-        TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getStatefulSetUid(name).equals(statefulSetUid));
         LOGGER.info("StatefulSet {} was recovered", name);
     }
@@ -185,7 +186,7 @@ public class StatefulSetUtils {
             if (!(isStrimziTag || isK8sTag)) {
                 LOGGER.info("Waiting for Stateful set label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Waits for StatefulSet label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                    Constants.GLOBAL_TIMEOUT, () ->
                         kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
@@ -196,7 +197,7 @@ public class StatefulSetUtils {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for StatefulSet label {} change to {}", labelKey, null);
             TestUtils.waitFor("Waiting for StatefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                DELETION_TIMEOUT, () ->
                     kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("StatefulSet label {} change to {}", labelKey, null);

@@ -26,6 +26,10 @@ spec:
     categories:
     - strimzi
   additionalPrinterColumns:
+  - name: Cluster
+    description: The name of the Kafka cluster this user belongs to
+    JSONPath: .metadata.labels.strimzi\.io/cluster
+    type: string
   - name: Authentication
     description: How the user is authenticated
     JSONPath: .spec.authentication.type
@@ -134,7 +138,7 @@ spec:
                   enum:
                   - simple
                   description: Authorization type. Currently the only supported type
-                    is `simple`. `simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer`
+                    is `simple`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
                     class for authorization.
               required:
               - acls

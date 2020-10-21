@@ -12,7 +12,7 @@ When you apply the Prometheus configuration, the following resources are created
 * A `ServiceAccount` for the Prometheus pods to run under.
 * A `ClusterRoleBinding` which binds the `ClusterRole` to the `ServiceAccount`.
 * A `Deployment` to manage the Prometheus Operator pod.
-* A `ServiceMonitor` to manage the configuration of the Prometheus pod.
+* A `PodMonitor` to manage the configuration of the Prometheus pod.
 * A `Prometheus` to manage the configuration of the Prometheus pod.
 * A `PrometheusRule` to manage alerting rules for the Prometheus pod.
 * A `Secret` to manage additional Prometheus settings.

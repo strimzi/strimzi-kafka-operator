@@ -60,6 +60,7 @@ import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -109,7 +110,6 @@ public abstract class AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
-    public static final String ANNO_STRIMZI_LOGGING_HASH = Annotations.STRIMZI_DOMAIN + "logging-hash";
 
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
@@ -1153,25 +1153,6 @@ public abstract class AbstractModel {
         this.ownerApiVersion = parent.getApiVersion();
         this.ownerKind = parent.getKind();
         this.ownerUid = parent.getMetadata().getUid();
-    }
-
-    /**
-     * Generate a Map with Prometheus annotations
-     *
-     * @return Map with Prometheus annotations using the default port (9404) and path (/metrics)
-     */
-    protected Map<String, String> prometheusAnnotations()    {
-        if (isMetricsEnabled) {
-            Map<String, String> annotations = new HashMap<>(3);
-
-            annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
-            annotations.put("prometheus.io/scrape", "true");
-            annotations.put("prometheus.io/path", METRICS_PATH);
-
-            return annotations;
-        } else {
-            return null;
-        }
     }
 
     /**

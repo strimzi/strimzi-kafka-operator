@@ -87,6 +87,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         echo "Minikube failed to start or RBAC could not be properly set up"
         exit 1
     fi
+
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
     MS_VERSION=1.13.1

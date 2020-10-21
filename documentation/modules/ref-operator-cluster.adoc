@@ -5,7 +5,7 @@
 [id='ref-operator-cluster-{context}']
 = Cluster Operator configuration
 
-The Cluster Operator can be configured through the following supported environment variables.
+The Cluster Operator can be configured through the following supported environment variables and through the logging configuration.
 
 `STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
 When not set, set to empty string, or to `*` the Cluster Operator will operate in all namespaces.
@@ -23,9 +23,6 @@ env:
 
 [[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default is 120000 ms. The interval between periodic reconciliations, in milliseconds.
 
-`STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
-The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
-
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
 The timeout for internal operations, in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
@@ -38,10 +35,6 @@ This is used when a `Kafka.spec.kafka.version` property is specified but not the
 
 `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
 The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
-
-`STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `{DockerKafkaStunnel}`.
-The image name to use as the default when deploying the sidecar container which provides TLS support for Kafka,
-if no image is specified as the `Kafka.spec.kafka.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 `STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
@@ -121,6 +114,32 @@ The DNS domain name is added to the Kafka broker certificates used for hostname 
 +
 If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
 
+[discrete]
+== Configuration by ConfigMap
+
+The Cluster Operator's logging is configured by the `strimzi-cluster-operator` `ConfigMap`.
+
+A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
+This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
+You configure Cluster Operator logging by changing the data field `log4j2.properties` in this `ConfigMap`.
+
+To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
+[source,shell,subs=+quotes]
+kubectl apply -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
+
+Alternatively, edit the `ConfigMap` directly:
+[source,shell,subs=+quotes]
+kubectl edit cm strimzi-cluster-operator
+
+To change the frequency of the reload interval, set a time in seconds in the `monitorInterval` option in the created `ConfigMap`.
+
+If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
+
+If the `ConfigMap` is accidentally deleted after the Cluster Operator is deployed, the most recently loaded logging configuration is used.
+Create a new `ConfigMap` to load a new logging configuration.
+
+NOTE: Do not remove the monitorInterval option from the ConfigMap.
+
 == Periodic reconciliation
 
 Although the Cluster Operator reacts to all notifications about the desired cluster resources received from the Kubernetes cluster,
@@ -174,11 +193,11 @@ The `Deployment` of the operator then needs to specify this in its `spec.templat
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example of `Deployment` for the Cluster Operator
 ----
-include::install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
+include::install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
       # ...
 ----
 
-Note line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
+Note line 12, where the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
 
 == `ClusterRoles`
 

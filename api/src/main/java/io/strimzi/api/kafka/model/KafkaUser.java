@@ -59,6 +59,12 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Cluster",
+                                description = "The name of the Kafka cluster this user belongs to",
+                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Authentication",
                                 description = "How the user is authenticated",
                                 jsonPath = ".spec.authentication.type",
@@ -71,7 +77,6 @@ import static java.util.Collections.unmodifiableList;
                                 type = "string"
                         )
                 }
-
         )
 )
 @Buildable(

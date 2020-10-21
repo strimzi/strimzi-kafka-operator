@@ -34,8 +34,9 @@ Consider a shorter interval for fast changing clusters, although this increases 
 [discrete]
 == Contents of optimization proposals
 
-The following table explains the properties contained in an optimization proposal:
+The following table describes the properties contained in an optimization proposal:
 
+.Properties contained in an optimization proposal
 [cols="35,65",options="header",stripes="none",separator=¦]
 |===
 
@@ -80,7 +81,8 @@ m¦monitoredPartitionsPercentage
 ¦The percentage of partitions in the Kafka cluster covered by the optimization proposal. Affected by the number of `excludedTopics`.
 
 m¦excludedTopics
-¦Not yet supported. An empty list is returned.
+¦If you specified a regular expression in the `spec.excludedTopicsRegex` property in the `KafkaRebalance` resource, all topic names matching that expression are listed here. 
+These topics are excluded from the calculation of partition replica/leader movements in the optimization proposal.
 
 m¦numLeaderMovements
 ¦The number of partitions whose leaders will be switched to different replicas. This involves a change to ZooKeeper configuration.

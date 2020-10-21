@@ -17,4 +17,4 @@ External clients can access the Kafka Bridge through an OpenShift Route, a loadb
 
 .HTTP internal and external client integration
 
-image:kafka-bridge.png[Kafka Bridge]
+image:kafka-bridge.png[Internal and external HTTP producers and consumers exchange data with the Kafka brokers through the Kafka Bridge]

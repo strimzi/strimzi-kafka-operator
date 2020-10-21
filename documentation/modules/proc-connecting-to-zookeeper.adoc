@@ -4,12 +4,16 @@
 
 [id='proc-connnecting-to-zookeeper-{context}']
 = Connecting to ZooKeeper from a terminal
-Open a terminal inside a Kafka container to use Kafka CLI tools that require a ZooKeeper connection.
+
+Most Kafka CLI tools can connect directly to Kafka.
+So you should under normal circumstances not need to connect to ZooKeeper.
+In case it is needed, you can follow this procedure.
+Open a terminal inside a ZooKeeper container to use Kafka CLI tools that require a ZooKeeper connection.
 
 .Prerequisites
 
 * A Kubernetes cluster is available.
-* A kafka cluster is running.
+* A Kafka cluster is running.
 * The Cluster Operator is running.
 
 .Procedure
@@ -20,9 +24,9 @@ For example:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl exec -it _my-cluster_-kafka-0 -- bin/kafka-topics.sh --list --zookeeper localhost:2181
+kubectl exec -it _my-cluster_-zookeeper-0 -- bin/kafka-topics.sh --list --zookeeper localhost:12181
 ----
 +
-Be sure to use `localhost:2181`.
+Be sure to use `localhost:12181`.
 +
 You can now run Kafka commands to ZooKeeper.

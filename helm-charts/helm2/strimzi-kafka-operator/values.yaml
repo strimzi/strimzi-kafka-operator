@@ -9,7 +9,8 @@ image:
   repository: strimzi
   name: operator
   tag: latest
-logLevel: INFO
+logVolume: co-config-volume
+logConfigMap: strimzi-cluster-operator
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
@@ -56,11 +57,14 @@ kafkaInit:
     repository: strimzi
     name: operator
     tag: latest
+<<<<<<< HEAD:helm-charts/helm3/strimzi-kafka-operator/values.yaml
 tlsSidecarKafka:
   image:
     repository: strimzi
     name: kafka
     tagPrefix: latest
+=======
+>>>>>>> master:helm-charts/helm2/strimzi-kafka-operator/values.yaml
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
@@ -75,7 +79,11 @@ kafkaBridge:
   image:
     repository: strimzi
     name: kafka-bridge
+<<<<<<< HEAD:helm-charts/helm3/strimzi-kafka-operator/values.yaml
     tag: 0.17.0
+=======
+    tag: 0.18.0
+>>>>>>> master:helm-charts/helm2/strimzi-kafka-operator/values.yaml
 kafkaExporter:
   image:
     repository: strimzi

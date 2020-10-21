@@ -22,8 +22,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "concurrentPartitionMovementsPerBroker",
-                     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle" })
+@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "excludedTopics", "concurrentPartitionMovementsPerBroker",
+                     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -33,11 +33,15 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
     private List<String> goals;
     private boolean skipHardGoalCheck;
 
+    // Topic configuration
+    private String excludedTopics;
+
     // Rebalance performance tuning configurations
     private int concurrentPartitionMovementsPerBroker;
     private int concurrentIntraBrokerPartitionMovements;
     private int concurrentLeaderMovements;
     private long replicationThrottle;
+    private List<String> replicaMovementStrategies;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -52,7 +56,7 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
         this.goals = goals;
     }
 
-    @Description("Whether to allow the hard goals specified in the Kafka CR to be skipped in rebalance proposal generation. " +
+    @Description("Whether to allow the hard goals specified in the Kafka CR to be skipped in optimization proposal generation. " +
             "This can be useful when some of those hard goals are preventing a balance solution being found. " +
             "Default is false.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -62,6 +66,17 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
 
     public void setSkipHardGoalCheck(boolean skipHardGoalCheck) {
         this.skipHardGoalCheck = skipHardGoalCheck;
+    }
+
+    @Description("A regular expression where any matching topics will be excluded from the calculation of optimization proposals. " +
+            "This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported formar " +
+            "consult the documentation for that class.")
+    public String getExcludedTopics() {
+        return excludedTopics;
+    }
+
+    public void setExcludedTopics(String excludedTopics) {
+        this.excludedTopics = excludedTopics;
     }
 
     @Description("The upper bound of ongoing partition replica movements going into/out of each broker. Default is 5.")
@@ -102,6 +117,16 @@ public class KafkaRebalanceSpec implements UnknownPropertyPreserving, Serializab
 
     public void setReplicationThrottle(long bandwidth) {
         this.replicationThrottle = bandwidth;
+    }
+
+    @Description("A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. " +
+        "By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.")
+    public List<String> getReplicaMovementStrategies() {
+        return replicaMovementStrategies;
+    }
+
+    public void setReplicaMovementStrategies(List<String> replicaMovementStrategies) {
+        this.replicaMovementStrategies = replicaMovementStrategies;
     }
 
     @Override

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TESTCASE=${1:-.*ST}
 TEST_PROFILE=${2:-travis}
 
@@ -13,7 +14,8 @@ function run_test() {
 
     echo "Extra args for tests: ${EXTRA_TEST_ARGS}"
 
-    mvn -B verify -pl systemtest -P${PROFILE} -Djava.net.preferIPv4Stack=true -DfailIfNoTests=false -Djansi.force=true -Dstyle.color=always ${EXTRA_TEST_ARGS}
+    pushd "${SCRIPT_DIR}"/../.. && mvn -B verify -pl systemtest -am -P"${PROFILE}" -Djava.net.preferIPv4Stack=true -DfailIfNoTests=false -Djansi.force=true -Dstyle.color=always -DtrimStackTrace=false "${EXTRA_TEST_ARGS}"
+    popd || exit
 }
 
 echo "Running tests with profile: ${TEST_PROFILE}, tests: ${TESTCASE}"
@@ -21,7 +23,7 @@ echo "Running tests with profile: ${TEST_PROFILE}, tests: ${TESTCASE}"
 failure=0
 
 #run tests
-run_test ${TESTCASE} ${TEST_PROFILE} || failure=$(($failure + 1))
+run_test "${TESTCASE}" "${TEST_PROFILE}" || failure=$(($failure + 1))
 
 if [[ ${failure} -gt 0 ]]; then
     echo "Systemtests failed"

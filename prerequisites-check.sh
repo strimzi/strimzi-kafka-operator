@@ -15,11 +15,8 @@ check_command_present mvn
 check_command_present git
 check_command_present docker
 
-YQ_VERSION="$(yq --version | ${SED} 's/^.* //g')"
 # After version 3.3.1, yq --version sends the string to STDERR instead of STDOUT
-if [ -z "$YQ_VERSION" ]; then
-    YQ_VERSION="$(yq --version 2> >($GREP -Po '\d.\d.\d'))"
-fi
+YQ_VERSION="$(yq --version 2>&1 | ${SED} 's/^.* //g')"
 
 yq_array=($(echo "$YQ_VERSION" | tr '.' '\n'))
 

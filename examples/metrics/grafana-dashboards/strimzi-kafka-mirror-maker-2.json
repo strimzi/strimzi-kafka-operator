@@ -120,7 +120,11 @@
       "tableColumn": "",
       "targets": [
         {
+<<<<<<< HEAD:examples/metrics/grafana-dashboards/strimzi-kafka-connect.json
+          "expr": "sum(kafka_connect_worker_connector_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+=======
           "expr": "sum(kafka_connect_worker_connector_count{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+>>>>>>> master:examples/metrics/grafana-dashboards/strimzi-kafka-mirror-maker-2.json
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -202,7 +206,11 @@
       "tableColumn": "",
       "targets": [
         {
+<<<<<<< HEAD:examples/metrics/grafana-dashboards/strimzi-kafka-connect.json
+          "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+=======
           "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+>>>>>>> master:examples/metrics/grafana-dashboards/strimzi-kafka-mirror-maker-2.json
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -260,7 +268,11 @@
       "steppedLine": false,
       "targets": [
         {
+<<<<<<< HEAD:examples/metrics/grafana-dashboards/strimzi-kafka-connect.json
+          "expr": "sum(kafka_connect_incoming_byte_total{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+=======
           "expr": "sum(kafka_connect_incoming_byte_total{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+>>>>>>> master:examples/metrics/grafana-dashboards/strimzi-kafka-mirror-maker-2.json
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -348,7 +360,11 @@
       "steppedLine": false,
       "targets": [
         {
+<<<<<<< HEAD:examples/metrics/grafana-dashboards/strimzi-kafka-connect.json
+          "expr": "sum(kafka_connect_outgoing_byte_total{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+=======
           "expr": "sum(kafka_connect_outgoing_byte_total{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+>>>>>>> master:examples/metrics/grafana-dashboards/strimzi-kafka-mirror-maker-2.json
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,

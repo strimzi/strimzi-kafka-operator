@@ -26,6 +26,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class PodUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(Constants.POD);
 
     private PodUtils() { }
 
@@ -63,7 +64,7 @@ public class PodUtils {
         int[] counter = {0};
 
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.rollingUpdateTimeout(expectPods),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),
             () -> {
                 List<Pod> pods = kubeClient().listPods(selector);
                 if (pods.isEmpty() && expectPods == 0) {
@@ -102,7 +103,7 @@ public class PodUtils {
     }
 
     public static void waitForPodUpdate(String podName, Date startTime) {
-        TestUtils.waitFor(podName + " update", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+        TestUtils.waitFor(podName + " update", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT, () ->
             startTime.before(kubeClient().getCreationTimestampForPod(podName))
         );
     }
@@ -132,7 +133,7 @@ public class PodUtils {
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 
-        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
+        TestUtils.waitFor("pod " + name + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(1),
             () -> {
                 List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {
@@ -148,7 +149,7 @@ public class PodUtils {
     public static void deletePodWithWait(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.TIMEOUT_FOR_POD_DELETION,
+        TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
                 if (pods.size() != 0) {
@@ -247,7 +248,7 @@ public class PodUtils {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for Pod label {} change to {}", labelKey, null);
             TestUtils.waitFor("Pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                DELETION_TIMEOUT, () ->
                     kubeClient().getPod(podName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("Pod label {} changed to {}", labelKey, null);

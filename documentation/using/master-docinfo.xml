@@ -9,6 +9,6 @@
 <subtitle>For Use with Strimzi</subtitle>
 <release>{ProductVersion}</release>
 <abstract>
-<para>This guide provides a getting started experience for Strimzi.</para>
+<para>This guide describes how to configure and manage Strimzi.</para>
 </abstract>
 <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

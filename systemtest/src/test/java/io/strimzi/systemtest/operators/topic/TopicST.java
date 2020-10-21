@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -36,8 +37,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonList;
@@ -85,10 +88,6 @@ public class TopicST extends AbstractST {
         final String newTopicName = "topic-example-new";
 
         kafkaTopic = KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).done();
-
-        TestUtils.waitFor("Waiting for " + newTopicName + " to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () -> KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0).contains(newTopicName)
-        );
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
@@ -164,17 +163,11 @@ public class TopicST extends AbstractST {
                 .endSpec()
                 .done();
 
-        TestUtils.waitFor("Waiting to " + topicName + " to be ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType().equals("Ready")
-        );
-
         KafkaTopicResource.replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
+        KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
 
         String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 3 and then the replication should be changed directly in Kafka.";
-
-        TestUtils.waitFor("Waiting for " + topicName + " to has to contains message" + exceptedMessage, Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION,
-            () ->  KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage)
-        );
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage), is(true));
 
         String topicCRDMessage = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
 
@@ -185,9 +178,9 @@ public class TopicST extends AbstractST {
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testSendingMessagesToNonExistingTopic() {
         int sent = 0;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
 
@@ -196,19 +189,18 @@ public class TopicST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
-        LOGGER.info("Checking if {} is on topic list", topicName);
-        boolean created = hasTopicInKafka(topicName);
+        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
+        boolean created = hasTopicInKafka(TOPIC_NAME);
         assertThat(created, is(false));
-        LOGGER.info("Topic with name {} is not created yet", topicName);
+        LOGGER.info("Topic with name {} is not created yet", TOPIC_NAME);
 
-        LOGGER.info("Trying to send messages to non-existing topic {}", topicName);
+        LOGGER.info("Trying to send messages to non-existing topic {}", TOPIC_NAME);
         // Try produce multiple times in case first try will fail because topic is not exists yet
         for (int retry = 0; retry < 3; retry++) {
             sent = internalKafkaClient.sendMessagesPlain();
@@ -222,15 +214,16 @@ public class TopicST extends AbstractST {
                 internalKafkaClient.receiveMessagesPlain()
         );
 
-        LOGGER.info("Checking if {} is on topic list", topicName);
-        created = hasTopicInKafka(topicName);
+        LOGGER.info("Checking if {} is on topic list", TOPIC_NAME);
+        created = hasTopicInKafka(TOPIC_NAME);
         assertThat(created, is(true));
 
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getType(), is("Ready"));
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is(Ready.toString()));
         LOGGER.info("Topic successfully created");
     }
 
     @Test
+    @Tag(INTERNAL_CLIENTS_USED)
     void testDeleteTopicEnableFalse() {
         String topicName = "my-deleted-topic";
         String isolatedKafkaCluster = CLUSTER_NAME + "-isolated";
@@ -255,14 +248,13 @@ public class TopicST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(isolatedKafkaCluster)
             .withMessageCount(MESSAGE_COUNT)
-            .withConsumerGroupName(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE))
             .build();
 
         int sent = internalKafkaClient.sendMessagesPlain();
 
         String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
         LOGGER.info("Going to delete topic {}", topicName);
-        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).cascading(true).delete();
+        KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         LOGGER.info("Topic {} deleted", topicName);
 
         KafkaTopicUtils.waitTopicHasRolled(topicName, topicUid);
@@ -286,7 +278,7 @@ public class TopicST extends AbstractST {
     }
 
     void verifyTopicViaKafka(String topicName, int topicPartitions) {
-        TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> {
                 try {
                     List<String> topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(CLUSTER_NAME, 0, topicName);
@@ -312,12 +304,6 @@ public class TopicST extends AbstractST {
     void deployTestSpecificResources() {
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
-        deployTestSpecificResources();
     }
 
     @BeforeAll

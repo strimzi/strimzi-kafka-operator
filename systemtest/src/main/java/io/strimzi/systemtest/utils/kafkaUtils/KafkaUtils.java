@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -38,21 +40,21 @@ public class KafkaUtils {
     private KafkaUtils() {}
 
     public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, "Ready");
+        waitForKafkaStatus(clusterName, Ready);
     }
 
     public static void waitForKafkaNotReady(String clusterName) {
-        waitForKafkaStatus(clusterName, "NotReady");
+        waitForKafkaStatus(clusterName, NotReady);
     }
 
-    public static void waitForKafkaStatus(String clusterName, String state) {
+    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
         Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
         ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }
 
-    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
-        TestUtils.waitFor("Kafka status contains exception with non-existing secret name",
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message, long timeout) {
+        TestUtils.waitFor("Kafka Status with message [" + message + "]",
+            Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     if (condition.getMessage().matches(message)) {
@@ -61,6 +63,10 @@ public class KafkaUtils {
                 }
                 return false;
             });
+    }
+
+    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
+        waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, message, Constants.GLOBAL_STATUS_TIMEOUT);
     }
 
     public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {

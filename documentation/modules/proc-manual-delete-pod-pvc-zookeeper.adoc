@@ -13,8 +13,10 @@ WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss. The f
 
 .Prerequisites
 
-* A running ZooKeeper cluster.
-* A running Cluster Operator.
+See the _Deploying Strimzi_ guide for instructions on running a:
+
+* link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
+* link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
 
 .Procedure
 
@@ -29,8 +31,3 @@ Use `kubectl annotate`:
 kubectl annotate pod _cluster-name_-zookeeper-_index_ strimzi.io/delete-pod-and-pvc=true
 
 . Wait for the next reconciliation, when the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
-
-.Additional resources
-
-* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the ZooKeeper cluster, see xref:deploying-kafka-cluster-str[].

@@ -27,6 +27,7 @@ import static java.util.Collections.emptyList;
  * Class for handling Kafka configuration passed by the user
  */
 public class KafkaConfiguration extends AbstractConfiguration {
+
     public static final String INTERBROKER_PROTOCOL_VERSION = "inter.broker.protocol.version";
     public static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
 
@@ -63,6 +64,17 @@ public class KafkaConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Returns a KafkaConfiguration created without forbidden option filtering.
+     * @param map A map representation of the Properties
+     * @return The KafkaConfiguration
+     */
+    public static KafkaConfiguration unvalidated(Map<String, String> map) {
+        StringBuilder string = new StringBuilder();
+        map.entrySet().forEach(entry -> string.append(entry.getKey() + "=" + entry.getValue() + "\n"));
+        return new KafkaConfiguration(string.toString(), emptyList());
+    }
+
+    /**
      * Validate the configs in this KafkaConfiguration returning a list of errors.
      * @param kafkaVersion The broker version.
      * @return A list of error messages.
@@ -83,7 +95,12 @@ public class KafkaConfiguration extends AbstractConfiguration {
         return errors;
     }
 
-    private Map<String, ConfigModel> readConfigModel(KafkaVersion kafkaVersion) {
+    /**
+     * Gets the config model for the given version of the Kafka broker.
+     * @param kafkaVersion The broker version.
+     * @return The config model for that broker version.
+     */
+    public static Map<String, ConfigModel> readConfigModel(KafkaVersion kafkaVersion) {
         String name = "/kafka-" + kafkaVersion.version() + "-config-model.json";
         try {
             try (InputStream in = KafkaConfiguration.class.getResourceAsStream(name)) {
@@ -159,5 +176,24 @@ public class KafkaConfiguration extends AbstractConfiguration {
         return result;
     }
 
+    /**
+     * Return the config properties with their values in this KafkaConfiguration which are not known broker configs.
+     * These might be consumed by broker plugins.
+     * @param kafkaVersion The broker version.
+     * @return The unknown configs.
+     */
+    public Set<String> unknownConfigsWithValues(KafkaVersion kafkaVersion) {
+        Map<String, ConfigModel> configModel = readConfigModel(kafkaVersion);
+        Set<String> result = new HashSet<>();
+        for (Map.Entry<String, String> e :this.asOrderedProperties().asMap().entrySet()) {
+            if (!configModel.containsKey(e.getKey())) {
+                result.add(e.getKey() + "=" + e.getValue());
+            }
+        }
+        return result;
+    }
 
+    public boolean isEmpty() {
+        return this.asOrderedProperties().asMap().size() == 0;
+    }
 }

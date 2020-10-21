@@ -6,6 +6,8 @@ package io.strimzi.test.k8s;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cluster.KubeCluster;
+import io.strimzi.test.k8s.cluster.Minishift;
+import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -42,7 +44,7 @@ public class KubeClusterResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClusterResource.class);
 
-    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
+    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../install/cluster-operator";
 
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
@@ -155,6 +157,14 @@ public class KubeClusterResource {
      */
     public static KubeClient kubeClient() {
         return cluster.client().namespace(cluster.getNamespace());
+    }
+
+    /**
+     * Provides approriate Helm client for running Helm operations in specific namespace
+     * @return Helm client
+     */
+    public static HelmClient helmClusterClient() {
+        return cluster.helmClient().namespace(cluster.getNamespace());
     }
 
     /**
@@ -325,5 +335,9 @@ public class KubeClusterResource {
 
     public String getDefaultOlmNamespace() {
         return cluster().defaultOlmNamespace();
+    }
+
+    public boolean isNotKubernetes() {
+        return cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift;
     }
 }

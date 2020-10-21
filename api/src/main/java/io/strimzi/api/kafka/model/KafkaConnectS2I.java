@@ -103,7 +103,7 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
     public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
     public static final String STATUS_REPLICAS_PATH = ".status.replicas";
-    public static final String LABEL_SELECTOR_PATH = ".status.selector";
+    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
     private ObjectMeta metadata;

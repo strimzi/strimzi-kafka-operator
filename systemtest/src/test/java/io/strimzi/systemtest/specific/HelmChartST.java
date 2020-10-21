@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.resources.operator.HelmResource;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
@@ -14,8 +15,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-
-import java.util.List;
 
 import static io.strimzi.systemtest.Constants.HELM;
 
@@ -39,19 +38,11 @@ class HelmChartST extends AbstractST {
     void setup() {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        deployClusterOperatorViaHelmChart();
+        HelmResource.clusterOperator();
     }
 
     @Override
     protected void tearDownEnvironmentAfterAll() {
-        deleteClusterOperatorViaHelmChart();
         cluster.deleteNamespaces();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        deleteClusterOperatorViaHelmChart();
-        cluster.deleteNamespaces();
-        cluster.createNamespace(NAMESPACE);
     }
 }

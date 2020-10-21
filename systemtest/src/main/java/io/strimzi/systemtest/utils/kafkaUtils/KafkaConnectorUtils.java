@@ -13,6 +13,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -52,17 +54,17 @@ public class KafkaConnectorUtils {
      * @param connectorName name of KafkaConnector
      * @param state desired state
      */
-    public static void waitForConnectorStatus(String connectorName, String state) {
+    public static void waitForConnectorStatus(String connectorName, Enum<?>  state) {
         KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get();
         ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
     }
 
     public static void waitForConnectorReady(String connectorName) {
-        waitForConnectorStatus(connectorName, "Ready");
+        waitForConnectorStatus(connectorName, Ready);
     }
 
     public static void waitForConnectorNotReady(String connectorName) {
-        waitForConnectorStatus(connectorName, "NotReady");
+        waitForConnectorStatus(connectorName, NotReady);
     }
 
     public static String getCreatedConnectors(String connectPodName) {
@@ -99,5 +101,17 @@ public class KafkaConnectorUtils {
     public static String getConnectorSpecFromConnectAPI(String podName, String connectorName) {
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "curl http://localhost:8083/connectors/" + connectorName).out();
+    }
+
+    public static String getConnectorConfig(String podName, String connectorName, String apiUrl) {
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", "curl http://" + apiUrl + ":8083/connectors/" +
+            connectorName + "/config").out();
+    }
+
+    public static String waitForConnectorConfigUpdate(String podName, String connectorName, String oldConfig, String apiUrl) {
+        TestUtils.waitFor("Wait for KafkaConnector config will contain desired config", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND),
+            () -> !oldConfig.equals(getConnectorConfig(podName, connectorName, apiUrl)));
+        return getConnectorConfig(podName, connectorName, apiUrl);
     }
 }

@@ -56,14 +56,14 @@ public class KafkaSpecCheckerTest {
 
     @Test
     public void checkEmptyWarnings() {
-        Kafka kafka = ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
+        Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
         assertThat(checker.run(), empty());
     }
 
     @Test
     public void checkKafkaStorage() {
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
@@ -83,7 +83,7 @@ public class KafkaSpecCheckerTest {
 
     @Test
     public void checkKafkaJbodStorage() {
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
             new JbodStorageBuilder().withVolumes(new EphemeralStorageBuilder().withId(1).build(),
                                                  new EphemeralStorageBuilder().withId(2).build()).build(),
@@ -105,7 +105,7 @@ public class KafkaSpecCheckerTest {
 
     @Test
     public void checkZookeeperStorage() {
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
@@ -125,7 +125,7 @@ public class KafkaSpecCheckerTest {
 
     @Test
     public void checkZookeeperReplicas() {
-        Kafka kafka = ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 2, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
+        Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 2, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
         List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
@@ -137,7 +137,7 @@ public class KafkaSpecCheckerTest {
 
     @Test
     public void checkZookeeperEvenReplicas() {
-        Kafka kafka = ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 4, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
+        Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 4, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
         List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
@@ -151,7 +151,7 @@ public class KafkaSpecCheckerTest {
     public void checkKafkaVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             Collections.emptyMap(), kafkaOptions, Collections.emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
@@ -171,7 +171,7 @@ public class KafkaSpecCheckerTest {
 
     @Test
     public void checkMultipleWarnings() {
-        Kafka kafka = ResourceUtils.createKafkaCluster(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+        Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
                 Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
                 new EphemeralStorage(), new EphemeralStorage(), null, null, null, null);
         KafkaSpecChecker checker = generateChecker(kafka);

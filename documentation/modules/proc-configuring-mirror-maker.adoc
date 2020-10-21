@@ -12,8 +12,10 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Prerequisites
 
-* xref:cluster-operator-str[Strimzi and Kafka is deployed]
-* Source and target Kafka clusters are available
+* See the _Deploying Strimzi_ guide for instructions on running a:
+** link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
+** link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
+* Source and target Kafka clusters must be available
 
 .Procedure
 
@@ -50,9 +52,10 @@ spec:
       ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <9>
       ssl.enabled.protocols: "TLSv1.2"
       ssl.protocol: "TLSv1.2"
+      ssl.endpoint.identification.algorithm: HTTPS <10>
   producer:
     bootstrapServers: my-target-cluster-kafka-bootstrap:9092
-    abortOnSendFailure: false <10>
+    abortOnSendFailure: false <11>
     tls:
       trustedCertificates:
       - secretName: my-target-cluster-ca-cert
@@ -66,28 +69,29 @@ spec:
     config:
       compression.type: gzip
       batch.size: 8192
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <11>
+      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <12>
       ssl.enabled.protocols: "TLSv1.2"
       ssl.protocol: "TLSv1.2"
-  whitelist: "my-topic|other-topic" <12>
-  resources: <13>
+      ssl.endpoint.identification.algorithm: HTTPS <13>
+  whitelist: "my-topic|other-topic" <14>
+  resources: <15>
     requests:
       cpu: "1"
       memory: 2Gi
     limits:
       cpu: "2"
       memory: 2Gi
-  logging: <14>
+  logging: <16>
     type: inline
     loggers:
       mirrormaker.root.logger: "INFO"
-  readinessProbe: <15>
+  readinessProbe: <17>
     initialDelaySeconds: 15
     timeoutSeconds: 5
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  metrics: <16>
+  metrics: <18>
     lowercaseOutputName: true
     rules:
       - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
@@ -97,11 +101,11 @@ spec:
         name: "kafka_server_$1_$2_total"
         labels:
           topic: "$3"
-  jvmOptions: <17>
+  jvmOptions: <19>
     "-Xmx": "1g"
     "-Xms": "1g"
-  image: my-org/my-image:latest <18>
-  template: <19>
+  image: my-org/my-image:latest <20>
+  template: <21>
     pod:
       affinity:
         podAntiAffinity:
@@ -114,7 +118,7 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: <20>
+    connectContainer: <22>
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -122,7 +126,7 @@ spec:
           value: jaeger-agent-name
         - name: JAEGER_AGENT_PORT
           value: "6831"
-  tracing: <21>
+  tracing: <23>
     type: jaeger
 ----
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes].
@@ -134,18 +138,20 @@ spec:
 <7> Authentication for consumer or producer, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 <8> Kafka configuration options for xref:property-consumer-config-reference[consumer] and xref:property-producer-config-reference[producer].
 <9> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
-<10> If the xref:property-producer-abort-on-send-reference[`abortOnSendFailure` property] is set to `true`, Kafka MirrorMaker will exit and the container will restart following a send failure for a message.
-<11> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
-<12> A xref:property-mm-whitelist-reference[_whitelist_ of topics] mirrored from source to target Kafka cluster.
-<13> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<14> Specified xref:property-mm-loggers-reference[loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. MirrorMaker has a single logger called `mirrormaker.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
-<15> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<16> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled with configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using `metrics: {}`.
-<17> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
-<18> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<19> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<20> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
-<21> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<10> xref:type-KafkaMirrorMakerConsumerSpec-reference[Hostname verification is enabled] by setting to `HTTPS`. An empty string disables the verification.
+<11> If the xref:property-producer-abort-on-send-reference[`abortOnSendFailure` property] is set to `true`, Kafka MirrorMaker will exit and the container will restart following a send failure for a message.
+<12> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
+<13> xref:type-KafkaMirrorMakerProducerSpec-reference[Hostname verification is enabled] by setting to `HTTPS`. An empty string disables the verification.
+<14> A xref:property-mm-whitelist-reference[_whitelist_ of topics] mirrored from source to target Kafka cluster.
+<15> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<16> Specified xref:property-mm-loggers-reference[loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. MirrorMaker has a single logger called `mirrormaker.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<17> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<18> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled with configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using `metrics: {}`.
+<19> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
+<20> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
+<21> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<22> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
+<23> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
 +
 WARNING: With the `abortOnSendFailure` property set to `false`, the producer attempts to send the next message in a topic. The original message might be lost, as there is no attempt to resend a failed message.
 

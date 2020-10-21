@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
@@ -96,6 +97,10 @@ public class MetricsUtils {
         return collectMetricsFromPods(coSelector, Constants.CLUSTER_OPERATOR_METRICS_PORT, "/metrics");
     }
 
+    public static HashMap<String, String> collectKafkaBridgePodMetrics(String clusterName) {
+        LabelSelector coSelector = kubeClient().getDeploymentSelectors(KafkaBridgeResources.deploymentName(clusterName));
+        return collectMetricsFromPods(coSelector, Constants.KAFKA_BRIDGE_METRICS_PORT, "/metrics");
+    }
 
     /**
      * Parse out specific metric from whole metrics file

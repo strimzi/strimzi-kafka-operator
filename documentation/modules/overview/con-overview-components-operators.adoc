@@ -15,4 +15,4 @@ The Cluster Operator can deploy the Topic Operator and User Operator as part of 
 
 .Operators within the Strimzi architecture
 
-image:operators.png[Operators]
+image:operators.png[Operators within the Strimzi architecture]

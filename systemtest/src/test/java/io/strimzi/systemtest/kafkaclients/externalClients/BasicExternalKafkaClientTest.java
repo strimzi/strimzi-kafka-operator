@@ -13,6 +13,7 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -24,9 +25,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.IntPredicate;
 
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
+@Tag(EXTERNAL_CLIENTS_USED)
 class BasicExternalKafkaClientTest {
 
     private static final Logger LOGGER = LogManager.getLogger(BasicExternalKafkaClient.class);
@@ -54,7 +57,6 @@ class BasicExternalKafkaClientTest {
             .withMessageCount(MESSAGE_COUNT)
             .withNamespaceName(".")
             .withClusterName(".")
-            .withConsumerGroupName("consumer-group" + "-" + new Random().nextInt(Integer.MAX_VALUE))
             .withKafkaClientProperties(
                 new KafkaClientProperties.KafkaClientPropertiesBuilder()
                     .withKeySerializerConfig(StringSerializer.class)

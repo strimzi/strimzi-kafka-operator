@@ -5,18 +5,19 @@
 package io.strimzi.systemtest.watcher;
 
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.resources.operator.BundleResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.util.Arrays;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -55,6 +56,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      * Test the case when MirrorMaker will be deployed in different namespace across multiple namespaces
      */
     @Test
+    @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(CLUSTER_NAME);
@@ -71,8 +73,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         applyRoleBindings(CO_NAMESPACE);
         applyRoleBindings(CO_NAMESPACE, SECOND_NAMESPACE);
-        // 050-Deployment
-        KubernetesResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
+        // 060-Deployment
+        BundleResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
         cluster.setNamespace(SECOND_NAMESPACE);
 
@@ -86,10 +88,5 @@ class MultipleNamespaceST extends AbstractNamespaceST {
             .endSpec().done();
 
         cluster.setNamespace(CO_NAMESPACE);
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        deployTestSpecificResources();
     }
 }

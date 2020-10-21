@@ -25,7 +25,7 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
 fi
 
 # enabling Prometheus JMX exporter as Java agent
-if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
+if [ "$CRUISE_CONTROL_METRICS_ENABLED" = "true" ]; then
   KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/jmx_prometheus_javaagent*.jar)=9404:$CRUISE_CONTROL_HOME/custom-config/metrics-config.yml"
   export KAFKA_OPTS
 fi

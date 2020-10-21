@@ -10,6 +10,9 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
+import java.util.Random;
+
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
@@ -22,6 +25,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ClientUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ClientUtils.class);
+    private static final String CONSUMER_GROUP_NAME = "my-consumer-group-";
+    private static Random rng = new Random();
 
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
@@ -43,11 +48,31 @@ public class ClientUtils {
     }
 
     public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
-        long timeout = (long) messageCount * 1000;
-        LOGGER.info("Waiting till producer {} and consumer {} finish for the following {} ms", producerName, consumerName, timeout);
-        TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
+        LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
+        TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(producerName).get().getStatus().getSucceeded().equals(1) &&
                     kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(consumerName).get().getStatus().getSucceeded().equals(1));
+    }
+
+    public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
+        LOGGER.info("Waiting for producer/consumer:{} will be finished", jobName);
+        TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+            () -> kubeClient().getClient().batch().jobs().inNamespace(namespace).withName(jobName).get().getStatus().getSucceeded().equals(1));
+    }
+
+    private static long timeoutForClientFinishJob(int messagesCount) {
+        // need to add at least 2minutes for finishing the job
+        return (long) messagesCount * 1000 + Duration.ofMinutes(2).toMillis();
+    }
+
+    /**
+     * Method which generates random consumer group name
+     * @return consumer group name with pattern: my-consumer-group-*-*
+     */
+    public static String generateRandomConsumerGroup() {
+        int salt = rng.nextInt(Integer.MAX_VALUE);
+
+        return CONSUMER_GROUP_NAME + salt;
     }
 }
 

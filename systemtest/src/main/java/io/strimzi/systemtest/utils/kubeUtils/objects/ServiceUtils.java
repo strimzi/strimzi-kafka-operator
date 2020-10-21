@@ -21,6 +21,7 @@ public class ServiceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ServiceUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SERVICE);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ServiceUtils() { }
 
@@ -32,7 +33,7 @@ public class ServiceUtils {
             if (!(isStrimziTag || isK8sTag)) {
                 LOGGER.info("Waiting for Service label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Service label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                    Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                    Constants.GLOBAL_TIMEOUT, () ->
                         kubeClient().getService(serviceName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
@@ -43,7 +44,7 @@ public class ServiceUtils {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Service label {} change to {}", labelKey, null);
             TestUtils.waitFor("Service label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                DELETION_TIMEOUT, () ->
                     kubeClient().getService(serviceName).getMetadata().getLabels().get(labelKey) == null
             );
         }
@@ -74,7 +75,7 @@ public class ServiceUtils {
     public static void waitForServiceDeletion(String serviceName) {
         LOGGER.info("Waiting for Service {} deletion in namespace {}", serviceName, kubeClient().getNamespace());
 
-        TestUtils.waitFor("Service " + serviceName + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Service " + serviceName + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> kubeClient().getService(serviceName) == null);
         LOGGER.info("Service {} in namespace {} was deleted", serviceName, kubeClient().getNamespace());
     }
@@ -87,7 +88,7 @@ public class ServiceUtils {
     public static void waitForServiceRecovery(String serviceName, String serviceUid) {
         LOGGER.info("Waiting when Service {}-{} in namespace {} will be recovered", serviceName, serviceUid, kubeClient().getNamespace());
 
-        TestUtils.waitFor("Service " + serviceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Service " + serviceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getServiceUid(serviceName).equals(serviceUid));
         LOGGER.info("{} in namespace {} is recovered", serviceName, kubeClient().getNamespace());
     }

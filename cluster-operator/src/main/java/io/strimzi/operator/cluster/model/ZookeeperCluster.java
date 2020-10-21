@@ -324,16 +324,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     @SuppressWarnings("deprecation")
     static List<Toleration> tolerations(ZookeeperClusterSpec zookeeperClusterSpec) {
-        if (zookeeperClusterSpec.getTemplate() != null
-                && zookeeperClusterSpec.getTemplate().getPod() != null
-                && zookeeperClusterSpec.getTemplate().getPod().getTolerations() != null) {
-            if (zookeeperClusterSpec.getAffinity() != null) {
-                log.warn("Tolerations given on both spec.zookeeper.tolerations and spec.zookeeper.template.pod.tolerations; latter takes precedence");
-            }
-            return zookeeperClusterSpec.getTemplate().getPod().getTolerations();
-        } else {
-            return zookeeperClusterSpec.getTolerations();
-        }
+        return ModelUtils.tolerations("spec.zookeeper.tolerations", zookeeperClusterSpec.getTolerations(), "spec.zookeeper.template.pod.tolerations", zookeeperClusterSpec.getTemplate() == null ? null : zookeeperClusterSpec.getTemplate().getPod());
     }
 
     @SuppressWarnings("deprecation")
@@ -351,13 +342,10 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public Service generateService() {
-        List<ServicePort> ports = new ArrayList<>(2);
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        }
+        List<ServicePort> ports = new ArrayList<>(1);
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
-        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", ports, templateServiceAnnotations);
     }
 
     public static String policyName(String cluster) {

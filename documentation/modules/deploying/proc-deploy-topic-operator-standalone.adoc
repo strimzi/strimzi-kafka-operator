@@ -10,8 +10,6 @@ This procedure shows how to deploy the Topic Operator as a standalone component.
 A standalone deployment requires configuration of environment variables, and is more complicated than xref:deploying-the-topic-operator-using-the-cluster-operator-str[deploying the Topic Operator using the Cluster Operator].
 However, a standalone deployment is more flexible as the Topic Operator can operate with _any_ Kafka cluster, not necessarily one deployed by the Cluster Operator.
 
-For more information about the environment variables used to configure the Topic Operator, see link:{BookURLUsing}#topic-operator-environment-deploying[Topic Operator environment].
-
 .Prerequisites
 
 * You need an existing Kafka cluster for the Topic Operator to connect to.

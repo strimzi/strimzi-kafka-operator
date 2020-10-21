@@ -91,6 +91,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
             writer.println("cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
             writer.println("cruise.control.metrics.topic.auto.create=true");
+            writer.println("cruise.control.metrics.reporter.kubernetes.mode=true");
             if (numPartitions != null) {
                 writer.println("cruise.control.metrics.topic.num.partitions=" + numPartitions);
             }
@@ -123,11 +124,21 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the Zookeeper connection URL.
      *
+     * @param clusterName The name of the Kafka custom resource
+     *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withZookeeper()  {
+    public KafkaBrokerConfigurationBuilder withZookeeper(String clusterName)  {
         printSectionHeader("Zookeeper");
-        writer.println("zookeeper.connect=localhost:2181");
+        writer.println(String.format("zookeeper.connect=%s:%d", ZookeeperCluster.serviceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
+        writer.println("zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty");
+        writer.println("zookeeper.ssl.client.enable=true");
+        writer.println("zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("zookeeper.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("zookeeper.ssl.keystore.type=PKCS12");
+        writer.println("zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("zookeeper.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("zookeeper.ssl.truststore.type=PKCS12");
         writer.println();
 
         return this;
@@ -354,6 +365,11 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
             writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" %s;", listenerNameInProperty, String.join(" ", options)));
             writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=OAUTHBEARER", listenerNameInProperty));
+
+            if (oauth.getMaxSecondsWithoutReauthentication() != null) {
+                writer.println(String.format("listener.name.%s.connections.max.reauth.ms=%s", listenerNameInProperty, 1000 * oauth.getMaxSecondsWithoutReauthentication()));
+            }
+
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
@@ -407,6 +423,9 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) {
             addOption(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
         }
+        if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
+            addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
+        }
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_CRYPTO_PROVIDER_BOUNCYCASTLE, oauth.isEnableECDSA());
         addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
         addOption(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
@@ -434,6 +453,10 @@ public class KafkaBrokerConfigurationBuilder {
 
     static void addBooleanOptionIfFalse(List<String> options, String option, boolean value) {
         if (!value) options.add(String.format("%s=\"%s\"", option, value));
+    }
+
+    static void addOption(PrintWriter writer, String name, Object value) {
+        if (value != null) writer.println(name + "=" + value);
     }
 
     /**
@@ -502,6 +525,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("strimzi.authorization.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
             writer.println("strimzi.authorization.client.id=" + keycloakAuthz.getClientId());
             writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
+            addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", keycloakAuthz.getGrantsRefreshPeriodSeconds());
+            addOption(writer, "strimzi.authorization.grants.refresh.pool.size", keycloakAuthz.getGrantsRefreshPoolSize());
             writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {

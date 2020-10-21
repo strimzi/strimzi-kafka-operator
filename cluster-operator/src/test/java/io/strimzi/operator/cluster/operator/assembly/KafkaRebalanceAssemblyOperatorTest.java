@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -64,7 +65,9 @@ import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -100,7 +103,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             .build();
 
     private final Kafka kafka =
-            new KafkaBuilder(ResourceUtils.createKafkaCluster(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+            new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
                         .editKafka()
                             .withVersion(version)
@@ -768,7 +771,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         // build a Kafka cluster without the cruiseControl definition
         Kafka kafka =
-                new KafkaBuilder(ResourceUtils.createKafkaCluster(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+                new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .editKafka()
                                 .withVersion(version)
@@ -915,7 +918,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         KafkaRebalance patchedKr = new KafkaRebalanceBuilder(kafkaRebalance)
                 .editMetadata()
-                    .addToAnnotations(KafkaRebalanceAssemblyOperator.ANNO_STRIMZI_IO_REBALANCE, annotationValue.toString())
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, annotationValue.toString())
                 .endMetadata()
                 .build();
 

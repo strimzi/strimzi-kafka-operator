@@ -18,6 +18,8 @@ public class RebalanceOptions {
     private boolean skipHardGoalCheck;
     /** Sets whether the response should be JSON formatted or formated for readibility on the command line */
     private boolean json = true;
+    /** A regular expression to specify topics that should not be considered for replica movement */
+    private String excludedTopics;
     /** The upper bound of ongoing replica movements going into/out of each broker */
     private int concurrentPartitionMovementsPerBroker;
     /** The upper bound of ongoing replica movements between disks within each broker */
@@ -26,6 +28,8 @@ public class RebalanceOptions {
     private int concurrentLeaderMovements;
     /** The upper bound, in bytes per second, on the bandwidth used to move replicas */
     private long replicationThrottle;
+    /** A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. */
+    private List<String> replicaMovementStrategies;
 
     public boolean isDryRun() {
         return isDryRun;
@@ -47,6 +51,10 @@ public class RebalanceOptions {
         return json;
     }
 
+    public String getExcludedTopics() {
+        return excludedTopics;
+    }
+
     public int getConcurrentPartitionMovementsPerBroker() {
         return concurrentPartitionMovementsPerBroker;
     }
@@ -63,16 +71,22 @@ public class RebalanceOptions {
         return replicationThrottle;
     }
 
+    public List<String> getReplicaMovementStrategies() {
+        return replicaMovementStrategies;
+    }
+
     private RebalanceOptions(RebalanceOptionsBuilder builder) {
         this.isDryRun = builder.isDryRun;
         this.verbose = builder.verbose;
         this.skipHardGoalCheck = builder.skipHardGoalCheck;
         this.goals = builder.goals;
         this.verbose = builder.verbose;
+        this.excludedTopics = builder.excludedTopics;
         this.concurrentPartitionMovementsPerBroker = builder.concurrentPartitionMovementsPerBroker;
         this.concurrentIntraBrokerPartitionMovements = builder.concurrentIntraPartitionMovements;
         this.concurrentLeaderMovements = builder.concurrentLeaderMovements;
         this.replicationThrottle = builder.replicationThrottle;
+        this.replicaMovementStrategies = builder.replicaMovementStrategies;
     }
 
     public static class RebalanceOptionsBuilder {
@@ -81,20 +95,24 @@ public class RebalanceOptions {
         private boolean verbose;
         private boolean skipHardGoalCheck;
         private List<String> goals;
+        private String excludedTopics;
         private int concurrentPartitionMovementsPerBroker;
         private int concurrentIntraPartitionMovements;
         private int concurrentLeaderMovements;
         private long replicationThrottle;
+        private List<String> replicaMovementStrategies;
 
         public RebalanceOptionsBuilder() {
             isDryRun = true;
             verbose = false;
             skipHardGoalCheck = false;
             goals = null;
+            excludedTopics = null;
             concurrentPartitionMovementsPerBroker = 0;
             concurrentIntraPartitionMovements = 0;
             concurrentLeaderMovements = 0;
             replicationThrottle = 0;
+            replicaMovementStrategies = null;
         }
 
         public RebalanceOptionsBuilder withFullRun() {
@@ -114,6 +132,11 @@ public class RebalanceOptions {
 
         public RebalanceOptionsBuilder withGoals(List<String> goals) {
             this.goals = goals;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withExcludedTopics(String excludedTopics) {
+            this.excludedTopics = excludedTopics;
             return this;
         }
 
@@ -146,6 +169,11 @@ public class RebalanceOptions {
                 throw new IllegalArgumentException("The max replication bandwidth should be greater than zero");
             }
             this.replicationThrottle = bandwidth;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withReplicaMovementStrategies(List<String> replicaMovementStrategies) {
+            this.replicaMovementStrategies = replicaMovementStrategies;
             return this;
         }
 

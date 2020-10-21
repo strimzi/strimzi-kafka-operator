@@ -5,14 +5,12 @@
 package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.DoneableService;
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
@@ -30,7 +28,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,88 +39,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KubernetesResource {
     private static final Logger LOGGER = LogManager.getLogger(KubernetesResource.class);
 
-    public static final String PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
-
-    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
-        return deployNewDeployment(defaultCLusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());
-    }
-
-    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        return deployNewDeployment(defaultCLusterOperator(namespace, operationTimeout, reconciliationInterval).build());
-    }
-
-    public static DoneableDeployment clusterOperator(String namespace) {
-        return deployNewDeployment(defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
-    }
-
-    public static DeploymentBuilder defaultClusterOperator(String namespace) {
-        return defaultCLusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    private static DeploymentBuilder defaultCLusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-
-        Deployment clusterOperator = getDeploymentFromYaml(PATH_TO_CO_CONFIG);
-
-        // Get env from config file
-        List<EnvVar> envVars = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        // Get default CO image
-        String coImage = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
-
-        // Update images
-        for (EnvVar envVar : envVars) {
-            switch (envVar.getName()) {
-                case "STRIMZI_LOG_LEVEL":
-                    envVar.setValue(Environment.STRIMZI_LOG_LEVEL);
-                    break;
-                case "STRIMZI_NAMESPACE":
-                    envVar.setValue(namespace);
-                    envVar.setValueFrom(null);
-                    break;
-                case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
-                    envVar.setValue(Long.toString(reconciliationInterval));
-                    break;
-                case "STRIMZI_OPERATION_TIMEOUT_MS":
-                    envVar.setValue(Long.toString(operationTimeout));
-                    break;
-                default:
-                    if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
-                        envVar.setValue(Environment.useLatestReleasedBridge() ? envVar.getValue() : Environment.BRIDGE_IMAGE);
-                    } else if (envVar.getName().contains("STRIMZI_DEFAULT")) {
-                        envVar.setValue(StUtils.changeOrgAndTag(envVar.getValue()));
-                    } else if (envVar.getName().contains("IMAGES")) {
-                        envVar.setValue(StUtils.changeOrgAndTagInImageMap(envVar.getValue()));
-                    }
-            }
-        }
-
-        envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
-        // Apply updated env variables
-        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
-
-        return new DeploymentBuilder(clusterOperator)
-            .editSpec()
-                .withNewSelector()
-                    .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
-                .endSelector()
-                .editTemplate()
-                    .editSpec()
-                        .editFirstContainer()
-                            .withImage(StUtils.changeOrgAndTag(coImage))
-                            .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec();
-    }
-
     public static DoneableDeployment deployNewDeployment(Deployment deployment) {
         return new DoneableDeployment(deployment, co -> {
-            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
                         ResourceManager.kubeClient().createOrReplaceDeployment(co);
@@ -143,7 +67,7 @@ public class KubernetesResource {
 
     public static DoneableJob deployNewJob(Job job) {
         return new DoneableJob(job, kubernetesJob -> {
-            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_CR_CREATION,
+            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
                 () -> {
                     try {
                         ResourceManager.kubeClient().getClient().batch().jobs().inNamespace(kubeClient().getNamespace()).createOrReplace(kubernetesJob);
@@ -357,7 +281,7 @@ public class KubernetesResource {
                 .build();
 
         if (kubeClient().listPods(labelSelector).size() == 0) {
-            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the Kafka Connect");
+            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
         }
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", deploymentName, labelSelector);
@@ -430,7 +354,7 @@ public class KubernetesResource {
         return networkPolicy;
     }
 
-    private static Deployment getDeploymentFromYaml(String yamlPath) {
+    public static Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
 

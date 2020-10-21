@@ -39,6 +39,11 @@ release_prepare:
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
 	rm -f ./strimzi-$(RELEASE_VERSION).zip
+	rm -f ./strimzi-kafka-operator-helm-2-chart-$(RELEASE_VERSION).tgz
+	rm -f ./strimzi-kafka-operator-helm-3-chart-$(RELEASE_VERSION).tgz
+	rm -f ./strimzi-topic-operator-$(RELEASE_VERSION).yaml
+	rm -f ./strimzi-cluster-operator-$(RELEASE_VERSION).yaml
+	rm -f ./strimzi-user-operator-$(RELEASE_VERSION).yaml
 	mkdir ./strimzi-$(RELEASE_VERSION)
 
 release_version:
@@ -77,10 +82,8 @@ release_helm_version:
 
 release_helm_repo:
 	echo "Updating Helm Repository index.yaml"
-	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
-	for HELM_VERSION in 2 3; do	\
-		cp ./index.yaml ./helm-charts/helm$$HELM_VERSION/index.yaml;	\
-	done
+	helm3 repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
+	$(CP) ./index.yaml ./helm-charts/index.yaml
 	rm ./index.yaml
 
 release_single_file:
@@ -93,9 +96,8 @@ helm_pkg:
 	for HELM_VERSION in 2 3; do	\
 		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator/;	\
 		mkdir -p strimzi-$(RELEASE_VERSION)/helm$$HELM_VERSION-charts/;	\
-		$(CP) -r $$CHART_PATH strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME);	\
 		helm$$HELM_VERSION package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $$CHART_PATH;	\
-		cp strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-$$HELM_VERSION-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz;	\
+		$(CP) strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-$$HELM_VERSION-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz;	\
 		rm -rf strimzi-$(RELEASE_VERSION)/helm$$HELM_VERSION-charts/;	\
 	done
 	rm strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz

@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -36,7 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.kafkaclients.AbstractKafkaClient.generateRandomConsumerGroup;
+import static io.strimzi.systemtest.utils.ClientUtils.generateRandomConsumerGroup;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 public class KafkaClientsResource {
@@ -222,6 +221,10 @@ public class KafkaClientsResource {
     }
 
     public static DoneableDeployment consumerWithTracing(String bootstrapServer) {
+        return consumerWithTracing(bootstrapServer, "my-topic");
+    }
+
+    public static DoneableDeployment consumerWithTracing(String bootstrapServer, String topic) {
         String consumerName = "hello-world-consumer";
 
         Map<String, String> consumerLabels = new HashMap<>();
@@ -253,7 +256,7 @@ public class KafkaClientsResource {
                                       .endEnv()
                                     .addNewEnv()
                                         .withName("TOPIC")
-                                        .withValue("my-topic")
+                                        .withValue(topic)
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("GROUP_ID")
@@ -432,59 +435,6 @@ public class KafkaClientsResource {
             .build());
     }
 
-    public static DoneableDeployment deployKeycloak() {
-        String keycloakName = "keycloak";
-
-        Map<String, String> keycloakLabels = new HashMap<>();
-        keycloakLabels.put("app", keycloakName);
-
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
-            .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withLabels(keycloakLabels)
-                .withName(keycloakName)
-            .endMetadata()
-            .withNewSpec()
-                .withNewSelector()
-                    .withMatchLabels(keycloakLabels)
-                .endSelector()
-                .withReplicas(1)
-                .withNewTemplate()
-                    .withNewMetadata()
-                        .withLabels(keycloakLabels)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withContainers()
-                        .addNewContainer()
-                            .withName(keycloakName + "pod")
-                            .withImage("jboss/keycloak:8.0.1")
-                            .withPorts(
-                                new ContainerPortBuilder()
-                                    .withName("http")
-                                    .withContainerPort(8080)
-                                    .build(),
-                                new ContainerPortBuilder()
-                                    .withName("https")
-                                    .withContainerPort(8443)
-                                    .build()
-                            )
-                            .addNewEnv()
-                                .withName("KEYCLOAK_USER")
-                                .withValue("admin")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("KEYCLOAK_PASSWORD")
-                                .withValue("admin")
-                            .endEnv()
-                            // for enabling importing authorization script
-                            .withArgs("-Dkeycloak.profile.feature.upload_scripts=enabled")
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
-    }
-
     public static DoneableJob producerStrimzi(String producerName, String bootstrapServer, String topicName, int messageCount) {
         return producerStrimzi(producerName, bootstrapServer, topicName, messageCount, "");
     }
@@ -606,4 +556,117 @@ public class KafkaClientsResource {
                 .endSpec()
                 .build());
     }
+
+    // HTTP Bridge clients
+    public static DoneableJob producerStrimziBridge(String producerName, String bridgeHostName, int port, String topicName, int messageCount) {
+        return producerStrimziBridge(producerName, bridgeHostName, port, topicName, messageCount, 1000);
+    }
+
+    public static DoneableJob producerStrimziBridge(String producerName, String bridgeHostname, int port, String topicName, int messageCount, int sendInterval) {
+        Map<String, String> producerLabels = new HashMap<>();
+        producerLabels.put("app", producerName);
+        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
+
+        return KubernetesResource.deployNewJob(new JobBuilder()
+            .withNewMetadata()
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withLabels(producerLabels)
+                .withName(producerName)
+            .endMetadata()
+            .withNewSpec()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withLabels(producerLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRestartPolicy("OnFailure")
+                        .withContainers()
+                            .addNewContainer()
+                                .withName(producerName)
+                                .withImage("strimzi/kafka-http-producer:latest")
+                                .addNewEnv()
+                                    .withName("HOSTNAME")
+                                    .withValue(bridgeHostname)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("PORT")
+                                    .withValue(Integer.toString(port))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPIC")
+                                    .withValue(topicName)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("SEND_INTERVAL")
+                                    .withValue(Integer.toString(sendInterval))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("MESSAGE_COUNT")
+                                    .withValue(Integer.toString(messageCount))
+                                .endEnv()
+                            .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build());
+    }
+
+    public static DoneableJob consumerStrimziBridge(String consumerName, String bootstrapServer, int port, String topicName, int messageCount) {
+        return consumerStrimziBridge(consumerName, bootstrapServer, port, topicName, messageCount, 1000, generateRandomConsumerGroup());
+    }
+
+    public static DoneableJob consumerStrimziBridge(String consumerName, String bridgeHostname, int port, String topicName, int messageCount, int pollInterval, String consumerGroup) {
+        Map<String, String> consumerLabels = new HashMap<>();
+        consumerLabels.put("app", consumerName);
+        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
+
+        return KubernetesResource.deployNewJob(new JobBuilder()
+            .withNewMetadata()
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withLabels(consumerLabels)
+                .withName(consumerName)
+            .endMetadata()
+            .withNewSpec()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withLabels(consumerLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRestartPolicy("OnFailure")
+                        .withContainers()
+                            .addNewContainer()
+                                .withName(consumerName)
+                                .withImage("strimzi/kafka-http-consumer:latest")
+                                .addNewEnv()
+                                    .withName("HOSTNAME")
+                                    .withValue(bridgeHostname)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("PORT")
+                                    .withValue(Integer.toString(port))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPIC")
+                                    .withValue(topicName)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("POLL_INTERVAL")
+                                    .withValue(Integer.toString(pollInterval))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("MESSAGE_COUNT")
+                                    .withValue(Integer.toString(messageCount))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("GROUP_ID")
+                                    .withValue(consumerGroup)
+                                .endEnv()
+                            .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build());
+    }
+
+
 }

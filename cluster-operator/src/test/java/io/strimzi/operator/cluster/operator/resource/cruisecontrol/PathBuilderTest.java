@@ -33,6 +33,7 @@ public class PathBuilderTest {
                         CruiseControlParameters.DRY_RUN.key + "=false&" +
                         CruiseControlParameters.VERBOSE.key + "=true&" +
                         CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key + "=false&" +
+                        CruiseControlParameters.EXCLUDED_TOPICS.key + "=test-.*&" +
                         CruiseControlParameters.GOALS.key + "=");
 
         StringBuilder goalStringBuilder = new StringBuilder();
@@ -68,6 +69,7 @@ public class PathBuilderTest {
                 .addParameter(CruiseControlParameters.DRY_RUN, "false")
                 .addParameter(CruiseControlParameters.VERBOSE, "true")
                 .addParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
+                .addParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
                 .addParameter(CruiseControlParameters.GOALS, GOALS)
                 .build();
 
@@ -82,6 +84,7 @@ public class PathBuilderTest {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
                 .withVerboseResponse()
                 .withFullRun()
+                .withExcludedTopics("test-.*")
                 .withGoals(GOALS)
                 .build();
 

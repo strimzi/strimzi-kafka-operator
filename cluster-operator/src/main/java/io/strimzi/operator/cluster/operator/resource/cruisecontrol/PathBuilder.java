@@ -73,6 +73,13 @@ public class PathBuilder {
                     .addParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
                     .addParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()));
 
+            if (options.getExcludedTopics() != null) {
+                builder.addParameter(CruiseControlParameters.EXCLUDED_TOPICS, options.getExcludedTopics());
+            }
+            if (options.getReplicaMovementStrategies() != null) {
+                builder.addParameter(CruiseControlParameters.REPLICA_MOVEMENT_STRATEGIES, options.getReplicaMovementStrategies());
+            }
+
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_PARTITION_MOVEMENTS, options.getConcurrentPartitionMovementsPerBroker());
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS, options.getConcurrentIntraBrokerPartitionMovements());
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_LEADER_MOVEMENTS, options.getConcurrentLeaderMovements());

@@ -14,7 +14,7 @@ Depending on your requirements, you can:
 
 When you have Prometheus and Grafana enabled, Kafka Exporter provides additional monitoring related to consumer lag.
 
-Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^].
+Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^] as described in the _Using Strimzi_ guide.
 
 .Additional resources
 * For more information about Prometheus, see the link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation].
@@ -28,3 +28,5 @@ include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 include::assembly_metrics-kafka-exporter.adoc[leveloffset=+1]
 //How to set up Kafka Bridge
 include::assembly_metrics-kafka-bridge.adoc[leveloffset=+1]
+//How to set up Cruise Control
+include::assembly_metrics-cruise-control.adoc[leveloffset=+1]

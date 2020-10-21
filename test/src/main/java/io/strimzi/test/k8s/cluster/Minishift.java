@@ -8,11 +8,14 @@ import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.cmdClient.Oc;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Minishift implements KubeCluster {
 
     private static final String CMD = "minishift";
     private static final String OLM_NAMESPACE = "openshift-operators";
+    private static final Logger LOGGER = LogManager.getLogger(Minishift.class);
 
     @Override
     public boolean isAvailable() {
@@ -26,6 +29,7 @@ public class Minishift implements KubeCluster {
             return output.contains("Minishift:  Running")
                     && output.contains("OpenShift:  Running");
         } catch (KubeClusterException e) {
+            LOGGER.debug("Error:", e);
             return false;
         }
     }

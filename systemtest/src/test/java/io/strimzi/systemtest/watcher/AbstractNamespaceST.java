@@ -6,9 +6,9 @@ package io.strimzi.systemtest.watcher;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -17,15 +17,16 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -37,7 +38,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
-    private static final String TOPIC_EXAMPLES_DIR = "../examples/topic/kafka-topic.yaml";
+    private static final String TOPIC_EXAMPLES_DIR = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = cluster.setNamespace(namespace);
@@ -48,13 +49,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
                     .getStatus().getConditions().get(0);
             LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
-            return kafkaCondition.getType().equals("Ready");
+            return kafkaCondition.getType().equals(Ready.toString());
         });
 
         Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
                 .getStatus().getConditions().get(0);
 
-        assertThat(kafkaCondition.getType(), is("Ready"));
+        assertThat(kafkaCondition.getType(), is(Ready.toString()));
         cluster.setNamespace(previousNamespace);
     }
 
@@ -75,11 +76,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
         cluster.setNamespace(topicNamespace);
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
-            cluster.setNamespace(kafkaClusterNamespace);
-            List<String> topics2 = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
-            return topics2.contains(topic);
-        });
+        KafkaTopicUtils.waitForKafkaTopicReady(topic);
+        cluster.setNamespace(kafkaClusterNamespace);
     }
 
     void deleteNewTopic(String namespace, String topic) {
@@ -104,7 +102,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .endSpec().done();
         KafkaConnectorUtils.waitForConnectorReady(clusterName);
 
-        String kafkaConnectPodName = kubeClient().listPods("type", connectLabel).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, connectLabel).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
         KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();

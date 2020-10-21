@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.io.strimzi.test.mockkube;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -73,7 +74,7 @@ public class MockKubeRegressionTest {
 
             }
         });
-        client.pods().inNamespace("ns").withName(ns.get(0).getMetadata().getName()).cascading(true).delete();
+        client.pods().inNamespace("ns").withName(ns.get(0).getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
         assertThat(deleted.get(), is(true));
         assertThat(recreated.get(), is(true));
@@ -82,7 +83,7 @@ public class MockKubeRegressionTest {
         ns = client.pods().inNamespace("ns").list().getItems();
         assertThat(ns, hasSize(3));
 
-        client.apps().statefulSets().inNamespace("ns").withName("foo").cascading(true).delete();
+        client.apps().statefulSets().inNamespace("ns").withName("foo").withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
     }
 }

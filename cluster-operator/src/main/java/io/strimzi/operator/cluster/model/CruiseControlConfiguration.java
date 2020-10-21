@@ -6,6 +6,8 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.CruiseControlSpec;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlGoals;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,26 +27,22 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      */
     protected static final List<String> CRUISE_CONTROL_GOALS_LIST = Collections.unmodifiableList(
         Arrays.asList(
-                CruiseControl.RACK_AWARENESS_GOAL,
-                CruiseControl.REPLICA_CAPACITY_GOAL,
-                CruiseControl.DISK_CAPACITY_GOAL,
-                CruiseControl.NETWORK_INBOUND_CAPACITY_GOAL,
-                CruiseControl.NETWORK_OUTBOUND_CAPACITY_GOAL,
-                // TODO: The CPU metric are currently not reported correctly when running on Kubernetes
-                //       we should add this back in once fixed upstream,
-                //       CC issue: https://github.com/linkedin/cruise-control/issues/1242
-                //       Strimzi issue: https://github.com/strimzi/strimzi-kafka-operator/issues/3215
-                //CruiseControl.CPU_CAPACITY_GOAL,
-                CruiseControl.REPLICA_DISTRIBUTION_GOAL,
-                CruiseControl.POTENTIAL_NETWORK_OUTAGE_GOAL,
-                CruiseControl.DISK_USAGE_DISTRIBUTION_GOAL,
-                CruiseControl.NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL,
-                CruiseControl.NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL,
-                CruiseControl.CPU_USAGE_DISTRIBUTION_GOAL,
-                CruiseControl.TOPIC_REPLICA_DISTRIBUTION_GOAL,
-                CruiseControl.LEADER_REPLICA_DISTRIBUTION_GOAL,
-                CruiseControl.LEADER_BYTES_IN_DISTRIBUTION_GOAL,
-                CruiseControl.PREFERRED_LEADER_ELECTION_GOAL
+                CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.DISK_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.NETWORK_INBOUND_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.NETWORK_OUTBOUND_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.CPU_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.REPLICA_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.POTENTIAL_NETWORK_OUTAGE_GOAL.toString(),
+                CruiseControlGoals.DISK_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.CPU_USAGE_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.TOPIC_REPLICA_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.LEADER_REPLICA_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.LEADER_BYTES_IN_DISTRIBUTION_GOAL.toString(),
+                CruiseControlGoals.PREFERRED_LEADER_ELECTION_GOAL.toString()
         )
      );
 
@@ -56,16 +54,12 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      */
     protected static final List<String> CRUISE_CONTROL_HARD_GOALS_LIST = Collections.unmodifiableList(
             Arrays.asList(
-                    CruiseControl.RACK_AWARENESS_GOAL,
-                    CruiseControl.REPLICA_CAPACITY_GOAL,
-                    CruiseControl.DISK_CAPACITY_GOAL,
-                    CruiseControl.NETWORK_INBOUND_CAPACITY_GOAL,
-                    CruiseControl.NETWORK_OUTBOUND_CAPACITY_GOAL
-                    // TODO: The CPU metric are currently not reported correctly when running on Kubernetes
-                    //       we should add this back in once fixed upstream,
-                    //       CC issue: https://github.com/linkedin/cruise-control/issues/1242
-                    //       Strimzi issue: https://github.com/strimzi/strimzi-kafka-operator/issues/3215
-                    //CruiseControl.CPU_CAPACITY_GOAL
+                    CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                    CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.DISK_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.NETWORK_INBOUND_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.NETWORK_OUTBOUND_CAPACITY_GOAL.toString(),
+                    CruiseControlGoals.CPU_CAPACITY_GOAL.toString()
             )
     );
 
@@ -73,22 +67,16 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
 
     protected static final List<String> CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST = Collections.unmodifiableList(
         Arrays.asList(
-                CruiseControl.RACK_AWARENESS_GOAL,
-                CruiseControl.REPLICA_CAPACITY_GOAL,
-                CruiseControl.DISK_CAPACITY_GOAL
+                CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
+                CruiseControlGoals.DISK_CAPACITY_GOAL.toString()
         )
     );
 
     public static final String CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS =
             String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
 
-    public static final String CRUISE_CONTROL_GOALS_CONFIG_KEY = "goals";
-    public static final String CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY = "default.goals";
-    public static final String CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY = "hard.goals";
-    public static final String CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY = "self.healing.goals";
-    public static final String CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY = "anomaly.detection.goals";
-
-   /*
+    /*
     * Map containing default values for required configuration properties
     */
     private static final Map<String, String> CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP;
@@ -97,15 +85,15 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
 
     static {
-        Map<String, String> config = new HashMap<>(7);
-        config.put("partition.metrics.window.ms", Integer.toString(300_000));
-        config.put("num.partition.metrics.windows", "1");
-        config.put("broker.metrics.window.ms", Integer.toString(300_000));
-        config.put("num.broker.metrics.windows", "20");
-        config.put("completed.user.task.retention.time.ms", Long.toString(TimeUnit.DAYS.toMillis(1)));
-        config.put(CRUISE_CONTROL_GOALS_CONFIG_KEY, CRUISE_CONTROL_GOALS);
-        config.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY, CRUISE_CONTROL_GOALS);
-        config.put(CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY, CRUISE_CONTROL_HARD_GOALS);
+        Map<String, String> config = new HashMap<>(8);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getName(), Integer.toString(300_000));
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getName(), "1");
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getName(), Integer.toString(300_000));
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getName(), "20");
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getName(), Long.toString(TimeUnit.DAYS.toMillis(1)));
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_HARD_GOALS);
         CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableMap(config);
 
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);

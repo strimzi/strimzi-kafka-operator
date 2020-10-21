@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.Kafka;
@@ -46,6 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_FROM_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
@@ -60,6 +62,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -188,6 +191,15 @@ public class KafkaUpdateTest {
                     public Future<Void> waitForQuiescence(StatefulSet sts) {
                         return Future.succeededFuture();
                     }
+                    @Override
+                    public Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+                        try {
+                            rollExceptions.accept(0);
+                            return Future.succeededFuture();
+                        } catch (RuntimeException e) {
+                            return Future.failedFuture(e);
+                        }
+                    }
                 }
                 .kafkaVersionChange();
         AtomicReference<UpgradeException> ex = new AtomicReference<>();
@@ -207,6 +219,8 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithEmptyConfig(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         try {
             testUpgradeMinorToPrevMessageFormatConfig(context, emptyMap(), true);
         } catch (UpgradeException e) {
@@ -217,6 +231,8 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithSameMessageFormatConfig(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
                 // Minor version upgrade doesn't require proto or mvg version change, so single phase
@@ -225,11 +241,15 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithOldMessageFormatConfig(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context, singletonMap(LOG_MESSAGE_FORMAT_VERSION, "1.0"), true);
     }
 
     @Test
     public void upgradeMinorToPrevWithSameProtocolVersion(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_PROTOCOL_VERSION),
@@ -239,6 +259,8 @@ public class KafkaUpdateTest {
 
     @Test
     public void upgradeMinorToPrevWithOldProtocolVersion(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         testUpgradeMinorToPrevMessageFormatConfig(context,
                 (Map) map(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION,
                         INTERBROKER_PROTOCOL_VERSION, "1.1"),
@@ -293,6 +315,8 @@ public class KafkaUpdateTest {
      */
     @Test
     public void testUpgradeMinorToPrevMessageFormatConfig_exceptionDuringPhase0Roll(VertxTestContext context) throws IOException {
+        assumeFalse(KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION.equals(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), "This test only runs when previous minor Kafka version and previous kafka version are different!");
+
         Map<String, Object> initialConfig = singletonMap(LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_MINOR_FORMAT_VERSION);
         String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
         String upgradedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;

@@ -16,15 +16,17 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.OlmResource;
+import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.resources.operator.HelmResource;
+import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
-import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
@@ -41,9 +43,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.File;
-import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,10 +52,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
-import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -88,32 +85,23 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
-    protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
-    protected static final String CONSUMER_GROUP_NAME = "my-consumer-group";
-
-    public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
-    public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
-    public static final String REQUESTS_MEMORY = "512Mi";
-    public static final String REQUESTS_CPU = "200m";
-    public static final String LIMITS_MEMORY = "512Mi";
-    public static final String LIMITS_CPU = "1000m";
 
     protected String testClass;
     protected String testName;
 
-    protected Random rng = new Random();
+    public static Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
+
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
     public static final String EXAMPLE_TOPIC_NAME = "my-topic";
-
+    public static final String AVAILABILITY_TOPIC_SOURCE_NAME = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
+    public static final String AVAILABILITY_TOPIC_TARGET_NAME = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
-    private HelmClient helmClient() {
-        return cluster.helmClient().namespace(cluster.getNamespace());
-    }
+    public static final String CONSUMER_GROUP_NAME = ClientUtils.generateRandomConsumerGroup();
 
     /**
      * This method install Strimzi Cluster Operator based on environment variable configuration.
@@ -123,14 +111,21 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void installClusterOperator(String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) throws Exception {
         if (Environment.isOlmInstall()) {
+            LOGGER.info("Going to install ClusterOperator via OLM");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
             OlmResource.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+        } else if (Environment.isHelmInstall()) {
+            LOGGER.info("Going to install ClusterOperator via Helm");
+            cluster.setNamespace(namespace);
+            cluster.createNamespace(namespace);
+            HelmResource.clusterOperator(operationTimeout, reconciliationInterval);
         } else {
+            LOGGER.info("Going to install ClusterOperator via Yaml bundle");
             prepareEnvForOperator(namespace, bindingsNamespaces);
             applyRoleBindings(namespace, bindingsNamespaces);
-            // 050-Deployment
-            KubernetesResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
+            // 060-Deployment
+            BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
         }
     }
 
@@ -197,52 +192,6 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param operationTimeout timeout for CO operations
-     * @param reconciliationInterval CO reconciliation interval
-     */
-    protected void recreateTestEnv(String coNamespace, long operationTimeout, long reconciliationInterval) throws Exception {
-        recreateTestEnv(coNamespace, Collections.singletonList(coNamespace), operationTimeout, reconciliationInterval);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     * @param operationTimeout timeout for CO operations
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout) throws Exception {
-        recreateTestEnv(coNamespace, bindingsNamespaces, operationTimeout, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    /**
-     * Recreate namespace and CO after test failure
-     * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
-     * @param operationTimeout timeout for CO operations
-     * @param reconciliationInterval CO reconciliation interval
-     */
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) throws Exception {
-        ResourceManager.deleteMethodResources();
-        ResourceManager.deleteClassResources();
-
-        KubeClusterResource.getInstance().deleteClusterOperatorInstallFiles();
-        KubeClusterResource.getInstance().deleteNamespaces();
-
-        installClusterOperator(coNamespace, bindingsNamespaces, operationTimeout, reconciliationInterval);
-    }
-
-    /**
      * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
@@ -250,15 +199,15 @@ public abstract class AbstractST implements TestSeparator {
     public static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
         for (String bindingsNamespace : bindingsNamespaces) {
             // 020-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 021-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 030-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
             // 031-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
             // 032-RoleBinding
-            KubernetesResource.roleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
         }
     }
 
@@ -289,11 +238,11 @@ public abstract class AbstractST implements TestSeparator {
 
         Container container = (Container) optional.get();
         Map<String, Quantity> limits = container.getResources().getLimits();
-        assertThat(limits.get("memory").getAmount(), is(memoryLimit));
-        assertThat(limits.get("cpu").getAmount(), is(cpuLimit));
+        assertThat(limits.get("memory"), is(new Quantity(memoryLimit)));
+        assertThat(limits.get("cpu"), is(new Quantity(cpuLimit)));
         Map<String, Quantity> requests = container.getResources().getRequests();
-        assertThat(requests.get("memory").getAmount(), is(memoryRequest));
-        assertThat(requests.get("cpu").getAmount(), is(cpuRequest));
+        assertThat(requests.get("memory"), is(new Quantity(memoryRequest)));
+        assertThat(requests.get("cpu"), is(new Quantity(cpuRequest)));
     }
 
     private void assertCmdOption(List<String> cmd, String expectedXmx) {
@@ -345,47 +294,6 @@ public abstract class AbstractST implements TestSeparator {
         }
         return images;
     }
-
-    /**
-     * Deploy CO via helm chart. Using config file stored in test resources.
-     */
-    public void deployClusterOperatorViaHelmChart() {
-        String dockerReg = Environment.STRIMZI_REGISTRY;
-        String dockerOrg = Environment.STRIMZI_ORG;
-        String dockerTag = Environment.STRIMZI_TAG;
-
-        Map<String, String> values = Collections.unmodifiableMap(Stream.of(
-            entry("imageRepositoryOverride", dockerReg + "/" + dockerOrg),
-            entry("imageTagOverride", dockerTag),
-            entry("image.pullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
-            entry("resources.requests.memory", REQUESTS_MEMORY),
-            entry("resources.requests.cpu", REQUESTS_CPU),
-            entry("resources.limits.memory", LIMITS_MEMORY),
-            entry("resources.limits.cpu", LIMITS_CPU),
-            entry("logLevel", Environment.STRIMZI_LOG_LEVEL))
-            .collect(TestUtils.entriesToMap()));
-
-        LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
-        // We need to delete all CRDs before install Strimzi via helm, otherwise install fail when some CRD is already created
-        cmdKubeClient().delete(KubeClusterResource.CO_INSTALL_DIR);
-        Path pathToChart = new File(HELM_CHART).toPath();
-        String oldNamespace = cluster.setNamespace("kube-system");
-        InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
-        String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
-        cmdKubeClient().applyContent(helmServiceAccount);
-        helmClient().init();
-        cluster.setNamespace(oldNamespace);
-        helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
-    }
-
-    /**
-     * Delete CO deployed via helm chart.
-     */
-    public void deleteClusterOperatorViaHelmChart() {
-        LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
-        helmClient().delete(HELM_RELEASE_NAME);
-    }
-
 
     /**
      * Verifies container configuration for specific component (kafka/zookeeper/bridge/mm) by environment key.
@@ -513,12 +421,10 @@ public abstract class AbstractST implements TestSeparator {
 
     void verifyLabelsForCRDs() {
         LOGGER.info("Verifying labels for CRDs");
-        kubeClient().listCustomResourceDefinition().stream()
-            .filter(crd -> crd.getMetadata().getName().startsWith("kafka"))
-            .forEach(crd -> {
-                LOGGER.info("Verifying labels for custom resource {}", crd.getMetadata().getName());
-                assertThat(crd.getMetadata().getLabels().get("app"), is("strimzi"));
-            });
+        String crds = cmdKubeClient().exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
+        crds = crds.replace(" ", "\n").trim();
+        assertThat(crds.split("\n").length, is(Crds.getNumCrds()));
+
     }
 
     void verifyLabelsForKafkaAndZKServices(String clusterName, String appName) {
@@ -650,13 +556,13 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String status, String type) {
+    protected void verifyCRStatusCondition(Condition condition, String status, Enum<?> type) {
         verifyCRStatusCondition(condition, null, null, status, type);
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, String type) {
+    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, Enum<?> type) {
         assertThat(condition.getStatus(), is(status));
-        assertThat(condition.getType(), is(type));
+        assertThat(condition.getType(), is(type.toString()));
 
         if (condition.getMessage() != null && condition.getReason() != null) {
             assertThat(condition.getMessage(), containsString(message));
@@ -699,8 +605,6 @@ public abstract class AbstractST implements TestSeparator {
         for (int i = 0; i < kafkaPods; i++) {
             String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "kafka");
             assertThat("Kafka pod " + i + " uses wrong image", TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), is(imgFromPod));
-            imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "tls-sidecar");
-            assertThat("Kafka TLS side car for pod " + i + " uses wrong image", imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), is(imgFromPod));
             if (rackAwareEnabled) {
                 String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
                 assertThat(initContainerImage, is(imgFromDeplConf.get(KAFKA_INIT_IMAGE)));
@@ -747,13 +651,7 @@ public abstract class AbstractST implements TestSeparator {
             assertionError = new AssertionError(e);
         }
 
-        if (Environment.SKIP_TEARDOWN == null) {
-            if (context.getExecutionException().isPresent() || assertionError != null) {
-                LOGGER.info("Test execution contains exception, going to recreate test environment");
-                recreateTestEnv(cluster.getTestNamespace(), cluster.getBindingsNamespaces());
-                KubernetesResource.applyDefaultNetworkPolicySettings(cluster.getBindingsNamespaces());
-                LOGGER.info("Env recreated.");
-            }
+        if (!Environment.SKIP_TEARDOWN) {
             tearDownEnvironmentAfterEach();
         }
 
@@ -764,7 +662,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @AfterAll
     void teardownEnvironmentClass() {
-        if (Environment.SKIP_TEARDOWN == null) {
+        if (!Environment.SKIP_TEARDOWN) {
             tearDownEnvironmentAfterAll();
             teardownEnvForOperator();
         }

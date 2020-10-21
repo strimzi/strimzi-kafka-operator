@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -27,7 +28,6 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -41,6 +41,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -64,14 +65,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
+import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
+import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -91,6 +96,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testKafkaStatus() {
         LOGGER.info("Checking status of deployed kafka cluster");
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
@@ -137,7 +143,7 @@ class CustomResourceStatusST extends AbstractST {
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
-        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is("Ready"));
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready.toString()));
         LOGGER.info("KafkaUser is in desired state: Ready");
     }
 
@@ -155,7 +161,7 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
         LOGGER.info("KafkaUser Message: {}", kafkaCondition.getMessage());
         LOGGER.info("KafkaUser Reason: {}", kafkaCondition.getReason());
-        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is("NotReady"));
+        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(NotReady.toString()));
         LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
 
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).delete();
@@ -165,7 +171,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatus() {
         // Deploy Mirror Maker
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).done();
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
@@ -184,7 +190,7 @@ class CustomResourceStatusST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatusWrongBootstrap() {
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).done();
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
@@ -197,6 +203,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
+    @Tag(BRIDGE)
     void testKafkaBridgeStatus() {
         String bridgeUrl = KafkaBridgeResources.url(CLUSTER_NAME, NAMESPACE, 8080);
         KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
@@ -297,6 +304,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
+    @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectorWithoutClusterConfig() {
         // This test check NPE when connect cluster is not specified in labels
         // Check for NPE in CO logs is performed after every test in BaseST
@@ -309,7 +317,7 @@ class CustomResourceStatusST extends AbstractST {
 
         KafkaConnectorUtils.waitForConnectorNotReady(CLUSTER_NAME);
 
-        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).cascading(true).delete();
+        KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     @Test
@@ -360,6 +368,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @Test
+    @Tag(MIRROR_MAKER2)
     void testKafkaMirrorMaker2WrongBootstrap() {
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithoutWait(
                 KafkaMirrorMaker2Resource.defaultKafkaMirrorMaker2(CLUSTER_NAME,
@@ -409,12 +418,6 @@ class CustomResourceStatusST extends AbstractST {
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
-        deployTestSpecificResources();
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
         deployTestSpecificResources();
     }
 
@@ -531,7 +534,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+            .anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
             .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
@@ -542,7 +545,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals("NotReady")), is(true));
+            .anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
             .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()

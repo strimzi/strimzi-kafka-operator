@@ -284,13 +284,10 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     public Service generateService() {
-        List<ServicePort> ports = new ArrayList<>(2);
+        List<ServicePort> ports = new ArrayList<>(1);
         ports.add(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
-        if (isMetricsEnabled()) {
-            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
-        }
 
-        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(prometheusAnnotations(), templateServiceAnnotations));
+        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceAnnotations));
     }
 
     protected List<ContainerPort> getContainerPortList() {
@@ -675,5 +672,14 @@ public class KafkaConnectCluster extends AbstractModel {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Returns the Tracing object with tracing configuration or null if tracing was not enabled.
+     *
+     * @return  Tracing object with tracing configuration
+     */
+    public Tracing getTracing() {
+        return tracing;
     }
 }

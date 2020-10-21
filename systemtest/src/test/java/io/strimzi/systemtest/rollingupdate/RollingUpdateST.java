@@ -27,7 +27,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
@@ -50,7 +49,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -58,6 +56,8 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -78,6 +78,7 @@ class RollingUpdateST extends AbstractST {
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testRecoveryDuringZookeeperRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -123,7 +124,7 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Verifying stability of kafka pods");
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
@@ -137,17 +138,17 @@ class RollingUpdateST extends AbstractST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
 
         // Create new topic to ensure, that ZK is working properly
-        String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -156,6 +157,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testRecoveryDuringKafkaRollingUpdate() throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -194,7 +196,7 @@ class RollingUpdateST extends AbstractST {
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         PodUtils.waitForPendingPod(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
@@ -215,16 +217,16 @@ class RollingUpdateST extends AbstractST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         ClientUtils.waitUntilClientReceivedMessagesTls(internalKafkaClient, MESSAGE_COUNT);
 
         // Create new topic to ensure, that ZK is working properly
-        String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -235,6 +237,7 @@ class RollingUpdateST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
+    @Tag(SCALABILITY)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -294,7 +297,7 @@ class RollingUpdateST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStsName, scaleTo);
         LOGGER.info("Kafka scale up to {} finished", scaleTo);
 
-        internalKafkaClient.setConsumerGroup(CONSUMER_GROUP_NAME + "-" + rng.nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
@@ -311,7 +314,7 @@ class RollingUpdateST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), zookeeperScaleTo);
         LOGGER.info("Kafka scale up to {} finished", zookeeperScaleTo);
 
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
 
@@ -324,7 +327,7 @@ class RollingUpdateST extends AbstractST {
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -333,11 +336,11 @@ class RollingUpdateST extends AbstractST {
                 .filter(pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME))).count(), is(initialReplicas));
 
         // Create new topic to ensure, that ZK is working properly
-        String newTopicName = "new-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, newTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(newTopicName);
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -346,6 +349,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(SCALABILITY)
     void testZookeeperScaleUpScaleDown() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -397,17 +401,17 @@ class RollingUpdateST extends AbstractST {
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
 
         // Create new topic to ensure, that ZK is working properly
-        String scaleUpTopicName = "new-scale-up-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String scaleUpTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, scaleUpTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(scaleUpTopicName);
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -423,7 +427,7 @@ class RollingUpdateST extends AbstractST {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), initialZkReplicas);
 
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         // Wait for one zk pods will became leader and others follower state
         KafkaUtils.waitForZkMntr(CLUSTER_NAME, ZK_SERVER_STATE, 0, 1, 2);
@@ -431,11 +435,11 @@ class RollingUpdateST extends AbstractST {
         assertThat(received, is(sent));
 
         // Create new topic to ensure, that ZK is working properly
-        String scaleDownTopicName = "new-scale-down-test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        String scaleDownTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopicResource.topic(CLUSTER_NAME, scaleDownTopicName, 1, 1).done();
 
         internalKafkaClient.setTopicName(scaleDownTopicName);
-        internalKafkaClient.setConsumerGroup("group" + new Random().nextInt(Integer.MAX_VALUE));
+        internalKafkaClient.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
@@ -449,6 +453,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testBrokerConfigurationChangeTriggerRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -464,6 +469,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testManualKafkaConfigMapChangeDontTriggerRollingUpdate() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -481,12 +487,13 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate() {
+        // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
-        Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
@@ -524,17 +531,10 @@ class RollingUpdateST extends AbstractST {
             kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
                     .withName(configMapLoggersName)
                     .build());
-            kafka.getSpec().getEntityOperator().getTopicOperator().setLogging(new ExternalLoggingBuilder()
-                    .withName(configMapLoggersName)
-                    .build());
-            kafka.getSpec().getEntityOperator().getUserOperator().setLogging(new ExternalLoggingBuilder()
-                    .withName(configMapLoggersName)
-                    .build());
         });
 
         zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
 
         configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("INFO", "DEBUG"));
         configMapLoggers.getData().put("log4j2.properties", loggersConfig.replace("INFO", "DEBUG"));
@@ -542,10 +542,10 @@ class RollingUpdateST extends AbstractST {
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testClusterOperatorFinishAllRollingUpdates() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
@@ -582,6 +582,7 @@ class RollingUpdateST extends AbstractST {
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
             " new bootstrap DNS is appended inside certificate in subject alternative names property.")
     @Test
+    @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
@@ -628,6 +629,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Tag(ROLLING_UPDATE)
     void testMetricsChange() {
         //Kafka
         Map<String, Object> kafkaRule = new HashMap<>();
@@ -727,11 +729,6 @@ class RollingUpdateST extends AbstractST {
 
         kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
-    }
-
-    @Override
-    protected void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) throws Exception {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces, Constants.CO_OPERATION_TIMEOUT_SHORT);
     }
 
     @BeforeAll

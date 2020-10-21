@@ -64,7 +64,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak].
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
-|config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms).
+|config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms).
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
@@ -94,7 +94,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |map
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tlsSidecar           1.2+<.<|TLS sidecar configuration.
+|tlsSidecar           1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
@@ -254,44 +254,48 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 [options="header"]
 |====
-|Property                               |Description
-|accessTokenIsJwt                1.2+<.<|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+|Property                                  |Description
+|accessTokenIsJwt                   1.2+<.<|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
 |boolean
-|checkAccessTokenType            1.2+<.<|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+|checkAccessTokenType               1.2+<.<|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
 |boolean
-|checkIssuer                     1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
+|checkIssuer                        1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
 |boolean
-|clientId                        1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|clientId                           1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |string
-|clientSecret                    1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|clientSecret                       1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
+|disableTlsHostnameVerification     1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|enableECDSA                     1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+|enableECDSA                        1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
 |boolean
-|fallbackUserNameClaim           1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
+|fallbackUserNameClaim              1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string
-|fallbackUserNamePrefix          1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
+|fallbackUserNamePrefix             1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
 |string
-|introspectionEndpointUri        1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
+|introspectionEndpointUri           1.2+<.<|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
-|jwksEndpointUri                 1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
+|jwksEndpointUri                    1.2+<.<|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
 |string
-|jwksExpirySeconds               1.2+<.<|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+|jwksExpirySeconds                  1.2+<.<|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
 |integer
-|jwksRefreshSeconds              1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+|jwksMinRefreshPauseSeconds         1.2+<.<|The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
 |integer
-|tlsTrustedCertificates          1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
+|jwksRefreshSeconds                 1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+|integer
+|maxSecondsWithoutReauthentication  1.2+<.<|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+|integer
+|tlsTrustedCertificates             1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|type                            1.2+<.<|Must be `oauth`.
+|type                               1.2+<.<|Must be `oauth`.
 |string
-|userInfoEndpointUri             1.2+<.<|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
+|userInfoEndpointUri                1.2+<.<|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
 |string
-|userNameClaim                   1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
+|userNameClaim                      1.2+<.<|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
 |string
-|validIssuerUri                  1.2+<.<|URI of the token issuer used for authentication.
+|validIssuerUri                     1.2+<.<|URI of the token issuer used for authentication.
 |string
-|validTokenType                  1.2+<.<|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
+|validTokenType                     1.2+<.<|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
 |string
 |====
 
@@ -789,8 +793,12 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |disableTlsHostnameVerification  1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|delegateToKafkaAcls             1.2+<.<|Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies.Default value is `false`.
+|delegateToKafkaAcls             1.2+<.<|Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
 |boolean
+|grantsRefreshPeriodSeconds      1.2+<.<|The time between two consecutive grants refresh runs in seconds. The default value is 60.
+|integer
+|grantsRefreshPoolSize           1.2+<.<|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
+|integer
 |superUsers                      1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
 |string array
 |====
@@ -985,7 +993,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |kafkaContainer            1.2+<.<|Template for the Kafka broker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer       1.2+<.<|Template for the Kafka broker TLS sidecar container.
+|tlsSidecarContainer       1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |initContainer             1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
@@ -1213,6 +1221,9 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 [id='type-TopicOperatorSpec-{context}']
 ### `TopicOperatorSpec` schema reference
 
+*The type `TopicOperatorSpec` has been deprecated.*
+Please use xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`] instead.
+
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
@@ -1392,26 +1403,28 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |Property               |Description
 |image           1.2+<.<|The docker image for the pods.
 |string
-|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl.
-|map
+|tlsSidecar      1.2+<.<|TLS sidecar configuration.
+|xref:type-TlsSidecar-{context}[`TlsSidecar`]
+|resources       1.2+<.<|CPU and memory resources to reserve for the Cruise Control container. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[core/v1 resourcerequirements].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |livenessProbe   1.2+<.<|Pod liveness checking for the Cruise Control container.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe  1.2+<.<|Pod readiness checking for the Cruise Control container.
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions      1.2+<.<|JVM Options for the Cruise Control container.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|resources       1.2+<.<|CPU and memory resources to reserve for the Cruise Control container. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[core/v1 resourcerequirements].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |logging         1.2+<.<|Logging configuration (log4j1) for Cruise Control. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tlsSidecar      1.2+<.<|TLS sidecar configuration.
-|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template        1.2+<.<|Template to specify how Cruise Control resources, `Deployments` and `Pods`, are generated.
 |xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`]
 |brokerCapacity  1.2+<.<|The Cruise Control `brokerCapacity` configuration.
 |xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
+|config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl.
+|map
+|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
 |====
 
 [id='type-CruiseControlTemplate-{context}']
@@ -1972,10 +1985,8 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |string
 |connectorPlugins    1.2+<.<|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
+|labelSelector       1.2+<.<|Label selector for pods providing this resource.
+|string
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2088,10 +2099,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |buildConfigName     1.2+<.<|The name of the build configuration.
 |string
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
+|labelSelector       1.2+<.<|Label selector for pods providing this resource.
+|string
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2521,10 +2530,8 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
+|labelSelector       1.2+<.<|Label selector for pods providing this resource.
+|string
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2692,10 +2699,8 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |integer
 |url                 1.2+<.<|The URL at which external client applications can access the Kafka Bridge.
 |string
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
+|labelSelector       1.2+<.<|Label selector for pods providing this resource.
+|string
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2915,10 +2920,8 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
 |connectors          1.2+<.<|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
 |map array
-|podSelector         1.2+<.<|Label selector for pods providing this resource. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[meta/v1 labelselector].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta[LabelSelector]
+|labelSelector       1.2+<.<|Label selector for pods providing this resource.
+|string
 |replicas            1.2+<.<|The current number of pods being used to provide this resource.
 |integer
 |====
@@ -2947,8 +2950,10 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |Property                                        |Description
 |goals                                    1.2+<.<|A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
 |string array
-|skipHardGoalCheck                        1.2+<.<|Whether to allow the hard goals specified in the Kafka CR to be skipped in rebalance proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
+|skipHardGoalCheck                        1.2+<.<|Whether to allow the hard goals specified in the Kafka CR to be skipped in optimization proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
 |boolean
+|excludedTopics                           1.2+<.<|A regular expression where any matching topics will be excluded from the calculation of optimization proposals. This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported formar consult the documentation for that class.
+|string
 |concurrentPartitionMovementsPerBroker    1.2+<.<|The upper bound of ongoing partition replica movements going into/out of each broker. Default is 5.
 |integer
 |concurrentIntraBrokerPartitionMovements  1.2+<.<|The upper bound of ongoing partition replica movements between disks within each broker. Default is 2.
@@ -2957,6 +2962,8 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |integer
 |replicationThrottle                      1.2+<.<|The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.
 |integer
+|replicaMovementStrategies                1.2+<.<|A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.
+|string array
 |====
 
 [id='type-KafkaRebalanceStatus-{context}']
