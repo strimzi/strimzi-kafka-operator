@@ -224,20 +224,13 @@ class KafkaRollerST extends AbstractST {
         // Testing this scenario
         // 1. deploy Kafka with wrong pod template (looking for nonexistent node)
         // 2. wait for Kafka not ready
-        // 3. fix the Kafka by updating pod template to existing node
+        // 3. fix the Kafka CR
         // 4. wait for Kafka ready
 
-        Optional<Node> node = kubeClient().listNodes().stream().filter(nod -> nod.getMetadata().getName().contains("worker")).findFirst();
-        String nodeName = "localhost";
-        if (node.isPresent()) {
-            nodeName = node.get().getMetadata().getName();
-        }
-        cmdKubeClient().exec("label", "nodes", nodeName, "dedicated=Kafka_correct", "--overwrite");
-
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
-                .withKey("dedicated")
+                .withKey("dedicated_test")
                 .withNewOperator("In")
-                .withValues("Kafka_bad")
+                .withValues("Kafka")
                 .build();
 
         NodeSelectorTerm nst = new NodeSelectorTermBuilder()
@@ -267,26 +260,10 @@ class KafkaRollerST extends AbstractST {
                 .endSpec()
                 .build());
 
-        NodeSelectorRequirement nsr2 = new NodeSelectorRequirementBuilder()
-                .withKey("dedicated")
-                .withNewOperator("In")
-                .withValues("Kafka_correct")
-                .build();
-
-        NodeSelectorTerm nst2 = new NodeSelectorTermBuilder()
-                .withMatchExpressions(nsr2)
-                .build();
-
-        NodeAffinity na = new NodeAffinityBuilder()
-                .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                    .withNodeSelectorTerms(nst2)
-                .endRequiredDuringSchedulingIgnoredDuringExecution()
-                .build();
-
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
-        LOGGER.info("Setting affinity to the correct one");
+        LOGGER.info("Removing requirement for the affinity");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
-                kafka.getSpec().getKafka().getTemplate().getPod().getAffinity().setNodeAffinity(na));
+                kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null));
 
         // kafka should get back ready in some reasonable time frame
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
