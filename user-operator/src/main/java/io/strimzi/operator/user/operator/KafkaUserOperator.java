@@ -75,7 +75,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * @param caCertName The name of the Secret containing the clients CA certificate.
      * @param caKeyName The name of the Secret containing the clients CA private key.
      * @param caNamespace The namespace of the Secret containing the clients CA certificate and private key.
-     * @param secretPrefix
+     * @param secretPrefix The prefix used to add to the name of the Secrets generated from the KafkaUser resources.
      */
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,

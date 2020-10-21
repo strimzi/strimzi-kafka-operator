@@ -98,7 +98,7 @@ public class KafkaUserModel {
      * @param clientsCaCert The clients CA certificate Secret.
      * @param clientsCaKey The clients CA key Secret.
      * @param userSecret Kubernetes secret with existing user certificate.
-     * @param secretPrefix
+     * @param secretPrefix The prefix used to add to the name of the Secret generated from the KafkaUser resource.
      * @return The user model.
      */
     public static KafkaUserModel fromCrd(CertManager certManager,
