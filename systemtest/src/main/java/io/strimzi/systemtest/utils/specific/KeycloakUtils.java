@@ -42,6 +42,13 @@ public class KeycloakUtils {
         Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, namespace);
     }
 
+    /**
+     * Returns token from Keycloak API
+     * @param baseURI base uri for accessing Keycloak API
+     * @param userName name of user
+     * @param password password of user
+     * @return user token
+     */
     public static String getToken(String baseURI, String userName, String password) {
         String coPodName = kubeClient().getClusterOperatorPodName();
         return new JsonObject(
@@ -57,6 +64,13 @@ public class KeycloakUtils {
             ).out()).getString("access_token");
     }
 
+    /**
+     * Returns specific realm from Keycloak API
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param desiredRealm realm we want to get
+     * @return JsonObject with whole desired realm from Keycloak
+     */
     public static JsonObject getKeycloakRealm(String baseURI, String token, String desiredRealm) {
         String coPodName = kubeClient().getClusterOperatorPodName();
         return new JsonObject(cmdKubeClient().execInPod(
@@ -71,6 +85,13 @@ public class KeycloakUtils {
         ).out());
     }
 
+    /**
+     * Returns all clients for specific realm
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param desiredRealm realm we want to get clients from
+     * @return JsonArray with all clients set for the specific realm
+     */
     public static JsonArray getKeycloakRealmClients(String baseURI, String token, String desiredRealm) {
         String coPodName = kubeClient().getClusterOperatorPodName();
         return new JsonArray(cmdKubeClient().execInPod(
@@ -85,15 +106,40 @@ public class KeycloakUtils {
         ).out());
     }
 
-    public static JsonArray getResourcesFromRealmClient(String baseUri, String token, String desiredRealm, String clientId) {
-        return getConfigFromResourceServerOfRealm(baseUri, token, desiredRealm, clientId, "resource");
+    /**
+     * Returns all resources from client of specific realm
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param desiredRealm realm we want to get clients from
+     * @param clientId id of desired client
+     * @return JsonArray with all resources for clients in specific realm
+     */
+    public static JsonArray getResourcesFromRealmClient(String baseURI, String token, String desiredRealm, String clientId) {
+        return getConfigFromResourceServerOfRealm(baseURI, token, desiredRealm, clientId, "resource");
     }
 
-    public static JsonArray getPoliciesFromRealmClient(String baseUri, String token, String desiredRealm, String clientId) {
-        return getConfigFromResourceServerOfRealm(baseUri, token, desiredRealm, clientId, "policy");
+    /**
+     * Returns all policies from client of specific realm
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param desiredRealm realm we want to get clients from
+     * @param clientId id of desired client
+     * @return JsonArray with all policies for clients in specific realm
+     */
+    public static JsonArray getPoliciesFromRealmClient(String baseURI, String token, String desiredRealm, String clientId) {
+        return getConfigFromResourceServerOfRealm(baseURI, token, desiredRealm, clientId, "policy");
     }
 
-    private static JsonArray getConfigFromResourceServerOfRealm(String baseUri, String token, String desiredRealm, String clientId, String endpoint) {
+    /**
+     * Returns "resources" for desired endpoint -> policies, resources ...
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param desiredRealm realm we want to get clients from
+     * @param clientId id of desired client
+     * @param endpoint endpoint for "resource" - resource, policy etc.
+     * @return JsonArray with results from endpoint
+     */
+    private static JsonArray getConfigFromResourceServerOfRealm(String baseURI, String token, String desiredRealm, String clientId, String endpoint) {
         String coPodName = kubeClient().getClusterOperatorPodName();
         return new JsonArray(cmdKubeClient().execInPod(
             coPodName,
@@ -102,12 +148,20 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "GET",
-            baseUri + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/" + endpoint,
+            baseURI + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/" + endpoint,
             "-H", "Authorization: Bearer " + token
         ).out());
     }
 
-    public static String putConfigurationToRealm(String baseUri, String token, JsonObject config, String desiredRealm) {
+    /**
+     * Puts new configuration to the specific realm
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param desiredRealm realm where the config should be put
+     * @param config configuration we want to put into the realm
+     * @return response from server
+     */
+    public static String putConfigurationToRealm(String baseURI, String token, JsonObject config, String desiredRealm) {
         String coPodName = kubeClient().getClusterOperatorPodName();
         return cmdKubeClient().execInPod(
             coPodName,
@@ -116,14 +170,23 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "PUT",
-            baseUri + "/auth/admin/realms/" + desiredRealm,
+            baseURI + "/auth/admin/realms/" + desiredRealm,
             "-H", "Authorization: Bearer " + token,
             "-d", config.toString(),
             "-H", "Content-Type: application/json"
         ).out();
     }
 
-    public static String updatePolicyOfRealmClient(String baseUri, String token, JsonObject policy, String desiredRealm, String clientId) {
+    /**
+     * Updates policies of specific client in realm
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param desiredRealm realm where the client policies should be updated
+     * @param policy new updated policies
+     * @param clientId id of client where we want to update policies
+     * @return response from server
+     */
+    public static String updatePolicyOfRealmClient(String baseURI, String token, JsonObject policy, String desiredRealm, String clientId) {
         String coPodName = kubeClient().getClusterOperatorPodName();
         return cmdKubeClient().execInPod(
             coPodName,
@@ -132,7 +195,7 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "PUT",
-            baseUri + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/policy/" + policy.getValue("id"),
+            baseURI + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/policy/" + policy.getValue("id"),
             "-H", "Authorization: Bearer " + token,
             "-d", policy.toString(),
             "-H", "Content-Type: application/json"
