@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeAffinityBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
@@ -43,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -224,7 +226,13 @@ class KafkaRollerST extends AbstractST {
         // 2. wait for Kafka not ready
         // 3. fix the Kafka by updating pod template to existing node
         // 4. wait for Kafka ready
-        cmdKubeClient().exec("label", "nodes", "localhost", "dedicated=Kafka_correct", "--overwrite");
+
+        Optional<Node> node = kubeClient().listNodes().stream().filter(nod -> nod.getMetadata().getName().contains("worker")).findFirst();
+        String nodeName = "localhost";
+        if (node.isPresent()) {
+            nodeName = node.get().getMetadata().getName();
+        }
+        cmdKubeClient().exec("label", "nodes", nodeName, "dedicated=Kafka_correct", "--overwrite");
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
                 .withKey("dedicated")
