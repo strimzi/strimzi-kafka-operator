@@ -8,7 +8,7 @@ set -e
 # $4: Alias of the certificate
 function create_truststore {
   cacerts_path=$(find /usr/lib/jvm -name cacerts)
-  cat $cacerts_path > "$1"
+  cat "$cacerts_path" > "$1"
 
   keytool -keystore "$1" \
       -alias "$4" \
@@ -19,17 +19,17 @@ function create_truststore {
       -noprompt
 
   # if CA certificate is chained, only import root cert into trustore
-  FULLCHAIN=$(<$3)
+  FULLCHAIN=$(<"$3")
   ROOT_CERT=$(echo -e "${FULLCHAIN#*-----END CERTIFICATE-----}" | sed '/./,$!d')
   
-  if [[ ! -z "${ROOT_CERT// }" ]] ; then
+  if [[ -n "${ROOT_CERT// }" ]] ; then
     RND_FILE=$(< /dev/urandom tr -dc _A-Z-a-z | head -c12)
-    echo "$ROOT_CERT" > /tmp/$RND_FILE.crt
+    echo "$ROOT_CERT" > /tmp/"$RND_FILE".crt
     
     keytool -keystore "$1" \
       -alias rootCA \
       -import \
-      -file /tmp/$RND_FILE.crt \
+      -file /tmp/"$RND_FILE".crt \
       -keypass changeit \
       -storepass changeit \
       -noprompt

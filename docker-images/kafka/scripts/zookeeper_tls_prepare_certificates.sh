@@ -7,37 +7,7 @@ set -e
 # $3: Public key to be imported
 # $4: Alias of the certificate
 function create_truststore {
-  cacerts_path=$(find /usr/lib/jvm -name cacerts)
-  cat $cacerts_path > "$1"
-
-  keytool -keystore "$1" \
-      -alias "$4" \
-      -import \
-      -file "$3" \
-      -keypass changeit \
-      -storepass changeit \
-      -noprompt
-
-  # if CA certificate is chained, only import root cert into trustore
-  FULLCHAIN=$(<$3)
-  ROOT_CERT=$(echo -e "${FULLCHAIN#*-----END CERTIFICATE-----}" | sed '/./,$!d')
-  
-  if [[ ! -z "${ROOT_CERT// }" ]] ; then
-    RND_FILE=$(< /dev/urandom tr -dc _A-Z-a-z | head -c12)
-    echo "$ROOT_CERT" > /tmp/$RND_FILE.crt
-    
-    keytool -keystore "$1" \
-      -alias rootCA \
-      -import \
-      -file /tmp/$RND_FILE.crt \
-      -keypass changeit \
-      -storepass changeit \
-      -noprompt
-  fi
-
-  # change default truststore password
-  keytool -storepasswd -storepass "changeit" -new "$2" -keystore "$1"
-    
+   keytool -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
 }
 
 # Parameters:
