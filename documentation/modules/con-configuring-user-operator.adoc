@@ -32,6 +32,9 @@ For more details about resource request and limit configuration, see xref:assemb
 The `logging` property configures the logging of the User Operator.
 For more details, see xref:con-entity-operator-logging-{context}[].
 
+`secretPrefix`::
+The `secretPrefix` property can be used to add a prefix to the name of all Secrets created from the KafkaUser resource. e.g., `STRIMZI_SECRET_PREFIX=kafka-` would cause all secret names to start with `kafka-`, e.g. `kafka-my-user`.
+
 .Example of User Operator configuration
 [source,yaml,subs=attributes+]
 ----
