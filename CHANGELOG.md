@@ -26,6 +26,7 @@
 * Add improvements for `oauth` authentication, and `keycloak` authorization:
   * Support for re-authentication was added, which also enforces access token lifespan on the Kafka client session
   * Permission changes through Keycloak Authorization Services are now detected by Kafka Brokers
+* Add support for `secretPrefix` property for User Operator to prefix all secret names created from KafkaUser resource.
 
 ### Deprecations and removals
 
