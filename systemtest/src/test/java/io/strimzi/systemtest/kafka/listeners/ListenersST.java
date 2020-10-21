@@ -115,7 +115,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none", false), is(serviceDiscoveryArray));
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none", false, true), is(serviceDiscoveryArray));
     }
 
     /**
@@ -179,7 +179,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", Constants.TLS_LISTENER_DEFAULT_NAME, true), is(serviceDiscoveryArray));
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", Constants.TLS_LISTENER_DEFAULT_NAME, false, true), is(serviceDiscoveryArray));
     }
 
     /**
@@ -418,14 +418,15 @@ public class ListenersST extends AbstractST {
                 .endSpec()
                 .done();
 
-        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
         LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
                 KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
-        assertThat(kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
+        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
+        String firstExternalService = CLUSTER_NAME + "-kafka-" + Constants.EXTERNAL_LISTENER_DEFAULT_NAME + "-" + 0;
+        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort, firstExternalService);
+        assertThat(kubeClient().getService(firstExternalService)
                 .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
-        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
-                KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
+
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -705,7 +706,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, customListenerName, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())

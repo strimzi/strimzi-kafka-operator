@@ -202,10 +202,10 @@ public class StUtils {
         return jsonArray;
     }
 
-    public static JsonArray expectedServiceDiscoveryInfo(String plainAuth, String tlsAuth, boolean tls) {
+    public static JsonArray expectedServiceDiscoveryInfo(String plainAuth, String tlsAuth, boolean plainTls, boolean tlsTls) {
         JsonArray jsonArray = new JsonArray();
-        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainAuth, tls).getValue(0));
-        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsAuth, tls).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainAuth, plainTls).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsAuth, tlsTls).getValue(0));
         return jsonArray;
     }
 
