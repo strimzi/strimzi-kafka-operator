@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.21.0
+
+* Add support for `secretPrefix` property for User Operator to prefix all secret names created from KafkaUser resource.
+
 ## 0.20.0
 
 **Note: This is the last version of Strimzi that will support Kubernetes 1.11 and higher. Future versions will drop support for Kubernetes 1.11-1.15 and support only Kubernetes 1.16 and higher.**
@@ -26,7 +30,6 @@
 * Add improvements for `oauth` authentication, and `keycloak` authorization:
   * Support for re-authentication was added, which also enforces access token lifespan on the Kafka client session
   * Permission changes through Keycloak Authorization Services are now detected by Kafka Brokers
-* Add support for `secretPrefix` property for User Operator to prefix all secret names created from KafkaUser resource.
 
 ### Deprecations and removals
 
