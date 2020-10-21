@@ -168,15 +168,19 @@ public class KafkaRoller {
     private ConcurrentHashMap<Integer, RestartContext> podToContext = new ConcurrentHashMap<>();
     private Function<Pod, List<String>> podNeedsRestart;
 
-    private Future<Void> initAdminClient() {
+    /**
+     * If allClient has not been initialized yet, does exactly that
+     * @return true if the creation of AC succeeded, false otherwise
+     */
+    private boolean initAdminClient() {
         if (this.allClient == null) {
             try {
                 this.allClient = adminClient(IntStream.range(0, numPods).boxed().collect(Collectors.toList()), false);
             } catch (ForceableProblem | FatalProblem e) {
-                return Future.failedFuture(e);
+                return false;
             }
         }
-        return Future.succeededFuture();
+        return true;
     }
         /**
      * Asynchronously perform a rolling restart of some subset of the pods,
@@ -461,7 +465,7 @@ public class KafkaRoller {
         boolean needsReconfig = false;
         // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
         // connect to the broker and that it's capable of responding.
-        if (initAdminClient().failed()) {
+        if (!initAdminClient()) {
             return new RestartPlan(true);
         }
         Config brokerConfig;
