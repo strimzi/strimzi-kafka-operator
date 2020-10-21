@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
-import io.fabric8.kubernetes.api.model.PodTemplateBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -29,12 +28,10 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -221,8 +218,12 @@ class KafkaRollerST extends AbstractST {
     }
 
     @Test
-
     void testKafkaPodPendingDueToRack() {
+        // Testing this scenario
+        // 1. deploy Kafka with wrong pod template (looking for nonexistent node)
+        // 2. wait for Kafka not ready
+        // 3. fix the Kafka by updating pod template to existing node
+        // 4. wait for Kafka ready
         cmdKubeClient().exec("label", "nodes", "localhost", "dedicated=Kafka_correct", "--overwrite");
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
