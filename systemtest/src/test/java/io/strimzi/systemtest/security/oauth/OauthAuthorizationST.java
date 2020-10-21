@@ -4,13 +4,18 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -19,11 +24,13 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -279,7 +286,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
      *      starting with `x-` -> updating the policy through the Keycloak API
      * 5) Wait for the WaitException to appear -> as the producer doesn't have permission for sending messages, the
      *      job will be in error state
-     * 6) Change the permissions back and check that the messages are correctly set
+     * 6) Try to send messages to topic with `a-` -> we should still be able to sent messages, because we didn't changed the permissions
+     * 6) Change the permissions back and check that the messages are correctly sent
      *
      *
      * The re-authentication can be seen in the log of team-a-producer pod.
@@ -287,13 +295,16 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Test
     @Order(7)
     void testSessionReAuthentication() {
-        String topicName = TOPIC_X + "-example-topic";
-        LOGGER.info("Verifying that team A producer is able to send messages to the {} topic -> the topic starting with 'x'", topicName);
+        String topicXName = TOPIC_X + "-example-topic";
+        String topicAName = TOPIC_A + "-example-topic";
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        LOGGER.info("Verifying that team A producer is able to send messages to the {} topic -> the topic starting with 'x'", topicXName);
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicXName).done();
+        KafkaTopicResource.topic(CLUSTER_NAME, topicAName).done();
 
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
-            .withTopicName(topicName)
+            .withTopicName(topicXName)
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
@@ -358,13 +369,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
             }
         }
 
-        teamAOauthClientJob = teamAOauthClientJob.toBuilder()
-            .withDelayMs(1000)
-            .build();
-
-        LOGGER.info("Deploying the Team A producer");
-        teamAOauthClientJob.producerStrimziOauthTls(CLUSTER_NAME).done();
-
         JsonArray kafkaAuthzRealmPolicies = KeycloakUtils.getPoliciesFromRealmClient(baseUri, token, TEST_REALM, kafkaClientId);
 
         JsonObject devAPolicy = new JsonObject();
@@ -390,6 +394,15 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
+        LOGGER.info("Sending messages to topic starting with a- -> the messages should be successfully sent");
+
+        teamAOauthClientJob = teamAOauthClientJob.toBuilder()
+            .withTopicName(topicAName)
+            .build();
+        teamAOauthClientJob.producerStrimziOauthTls(CLUSTER_NAME).done();
+        ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
+
         LOGGER.info("Changing back to the original settings and checking, if the producer will be successful");
 
         config.put("scopes", "[\"Describe\",\"Write\"]");
@@ -397,6 +410,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         KeycloakUtils.updatePolicyOfRealmClient(baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
+            .withTopicName(topicXName)
             .withDelayMs(1000)
             .build();
 
