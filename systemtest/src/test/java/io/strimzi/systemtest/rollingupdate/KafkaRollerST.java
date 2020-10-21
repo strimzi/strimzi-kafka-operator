@@ -217,10 +217,10 @@ class KafkaRollerST extends AbstractST {
     @Test
     void testKafkaPodPendingDueToRack() {
         // Testing this scenario
-        // 1. deploy Kafka with wrong pod template (looking for nonexistent node)
-        // 2. wait for Kafka not ready
-        // 3. fix the Kafka CR
-        // 4. wait for Kafka ready
+        // 1. deploy Kafka with wrong pod template (looking for nonexistent node) kafka pods should not exist
+        // 2. wait for Kafka not ready, kafka pods should be in the pending state
+        // 3. fix the Kafka CR, kafka pods should be in the pending state
+        // 4. wait for Kafka ready, kafka pods should NOT be in the pending state
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
                 .withKey("dedicated_test")
@@ -255,7 +255,9 @@ class KafkaRollerST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+        // pods are stable in the Pending state
+        PodUtils.waitUntilPodStabilityReplicasCount(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+
         LOGGER.info("Removing requirement for the affinity");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null));
