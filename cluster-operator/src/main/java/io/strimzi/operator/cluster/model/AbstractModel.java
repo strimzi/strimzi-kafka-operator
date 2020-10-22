@@ -547,7 +547,9 @@ public abstract class AbstractModel {
             }
             ArrayList<Map<String, Object>> data = new ArrayList<>();
             for (Map<String, Object> rule : ((InlineMetrics) getMetrics()).getRules()) {
-                data.add(rule);
+                if (rule != null) {
+                    data.add(rule);
+                }
             }
             m.put("rules", data);
             return new JsonObject(m).toString();

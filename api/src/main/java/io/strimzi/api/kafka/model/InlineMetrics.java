@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class InlineMetrics extends Metrics {
 
     public static final String TYPE_INLINE = "inline";
 
-    private List<Map<String, Object>> rules = null;
+    private List<Map<String, Object>> rules = new ArrayList<>();
     private Boolean lowercaseOutputName = null;
     private Boolean lowercaseOutputLabelNames = null;
 

@@ -29,9 +29,10 @@ spec:
       size: 500Gi
     config:
       min.insync.replicas: 3
-    metrics: {
-        "lowercaseOutputName": true,
-        "rules": [
+    metrics:
+      type: inline
+      lowercaseOutputName: true
+      rules: [
             {
               "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
               "name": "kafka_server_$1_$2_total"
@@ -45,7 +46,6 @@ spec:
               }
             }
         ]
-      }
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"
@@ -63,7 +63,8 @@ spec:
       -Xms: "512Mi"
     storage:
       type: ephemeral
-    metrics: {}
+    metrics:
+      type: inline
   topicOperator:
     watchedNamespace: my-ns
 

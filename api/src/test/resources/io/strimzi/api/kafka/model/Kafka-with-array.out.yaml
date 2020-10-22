@@ -108,6 +108,7 @@ spec:
         memory: "512Mi"
     metrics:
       type: "inline"
+      rules: []
   topicOperator:
     watchedNamespace: "my-ns"
     reconciliationIntervalSeconds: 90
