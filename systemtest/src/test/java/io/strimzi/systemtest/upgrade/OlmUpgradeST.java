@@ -53,6 +53,10 @@ public class OlmUpgradeST extends AbstractST {
         OlmResource.obtainInstallPlanName();
 
         while (OlmResource.isUpgradeable()) {
+            LOGGER.info("====================================================================================");
+            LOGGER.info("============== Verification version of CO:" + OlmResource.getClusterOperatorVersion());
+            LOGGER.info("====================================================================================");
+
             // 3.perform verification of specific version
             performUpgradeVerification();
 

@@ -39,8 +39,7 @@ public class OlmResource {
     private static final String CO_POD_PREFIX_NAME = "strimzi-cluster-operator-";
 
     // 3 only three versions
-    private static Map<String, Boolean> closedMapInstallPlan = new HashMap<>(3);
-    private static List<String> closedListInstallPlans = new ArrayList<>(2);
+    private static final Map<String, Boolean> closedMapInstallPlan = new HashMap<>(3);
 
     private static Map<String, JsonObject> exampleResources = new HashMap<>();
 
@@ -117,6 +116,22 @@ public class OlmResource {
         if (!(closedMapInstallPlan.keySet().size() > 0)) {
             throw new RuntimeException("No install plans located in namespace:" + cmdKubeClient().namespace());
         }
+    }
+
+    public static String getClusterOperatorVersion() {
+        String installPlansPureString = cmdKubeClient().exec("get", "installplan").out();
+        String[] installPlansLines = installPlansPureString.split("\n");
+
+        for (String line : installPlansLines) {
+            // line NAME  CSV  APPROVAL   APPROVED
+            String[] wholeLine = line.split(" ");
+
+            // non-used install plan
+            if (wholeLine[0].equals(getNonUsedInstallPlan())) {
+                return wholeLine[1];
+            }
+        }
+        throw new RuntimeException("Version was not found in the install plan.");
     }
 
     public static boolean isUpgradeable() {
