@@ -63,6 +63,7 @@ public class UserOperatorConfig {
      * @param clusterCaCertSecretName Name of the secret containing the cluster Certification Authority certificate.
      * @param eoKeySecretName The name of the secret containing the Entity Operator key and certificate
      * @param caNamespace Namespace with the CA secret.
+     * @param secretPrefix Prefix used for the Secret names
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"}) //TODO: to remove when removing the zookeeper related parameters
     public UserOperatorConfig(String namespace,
