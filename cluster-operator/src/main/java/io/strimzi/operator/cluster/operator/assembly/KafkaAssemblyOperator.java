@@ -120,7 +120,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -145,6 +144,7 @@ import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersio
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.Collections.emptyMap;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -598,6 +598,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
 
+                        Map<String, String> clusterCaCertLabels = emptyMap();
+                        Map<String, String> clusterCaCertAnnotations = emptyMap();
+
+                        if (kafkaAssembly.getSpec().getKafka() != null
+                                && kafkaAssembly.getSpec().getKafka().getTemplate() != null
+                                && kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert() != null
+                                && kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata() != null) {
+                            clusterCaCertLabels = kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata().getLabels();
+                            clusterCaCertAnnotations = kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata().getAnnotations();
+                        }
+
                         this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
                                 ModelUtils.getRenewalDays(clusterCaConfig),
@@ -605,6 +616,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
+                                clusterCaCertLabels, clusterCaCertAnnotations,
                                 ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
@@ -622,7 +634,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                                 clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
                         clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
-                                caLabels.toMap(), ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
+                                caLabels.toMap(), emptyMap(), emptyMap(), ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
                         List<Future> secretReconciliations = new ArrayList<>(2);
 
@@ -2978,7 +2990,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(uoCm);
                             }
 
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), Collections.emptyMap(), imagePullPolicy, imagePullSecrets);
+                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), emptyMap(), imagePullPolicy, imagePullSecrets);
                             return Future.succeededFuture(this);
                         });
             } else {

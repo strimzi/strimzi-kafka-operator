@@ -14,6 +14,7 @@ import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Util;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -495,10 +496,12 @@ public abstract class Ca {
      * @param namespace The namespace containing the cluster.
      * @param clusterName The name of the cluster.
      * @param labels The labels of the {@code Secrets} created.
+     * @param additonalLabels The additional labels of the {@code Secrets} created.
+     * @param additonalAnnotations The additional annotations of the {@code Secrets} created.
      * @param ownerRef The owner of the {@code Secrets} created.
      * @param maintenanceWindowSatisfied Flag indicating whether we are in the maintenance window
      */
-    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
+    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels, Map<String, String> additonalLabels, Map<String, String> additonalAnnotations, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
@@ -572,8 +575,8 @@ public abstract class Ca {
             keyAnnotations.put(ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(caKeySecret, ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
         }
 
-        caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, labels,
-                certAnnotations, ownerRef);
+        caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels, additonalLabels),
+                Util.mergeLabelsOrAnnotations(certAnnotations, additonalAnnotations), ownerRef);
 
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels,
                 keyAnnotations, ownerRef);
@@ -716,7 +719,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in expired certificates being removed from the CA {@code Secret}.
      * @return Whether any expired certificates were removed.
      */
@@ -725,7 +728,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in a renewed CA certificate.
      * @return Whether the certificate was renewed.
      */
@@ -734,7 +737,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in a replaced CA key.
      * @return Whether the key was replaced.
      */
