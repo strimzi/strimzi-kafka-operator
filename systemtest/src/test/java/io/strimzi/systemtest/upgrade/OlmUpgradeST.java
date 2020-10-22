@@ -42,31 +42,34 @@ public class OlmUpgradeST extends AbstractST {
 
     @Test
     void testUpgrade() {
-        // 1. Create subscription (+ operator group) with version latest - 1 (manual approval strategy) already done...!
-        // 2. Approve installation
-        //   a) get name of install-plan
-        //   b) approve installation
+        Map<String, String> kafkaSnapshot = null;
+        boolean isUpgradeAble = true;
 
-        OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, false);
+        while (isUpgradeAble) {
+            // 1. Create subscription (+ operator group) with version latest - 1 (manual approval strategy) already done...!
+            // 2. Approve installation
+            //   a) get name of install-plan
+            //   b) approve installation
+            OlmResource.upgradeAbleClusterOperator(namespace, OlmInstallationStrategy.Manual, false);
 
-        // we need firstly invoke `obtainInstallPlanName` to use `isUpgradeable`
-        OlmResource.obtainInstallPlanName();
+            String currentVersionOfCo = OlmResource.getClusterOperatorVersion();
 
-        while (OlmResource.isUpgradeable()) {
             LOGGER.info("====================================================================================");
-            LOGGER.info("============== Verification version of CO:" + OlmResource.getClusterOperatorVersion());
+            LOGGER.info("============== Verification version of CO:" + currentVersionOfCo);
             LOGGER.info("====================================================================================");
 
-            // 3.perform verification of specific version
+            // wait until RU is finished (first run skipping)
+            if (kafkaSnapshot != null) {
+                StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+            }
+
+            // 3. perform verification of specific version
             performUpgradeVerification();
+            kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-            Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
-            // 4. Upgrade CO
-            OlmResource.upgradeClusterOperator();
-
-            // 5. wait until RU is finished
-            StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+            OlmResource.CLOSED_MAP_INSTALL_PLAN.put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
+            OlmResource.obtainInstallPlanName();
+            isUpgradeAble = OlmResource.isUpgradeable();
         }
     }
 
