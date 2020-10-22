@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
@@ -78,9 +79,14 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
 
-        ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(bridge.getLogging() instanceof ExternalLogging ?
+        ConfigMap loggingCm = bridge.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
-                null);
+                null;
+        ConfigMap metricsCm = bridge.getMetrics() instanceof ExternalMetrics ?
+                configMapOperations.get(namespace, ((ExternalMetrics) bridge.getMetrics()).getName()) :
+                null;
+
+        ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 

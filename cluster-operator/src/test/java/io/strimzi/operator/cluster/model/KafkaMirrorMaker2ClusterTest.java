@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -104,9 +105,13 @@ public class KafkaMirrorMaker2ClusterTest {
             .withBootstrapServers(bootstrapServers)
             .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
             .build();
+    private final InlineMetrics inlineMetrics = new InlineMetrics();
+    {
+        inlineMetrics.setRules(singletonList((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class)));
+    }
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
-            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+            .withMetrics(inlineMetrics)
             .withImage(image)
             .withReplicas(replicas)
             .withReadinessProbe(new Probe(healthDelay, healthTimeout))
@@ -119,7 +124,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null);
+        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
     }
 

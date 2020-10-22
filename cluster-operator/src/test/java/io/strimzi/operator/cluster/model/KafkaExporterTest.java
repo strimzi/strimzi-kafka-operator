@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
@@ -54,7 +55,8 @@ public class KafkaExporterTest {
     private final String image = "my-image:latest";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
+    private final Map<String, Object> metricsCmData = singletonMap("animal", "wombat");
+    private final InlineMetrics metricsCm = new InlineMetrics();
     private final Map<String, Object> kafkaConfig = singletonMap("foo", "bar");
     private final Map<String, Object> zooConfig = singletonMap("foo", "bar");
     private final Storage kafkaStorage = new EphemeralStorage();
@@ -66,6 +68,7 @@ public class KafkaExporterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     {
+        metricsCm.setRules(singletonList(metricsCmData));
         kafkaLogJson.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));
         zooLogJson.setLoggers(singletonMap("zookeeper.root.logger", "OFF"));
     }

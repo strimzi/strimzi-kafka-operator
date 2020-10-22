@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
@@ -117,7 +118,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, im);
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
@@ -204,7 +207,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, im);
 
         KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(kmm,
                 VERSIONS);
@@ -280,7 +285,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCmP = new HashMap<>();
         metricsCmP.put("foo", "bar");
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, metricsCmP);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCmP));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, im);
         KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(kmm,
                 VERSIONS);
         kmm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
@@ -394,7 +401,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, im);
         KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(kmm,
                 VERSIONS);
         kmm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
@@ -460,7 +469,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, im);
         KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(kmm,
                 VERSIONS);
         kmm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
@@ -521,7 +532,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, im);
         KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(kmm,
                 VERSIONS);
         kmm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
@@ -579,8 +592,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
 
-        KafkaMirrorMaker foo = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, "foo", image, producer, consumer, whitelist, metricsCm);
-        KafkaMirrorMaker bar = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, "bar", image, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker foo = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, "foo", image, producer, consumer, whitelist, im);
+        KafkaMirrorMaker bar = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, "bar", image, producer, consumer, whitelist, im);
 
         when(mockMirrorOps.listAsync(eq(kmmNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Mirror Maker cluster
@@ -654,7 +669,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, whitelist, im);
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
@@ -710,8 +727,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 .build();
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
-
-        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, 0, producer, consumer, whitelist, metricsCm);
+        InlineMetrics im = new InlineMetrics();
+        im.setRules(Collections.singletonList(metricsCm));
+        KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, 0, producer, consumer, whitelist, im);
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));

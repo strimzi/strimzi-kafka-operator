@@ -95,8 +95,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
+|metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration. The type depends on the value of the `metrics.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineMetrics-{context}[`InlineMetrics`], xref:type-ExternalMetrics-{context}[`ExternalMetrics`]
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar           1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration.
@@ -1058,6 +1058,42 @@ It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 |string
 |====
 
+[id='type-InlineMetrics-{context}']
+### `InlineMetrics` schema reference
+
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `InlineMetrics` from xref:type-ExternalMetrics-{context}[`ExternalMetrics`].
+It must have the value `inline` for the type `InlineMetrics`.
+[options="header"]
+|====
+|Property                    |Description
+|type                 1.2+<.<|Must be `inline`.
+|string
+|lowercaseOutputName  1.2+<.<|A flag for lowercaseOutputName.
+|boolean
+|rules                1.2+<.<|A List of metrics rules.
+|map array
+|====
+
+[id='type-ExternalMetrics-{context}']
+### `ExternalMetrics` schema reference
+
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `ExternalMetrics` from xref:type-InlineMetrics-{context}[`InlineMetrics`].
+It must have the value `external` for the type `ExternalMetrics`.
+[options="header"]
+|====
+|Property     |Description
+|type  1.2+<.<|Must be `external`.
+|string
+|name  1.2+<.<|The name of the `ConfigMap` from which to get the metrics configuration.
+|string
+|====
+
 [id='type-InlineLogging-{context}']
 ### `InlineLogging` schema reference
 
@@ -1364,8 +1400,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
+|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration. The type depends on the value of the `metrics.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineMetrics-{context}[`InlineMetrics`], xref:type-ExternalMetrics-{context}[`ExternalMetrics`]
 |logging         1.2+<.<|Logging configuration for ZooKeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |template        1.2+<.<|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
@@ -1610,8 +1646,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl.
 |map
-|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
+|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration. The type depends on the value of the `metrics.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineMetrics-{context}[`InlineMetrics`], xref:type-ExternalMetrics-{context}[`ExternalMetrics`]
 |====
 
 [id='type-CruiseControlTemplate-{context}']
@@ -1921,8 +1957,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
+|metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration. The type depends on the value of the `metrics.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineMetrics-{context}[`InlineMetrics`], xref:type-ExternalMetrics-{context}[`ExternalMetrics`]
 |tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
@@ -2293,8 +2329,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
 |logging                   1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
+|metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration. The type depends on the value of the `metrics.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineMetrics-{context}[`InlineMetrics`], xref:type-ExternalMetrics-{context}[`ExternalMetrics`]
 |template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |authentication            1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
@@ -2686,8 +2722,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |logging         1.2+<.<|Logging configuration for MirrorMaker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
-|map
+|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration. The type depends on the value of the `metrics.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineMetrics-{context}[`InlineMetrics`], xref:type-ExternalMetrics-{context}[`ExternalMetrics`]
 |tracing         1.2+<.<|The configuration of tracing in Kafka MirrorMaker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template        1.2+<.<|Template to specify how Kafka MirrorMaker resources, `Deployments` and `Pods`, are generated.
@@ -3106,8 +3142,8 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
+|metrics                1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration. The type depends on the value of the `metrics.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineMetrics-{context}[`InlineMetrics`], xref:type-ExternalMetrics-{context}[`ExternalMetrics`]
 |tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.

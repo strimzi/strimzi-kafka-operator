@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
@@ -237,10 +238,10 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setJavaSystemProperties(zookeeperClusterSpec.getJvmOptions().getJavaSystemProperties());
         }
 
-        Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
+        Metrics metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
             zk.setMetricsEnabled(true);
-            zk.setMetricsConfig(metrics.entrySet());
+            zk.setMetricsConfig(metrics);
         }
 
         if (oldStorage != null) {
@@ -682,12 +683,13 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Generates a configuration ConfigMap with metrics and logging configurations and node count.
      *
-     * @param cm    The ConfigMap with original logging configuration
+     * @param loggingCm    The ConfigMap with original logging configuration
+     * @param metricsCm    The ConfigMap with original metrics configuration
      *
      * @return      The generated configuration ConfigMap.
      */
-    public ConfigMap generateConfigurationConfigMap(ConfigMap cm) {
-        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(cm);
+    public ConfigMap generateConfigurationConfigMap(ConfigMap loggingCm, ConfigMap metricsCm) {
+        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
         zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
         return zkConfigMap;
     }

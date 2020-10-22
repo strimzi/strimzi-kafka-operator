@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -92,11 +93,13 @@ public class ZookeeperClusterTest {
     private final int healthTimeout = 30;
     private final int tlsHealthDelay = 120;
     private final int tlsHealthTimeout = 30;
-    private final Map<String, Object> metricsCmJson = singletonMap("animal", "wombat");
+    private final Map<String, Object> metricsCmData = singletonMap("animal", "wombat");
+    private final InlineMetrics metricsCmJson = new InlineMetrics();
     private final Map<String, Object> configurationJson = emptyMap();
     private final InlineLogging kafkaLogConfigJson = new InlineLogging();
     private final InlineLogging zooLogConfigJson = new InlineLogging();
     {
+        metricsCmJson.setRules(singletonList(metricsCmData));
         kafkaLogConfigJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLogConfigJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
@@ -109,7 +112,7 @@ public class ZookeeperClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = zc.generateConfigurationConfigMap(null);
+        ConfigMap metricsCm = zc.generateConfigurationConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(zc.createOwnerReference(), metricsCm);
     }

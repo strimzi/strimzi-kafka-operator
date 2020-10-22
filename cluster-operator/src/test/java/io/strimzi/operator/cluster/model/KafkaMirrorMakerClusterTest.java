@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -92,6 +93,11 @@ public class KafkaMirrorMakerClusterTest {
             .withOffsetCommitInterval(offsetCommitInterval)
             .withConfig((Map<String, Object>) TestUtils.fromJson(consumerConfigurationJson, Map.class))
             .build();
+
+    private final InlineMetrics inlineMetrics = new InlineMetrics();
+    {
+        inlineMetrics.setRules(singletonList((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class)));
+    }
     private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
             .withNewSpec()
             .withImage(image)
@@ -99,7 +105,7 @@ public class KafkaMirrorMakerClusterTest {
             .withProducer(producer)
             .withConsumer(consumer)
             .withWhitelist(whitelist)
-            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+            .withMetrics(inlineMetrics)
             .endSpec()
             .build();
 
@@ -108,7 +114,7 @@ public class KafkaMirrorMakerClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null);
+        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
     }
 

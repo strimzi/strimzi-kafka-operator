@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
@@ -111,9 +112,15 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         String namespace = reconciliation.namespace();
 
         connect.generateBuildConfig();
-        ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
+
+        ConfigMap loggingCm = connect.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
-                null);
+                null;
+        ConfigMap metricsCm = connect.getMetrics() instanceof ExternalMetrics ?
+                configMapOperations.get(namespace, ((ExternalMetrics) connect.getMetrics()).getName()) :
+                null;
+
+        ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 
         Map<String, String> annotations = new HashMap<>(1);
         annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,

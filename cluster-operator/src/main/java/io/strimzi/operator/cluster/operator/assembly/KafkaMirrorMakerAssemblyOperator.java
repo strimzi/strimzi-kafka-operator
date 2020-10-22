@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
@@ -80,9 +81,13 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
             return Future.failedFuture(new ReconciliationException(kafkaMirrorMakerStatus, e));
         }
 
-        ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(mirror.getLogging() instanceof ExternalLogging ?
+        ConfigMap loggingCm = mirror.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
-                null);
+                null;
+        ConfigMap metricsCm = mirror.getMetrics() instanceof ExternalMetrics ?
+                configMapOperations.get(namespace, ((ExternalMetrics) mirror.getMetrics()).getName()) :
+                null;
+        ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 
         Map<String, String> annotations = new HashMap<>(1);
         annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));

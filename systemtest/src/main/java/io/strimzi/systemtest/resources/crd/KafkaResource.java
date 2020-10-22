@@ -26,7 +26,7 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 
 import java.io.File;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,18 +120,23 @@ public class KafkaResource {
     public static DoneableKafka kafkaWithMetricsAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
 
-        Map<String, String> rule = new HashMap<>();
+        Map<String, Object> rule = new HashMap<>();
         rule.put("pattern", "kafka.cruisecontrol<name=(.+)><>(\\w+)");
         rule.put("name", "kafka_cruisecontrol_$1_$2");
         rule.put("type", "GAUGE");
+
+        ArrayList<Map<String, Object>> rules = new ArrayList<>();
+        rules.add(rule);
 
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
                 .withNewCruiseControl()
-                    .addToMetrics("lowercaseOutputName", true)
-                    .addToMetrics("rules", Collections.singletonList(rule))
+                    .withNewInlineMetrics()
+                        .withRules(rules)
+                        .withLowercaseOutputName(true)
+                    .endInlineMetrics()
                 .endCruiseControl()
             .endSpec()
             .build());

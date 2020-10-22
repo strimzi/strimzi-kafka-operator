@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
+import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
@@ -155,10 +156,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
             kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
 
-            Map<String, Object> metrics = spec.getMetrics();
+            Metrics metrics = spec.getMetrics();
             if (metrics != null) {
                 kafkaMirrorMakerCluster.setMetricsEnabled(true);
-                kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
+                kafkaMirrorMakerCluster.setMetricsConfig(metrics);
             }
 
             /*setClientAuth(kafkaMirrorMakerCluster, spec.getConsumer());

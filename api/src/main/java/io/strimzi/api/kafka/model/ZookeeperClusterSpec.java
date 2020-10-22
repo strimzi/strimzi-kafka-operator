@@ -65,7 +65,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
-    private Map<String, Object> metrics;
+    private Metrics metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private ZookeeperClusterTemplate template;
@@ -180,11 +180,11 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public Map<String, Object> getMetrics() {
+    public Metrics getMetrics() {
         return metrics;
     }
 
-    public void setMetrics(Map<String, Object> metrics) {
+    public void setMetrics(Metrics metrics) {
         this.metrics = metrics;
     }
 

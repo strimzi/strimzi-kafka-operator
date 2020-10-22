@@ -61,6 +61,7 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -440,7 +441,7 @@ public class KafkaCluster extends AbstractModel {
                 );
             }
         }
-        String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
+        String metricReporters = configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
         if (metricReporters != null) {
             addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
@@ -451,7 +452,7 @@ public class KafkaCluster extends AbstractModel {
                     kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
                     " has invalid configuration. Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes.");
         }
-        result.cruiseControlSpec  = kafkaSpec.getCruiseControl();
+        result.cruiseControlSpec = kafkaSpec.getCruiseControl();
         if (result.cruiseControlSpec != null) {
             metricReporterList.add(CRUISE_CONTROL_METRIC_REPORTER);
         } else {
@@ -478,10 +479,10 @@ public class KafkaCluster extends AbstractModel {
         }
         result.setConfiguration(configuration);
 
-        Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
+        Metrics metrics = kafkaClusterSpec.getMetrics();
         if (metrics != null) {
             result.setMetricsEnabled(true);
-            result.setMetricsConfig(metrics.entrySet());
+            result.setMetricsConfig(metrics);
         }
 
         if (oldStorage != null) {
@@ -1891,8 +1892,8 @@ public class KafkaCluster extends AbstractModel {
         return this.brokersConfiguration;
     }
 
-    public ConfigMap generateAncillaryConfigMap(ConfigMap externalLoggingCm, Set<String> advertisedHostnames, Set<String> advertisedPorts)   {
-        ConfigMap cm = generateMetricsAndLogConfigMap(externalLoggingCm);
+    public ConfigMap generateAncillaryConfigMap(ConfigMap externalLoggingCm, ConfigMap externalMetricsCm, Set<String> advertisedHostnames, Set<String> advertisedPorts)   {
+        ConfigMap cm = generateMetricsAndLogConfigMap(externalLoggingCm, externalMetricsCm);
 
         this.brokersConfiguration = generateBrokerConfiguration();
 

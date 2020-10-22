@@ -34,6 +34,7 @@ spec:
         size: 100Gi
         deleteClaim: false
     metrics:
+      type: inline
       # Inspired by config from Kafka 2.0.0 example rules:
       # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-2_0_0.yml
       lowercaseOutputName: true
@@ -171,6 +172,7 @@ spec:
       size: 100Gi
       deleteClaim: false
     metrics:
+      type: inline
       # Inspired by Zookeeper rules
       # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
       lowercaseOutputName: true

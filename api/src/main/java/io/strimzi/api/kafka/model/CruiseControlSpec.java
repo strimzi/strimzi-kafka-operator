@@ -51,7 +51,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private CruiseControlTemplate template;
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
-    private Map<String, Object> metrics;
+    private Metrics metrics;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The docker image for the pods.")
@@ -99,11 +99,11 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public Map<String, Object> getMetrics() {
+    public Metrics getMetrics() {
         return metrics;
     }
 
-    public void setMetrics(Map<String, Object> metrics) {
+    public void setMetrics(Metrics metrics) {
         this.metrics = metrics;
     }
 

@@ -21,7 +21,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
-import java.util.Map;
 
 @DescriptionFile
 @Buildable(
@@ -54,7 +53,7 @@ public class KafkaMirrorMakerSpec extends Spec {
     private List<Toleration> tolerations;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private Map<String, Object> metrics;
+    private Metrics metrics;
     private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
 
@@ -124,11 +123,11 @@ public class KafkaMirrorMakerSpec extends Spec {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See {JMXExporter} for details of the structure of this configuration.")
-    public Map<String, Object> getMetrics() {
+    public Metrics getMetrics() {
         return metrics;
     }
 
-    public void setMetrics(Map<String, Object> metrics) {
+    public void setMetrics(Metrics metrics) {
         this.metrics = metrics;
     }
 
