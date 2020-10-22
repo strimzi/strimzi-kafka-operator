@@ -28,11 +28,13 @@ public class UserOperatorConfig {
     public static final String STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
+    public static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
     public static final String DEFAULT_ZOOKEEPER_CONNECT = "localhost:2181";
     public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = 6_000;
+    public static final String DEFAULT_SECRET_PREFIX = "";
 
     private final String namespace;
     private final long reconciliationIntervalMs;
@@ -45,6 +47,7 @@ public class UserOperatorConfig {
     private final String clusterCaCertSecretName;
     private final String eoKeySecretName;
     private final String caNamespace;
+    private final String secretPrefix;
 
     /**
      * Constructor
@@ -60,6 +63,7 @@ public class UserOperatorConfig {
      * @param clusterCaCertSecretName Name of the secret containing the cluster Certification Authority certificate.
      * @param eoKeySecretName The name of the secret containing the Entity Operator key and certificate
      * @param caNamespace Namespace with the CA secret.
+     * @param secretPrefix Prefix used for the Secret names
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"}) //TODO: to remove when removing the zookeeper related parameters
     public UserOperatorConfig(String namespace,
@@ -71,7 +75,8 @@ public class UserOperatorConfig {
                               String caKeySecretName,
                               String clusterCaCertSecretName,
                               String eoKeySecretName,
-                              String caNamespace) {
+                              String caNamespace,
+                              String secretPrefix) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.kafkaBootstrapServers = kafkaBootstrapServers;
@@ -83,6 +88,7 @@ public class UserOperatorConfig {
         this.clusterCaCertSecretName = clusterCaCertSecretName;
         this.eoKeySecretName = eoKeySecretName;
         this.caNamespace = caNamespace;
+        this.secretPrefix = secretPrefix;
     }
 
     /**
@@ -150,8 +156,13 @@ public class UserOperatorConfig {
             caNamespace = namespace;
         }
 
+        String secretPrefix = map.get(UserOperatorConfig.STRIMZI_SECRET_PREFIX);
+        if (secretPrefix == null || secretPrefix.isEmpty()) {
+            secretPrefix = DEFAULT_SECRET_PREFIX;
+        }
+
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, zookeeperConnect, zookeeperSessionTimeoutMs, labels,
-                caCertSecretName, caKeySecretName, clusterCaCertSecretName, eoKeySecretName, caNamespace);
+                caCertSecretName, caKeySecretName, clusterCaCertSecretName, eoKeySecretName, caNamespace, secretPrefix);
     }
 
     public static int getClientsCaValidityDays() {
@@ -246,6 +257,13 @@ public class UserOperatorConfig {
      */
     public long getZookeeperSessionTimeoutMs() {
         return zookeeperSessionTimeoutMs;
+    }
+
+    /**
+     * @return  The prefix that will be prepended to the name of the created kafka user secrets.
+     */
+    public String getSecretPrefix() {
+        return secretPrefix;
     }
 
     @Override

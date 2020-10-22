@@ -70,6 +70,8 @@ public class KafkaUserModel {
     private Map<String, String> templateSecretLabels;
     private Map<String, String> templateSecretAnnotations;
 
+    private final String secretPrefix;
+
     /**
      * Constructor
      *
@@ -77,13 +79,14 @@ public class KafkaUserModel {
      * @param name   User name
      * @param labels   Labels
      */
-    protected KafkaUserModel(String namespace, String name, Labels labels) {
+    protected KafkaUserModel(String namespace, String name, Labels labels, String secretPrefix) {
         this.namespace = namespace;
         this.name = name;
         this.labels = labels.withKubernetesName(KAFKA_USER_OPERATOR_NAME)
             .withKubernetesInstance(name)
             .withKubernetesPartOf(name)
             .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
+        this.secretPrefix = secretPrefix;
     }
 
     /**
@@ -95,6 +98,7 @@ public class KafkaUserModel {
      * @param clientsCaCert The clients CA certificate Secret.
      * @param clientsCaKey The clients CA key Secret.
      * @param userSecret Kubernetes secret with existing user certificate.
+     * @param secretPrefix The prefix used to add to the name of the Secret generated from the KafkaUser resource.
      * @return The user model.
      */
     public static KafkaUserModel fromCrd(CertManager certManager,
@@ -102,10 +106,11 @@ public class KafkaUserModel {
                                          KafkaUser kafkaUser,
                                          Secret clientsCaCert,
                                          Secret clientsCaKey,
-                                         Secret userSecret) {
+                                         Secret userSecret, String secretPrefix) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
-                Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()));
+                Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()),
+                secretPrefix);
         result.setOwnerReference(kafkaUser);
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
@@ -381,11 +386,12 @@ public class KafkaUserModel {
     /**
      * Generates the name of the User secret based on the username.
      *
+     * @param secretPrefix The secret prefix
      * @param username The username.
      * @return The name of the user.
      */
-    public static String getSecretName(String username)    {
-        return username;
+    public static String getSecretName(String secretPrefix, String username)    {
+        return secretPrefix + username;
     }
 
     /**
@@ -394,7 +400,7 @@ public class KafkaUserModel {
      * @return The name of the user secret.
      */
     public String getSecretName()    {
-        return KafkaUserModel.getSecretName(name);
+        return KafkaUserModel.getSecretName(secretPrefix, name);
     }
 
     /**

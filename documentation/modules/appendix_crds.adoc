@@ -1467,6 +1467,8 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the ZooKeeper session.
 |integer
+|secretPrefix                    1.2+<.<|The prefix that will be added to the KafkaUser name to be used as the Secret name.
+|string
 |livenessProbe                   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe                  1.2+<.<|Pod readiness checking.

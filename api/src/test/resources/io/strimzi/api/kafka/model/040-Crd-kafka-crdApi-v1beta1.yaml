@@ -2531,6 +2531,10 @@ spec:
                         type: integer
                         minimum: 0
                         description: Timeout for the ZooKeeper session.
+                      secretPrefix:
+                        type: string
+                        description: The prefix that will be added to the KafkaUser
+                          name to be used as the Secret name.
                       livenessProbe:
                         type: object
                         properties:
@@ -10058,6 +10062,10 @@ spec:
                         type: integer
                         minimum: 0
                         description: Timeout for the ZooKeeper session.
+                      secretPrefix:
+                        type: string
+                        description: The prefix that will be added to the KafkaUser
+                          name to be used as the Secret name.
                       livenessProbe:
                         type: object
                         properties:
@@ -17585,6 +17593,10 @@ spec:
                         type: integer
                         minimum: 0
                         description: Timeout for the ZooKeeper session.
+                      secretPrefix:
+                        type: string
+                        description: The prefix that will be added to the KafkaUser
+                          name to be used as the Secret name.
                       livenessProbe:
                         type: object
                         properties:

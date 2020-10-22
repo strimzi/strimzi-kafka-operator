@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "livenessProbe", "readinessProbe",
+        "secretPrefix", "livenessProbe", "readinessProbe",
         "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
 public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serializable {
@@ -40,9 +40,11 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
+    public static final String DEFAULT_SECRET_PREFIX = "";
 
     private String watchedNamespace;
     private String image;
+    private String secretPrefix;
     private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     private Probe livenessProbe;
@@ -148,5 +150,15 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
 
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("The prefix that will be added to the KafkaUser name to be used as the Secret name.")
+    public String getSecretPrefix() {
+        return secretPrefix;
+    }
+
+    public void setSecretPrefix(String secretPrefix) {
+        this.secretPrefix = secretPrefix;
     }
 }

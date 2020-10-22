@@ -64,8 +64,10 @@ public class EntityUserOperatorTest {
 
     private final String uoWatchedNamespace = "my-user-namespace";
     private final String uoImage = "my-user-operator-image";
+    private final String secretPrefix = "strimzi-";
     private final int uoReconciliationInterval = 90;
     private final int uoZookeeperSessionTimeout = 20;
+
 
     private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
             add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
@@ -77,6 +79,7 @@ public class EntityUserOperatorTest {
             .withImage(uoImage)
             .withReconciliationIntervalSeconds(uoReconciliationInterval)
             .withZookeeperSessionTimeoutSeconds(uoZookeeperSessionTimeout)
+            .withSecretPrefix(secretPrefix)
             .withLivenessProbe(livenessProbe)
             .withReadinessProbe(readinessProbe)
             .withLogging(userOperatorLogging)
@@ -117,6 +120,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xmx256m").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SECRET_PREFIX).withValue(secretPrefix).build());
 
         return expected;
     }
@@ -156,6 +160,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.getKafkaBootstrapServers(), is(String.format("%s:%d", KafkaCluster.serviceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
         assertThat(entityUserOperator.getLogging().getType(), is(userOperatorLogging.getType()));
         assertThat(((InlineLogging) entityUserOperator.getLogging()).getLoggers(), is(userOperatorLogging.getLoggers()));
+        assertThat(entityUserOperator.getSecretPrefix(), is(secretPrefix));
     }
 
     @Test
@@ -184,6 +189,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.getZookeeperConnect(), is(EntityUserOperator.defaultZookeeperConnect(cluster)));
         assertThat(entityUserOperator.getKafkaBootstrapServers(), is(EntityUserOperator.defaultBootstrapServers(cluster)));
         assertThat(entityUserOperator.getLogging(), is(nullValue()));
+        assertThat(entityUserOperator.getSecretPrefix(), is(EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX));
     }
 
     @Test
