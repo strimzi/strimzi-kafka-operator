@@ -292,7 +292,7 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(KafkaListenerType.LOADBALANCER.toValue() + j)
+                            .withName(KafkaListenerType.LOADBALANCER.toValue().substring(0, 5) + j)
                             .withPort(11900 + j)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(stochasticCommunication)
