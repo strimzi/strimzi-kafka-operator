@@ -21,11 +21,12 @@ import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.UserOperatorConfig;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
 
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -297,8 +298,12 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
 
-        assertThat(generatedSecret.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
-        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
+        assertThat(generatedSecret.getData().keySet(), is(new HashSet<>(Arrays.asList(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_SASL_JAAS_CONFIG))));
+
+        String password = "aaaaaaaaaa";
+        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
+        assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
+                is(KafkaUserModel.getSaslJsonConfig(ResourceUtils.NAME, password)));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
@@ -307,7 +312,6 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecretGeneratesPasswordKeepingExistingScramShaPassword()    {
         Secret scramShaSecret = ResourceUtils.createUserSecretScramSha();
-        String existingPassword = scramShaSecret.getData().get(KafkaUserModel.KEY_PASSWORD);
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCaCert, clientsCaKey, scramShaSecret, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
         Secret generated = model.generateSecret();
 
@@ -321,8 +325,9 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
                         .toMap()));
-        assertThat(generated.getData().keySet(), is(singleton(KafkaUserModel.KEY_PASSWORD)));
-        assertThat(generated.getData(), hasEntry(KafkaUserModel.KEY_PASSWORD, existingPassword));
+        assertThat(generated.getData().keySet(), is(new HashSet<>(Arrays.asList(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_SASL_JAAS_CONFIG))));
+        assertThat(generated.getData(), hasEntry(KafkaUserModel.KEY_PASSWORD, scramShaSecret.getData().get(KafkaUserModel.KEY_PASSWORD)));
+        assertThat(generated.getData(), hasEntry(KafkaUserModel.KEY_SASL_JAAS_CONFIG, scramShaSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG)));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
@@ -345,8 +350,12 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
 
-        assertThat(generated.getData().keySet(), is(singleton("password")));
-        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is("aaaaaaaaaa"));
+        assertThat(generated.getData().keySet(), is(new HashSet<>(Arrays.asList(KafkaUserModel.KEY_PASSWORD, KafkaUserModel.KEY_SASL_JAAS_CONFIG))));
+
+        String password = "aaaaaaaaaa";
+        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
+        assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
+                is(KafkaUserModel.getSaslJsonConfig(ResourceUtils.NAME, password)));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);

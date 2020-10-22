@@ -45,6 +45,7 @@ public class KafkaUserModel {
     private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
 
     public static final String KEY_PASSWORD = "password";
+    public static final String KEY_SASL_JAAS_CONFIG = "sasl.jaas.config";
 
     protected final String namespace;
     protected final String name;
@@ -158,7 +159,8 @@ public class KafkaUserModel {
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
             Map<String, String> data = new HashMap<>(1);
-            data.put(KafkaUserModel.KEY_PASSWORD, Base64.getEncoder().encodeToString(scramSha512Password.getBytes(StandardCharsets.US_ASCII)));
+            data.put(KafkaUserModel.KEY_PASSWORD, Base64.getEncoder().encodeToString(this.scramSha512Password.getBytes(StandardCharsets.US_ASCII)));
+            data.put(KEY_SASL_JAAS_CONFIG, Base64.getEncoder().encodeToString(getSaslJsonConfig().getBytes(StandardCharsets.US_ASCII)));
             return createSecret(data);
         } else {
             return null;
@@ -395,6 +397,17 @@ public class KafkaUserModel {
     }
 
     /**
+     * Creates the sasl.jaas.config string for SASL/SCRAM authentication.
+     *
+     * @param username The SCRAM username.
+     * @param password The SCRAM password.
+     * @return The sasl.jaas.config string.
+     */
+    public static String getSaslJsonConfig(String username, String password) {
+        return "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
+    }
+
+    /**
      * Gets the name of the User secret.
      *
      * @return The name of the user secret.
@@ -482,4 +495,14 @@ public class KafkaUserModel {
     public boolean isNoneUser()  {
         return authentication == null;
     }
+
+    /**
+     * Creates the sasl.jaas.config string for SASL/SCRAM authentication.
+     *
+     * @return The sasl.jaas.config string.
+     */
+    public String getSaslJsonConfig() {
+        return getSaslJsonConfig(getScramUserName(name), scramSha512Password);
+    }
+
 }
