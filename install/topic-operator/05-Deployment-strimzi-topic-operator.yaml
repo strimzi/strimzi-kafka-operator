@@ -17,7 +17,7 @@ spec:
       serviceAccountName: strimzi-topic-operator
       containers:
         - name: strimzi-topic-operator
-          image: strimzi/operator:0.20.0-rc2
+          image: strimzi/operator:0.20.0-rc3
           args:
           - /opt/strimzi/bin/topic_operator_run.sh
           env:
