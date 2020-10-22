@@ -539,7 +539,12 @@ public abstract class AbstractModel {
     protected String parseMetrics(ConfigMap externalCm) {
         if (metricsConfig instanceof InlineMetrics) {
             HashMap<String, Object> m = new HashMap<>();
-            m.put("lowercaseOutputName", ((InlineMetrics) getMetrics()).getLowercaseOutputName());
+            if (((InlineMetrics) getMetrics()).getLowercaseOutputName() != null) {
+                m.put("lowercaseOutputName", ((InlineMetrics) getMetrics()).getLowercaseOutputName());
+            }
+            if (((InlineMetrics) getMetrics()).getLowercaseOutputLabelNames() != null) {
+                m.put("lowercaseOutputLabelNames", ((InlineMetrics) getMetrics()).getLowercaseOutputLabelNames());
+            }
             ArrayList<Map<String, Object>> data = new ArrayList<>();
             for (Map<String, Object> rule : ((InlineMetrics) getMetrics()).getRules()) {
                 data.add(rule);

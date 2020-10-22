@@ -22,7 +22,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
@@ -122,7 +121,6 @@ import java.util.function.Function;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -430,12 +428,11 @@ public class ResourceUtils {
      * Create a Kafka Connect S2I custom resource
      */
     public static KafkaConnectS2I createKafkaConnectS2I(String namespace, String name, int replicas,
-                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson,
+                                                        String image, int healthDelay, int healthTimeout, Metrics metrics,
                                                         String connectConfig, boolean insecureSourceRepo, String bootstrapServers,
                                                         ResourceRequirements builResourceRequirements) {
 
-        InlineMetrics im = new InlineMetrics();
-        im.setRules(singletonList((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class)));
+
         return new KafkaConnectS2IBuilder(createEmptyKafkaConnectS2I(namespace, name))
                 .editOrNewSpec()
                     .withImage(image)
@@ -443,7 +440,7 @@ public class ResourceUtils {
                     .withBootstrapServers(bootstrapServers)
                     .withLivenessProbe(new Probe(healthDelay, healthTimeout))
                     .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                    .withMetrics(im)
+                    .withMetrics(metrics)
                     .withConfig((Map<String, Object>) TestUtils.fromJson(connectConfig, Map.class))
                     .withInsecureSourceRepository(insecureSourceRepo)
                     .withBuildResources(builResourceRequirements)

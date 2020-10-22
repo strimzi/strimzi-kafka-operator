@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -149,7 +151,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testMetricsConfigMap() {
+    public void testMetricsConfigMap() throws JsonProcessingException {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(kc.createOwnerReference(), metricsCm);
@@ -162,8 +164,10 @@ public class KafkaClusterTest {
                 "-D" + javaSystemProperties.get(1).getName() + "=" + javaSystemProperties.get(1).getValue()));
     }
 
-    private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(TestUtils.toJsonString(this.metricsCm)));
+    private void checkMetricsConfigMap(ConfigMap metricsCm) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> map = mapper.readValue(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), Map.class);
+        assertThat(map.get("rules"), is(this.metricsCm.getRules()));
     }
 
     private Map<String, String> expectedLabels()    {

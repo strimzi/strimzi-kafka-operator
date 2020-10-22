@@ -31,6 +31,7 @@ spec:
     userOperator: {}
   cruiseControl:
     metrics:
+      type: inline
       lowercaseOutputName: true
       rules:
       - pattern: kafka.cruisecontrol<name=(.+)><>(\w+)

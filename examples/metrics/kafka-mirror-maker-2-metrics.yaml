@@ -34,6 +34,7 @@ spec:
       topicsPattern: ".*"
       groupsPattern: ".*"
   metrics:
+    type: inline
     # Inspired by kafka-connect rules
     # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-connect.yml
     lowercaseOutputName: true

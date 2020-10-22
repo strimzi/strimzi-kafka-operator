@@ -1443,6 +1443,9 @@ spec:
                 metrics:
                   type: object
                   properties:
+                    lowercaseOutputLabelNames:
+                      type: boolean
+                      description: A flag for lowercaseOutputLabelNames.
                     lowercaseOutputName:
                       type: boolean
                       description: A flag for lowercaseOutputName.
@@ -2666,6 +2669,9 @@ spec:
                 metrics:
                   type: object
                   properties:
+                    lowercaseOutputLabelNames:
+                      type: boolean
+                      description: A flag for lowercaseOutputLabelNames.
                     lowercaseOutputName:
                       type: boolean
                       description: A flag for lowercaseOutputName.
@@ -5585,6 +5591,9 @@ spec:
                 metrics:
                   type: object
                   properties:
+                    lowercaseOutputLabelNames:
+                      type: boolean
+                      description: A flag for lowercaseOutputLabelNames.
                     lowercaseOutputName:
                       type: boolean
                       description: A flag for lowercaseOutputName.

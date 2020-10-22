@@ -28,7 +28,8 @@ public class InlineMetrics extends Metrics {
     public static final String TYPE_INLINE = "inline";
 
     private List<Map<String, Object>> rules = null;
-    private boolean lowercaseOutputName = false;
+    private Boolean lowercaseOutputName = null;
+    private Boolean lowercaseOutputLabelNames = null;
 
     @Description("Must be `" + TYPE_INLINE + "`")
     @Override
@@ -37,12 +38,21 @@ public class InlineMetrics extends Metrics {
     }
 
     @Description("A flag for lowercaseOutputName.")
-    public boolean getLowercaseOutputName() {
+    public Boolean getLowercaseOutputName() {
         return lowercaseOutputName;
     }
 
-    public void setLowercaseOutputName(boolean lowercaseOutputName) {
+    public void setLowercaseOutputName(Boolean lowercaseOutputName) {
         this.lowercaseOutputName = lowercaseOutputName;
+    }
+
+    @Description("A flag for lowercaseOutputLabelNames.")
+    public Boolean getLowercaseOutputLabelNames() {
+        return lowercaseOutputLabelNames;
+    }
+
+    public void setLowercaseOutputLabelNames(Boolean lowercaseOutputLabelNames) {
+        this.lowercaseOutputLabelNames = lowercaseOutputLabelNames;
     }
 
     @Description("A List of metrics rules.")

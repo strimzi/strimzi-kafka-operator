@@ -4,7 +4,13 @@
  */
 package io.strimzi.systemtest.metrics;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -26,6 +32,7 @@ import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
@@ -44,6 +51,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -383,6 +391,61 @@ public class MetricsST extends AbstractST {
             assertThat(metricKey, not(nullValue()));
             assertThat(metricValue, not(nullValue()));
         }
+    }
+
+    @Test
+    void testKafkaMetricsSettings() throws JsonProcessingException {
+        String expectedMetricsConfig = "{\"lowercaseOutputName\":true,\"rules\":[{\"labels\":{\"clientId\":\"$3\",\"partition\":\"$5\",\"topic\":\"$4\"},\"name\":\"kafka_server_$1_$2\",\"pattern\":\"kafka.server<type=(.+),\n" +
+                        "name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"broker\":\"$4:$5\",\"clientId\":\"$3\"},\"name\":\"kafka_server_$1_$2\",\"pattern\":\"kafka.server<type=(.+),\n" +
+                        "name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"cipher\":\"$5\",\"listener\":\"$2\",\"networkProcessor\":\"$3\",\"protocol\":\"$4\"},\"name\":\"kafka_server_$1_connections_tls_info\",\"pattern\":\"kafka.server<type=(.+),\n" +
+                        "cipher=(.+), protocol=(.+), listener=(.+), networkProcessor=(.+)><>connections\",\"type\":\"GAUGE\"},{\"labels\":{\"clientSoftwareName\":\"$2\",\"clientSoftwareVersion\":\"$3\",\"listener\":\"$4\",\"networkProcessor\":\"$5\"},\"name\":\"kafka_server_$1_connections_software\",\"pattern\":\"kafka.server<type=(.+),\n" +
+                        "clientSoftwareName=(.+), clientSoftwareVersion=(.+), listener=(.+), networkProcessor=(.+)><>connections\",\"type\":\"GAUGE\"},{\"labels\":{\"listener\":\"$2\",\"networkProcessor\":\"$3\"},\"name\":\"kafka_server_$1_$4\",\"pattern\":\"kafka.server<type=(.+),\n" +
+                        "listener=(.+), networkProcessor=(.+)><>(.+):\",\"type\":\"GAUGE\"},{\"labels\":{\"listener\":\"$2\",\"networkProcessor\":\"$3\"},\"name\":\"kafka_server_$1_$4\",\"pattern\":\"kafka.server<type=(.+),\n" +
+                        "listener=(.+), networkProcessor=(.+)><>(.+)\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3_percent\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)Percent\\\\w*><>MeanRate\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3_percent\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)Percent\\\\w*><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3_percent\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)Percent\\\\w*, (.+)=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\"},\"name\":\"kafka_$1_$2_$3_total\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)PerSec\\\\w*, (.+)=(.+), (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3_total\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)PerSec\\\\w*, (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"name\":\"kafka_$1_$2_$3_total\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)PerSec\\\\w*><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+), (.+)=(.+), (.+)=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+), (.+)=(.+)><>Value\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\"},\"name\":\"kafka_$1_$2_$3_count\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+), (.+)=(.+), (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\",\"quantile\":\"0.$8\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+), (.+)=(.*), (.+)=(.+)><>(\\\\d+)thPercentile\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3_count\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+), (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\",\"quantile\":\"0.$6\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+), (.+)=(.*)><>(\\\\d+)thPercentile\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3_count\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"quantile\":\"0.$4\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
+                        "name=(.+)><>(\\\\d+)thPercentile\",\"type\":\"GAUGE\"}]}";
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(
+                JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(),
+                true
+        );
+
+        ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
+
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig.replace("\n", " ")));
+
+        ConfigMap externalMetricsCm = new ConfigMapBuilder()
+                .withData(Collections.singletonMap("metrics-config.yml", expectedMetricsConfig))
+                .withNewMetadata()
+                    .withName("external-metrics-cm")
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsCm);
+
+        ExternalMetrics em = new ExternalMetrics();
+        em.setName("external-metrics-cm");
+        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            k.getSpec().getKafka().setMetrics(em);
+        });
+        PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
+        actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig.replace("\n", " ")));
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {

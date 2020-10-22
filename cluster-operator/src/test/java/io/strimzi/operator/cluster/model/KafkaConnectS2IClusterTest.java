@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
@@ -36,6 +38,7 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -105,20 +108,27 @@ public class KafkaConnectS2IClusterTest {
             .withRequests(Collections.singletonMap("mem", new Quantity("4Gi")))
             .build();
 
+    InlineMetrics im = new InlineMetrics();
+    {
+        im.setRules(singletonList((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class)));
+    }
+
 
     private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
+            healthDelay, healthTimeout, im, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
 
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
     @Test
-    public void testMetricsConfigMap() {
+    public void testMetricsConfigMap() throws JsonProcessingException {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
     }
 
-    private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(metricsCmJson));
+    private void checkMetricsConfigMap(ConfigMap metricsCm) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> map = mapper.readValue(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), Map.class);
+        assertThat(map.get("rules"), is(im.getRules()));
     }
 
     private Map<String, String> expectedLabels(String name)    {
@@ -311,7 +321,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testInsecureSourceRepo() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
+                healthDelay, healthTimeout, im, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
 
         assertThat(kc.isInsecureSourceRepository(), is(true));
 

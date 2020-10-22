@@ -1068,13 +1068,15 @@ The `type` property is a discriminator that distinguishes the use of the type `I
 It must have the value `inline` for the type `InlineMetrics`.
 [options="header"]
 |====
-|Property                    |Description
-|type                 1.2+<.<|Must be `inline`.
+|Property                          |Description
+|type                       1.2+<.<|Must be `inline`.
 |string
-|lowercaseOutputName  1.2+<.<|A flag for lowercaseOutputName.
+|lowercaseOutputName        1.2+<.<|A flag for lowercaseOutputName.
 |boolean
-|rules                1.2+<.<|A List of metrics rules.
+|rules                      1.2+<.<|A List of metrics rules.
 |map array
+|lowercaseOutputLabelNames  1.2+<.<|A flag for lowercaseOutputLabelNames.
+|boolean
 |====
 
 [id='type-ExternalMetrics-{context}']
