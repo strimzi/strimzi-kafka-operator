@@ -40,7 +40,7 @@ public enum KafkaListenerType {
             case ROUTE:
                 return "route";
             case LOADBALANCER:
-                return "lb";
+                return "loadbalancer";
             case NODEPORT:
                 return "nodeport";
             case INGRESS:
