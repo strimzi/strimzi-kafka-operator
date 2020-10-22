@@ -120,22 +120,12 @@ public class OlmResource {
     }
 
     public static boolean isUpgradeable() {
-        String[] nonUsedInstallPlan = new String[1];
-
-        closedMapInstallPlan.forEach((key, value) -> {
-            nonUsedInstallPlan[0] = value == Boolean.FALSE ? key : "";
-        });
-
-        return nonUsedInstallPlan[0].equals("");
+        return !getNonUsedInstallPlan().equals("NoMoreNonUsedInstallPlans");
     }
 
     public static String getNonUsedInstallPlan() {
-
         String[] nonUsedInstallPlan = new String[1];
-
-        closedMapInstallPlan.forEach((key, value) -> {
-            nonUsedInstallPlan[0] = value == Boolean.FALSE ? key : "";
-        });
+        closedMapInstallPlan.forEach((key, value) -> nonUsedInstallPlan[0] = value == Boolean.FALSE ? key : "NoMoreNonUsedInstallPlans");
 
         return nonUsedInstallPlan[0];
     }
