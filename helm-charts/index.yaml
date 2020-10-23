@@ -1,6 +1,33 @@
 apiVersion: v1
 entries:
   strimzi-kafka-operator:
+  - apiVersion: v2
+    appVersion: 0.20.0
+    created: "2020-10-23T16:25:31.110067+02:00"
+    description: 'Strimzi: Apache Kafka running on Kubernetes'
+    digest: 320f960e9f62622c9e8cbe49566bad449659ba40116d9112338ef1e40b9b61c2
+    home: https://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: Frawless
+    - name: ppatierno
+    - name: samuel-hawker
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.20.0/strimzi-kafka-operator-helm-3-chart-0.20.0.tgz
+    version: 0.20.0
   - apiVersion: v1
     appVersion: 0.19.0
     created: "2020-07-27T20:10:46.405537+02:00"
@@ -632,4 +659,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: "2020-07-27T20:10:46.395564+02:00"
+generated: "2020-10-23T16:25:31.099259+02:00"
