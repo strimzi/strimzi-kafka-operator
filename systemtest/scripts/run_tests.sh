@@ -2,7 +2,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TESTCASE=${1:-.*ST}
-TEST_PROFILE=${2:-travis}
+TEST_PROFILE=${2:-smoke}
 
 function run_test() {
     TESTCASE=$1

@@ -253,7 +253,7 @@ You can specify the admin user using variable `TEST_CLUSTER_ADMIN` (by default i
 
 ## Helper script
 
-The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the travis build.
+The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the Azure build.
 You can use this script to easily run the `systemtests` project.
 
 Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
