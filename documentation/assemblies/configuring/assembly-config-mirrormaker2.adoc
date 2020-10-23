@@ -3,7 +3,7 @@
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
 [id='assembly-mirrormaker-{context}']
-= Kafka MirrorMaker 2.0 configuration
+= Kafka MirrorMaker 2.0 cluster configuration
 
 This section describes how to configure a Kafka MirrorMaker 2.0 deployment in your Strimzi cluster.
 

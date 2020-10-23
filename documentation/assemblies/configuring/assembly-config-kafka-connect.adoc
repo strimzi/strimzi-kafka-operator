@@ -30,5 +30,5 @@ include::../../modules/configuring/con-config-kafka-connect-multiple-instances.a
 include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+1]
 //Resources created for Kafka Connect
 include::../../modules/configuring/ref-config-list-of-kafka-connect-resources.adoc[leveloffset=+1]
-//Resource created for Kafka Connect S2I
+//Resources created for Kafka Connect S2I
 include::../../modules/configuring/ref-config-list-of-kafka-connect-s2i-resources.adoc[leveloffset=+1]

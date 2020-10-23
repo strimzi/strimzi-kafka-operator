@@ -7,6 +7,18 @@ Specify the username in the `username` property.
 === `passwordSecret`
 In the `passwordSecret` property, specify a link to a `Secret` containing the password.
 
+You can use the secrets created by the User Operator.
+
+If required, you can create a text file that contains the password, in cleartext, to use for authentication:
+
+[source,shell,subs="+quotes"]
+echo -n _PASSWORD_ > _MY-PASSWORD_.txt
+
+You can then create a `Secret` from the text file, setting your own field name (key) for the password:
+
+[source,shell,subs="+quotes"]
+kubectl create secret generic _MY-CONNECT-SECRET-NAME_ --from-file=_MY-PASSWORD-FIELD-NAME_=./_MY-PASSWORD_.txt
+
 .Example Secret for SCRAM-SHA-512 client authentication for Kafka Connect
 [source,yaml,subs="attributes+"]
 ----

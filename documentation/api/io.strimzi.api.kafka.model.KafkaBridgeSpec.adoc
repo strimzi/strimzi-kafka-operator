@@ -1,0 +1,106 @@
+Configures a Kafka Bridge cluster.
+
+Configuration options relate to:
+
+* Kafka cluster bootstrap address
+* Security (Encryption, Authentication, and Authorization)
+* Consumer configuration
+* Producer configuration
+* HTTP configuration
+
+[id='property-kafka-bridge-logging-{context}']
+=== `logging`
+Kafka Bridge has its own configurable loggers:
+
+* `logger.bridge`
+* `logger.__<operation-id>__`
+
+You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to set log levels for specific operations:
+
+* `createConsumer`
+* `deleteConsumer`
+* `subscribe`
+* `unsubscribe`
+* `poll`
+* `assign`
+* `commit`
+* `send`
+* `sendToPartition`
+* `seekToBeginning`
+* `seekToEnd`
+* `seek`
+* `healthy`
+* `ready`
+* `openapi`
+
+Each operation is defined according OpenAPI specification, and has a corresponding API endpoint through which the bridge receives requests from HTTP clients.
+You can change the log level on each endpoint to create fine-grained logging information about the incoming and outgoing HTTP requests.
+
+Each logger has to be configured assigning it a `name` as `http.openapi.operation.__<operation-id>__`.
+For example, configuring the logging level for the `send` operation logger means defining the following:
+
+```
+logger.send.name = http.openapi.operation.send
+logger.send.level = DEBUG
+```
+
+Kafka Bridge uses the Apache `log4j2` logger implementation.
+Loggers are defined in the `log4j2.properties` file, which has the following default configuration for `healthy` and `ready` endpoints:
+
+```
+logger.healthy.name = http.openapi.operation.healthy
+logger.healthy.level = WARN
+logger.ready.name = http.openapi.operation.ready
+logger.ready.level = WARN
+```
+The log level of all other operations is set to `INFO` by default.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration.
+Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+For more information about log levels, see {ApacheLoggers}.
+
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      logger.bridge.level: "INFO"
+      # enabling DEBUG just for send operation
+      logger.send.name: "http.openapi.operation.send"
+      logger.send.level: "DEBUG"
+  # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+spec:
+  # ...
+  logging:
+    type: external
+    name: customConfigMap
+  # ...
+----
+
+Any available loggers that are not configured have their level set to `OFF`.
+
+If the Kafka Bridge was deployed using the Cluster Operator,
+changes to Kafka Bridge logging levels are applied dynamically.
+
+If you use external logging, a rolling update is triggered when logging appenders are changed.
+
+.Garbage collector (GC)
+
+Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].

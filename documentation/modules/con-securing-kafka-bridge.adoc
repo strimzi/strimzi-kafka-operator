@@ -28,6 +28,6 @@ The Kafka Bridge supports TLS encryption and TLS and SASL authentication when co
 
 * A TLS-encrypted connection between the Kafka Bridge and your Kafka cluster.
 
-For more information, see xref:con-kafka-bridge-authentication-deployment-configuration-kafka-bridge[]. 
+For more information, see xref:proc-config-kafka-bridge-str[]. 
 
 You can use ACLs in Kafka brokers to restrict the topics that can be consumed and produced using the Kafka Bridge.
