@@ -202,10 +202,18 @@ public class StUtils {
         return jsonArray;
     }
 
-    public static JsonArray expectedServiceDiscoveryInfo(String plainAuth, String tlsAuth, boolean plainTls, boolean tlsTls) {
+    /**
+     * Build jsonArray with data about service discovery based on pass configuration
+     * @param plainEcryption plain listener encryption
+     * @param tlsEncryption tls listener encryption
+     * @param plainTlsAuth plain listener authentication
+     * @param tlsTlsAuth tls listener authentication
+     * @return builded jsonArray
+     */
+    public static JsonArray expectedServiceDiscoveryInfo(String plainEcryption, String tlsEncryption, boolean plainTlsAuth, boolean tlsTlsAuth) {
         JsonArray jsonArray = new JsonArray();
-        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainAuth, plainTls).getValue(0));
-        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsAuth, tlsTls).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainEcryption, plainTlsAuth).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsEncryption, tlsTlsAuth).getValue(0));
         return jsonArray;
     }
 
