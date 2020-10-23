@@ -22,7 +22,9 @@ listeners:
       type: tls
     configuration:
       bootstrap:
-        alternativeNames: example.hostname
+        alternativeNames:
+          - example.hostname1
+          - example.hostname2
 # ...
 ----
 
