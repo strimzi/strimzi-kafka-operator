@@ -72,7 +72,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
             performUpgradeVerification();
             kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-            OlmResource.CLOSED_MAP_INSTALL_PLAN.put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
+            OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
             OlmResource.obtainInstallPlanName();
             isUpgradeAble = OlmResource.isUpgradeable();
         }
@@ -80,22 +80,22 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
     private void performUpgradeVerification() {
         // fetch the tag from imageName: docker.io/strimzi/operator:'[latest|0.19.0|0.18.0]'
-        String imageTag = kubeClient().getDeployment(kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME))
+        String containerImageTag = kubeClient().getDeployment(kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME))
             .getSpec()
             .getTemplate()
             .getMetadata()
             .getAnnotations()
             .get("containerImage").split(":")[1];
 
-        LOGGER.info("Image tag of strimzi operator is {}", imageTag);
+        LOGGER.info("Image tag of strimzi operator is {}", containerImageTag);
 
         // NOT (latest image or default substring(1)) for skipping 'v'0.19.0 on the start...
         // '6.6.6' is the latest version of cluster operator
-        if (!imageTag.equals("6.6.6") && (!(imageTag.equals("latest") || imageTag.equals(Environment.OLM_OPERATOR_VERSION_DEFAULT.substring(1))))) {
+        if (!containerImageTag.equals("6.6.6") && (!(containerImageTag.equals("latest") || containerImageTag.equals(Environment.OLM_OPERATOR_VERSION_DEFAULT.substring(1))))) {
             try {
-                File dir = FileUtils.downloadAndUnzip("https://github.com/strimzi/strimzi-kafka-operator/releases/download/" + imageTag + "/strimzi-" + imageTag + ".zip");
+                File dir = FileUtils.downloadAndUnzip("https://github.com/strimzi/strimzi-kafka-operator/releases/download/" + containerImageTag + "/strimzi-" + containerImageTag + ".zip");
 
-                deployKafkaFromFile(dir, imageTag);
+                deployKafkaFromFile(dir, containerImageTag);
                 waitForReadinessOfKafkaCluster();
 
                 KafkaTopicResource.topic(CLUSTER_NAME, topicUpgradeName).done();
@@ -116,10 +116,10 @@ public class OlmUpgradeST extends AbstractUpgradeST {
             List<String> supportedClusterOperatorVersion = mapOfKafkaVersionsWithSupportedClusterOperators.get(currentKafkaVersion);
 
             // exist version of cluster operator in list of supported
-            if (supportedClusterOperatorVersion.contains(imageTag)) {
-                LOGGER.info("Current Kafka Version {} supports Cluster operator version {}. So we are not gonna upgrade Kafka", currentKafkaVersion, imageTag);
+            if (supportedClusterOperatorVersion.contains(containerImageTag)) {
+                LOGGER.info("Current Kafka Version {} supports Cluster operator version {}. So we are not gonna upgrade Kafka", currentKafkaVersion, containerImageTag);
             } else {
-                LOGGER.warn("Current Kafka Version {} does not supports Cluster operator version {}. So we are gonna upgrade Kafka", currentKafkaVersion, imageTag);
+                LOGGER.warn("Current Kafka Version {} does not supports Cluster operator version {}. So we are gonna upgrade Kafka", currentKafkaVersion, containerImageTag);
 
                 // sort keys and pick 'next version'
                 SortedSet<String> sortedKeys = new TreeSet<>(mapOfKafkaVersionsWithSupportedClusterOperators.keySet());
@@ -144,7 +144,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
                 Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
                 // we are gonna use latest Kafka
-                if (imageTag.equals("6.6.6")) {
+                if (containerImageTag.equals("6.6.6")) {
                     newKafkaVersion[0] = sortedKeys.last();
                 }
 

@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
@@ -34,11 +35,10 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class OlmResource {
     private static final Logger LOGGER = LogManager.getLogger(OlmResource.class);
 
-    private static final String CO_POD_PREFIX_NAME = "strimzi-cluster-operator-";
     private static final String NO_MORE_NON_USED_INSTALL_PLANS = "NoMoreNonUsedInstallPlans";
 
     // only three versions
-    public static final Map<String, Boolean> CLOSED_MAP_INSTALL_PLAN = new HashMap<>(3);
+    private static final Map<String, Boolean> CLOSED_MAP_INSTALL_PLAN = new HashMap<>(3);
 
     private static Map<String, JsonObject> exampleResources = new HashMap<>();
 
@@ -52,7 +52,7 @@ public class OlmResource {
     }
 
     public static void upgradeAbleClusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, boolean isLatest) {
-        if (kubeClient().listPodsByPrefixInName(CO_POD_PREFIX_NAME).size() == 0) {
+        if (kubeClient().listPodsByPrefixInName(Constants.CO_POD_PREFIX_NAME).size() == 0) {
             clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
                 olmInstallationStrategy, isLatest);
         } else {
@@ -172,7 +172,8 @@ public class OlmResource {
         String[] nonUsedInstallPlan = new String[1];
 
         for (Map.Entry<String, Boolean> entry : CLOSED_MAP_INSTALL_PLAN.entrySet()) {
-            if (entry.getValue() == Boolean.FALSE) {
+            // if value is FALSE we are gonna use it = non-used install plan
+            if (!entry.getValue()) {
                 nonUsedInstallPlan[0] = entry.getKey();
                 break;
             }
@@ -197,7 +198,7 @@ public class OlmResource {
                     cmdKubeClient().cmd() +
                     " patch installplan " + nonUsedInstallPlan + " --type json  --patch '[{\"op\": \"add\", \"path\": \"/spec/approved\", \"value\": true}]'";
 
-            InputStream inputStream = new ByteArrayInputStream(dynamicScriptContent.getBytes());
+            InputStream inputStream = new ByteArrayInputStream(dynamicScriptContent.getBytes(Charset.defaultCharset()));
             File patchScript = File.createTempFile("installplan_patch",  ".sh");
             Files.copy(inputStream, patchScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
@@ -212,7 +213,7 @@ public class OlmResource {
      * changing the install plan YAML
      */
     public static void upgradeClusterOperator() {
-        if (kubeClient().listPodsByPrefixInName(CO_POD_PREFIX_NAME).get(0) == null) {
+        if (kubeClient().listPodsByPrefixInName(Constants.CO_POD_PREFIX_NAME).get(0) == null) {
             throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
         }
 
@@ -306,5 +307,9 @@ public class OlmResource {
 
     public static void setExampleResources(Map<String, JsonObject> exampleResources) {
         OlmResource.exampleResources = exampleResources;
+    }
+
+    public static Map<String, Boolean> getClosedMapInstallPlan() {
+        return CLOSED_MAP_INSTALL_PLAN;
     }
 }
