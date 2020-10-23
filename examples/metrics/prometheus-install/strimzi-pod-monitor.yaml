@@ -60,7 +60,7 @@ spec:
     matchExpressions:
       - key: "strimzi.io/kind"
         operator: In
-        values: ["Kafka", "KafkaConnect"]
+        values: ["Kafka", "KafkaConnect", "KafkaConnectS2I", "KafkaMirrorMaker2"]
   namespaceSelector:
     matchNames:
       - myproject
