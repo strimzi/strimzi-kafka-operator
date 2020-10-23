@@ -106,7 +106,7 @@ data:
   sasl.jaas.config: b3JnLmFwYWNoZS5rYWZrYS5jb21tb24uc2VjdXJpdHkuc2NyYW0uU2NyYW1Mb2dpbk1vZHVsZSByZXF1aXJlZCB1c2VybmFtZT0ibXktdXNlciIgcGFzc3dvcmQ9ImdlbmVyYXRlZHBhc3N3b3JkIjsK <2>
 ----
 <1> The generated password, base64 encoded.
-<2> The `sasl.jaas.config` string, base64 encoded.
+<2> The JAAS configuration string for SASL SCRAM-SHA-512 authentication, base64 encoded.
 
 Decoding the generated password:
 ----

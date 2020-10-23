@@ -158,9 +158,9 @@ public class KafkaUserModel {
             data.put("user.password", userCertAndKey.storePasswordAsBase64String());
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
-            Map<String, String> data = new HashMap<>(1);
+            Map<String, String> data = new HashMap<>(2);
             data.put(KafkaUserModel.KEY_PASSWORD, Base64.getEncoder().encodeToString(this.scramSha512Password.getBytes(StandardCharsets.US_ASCII)));
-            data.put(KEY_SASL_JAAS_CONFIG, Base64.getEncoder().encodeToString(getSaslJsonConfig().getBytes(StandardCharsets.US_ASCII)));
+            data.put(KafkaUserModel.KEY_SASL_JAAS_CONFIG, Base64.getEncoder().encodeToString(getSaslJsonConfig().getBytes(StandardCharsets.US_ASCII)));
             return createSecret(data);
         } else {
             return null;
@@ -397,11 +397,11 @@ public class KafkaUserModel {
     }
 
     /**
-     * Creates the sasl.jaas.config string for SASL/SCRAM authentication.
+     * Creates the JAAS configuration string for SASL SCRAM-SHA-512 authentication.
      *
      * @param username The SCRAM username.
      * @param password The SCRAM password.
-     * @return The sasl.jaas.config string.
+     * @return The JAAS configuration string.
      */
     public static String getSaslJsonConfig(String username, String password) {
         return "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
@@ -497,9 +497,9 @@ public class KafkaUserModel {
     }
 
     /**
-     * Creates the sasl.jaas.config string for SASL/SCRAM authentication.
+     * Creates the JAAS configuration string for SASL SCRAM-SHA-512 authentication.
      *
-     * @return The sasl.jaas.config string.
+     * @return The JAAS configuration string.
      */
     public String getSaslJsonConfig() {
         return getSaslJsonConfig(getScramUserName(name), scramSha512Password);

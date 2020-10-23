@@ -303,7 +303,7 @@ public class KafkaUserModelTest {
         String password = "aaaaaaaaaa";
         assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
         assertThat(new String(Base64.getDecoder().decode(generatedSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
-                is(KafkaUserModel.getSaslJsonConfig(ResourceUtils.NAME, password)));
+                is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + password + "\";"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
@@ -355,7 +355,7 @@ public class KafkaUserModelTest {
         String password = "aaaaaaaaaa";
         assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))), is(password));
         assertThat(new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))),
-                is(KafkaUserModel.getSaslJsonConfig(ResourceUtils.NAME, password)));
+                is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + ResourceUtils.NAME + "\" password=\"" + password + "\";"));
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
