@@ -102,7 +102,7 @@ spec:
 
       #kafka.connect:type=connector-task-metrics,connector="{connector}",task="{task}<> status"
       - pattern: 'kafka.connect<type=connector-task-metrics, connector=(.+), task=(.+)><>status: ([a-z-]+)'
-        name: kafka_mm2_connector_status
+        name: kafka_connect_connector_status
         value: 1
         labels:
           connector: "$1"
@@ -116,7 +116,7 @@ spec:
       #kafka.connect:type=sink-task-metrics,connector="{connector}",task="{task}"
       #kafka.connect:type=connector-task-metrics,connector="{connector}",task="{task}"
       - pattern: kafka.connect<type=(.+)-metrics, connector=(.+), task=(.+)><>(.+-total|.+-count|.+-ms|.+-ratio|.+-avg|.+-failures|.+-requests|.+-timestamp|.+-logged|.+-errors|.+-retries|.+-skipped)
-        name: kafka_mm2_$1_$4
+        name: kafka_connect_$1_$4
         labels:
           connector: "$2"
           task: "$3"
@@ -126,7 +126,7 @@ spec:
       #kafka.connect:type=connector-metrics,connector="{connector}"
       #kafka.connect:type=connect-worker-metrics,connector="{connector}"
       - pattern: kafka.connect<type=connect-worker-metrics, connector=(.+)><>([a-z-]+)
-        name: kafka_mm2_worker_$2
+        name: kafka_connect_worker_$2
         labels:
           connector: "$1"
         help: "Kafka Connect JMX metric $1"
@@ -134,12 +134,12 @@ spec:
 
       #kafka.connect:type=connect-worker-metrics
       - pattern: kafka.connect<type=connect-worker-metrics><>([a-z-]+)
-        name: kafka_mm2_worker_$1
+        name: kafka_connect_worker_$1
         help: "Kafka Connect JMX metric worker"
         type: GAUGE
 
       #kafka.connect:type=connect-worker-rebalance-metrics
       - pattern: kafka.connect<type=connect-worker-rebalance-metrics><>([a-z-]+)
-        name: kafka_mm2_worker_rebalance_$1
+        name: kafka_connect_worker_rebalance_$1
         help: "Kafka Connect JMX metric rebalance information"
         type: GAUGE

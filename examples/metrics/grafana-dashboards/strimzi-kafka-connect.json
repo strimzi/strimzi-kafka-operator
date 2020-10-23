@@ -124,7 +124,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_connect_worker_connector_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+          "expr": "sum(kafka_connect_worker_connector_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\", strimzi_io_kind=~\"KafkaConnect.*\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -206,7 +206,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"})",
+          "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\", strimzi_io_kind=~\"KafkaConnect.*\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
