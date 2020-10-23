@@ -85,6 +85,7 @@ public class OlmResource {
 
         // manual installation needs approval with patch
         if (olmInstallationStrategy == OlmInstallationStrategy.Manual) {
+            waitUntilSomeInstallPlanIsPresent();
             obtainInstallPlanName();
             approveInstallation();
         }
@@ -102,6 +103,18 @@ public class OlmResource {
         waitFor(deploymentName, namespace, 1);
 
         exampleResources = parseExamplesFromCsv(csvName, namespace);
+    }
+
+    public static void waitUntilSomeInstallPlanIsPresent() {
+        TestUtils.waitFor("install plan is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                try {
+                    obtainInstallPlanName();
+                    return true;
+                } catch (RuntimeException e)  {
+                    return false;
+                }
+            });
     }
 
     /**

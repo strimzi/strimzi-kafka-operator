@@ -40,16 +40,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import javax.json.JsonValue;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,6 +55,7 @@ import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
+import static io.strimzi.systemtest.upgrade.AbstractUpgradeST.readUpgradeJson;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -84,7 +81,6 @@ public class StrimziUpgradeST extends AbstractST {
     private Map<String, String> coPods;
 
     private File coDir = null;
-    private File kafkaDir = null;
     private File kafkaYaml = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
@@ -99,7 +95,8 @@ public class StrimziUpgradeST extends AbstractST {
     // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.json
     // main idea of the test and usage of latestReleasedVersion: upgrade CO from version X, kafka Y, to CO version Z and kafka Y + 1 at the end
     private final String strimziReleaseWithOlderKafkaVersion = "0.19.0";
-    private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip", strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
+    private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
+        strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
     @MethodSource("loadJsonUpgradeData")
@@ -577,11 +574,6 @@ public class StrimziUpgradeST extends AbstractST {
         return parameters.stream();
     }
 
-    private static JsonArray readUpgradeJson() throws FileNotFoundException {
-        InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json");
-        JsonReader reader = Json.createReader(fis);
-        return reader.readArray();
-    }
 
     @BeforeEach
     void setupEnvironment() {

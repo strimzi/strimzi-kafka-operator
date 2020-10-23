@@ -5,11 +5,11 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
@@ -25,12 +25,16 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
-public class OlmUpgradeST extends AbstractST {
+public class OlmUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);
 
@@ -39,6 +43,7 @@ public class OlmUpgradeST extends AbstractST {
     private final String consumerName = "consumer";
     private final String topicUpgradeName = "topic-upgrade";
     private final int messageUpgradeCount =  10_000;
+    private final Map<String, List<String>> mapOfKafkaVersionsWithSupportedClusterOperators = getMapKafkaVersionsWithSupportedClusterOperatorVersions();
 
     @Test
     void testUpgrade() {
@@ -82,8 +87,11 @@ public class OlmUpgradeST extends AbstractST {
             .getAnnotations()
             .get("containerImage").split(":")[1];
 
+        LOGGER.info("Image tag of strimzi operator is {}", imageTag);
+
         // NOT (latest image or default substring(1)) for skipping 'v'0.19.0 on the start...
-        if (!(imageTag.equals("latest") || imageTag.equals(Environment.OLM_OPERATOR_VERSION_DEFAULT.substring(1)))) {
+        // '6.6.6' is the latest version of cluster operator
+        if (!imageTag.equals("6.6.6") && (!(imageTag.equals("latest") || imageTag.equals(Environment.OLM_OPERATOR_VERSION_DEFAULT.substring(1))))) {
             try {
                 File dir = FileUtils.downloadAndUnzip("https://github.com/strimzi/strimzi-kafka-operator/releases/download/" + imageTag + "/strimzi-" + imageTag + ".zip");
 
@@ -93,6 +101,65 @@ public class OlmUpgradeST extends AbstractST {
                 KafkaTopicResource.topic(CLUSTER_NAME, topicUpgradeName).done();
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+        //  this is round only last version (so kafka is not present)
+        } else if (KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get() == null) {
+            KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        }
+
+        String currentKafkaVersion = KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion();
+
+        LOGGER.info("Current Kafka message version is {}", currentKafkaVersion);
+
+        if (mapOfKafkaVersionsWithSupportedClusterOperators.containsKey(currentKafkaVersion)) {
+            // supported co version for specific kafka version
+            List<String> supportedClusterOperatorVersion = mapOfKafkaVersionsWithSupportedClusterOperators.get(currentKafkaVersion);
+
+            // exist version of cluster operator in list of supported
+            if (supportedClusterOperatorVersion.contains(imageTag)) {
+                LOGGER.info("Current Kafka Version {} supports Cluster operator version {}. So we are not gonna upgrade Kafka", currentKafkaVersion, imageTag);
+            } else {
+                LOGGER.warn("Current Kafka Version {} does not supports Cluster operator version {}. So we are gonna upgrade Kafka", currentKafkaVersion, imageTag);
+
+                // sort keys and pick 'next version'
+                SortedSet<String> sortedKeys = new TreeSet<>(mapOfKafkaVersionsWithSupportedClusterOperators.keySet());
+                Iterator<String> kafkaVersions = sortedKeys.iterator();
+                String[] newKafkaVersion = new String[1];
+
+                while (kafkaVersions.hasNext()) {
+                    String kafkaVersion = kafkaVersions.next();
+                    if (kafkaVersion.equals(currentKafkaVersion)) {
+                        LOGGER.info("This is current version {} but we need next one!", kafkaVersion);
+                        if (kafkaVersions.hasNext()) {
+                            newKafkaVersion[0] = kafkaVersions.next();
+                            LOGGER.info("New Kafka version is {} and we are gonna update Kafka custom resource.", newKafkaVersion[0]);
+                        }
+                    }
+                }
+
+                if (newKafkaVersion[0] == null || newKafkaVersion[0].isEmpty()) {
+                    throw new RuntimeException("There is not new Kafka version! Latest is:" + currentKafkaVersion);
+                }
+
+                Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+                // we are gonna use latest Kafka
+                if (imageTag.equals("6.6.6")) {
+                    newKafkaVersion[0] = sortedKeys.last();
+                }
+
+                KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+                    //  2.2.1 -> 2.2 (gonna trim from kafka version)
+                    String logMessageFormatVersion = newKafkaVersion[0].substring(0, 2);
+                    LOGGER.info("We are gonna update Kafka CR with following versions:\n" +
+                        "Kafka version: {}\n" +
+                        "Log message format version: {}", newKafkaVersion[0], logMessageFormatVersion);
+                    kafka.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageFormatVersion);
+                    kafka.getSpec().getKafka().setVersion(newKafkaVersion[0]);
+                });
+
+                // wait until RU
+                StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
             }
         }
 
