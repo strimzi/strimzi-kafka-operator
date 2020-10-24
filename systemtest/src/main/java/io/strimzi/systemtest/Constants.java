@@ -112,7 +112,7 @@ public interface Constants {
     String DEFAULT_TAG = "all";
 
     /**
-     * Tag for acceptance tests, which are triggered for each push/pr/merge on travis-ci
+     * Tag for acceptance tests, which can be triggered manually for each push/pr/merge on Azure
      */
     String ACCEPTANCE = "acceptance";
 
