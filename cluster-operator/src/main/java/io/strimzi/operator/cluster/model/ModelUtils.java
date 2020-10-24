@@ -322,12 +322,16 @@ public class ModelUtils {
         Map<String, String> currentData = current.getData();
         Map<String, String> desiredData = desired.getData();
 
-        for (Map.Entry<String, String> entry : currentData.entrySet()) {
-            String desiredValue = desiredData.get(entry.getKey());
-            if (entry.getValue() != null
-                    && desiredValue != null
-                    && !entry.getValue().equals(desiredValue)) {
-                return true;
+        if (currentData == null) {
+            return true;
+        } else {
+            for (Map.Entry<String, String> entry : currentData.entrySet()) {
+                String desiredValue = desiredData.get(entry.getKey());
+                if (entry.getValue() != null
+                        && desiredValue != null
+                        && !entry.getValue().equals(desiredValue)) {
+                    return true;
+                }
             }
         }
 

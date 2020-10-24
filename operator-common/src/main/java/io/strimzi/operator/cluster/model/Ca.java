@@ -345,8 +345,12 @@ public abstract class Ca {
            Secret secret,
            Function<Integer, String> podNameFn,
            boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        int replicasInSecret = secret == null || this.certRenewed() ? 0 :
-                (int) secret.getData().keySet().stream().filter(k -> k.contains(".crt")).count();
+        int replicasInSecret;
+        if (secret == null || secret.getData() == null || this.certRenewed())   {
+            replicasInSecret = 0;
+        } else {
+            replicasInSecret = (int) secret.getData().keySet().stream().filter(k -> k.contains(".crt")).count();
+        }
 
         File brokerCsrFile = File.createTempFile("tls", "broker-csr");
         File brokerKeyFile = File.createTempFile("tls", "broker-key");
@@ -595,10 +599,12 @@ public abstract class Ca {
         String reason = null;
         RenewalType renewalType = RenewalType.NOOP;
         if (caKeySecret == null
+                || caKeySecret.getData() == null
                 || caKeySecret.getData().get(CA_KEY) == null) {
             reason = "CA key secret " + caKeySecretName + " is missing or lacking data." + CA_KEY.replace(".", "\\.");
             renewalType = RenewalType.CREATE;
         } else if (this.caCertSecret == null
+                || this.caCertSecret.getData() == null
                 || this.caCertSecret.getData().get(CA_CRT) == null) {
             reason = "CA certificate secret " + caCertSecretName + " is missing or lacking data." + CA_CRT.replace(".", "\\.");
             renewalType = RenewalType.RENEW_CERT;
