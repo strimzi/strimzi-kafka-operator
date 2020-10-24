@@ -4,6 +4,7 @@
 
 * Add support for `secretPrefix` property for User Operator to prefix all secret names created from KafkaUser resource.
 * Allow configuring labels and annotations for Cluster CA certificate secrets
+* Add the JAAS configuration string in the sasl.jaas.config property to the generated secrets for KafkaUser with SCRAM-SHA-512 authentication.
 
 ## 0.20.0
 

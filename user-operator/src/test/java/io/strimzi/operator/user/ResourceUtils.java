@@ -33,6 +33,7 @@ public class ResourceUtils {
     public static final String NAME = "user";
     public static final String CA_CERT_NAME = NAME + "-cert";
     public static final String CA_KEY_NAME = NAME + "-key";
+    public static final String PASSWORD = "my-password";
 
     public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {
         return new KafkaUserBuilder()
@@ -170,7 +171,8 @@ public class ResourceUtils {
                     .withNamespace(NAMESPACE)
                     .withLabels(Labels.fromMap(LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND).toMap())
                 .endMetadata()
-                .addToData("password", Base64.getEncoder().encodeToString("my-password".getBytes()))
+                .addToData(KafkaUserModel.KEY_PASSWORD, Base64.getEncoder().encodeToString(PASSWORD.getBytes()))
+                .addToData(KafkaUserModel.KEY_SASL_JAAS_CONFIG, Base64.getEncoder().encodeToString(KafkaUserModel.getSaslJsonConfig(NAME, PASSWORD).getBytes()))
                 .build();
     }
 
