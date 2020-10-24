@@ -65,8 +65,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.version>3.8.1</maven.compiler.version>
         <maven.surefire.version>3.0.0-M5</maven.surefire.version>
         <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
@@ -409,7 +409,7 @@
             <dependency>
                 <!-- transitive dep; override here to avoid buggy version -->
                 <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jdk8</artifactId>
+                <artifactId>jackson-datatype-jdk11</artifactId>
                 <version>${fasterxml.jackson-core.version}</version>
             </dependency>
             <dependency>
@@ -1151,15 +1151,6 @@
             <properties>
                 <maven.compiler.source>${env.JAVA_VERSION_BUILD}</maven.compiler.source>
                 <maven.compiler.target>${env.JAVA_VERSION_BUILD}</maven.compiler.target>
-            </properties>
-        </profile>
-        <profile>
-            <id>jdk-8-config</id>
-            <activation>
-                <jdk>1.8</jdk>
-            </activation>
-            <properties>
-                <javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
             </properties>
         </profile>
         <profile>
