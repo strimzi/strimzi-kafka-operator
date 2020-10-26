@@ -18,8 +18,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 public class AbstractResourceStateMatchers {
-
-
     public static Matcher<KafkaRebalance> hasState() {
         return new TypeSafeDiagnosingMatcher<>() {
 
@@ -52,7 +50,6 @@ public class AbstractResourceStateMatchers {
         };
 
     }
-
 
     /**
      * Checks all conditions in the supplied resource to see if the type of one of them matches the supplied rebalance state.

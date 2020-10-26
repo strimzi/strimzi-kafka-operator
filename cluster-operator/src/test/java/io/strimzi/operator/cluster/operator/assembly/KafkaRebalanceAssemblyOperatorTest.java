@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.google.common.collect.Lists;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
@@ -934,7 +933,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
             assertThat(kafkaRebalance, StateMatchers.hasState());
             Condition condition = kcrao.rebalanceStateCondition(kafkaRebalance.getStatus());
-            assertThat(Lists.newArrayList(condition), StateMatchers.hasStateInConditions(state));
+            assertThat(Collections.singletonList(condition), StateMatchers.hasStateInConditions(state));
         });
     }
 
