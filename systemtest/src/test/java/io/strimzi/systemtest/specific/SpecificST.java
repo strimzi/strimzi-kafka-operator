@@ -100,6 +100,15 @@ public class SpecificST extends AbstractST {
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
+        LOGGER.info("Waiting for reconciliation to happen. " +
+                "Giving some time to DNS/load balancer to propagate kafka address." +
+                "Sleeping for {}ms", Constants.RECONCILIATION_INTERVAL);
+        try {
+            Thread.sleep(Constants.RECONCILIATION_INTERVAL);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
