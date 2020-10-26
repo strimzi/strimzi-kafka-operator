@@ -104,8 +104,8 @@ spec:
         - CN=kyle
         - CN=sergey
         - CN=andryi
-    metrics:
-      "lowercaseOutputName": true
+    metrics: {
+      "lowercaseOutputName": true,
       "rules": [
           {
             "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
@@ -120,6 +120,7 @@ spec:
             }
           }
       ]
+    }
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"
