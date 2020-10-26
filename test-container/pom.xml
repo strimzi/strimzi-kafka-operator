@@ -11,7 +11,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>test-container</artifactId>
+    <artifactId>strimzi-test-container</artifactId>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
