@@ -139,7 +139,8 @@ spec:
 
 Any available loggers that are not configured have their level set to `OFF`.
 
-Changes to Kafka Connect logging levels are applied dynamically.
+If Kafka Connect was deployed using the Cluster Operator,
+changes to Kafka Connect logging levels are applied dynamically.
 
 If you use external logging, a rolling update is triggered when logging appenders are changed.
 

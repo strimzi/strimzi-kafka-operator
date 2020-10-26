@@ -3,7 +3,7 @@
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
 [id='ref-list-of-kafka-mirror-maker-resources-{context}']
-= List of resources created as part of Kafka MirrorMaker
+= List of Kafka MirrorMaker cluster resources
 
 The following resources are created by the Cluster Operator in the Kubernetes cluster:
 

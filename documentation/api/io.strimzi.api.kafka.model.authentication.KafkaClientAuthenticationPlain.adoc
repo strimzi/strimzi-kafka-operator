@@ -10,6 +10,8 @@ Specify the username in the `username` property.
 === `passwordSecret`
 In the `passwordSecret` property, specify a link to a `Secret` containing the password.
 
+You can use the secrets created by the User Operator.
+
 If required, create a text file that contains the password, in cleartext, to use for authentication:
 
 [source,shell,subs="+quotes"]

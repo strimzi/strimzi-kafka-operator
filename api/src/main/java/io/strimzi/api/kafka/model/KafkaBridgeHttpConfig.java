@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
@@ -19,6 +20,7 @@ import java.util.Map;
 /**
  * A representation of the HTTP configuration.
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

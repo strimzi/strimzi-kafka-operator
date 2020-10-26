@@ -54,9 +54,9 @@ spec:
   authentication: <4>
     type: tls
     certificateAndKey:
-        certificate: source.crt
-        key: source.key
-        secretName: my-user-source
+      certificate: source.crt
+      key: source.key
+      secretName: my-user-source
   bootstrapServers: my-cluster-kafka-bootstrap:9092 <5>
   tls: <6>
     trustedCertificates:
@@ -122,27 +122,26 @@ spec:
     "-Xms": "1g"
   image: my-org/my-image:latest <14>
   template: <15>
-      pod:
-        affinity:
-          podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: application
-                      operator: In
-                      values:
-                        - postgresql
-                        - mongodb
-                topologyKey: "kubernetes.io/hostname"
-      connectContainer: <16>
-        env:
-          - name: JAEGER_SERVICE_NAME
-            value: my-jaeger-service
-          - name: JAEGER_AGENT_HOST
-            value: jaeger-agent-name
-          - name: JAEGER_AGENT_PORT
-            value: "6831"
-
+    pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: application
+                    operator: In
+                    values:
+                      - postgresql
+                      - mongodb
+              topologyKey: "kubernetes.io/hostname"
+    connectContainer: <16>
+      env:
+        - name: JAEGER_SERVICE_NAME
+          value: my-jaeger-service
+        - name: JAEGER_AGENT_HOST
+          value: jaeger-agent-name
+        - name: JAEGER_AGENT_PORT
+          value: "6831"
 ----
 <1> Use `KafkaConnect` or `KafkaConnectS2I`, as required.
 <2> Enables `KafkaConnectors` for the Kafka Connect cluster.

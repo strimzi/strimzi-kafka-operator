@@ -130,7 +130,7 @@ Accept: application/vnd.kafka.json.v2+json
 [id='con-requests-kafka-bridge-cors-{context}']
 = CORS
 
-Cross-Origin Resource Sharing (CORS) allows you to specify allowed methods and originating URLs for accessing the Kafka cluster in your xref:ref-kafka-bridge-http-configuration-deployment-configuration-kafka-bridge[Kafka Bridge HTTP configuration].
+Cross-Origin Resource Sharing (CORS) allows you to specify allowed methods and originating URLs for accessing the Kafka cluster in your xref:proc-config-kafka-bridge-str[Kafka Bridge HTTP configuration].
 
 .Example CORS configuration for Kafka Bridge
 [source,yaml,subs="attributes+"]

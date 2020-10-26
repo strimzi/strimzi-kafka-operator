@@ -3,9 +3,9 @@
 // assembly-deployment-configuration-kafka-connect-s2i.adoc
 
 [id='ref-list-of-kafka-connect-s2i-resources-{context}']
-= List of resources created as part of Kafka Connect cluster with Source2Image support
+= List of Kafka Connect (S2I) cluster resources
 
-The following resources will created by the Cluster Operator in the Kubernetes cluster:
+The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
 _connect-cluster-name_-connect-source:: ImageStream which is used as the base image for the newly-built Docker images.
 _connect-cluster-name_-connect:: BuildConfig which is responsible for building the new Kafka Connect Docker images.

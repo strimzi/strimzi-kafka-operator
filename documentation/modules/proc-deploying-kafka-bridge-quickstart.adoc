@@ -58,4 +58,4 @@ After deploying the Kafka Bridge to your Kubernetes cluster, xref:proc-exposing-
 
 .Additional resources
 
-* For more detailed information about configuring the Kafka Bridge, see xref:assembly-deployment-configuration-kafka-bridge-str[].
+* For more detailed information about configuring the Kafka Bridge, see xref:assembly-config-kafka-bridge-str[].
