@@ -18,9 +18,9 @@ API request and response bodies are always encoded as JSON.
 Content-Type: application/vnd.kafka.v2+json
 ----
 
-* When performing producer operations, `POST` requests must provide `Content-Type` headers specifying the desired _embedded data format_, either `json` or `binary`, as shown in the following table.
+* When performing producer operations, `POST` requests must provide `Content-Type` headers specifying the _embedded data format_ of the messages produced. This can be either `json` or `binary`.
 +
-[%autowidth,cols="2*",options="header",stripes="none",separator=¦]
+[cols="35,65",options="header",stripes="none",separator=¦]
 |===
 
 ¦Embedded data format
@@ -34,9 +34,9 @@ m¦Content-Type: application/vnd.kafka.binary.v2+json
 
 |===
 
-You set the embedded data format when creating a consumer using the `consumers/_groupid_` endpoint--for more information, see the next section.
+The embedded data format is set per consumer, as described in the next section.
 
-The `Content-Type` must not be set if the `POST` request has an empty body.
+The `Content-Type` must _not_ be set if the `POST` request has an empty body.
 An empty body can be used to create a consumer with the default values.
 
 == Embedded data format
@@ -74,16 +74,51 @@ If you choose to specify a binary embedded data format, subsequent producer requ
 
 Producer requests must also provide a `Content-Type` header that corresponds to the embedded data format, for example, `Content-Type: application/vnd.kafka.binary.v2+json`.
 
+== Message format
+
+When sending messages using the `/topics` endpoint, you enter the message payload in the request body, in the `records` parameter.
+
+The `records` parameter can contain any of these optional fields:
+
+* Message `headers`
+* Message `key`
+* Message `value`
+* Destination `partition`
+
+.Example `POST` request to /topics
+[source,curl,subs=attributes+]
+----
+curl -X POST \
+  http://localhost:8080/topics/my-topic \
+  -H 'content-type: application/vnd.kafka.json.v2+json' \
+  -d '{
+    "records": [
+        {
+            "key": "my-key",
+            "value": "sales-lead-0001"
+            "partition": 2
+            "headers": [
+              {
+                "key": "key1",
+                "value": "QXBhY2hlIEthZmthIGlzIHRoZSBib21iIQ==" <1>
+              }
+            ]
+        },
+    ]
+}'
+----
+<1> The header value in binary format and encoded as Base64.
+
 == Accept headers
 
 After creating a consumer, all subsequent GET requests must provide an `Accept` header in the following format:
 
 [source,http,subs=+quotes]
 ----
-Accept: application/vnd.kafka._embedded-data-format_.v2+json
+Accept: application/vnd.kafka._EMBEDDED-DATA-FORMAT_.v2+json
 ----
 
-The `embedded-data-format` is either `json` or `binary`.
+The `EMBEDDED-DATA-FORMAT` is either `json` or `binary`.
 
 For example, when retrieving records for a subscribed consumer using an embedded data format of JSON, include this Accept header:
 
