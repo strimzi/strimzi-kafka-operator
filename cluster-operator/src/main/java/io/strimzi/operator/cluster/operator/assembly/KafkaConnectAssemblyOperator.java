@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -107,8 +106,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                 null;
 
-        ConfigMap metricsCm = connect.getMetrics() instanceof ExternalMetrics ?
-                configMapOperations.get(namespace, ((ExternalMetrics) connect.getMetrics()).getName()) :
+        ConfigMap metricsCm = connect.isExternalMetricsConfigured() ?
+                configMapOperations.get(namespace, connect.getExternalMetricsName()) :
                 null;
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 

@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -77,7 +76,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.storage.Storage.deleteClaim;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -112,15 +110,6 @@ public class KafkaAssemblyOperatorMockTest {
     private KubernetesClient client;
 
     private KafkaAssemblyOperator operator;
-
-    private InlineMetrics metrics = new InlineMetrics();
-    {
-        Map<String, Object> map = new HashMap<>();
-        map.put("foo", "bar");
-        Map<String, Object> rules = new HashMap<>();
-        rules.put("rules", map);
-        metrics.setRules(singletonList(rules));
-    }
 
     /*
      * Params contains the parameterized fields of different configurations of a Kafka and Zookeeper Strimzi cluster
@@ -264,13 +253,13 @@ public class KafkaAssemblyOperatorMockTest {
                                 .withTls(true)
                             .endGenericKafkaListener()
                         .endListeners()
-                        .withMetrics(metrics)
+                        .withMetrics(singletonMap("foo", "bar"))
                         .withResources(resources)
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(zkReplicas)
                         .withStorage(zkStorage)
-                        .withMetrics(metrics)
+                        .withMetrics(singletonMap("foo", "bar"))
                     .endZookeeper()
                     .withNewEntityOperator()
                         .withNewTopicOperator()

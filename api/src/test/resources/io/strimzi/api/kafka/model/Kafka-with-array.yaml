@@ -69,7 +69,6 @@ spec:
         - CN=sergey
         - CN=andryi
     metrics:
-        type: inline
         "lowercaseOutputName": true
         "rules": [
             {
@@ -111,8 +110,7 @@ spec:
       -Xms: "512Mi"
     storage:
       type: ephemeral
-    metrics:
-      type: inline
+    metrics: {}
   topicOperator:
     watchedNamespace: my-ns
   clusterCa:

@@ -4,13 +4,11 @@
  */
 package io.strimzi.systemtest.metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -394,7 +392,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
-    void testKafkaMetricsSettings() throws JsonProcessingException {
+    void testKafkaMetricsSettings() {
         String expectedMetricsConfig = "{\"lowercaseOutputName\":true,\"rules\":[{\"labels\":{\"clientId\":\"$3\",\"partition\":\"$5\",\"topic\":\"$4\"},\"name\":\"kafka_server_$1_$2\",\"pattern\":\"kafka.server<type=(.+),\n" +
                         "name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"broker\":\"$4:$5\",\"clientId\":\"$3\"},\"name\":\"kafka_server_$1_$2\",\"pattern\":\"kafka.server<type=(.+),\n" +
                         "name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"cipher\":\"$5\",\"listener\":\"$2\",\"networkProcessor\":\"$3\",\"protocol\":\"$4\"},\"name\":\"kafka_server_$1_connections_tls_info\",\"pattern\":\"kafka.server<type=(.+),\n" +
@@ -438,14 +436,15 @@ public class MetricsST extends AbstractST {
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsCm);
 
-        ExternalMetrics em = new ExternalMetrics();
-        em.setName("external-metrics-cm");
+        Map<String, Object> externalMetrics = new HashMap<>();
+        externalMetrics.put("type", "external");
+        externalMetrics.put("name", "external-metrics-cm");
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
-            k.getSpec().getKafka().setMetrics(em);
+            k.getSpec().getKafka().setMetrics(externalMetrics);
         });
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig.replace("\n", " ")));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig));
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {

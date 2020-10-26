@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -41,7 +39,6 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -118,13 +115,11 @@ public class KafkaClusterTest {
     private final String image = "image";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final Map<String, Object> metricsCmData = singletonMap("animal", "wombat");
-    private final InlineMetrics metricsCm = new InlineMetrics();
+    private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
     private final Map<String, Object> configuration = singletonMap("foo", "bar");
     private final InlineLogging kafkaLog = new InlineLogging();
     private final InlineLogging zooLog = new InlineLogging();
     {
-        metricsCm.setRules(singletonList(metricsCmData));
         kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
@@ -151,7 +146,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testMetricsConfigMap() throws JsonProcessingException {
+    public void testMetricsConfigMap() {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(kc.createOwnerReference(), metricsCm);
@@ -164,10 +159,8 @@ public class KafkaClusterTest {
                 "-D" + javaSystemProperties.get(1).getName() + "=" + javaSystemProperties.get(1).getValue()));
     }
 
-    private void checkMetricsConfigMap(ConfigMap metricsCm) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> map = mapper.readValue(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), Map.class);
-        assertThat(map.get("rules"), is(this.metricsCm.getRules()));
+    private void checkMetricsConfigMap(ConfigMap metricsCm) {
+        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(TestUtils.toJsonString(this.metricsCm)));
     }
 
     private Map<String, String> expectedLabels()    {

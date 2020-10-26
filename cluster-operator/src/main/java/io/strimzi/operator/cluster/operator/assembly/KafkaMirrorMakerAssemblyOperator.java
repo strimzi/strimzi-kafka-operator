@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
@@ -84,8 +83,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         ConfigMap loggingCm = mirror.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
                 null;
-        ConfigMap metricsCm = mirror.getMetrics() instanceof ExternalMetrics ?
-                configMapOperations.get(namespace, ((ExternalMetrics) mirror.getMetrics()).getName()) :
+        ConfigMap metricsCm = mirror.isExternalMetricsConfigured() ?
+                configMapOperations.get(namespace, mirror.getExternalMetricsName()) :
                 null;
         ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 

@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -120,7 +119,7 @@ public class PartialRollingUpdateTest {
                             .withStorageClass("foo")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
-                        .withMetrics(new InlineMetrics())
+                        .withMetrics(Collections.emptyMap())
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)
@@ -129,7 +128,7 @@ public class PartialRollingUpdateTest {
                             .withStorageClass("foo")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
-                        .withMetrics(new InlineMetrics())
+                        .withMetrics(Collections.emptyMap())
                     .endZookeeper()
                     .withNewTopicOperator()
                     .endTopicOperator()

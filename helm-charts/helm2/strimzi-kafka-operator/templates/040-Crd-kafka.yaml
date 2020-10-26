@@ -1446,29 +1446,6 @@ spec:
                   description: CPU and memory resources to reserve.
                 metrics:
                   type: object
-                  properties:
-                    lowercaseOutputLabelNames:
-                      type: boolean
-                      description: A flag for lowercaseOutputLabelNames.
-                    lowercaseOutputName:
-                      type: boolean
-                      description: A flag for lowercaseOutputName.
-                    name:
-                      type: string
-                      description: The name of the `ConfigMap` from which to get the metrics configuration.
-                    rules:
-                      type: array
-                      items:
-                        type: object
-                      description: A List of metrics rules.
-                    type:
-                      type: string
-                      enum:
-                        - inline
-                        - external
-                      description: Metrics type, must be either 'inline' or 'external'.
-                  required:
-                    - type
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
                 logging:
                   type: object
@@ -2672,29 +2649,6 @@ spec:
                   description: CPU and memory resources to reserve.
                 metrics:
                   type: object
-                  properties:
-                    lowercaseOutputLabelNames:
-                      type: boolean
-                      description: A flag for lowercaseOutputLabelNames.
-                    lowercaseOutputName:
-                      type: boolean
-                      description: A flag for lowercaseOutputName.
-                    name:
-                      type: string
-                      description: The name of the `ConfigMap` from which to get the metrics configuration.
-                    rules:
-                      type: array
-                      items:
-                        type: object
-                      description: A List of metrics rules.
-                    type:
-                      type: string
-                      enum:
-                        - inline
-                        - external
-                      description: Metrics type, must be either 'inline' or 'external'.
-                  required:
-                    - type
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
                 logging:
                   type: object
@@ -5594,29 +5548,6 @@ spec:
                   description: 'The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl.'
                 metrics:
                   type: object
-                  properties:
-                    lowercaseOutputLabelNames:
-                      type: boolean
-                      description: A flag for lowercaseOutputLabelNames.
-                    lowercaseOutputName:
-                      type: boolean
-                      description: A flag for lowercaseOutputName.
-                    name:
-                      type: string
-                      description: The name of the `ConfigMap` from which to get the metrics configuration.
-                    rules:
-                      type: array
-                      items:
-                        type: object
-                      description: A List of metrics rules.
-                    type:
-                      type: string
-                      enum:
-                        - inline
-                        - external
-                      description: Metrics type, must be either 'inline' or 'external'.
-                  required:
-                    - type
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
               description: Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified.
             jmxTrans:

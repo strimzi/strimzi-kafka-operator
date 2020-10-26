@@ -79,7 +79,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
     private KafkaJmxOptions jmxOptions;
-    private Metrics metrics;
+    private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private ArrayOrObjectKafkaListeners listeners;
@@ -237,11 +237,11 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public Metrics getMetrics() {
+    public Map<String, Object> getMetrics() {
         return metrics;
     }
 
-    public void setMetrics(Metrics metrics) {
+    public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
     }
 

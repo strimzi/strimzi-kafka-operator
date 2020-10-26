@@ -34,7 +34,6 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
@@ -91,8 +90,7 @@ public class CruiseControlTest {
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
     private final String minInsyncReplicas = "2";
-    private final Map<String, Object> metricsCmData = singletonMap("animal", "wombat");
-    private final InlineMetrics metricsCm = new InlineMetrics();
+    private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
     private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
     private final Map<String, Object> zooConfig = singletonMap("foo", "bar");
 
@@ -111,7 +109,6 @@ public class CruiseControlTest {
     private final String ccImage = "my-cruise-control-image";
 
     {
-        metricsCm.setRules(singletonList(metricsCmData));
         kafkaLogJson.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));
         zooLogJson.setLoggers(singletonMap("zookeeper.root.logger", "OFF"));
     }

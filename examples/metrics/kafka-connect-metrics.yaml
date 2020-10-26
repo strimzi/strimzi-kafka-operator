@@ -9,7 +9,6 @@ spec:
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9092
   metrics:
-    type: inline
     # Inspired by kafka-connect rules
     # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-connect.yml
     lowercaseOutputName: true

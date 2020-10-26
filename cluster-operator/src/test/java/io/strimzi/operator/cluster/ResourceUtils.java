@@ -43,7 +43,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
@@ -179,7 +178,7 @@ public class ResourceUtils {
 
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
-                                    Metrics metricsCm,
+                                    Map<String, Object> metricsCm,
                                     Map<String, Object> kafkaConfigurationJson,
                                     Map<String, Object> zooConfigurationJson) {
         return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay, healthTimeout))
@@ -324,7 +323,7 @@ public class ResourceUtils {
 
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
-                                    Metrics metricsCm,
+                                    Map<String, Object> metricsCm,
                                     Map<String, Object> kafkaConfigurationJson,
                                     Logging kafkaLogging, Logging zkLogging) {
         return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay,
@@ -356,7 +355,7 @@ public class ResourceUtils {
 
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
-                                    Metrics metricsCm,
+                                    Map<String, Object> metricsCm,
                                     Map<String, Object> kafkaConfiguration,
                                     Map<String, Object> zooConfiguration,
                                     Storage kafkaStorage,
@@ -428,7 +427,7 @@ public class ResourceUtils {
      * Create a Kafka Connect S2I custom resource
      */
     public static KafkaConnectS2I createKafkaConnectS2I(String namespace, String name, int replicas,
-                                                        String image, int healthDelay, int healthTimeout, Metrics metrics,
+                                                        String image, int healthDelay, int healthTimeout, Map<String, Object> metrics,
                                                         String connectConfig, boolean insecureSourceRepo, String bootstrapServers,
                                                         ResourceRequirements builResourceRequirements) {
 
@@ -515,11 +514,14 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer, String whitelist, Metrics metricsCm) {
+    public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, KafkaMirrorMakerProducerSpec producer,
+                                                          KafkaMirrorMakerConsumerSpec consumer, String whitelist, Map<String, Object> metricsCm) {
         return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, whitelist, metricsCm);
     }
 
-    public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, Integer replicas, KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer, String whitelist, Metrics metricsCm) {
+    public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, Integer replicas,
+                                                          KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer,
+                                                          String whitelist, Map<String, Object> metricsCm) {
 
         KafkaMirrorMakerBuilder builder = new KafkaMirrorMakerBuilder()
                 .withMetadata(new ObjectMetaBuilder()

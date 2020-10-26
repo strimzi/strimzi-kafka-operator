@@ -53,13 +53,10 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -209,7 +206,7 @@ public abstract class AbstractModel {
     protected static final String METRICS_PORT_NAME = "tcp-prometheus";
     protected static final int METRICS_PORT = 9404;
     protected static final String METRICS_PATH = "/metrics";
-    protected Metrics metricsConfig;
+    protected Map<String, Object> metricsConfig;
     protected String ancillaryConfigMapName;
     protected String logAndMetricsConfigMountPath;
     protected String logAndMetricsConfigVolumeName;
@@ -526,49 +523,56 @@ public abstract class AbstractModel {
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalLoggingConfigMap, ConfigMap externalMetricsConfigMap) {
         Map<String, String> data = new HashMap<>(2);
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalLoggingConfigMap));
-        if (isMetricsEnabled() && getMetrics() != null) {
+        if (isMetricsEnabled() && getMetricsConfig() != null) {
             data.put(ANCILLARY_CM_KEY_METRICS, parseMetrics(externalMetricsConfigMap));
         }
         return createConfigMap(ancillaryConfigMapName, data);
     }
 
-    public Metrics getMetrics() {
+    public Map<String, Object> getMetricsConfig() {
         return metricsConfig;
     }
 
-    protected String parseMetrics(ConfigMap externalCm) {
-        if (metricsConfig instanceof InlineMetrics) {
-            HashMap<String, Object> m = new HashMap<>();
-            if (((InlineMetrics) getMetrics()).getLowercaseOutputName() != null) {
-                m.put("lowercaseOutputName", ((InlineMetrics) getMetrics()).getLowercaseOutputName());
-            }
-            if (((InlineMetrics) getMetrics()).getLowercaseOutputLabelNames() != null) {
-                m.put("lowercaseOutputLabelNames", ((InlineMetrics) getMetrics()).getLowercaseOutputLabelNames());
-            }
-            ArrayList<Map<String, Object>> data = new ArrayList<>();
-            for (Map<String, Object> rule : ((InlineMetrics) getMetrics()).getRules()) {
-                if (rule != null) {
-                    data.add(rule);
-                }
-            }
-            m.put("rules", data);
-            return new JsonObject(m).toString();
-        } else if (metricsConfig instanceof ExternalMetrics) {
-            if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(ANCILLARY_CM_KEY_METRICS)) {
-                return externalCm.getData().get(ANCILLARY_CM_KEY_METRICS);
-            } else {
-                log.warn("ConfigMap {} with external metrics configuration does not exist or doesn't contain the configuration under the {} key. Metrics are empty.",
-                        ((ExternalMetrics) getMetrics()).getName(),
-                        ANCILLARY_CM_KEY_METRICS);
-                return null;
-            }
+    public boolean isExternalMetricsConfigured() {
+        return getMetricsConfig() != null && getMetricsConfig().get("type") != null && getMetricsConfig().get("type").equals("external") && getMetricsConfig().get("name") != null;
+    }
+
+    public String getExternalMetricsName() {
+        if (isExternalMetricsConfigured()) {
+            return getMetricsConfig().get("name").toString();
         } else {
-            log.debug("Metrics are not set, thus disabled");
             return null;
         }
     }
 
-    protected void setMetricsConfig(Metrics metricsConfig) {
+    protected String parseMetrics(ConfigMap externalCm) {
+        if (isMetricsEnabled() && getMetricsConfig() != null) {
+            if (getMetricsConfig().get("type") != null && getMetricsConfig().get("type").equals("external")) {
+                // external metrics
+                if (getMetricsConfig().get("name") != null) {
+                    if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(ANCILLARY_CM_KEY_METRICS)) {
+                        return externalCm.getData().get(ANCILLARY_CM_KEY_METRICS);
+                    } else {
+                        log.warn("ConfigMap {} with external metrics configuration does not exist or doesn't contain the configuration under the {} key. Metrics are empty.",
+                                getMetricsConfig().get("name"), ANCILLARY_CM_KEY_METRICS);
+                        return null;
+                    }
+                } else {
+                    log.warn("External metrics configured without the name of the external ConfigMap.");
+                }
+            } else {
+                // inline metrics
+                HashMap<String, Object> m = new HashMap<>();
+                for (Map.Entry<String, Object> entry : getMetricsConfig().entrySet()) {
+                    m.put(entry.getKey(), entry.getValue());
+                }
+                return new JsonObject(m).toString();
+            }
+        }
+        return null;
+    }
+
+    protected void setMetricsConfig(Map<String, Object> metricsConfig) {
         this.metricsConfig = metricsConfig;
     }
 

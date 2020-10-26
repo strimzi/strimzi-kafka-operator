@@ -50,7 +50,6 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnectTls;
-import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -218,7 +217,7 @@ public class KafkaConnectCluster extends AbstractModel {
         }
         kafkaConnect.setInitImage(initImage);
 
-        Metrics metrics = spec.getMetrics();
+        Map<String, Object> metrics = spec.getMetrics();
         if (metrics != null) {
             kafkaConnect.setMetricsEnabled(true);
             kafkaConnect.setMetricsConfig(metrics);

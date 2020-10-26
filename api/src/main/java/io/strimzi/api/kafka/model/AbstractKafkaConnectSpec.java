@@ -20,6 +20,7 @@ import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Map;
 
 @Buildable(
         editableEnabled = false,
@@ -43,7 +44,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
-    private Metrics metrics;
+    private Map<String, Object> metrics;
     private Tracing tracing;
     private Affinity affinity;
     private List<Toleration> tolerations;
@@ -134,11 +135,11 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public Metrics getMetrics() {
+    public Map<String, Object> getMetrics() {
         return metrics;
     }
 
-    public void setMetrics(Metrics metrics) {
+    public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
     }
 

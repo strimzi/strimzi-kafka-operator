@@ -30,7 +30,6 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.ExternalMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -1386,8 +1385,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             configMaps.add(Future.succeededFuture(null));
                         }
 
-                        if (zkCluster.getMetrics() instanceof ExternalMetrics) {
-                            configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalMetrics) zkCluster.getMetrics()).getName()));
+                        if (zkCluster.isExternalMetricsConfigured()) {
+                            configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), zkCluster.getExternalMetricsName()));
                         } else {
                             configMaps.add(Future.succeededFuture(null));
                         }
@@ -2421,8 +2420,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 loggingCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName());
             }
 
-            if (kafkaCluster.getMetrics() instanceof ExternalMetrics) {
-                metricsCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalMetrics) kafkaCluster.getMetrics()).getName());
+            if (kafkaCluster.isExternalMetricsConfigured()) {
+                metricsCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), kafkaCluster.getExternalMetricsName());
             }
 
             ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(loggingCm, metricsCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
@@ -3008,8 +3007,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 Future<ConfigMap> futToMetricsConfigMap;
-                if (topicOperator != null && topicOperator.getMetrics() instanceof ExternalMetrics)  {
-                    futToMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalMetrics) topicOperator.getMetrics()).getName());
+                if (topicOperator != null && topicOperator.isExternalMetricsConfigured())  {
+                    futToMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), topicOperator.getExternalMetricsName());
                 } else {
                     futToMetricsConfigMap = Future.succeededFuture(null);
                 }
@@ -3022,8 +3021,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 Future<ConfigMap> futUoMetricsConfigMap;
-                if (userOperator != null && userOperator.getMetrics() instanceof ExternalMetrics)  {
-                    futUoMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalMetrics) userOperator.getMetrics()).getName());
+                if (userOperator != null && userOperator.isExternalMetricsConfigured())  {
+                    futUoMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), userOperator.getExternalMetricsName());
                 } else {
                     futUoMetricsConfigMap = Future.succeededFuture(null);
                 }
@@ -3186,8 +3185,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 ConfigMap loggingCm = cruiseControl.getLogging() instanceof ExternalLogging ?
                         configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) cruiseControl.getLogging()).getName()) :
                         null;
-                ConfigMap metricsCm = cruiseControl.getMetrics() instanceof ExternalMetrics ?
-                        configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalMetrics) cruiseControl.getMetrics()).getName()) :
+                ConfigMap metricsCm = cruiseControl.isExternalMetricsConfigured() ?
+                        configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), cruiseControl.getExternalMetricsName()) :
                         null;
                 ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 

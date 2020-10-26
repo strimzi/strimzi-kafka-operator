@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Probe;
@@ -28,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -273,10 +271,9 @@ public class EntityUserOperatorTest {
     public void testEntityUserOperatorEnvVarValidityAndRenewal() {
         int validity = 100;
         int renewal = 42;
-        InlineMetrics im = new InlineMetrics();
-        im.setRules(singletonList(singletonMap("animal", "wombat")));
+
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, im, singletonMap("foo", "bar"), emptyMap()))
+                image, healthDelay, healthTimeout, singletonMap("animal", "wombat"), singletonMap("foo", "bar"), emptyMap()))
                 .editSpec()
                 .withNewClientsCa()
                 .withRenewalDays(renewal)

@@ -71,7 +71,6 @@ spec:
       limits:
         memory: "5Gi"
     metrics:
-      type: "inline"
       lowercaseOutputName: true
       rules:
       - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
@@ -107,7 +106,6 @@ spec:
       limits:
         memory: "512Mi"
     metrics:
-      type: "inline"
       rules: []
   topicOperator:
     watchedNamespace: "my-ns"

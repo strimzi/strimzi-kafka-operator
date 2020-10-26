@@ -27,6 +27,7 @@ import io.strimzi.test.TestUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,10 +134,8 @@ public class KafkaResource {
                 .withNewKafkaExporter()
                 .endKafkaExporter()
                 .withNewCruiseControl()
-                    .withNewInlineMetrics()
-                        .withRules(rules)
-                        .withLowercaseOutputName(true)
-                    .endInlineMetrics()
+                    .addToMetrics("lowercaseOutputName", true)
+                    .addToMetrics("rules", Collections.singletonList(rule))
                 .endCruiseControl()
             .endSpec()
             .build());

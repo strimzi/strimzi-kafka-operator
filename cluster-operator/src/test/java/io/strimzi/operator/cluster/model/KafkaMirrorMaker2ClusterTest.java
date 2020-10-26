@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
@@ -32,7 +30,6 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -107,13 +104,10 @@ public class KafkaMirrorMaker2ClusterTest {
             .withBootstrapServers(bootstrapServers)
             .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
             .build();
-    private final InlineMetrics inlineMetrics = new InlineMetrics();
-    {
-        inlineMetrics.setRules(singletonList((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class)));
-    }
+
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
-            .withMetrics(inlineMetrics)
+            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .withImage(image)
             .withReplicas(replicas)
             .withReadinessProbe(new Probe(healthDelay, healthTimeout))
@@ -125,15 +119,13 @@ public class KafkaMirrorMaker2ClusterTest {
     private final KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
 
     @Test
-    public void testMetricsConfigMap() throws JsonProcessingException {
+    public void testMetricsConfigMap() {
         ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
     }
 
-    private void checkMetricsConfigMap(ConfigMap metricsCm) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> map = mapper.readValue(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), Map.class);
-        assertThat(map.get("rules"), is(inlineMetrics.getRules()));
+    private void checkMetricsConfigMap(ConfigMap metricsCm) {
+        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(metricsCmJson));
     }
 
     private Map<String, String> expectedLabels(String name)    {

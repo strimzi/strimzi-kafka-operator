@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -25,7 +23,6 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.InlineMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -96,10 +93,6 @@ public class KafkaMirrorMakerClusterTest {
             .withConfig((Map<String, Object>) TestUtils.fromJson(consumerConfigurationJson, Map.class))
             .build();
 
-    private final InlineMetrics inlineMetrics = new InlineMetrics();
-    {
-        inlineMetrics.setRules(singletonList((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class)));
-    }
     private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
             .withNewSpec()
             .withImage(image)
@@ -107,7 +100,7 @@ public class KafkaMirrorMakerClusterTest {
             .withProducer(producer)
             .withConsumer(consumer)
             .withWhitelist(whitelist)
-            .withMetrics(inlineMetrics)
+            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .endSpec()
             .build();
 
@@ -115,15 +108,13 @@ public class KafkaMirrorMakerClusterTest {
             VERSIONS);
 
     @Test
-    public void testMetricsConfigMap() throws JsonProcessingException {
+    public void testMetricsConfigMap() {
         ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null, null);
         checkMetricsConfigMap(metricsCm);
     }
 
-    private void checkMetricsConfigMap(ConfigMap metricsCm) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> map = mapper.readValue(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), Map.class);
-        assertThat(map.get("rules"), is(inlineMetrics.getRules()));
+    private void checkMetricsConfigMap(ConfigMap metricsCm) {
+        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(metricsCmJson));
     }
 
     private Map<String, String> expectedLabels(String name)    {

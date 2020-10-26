@@ -61,7 +61,6 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -479,7 +478,7 @@ public class KafkaCluster extends AbstractModel {
         }
         result.setConfiguration(configuration);
 
-        Metrics metrics = kafkaClusterSpec.getMetrics();
+        Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
         if (metrics != null) {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics);

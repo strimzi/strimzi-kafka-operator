@@ -37,7 +37,6 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.Metrics;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
@@ -210,7 +209,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.brokerInboundNetworkKiBPerSecondCapacity = capacity.getInboundNetworkKiBPerSecond();
             cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKiBPerSecond();
 
-            Metrics metrics = spec.getMetrics();
+            Map<String, Object> metrics = spec.getMetrics();
             if (metrics != null) {
                 cruiseControl.setMetricsEnabled(true);
                 cruiseControl.setMetricsConfig(metrics);
