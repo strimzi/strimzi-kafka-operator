@@ -14,7 +14,9 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -56,8 +58,6 @@ public class SpecificST extends AbstractST {
     public static final String NAMESPACE = "specific-cluster-test";
 
     @Test
-    @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
     void testRackAware() {
         String rackKey = "rack-key";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
@@ -66,14 +66,6 @@ public class SpecificST extends AbstractST {
                     .withNewRack()
                         .withTopologyKey(rackKey)
                     .endRack()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
                 .endKafka()
             .endSpec().done();
 
@@ -100,26 +92,21 @@ public class SpecificST extends AbstractST {
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
-        LOGGER.info("Waiting for reconciliation to happen. " +
-                "Giving some time to DNS/load balancer to propagate kafka address." +
-                "Sleeping for {}ms", Constants.RECONCILIATION_INTERVAL);
-        try {
-            Thread.sleep(Constants.RECONCILIATION_INTERVAL);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+                .withUsingPodName(defaultKafkaClientsPodName)
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                .build();
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-            .build();
-
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
+        internalKafkaClient.verifyProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
         );
     }
 
