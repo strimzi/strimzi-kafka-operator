@@ -189,10 +189,10 @@ public class StUtils {
         return validLines;
     }
 
-    public static JsonArray expectedServiceDiscoveryInfo(int port, String protocol, String auth) {
+    public static JsonArray expectedServiceDiscoveryInfo(int port, String protocol, String auth, boolean tls) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.put("port", port);
-        jsonObject.put(Constants.TLS_LISTENER_DEFAULT_NAME, port == 9093);
+        jsonObject.put(Constants.TLS_LISTENER_DEFAULT_NAME, tls);
         jsonObject.put("protocol", protocol);
         jsonObject.put("auth", auth);
 
@@ -202,10 +202,18 @@ public class StUtils {
         return jsonArray;
     }
 
-    public static JsonArray expectedServiceDiscoveryInfo(String plainAuth, String tlsAuth) {
+    /**
+     * Build jsonArray with data about service discovery based on pass configuration
+     * @param plainEcryption plain listener encryption
+     * @param tlsEncryption tls listener encryption
+     * @param plainTlsAuth plain listener authentication
+     * @param tlsTlsAuth tls listener authentication
+     * @return builded jsonArray
+     */
+    public static JsonArray expectedServiceDiscoveryInfo(String plainEcryption, String tlsEncryption, boolean plainTlsAuth, boolean tlsTlsAuth) {
         JsonArray jsonArray = new JsonArray();
-        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainAuth).getValue(0));
-        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsAuth).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainEcryption, plainTlsAuth).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsEncryption, tlsTlsAuth).getValue(0));
         return jsonArray;
     }
 

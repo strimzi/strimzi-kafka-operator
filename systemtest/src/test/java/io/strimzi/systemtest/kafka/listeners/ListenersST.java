@@ -68,7 +68,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
-    public static final String NAMESPACE = "kafka-listeners-cluster-test";
+    public static final String NAMESPACE = "listeners";
 
     private String customCertChain1 = "custom-certificate-chain-1";
     private String customCertChain2 = "custom-certificate-chain-2";
@@ -76,6 +76,7 @@ public class ListenersST extends AbstractST {
     private String customCertServer2 = "custom-certificate-server-2";
     private String customRootCA1 = "custom-certificate-root-1";
     private String customRootCA2 = "custom-certificate-root-2";
+    private String customListenerName = "randname";
 
     private String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
@@ -114,7 +115,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none"), is(serviceDiscoveryArray));
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none", false, true), is(serviceDiscoveryArray));
     }
 
     /**
@@ -178,7 +179,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(StUtils.expectedServiceDiscoveryInfo("none", Constants.TLS_LISTENER_DEFAULT_NAME), is(serviceDiscoveryArray));
+        assertThat(StUtils.expectedServiceDiscoveryInfo("none", Constants.TLS_LISTENER_DEFAULT_NAME, false, true), is(serviceDiscoveryArray));
     }
 
     /**
@@ -198,8 +199,8 @@ public class ListenersST extends AbstractST {
                         .withNewListeners()
                             .addNewGenericKafkaListener()
                                 .withType(KafkaListenerType.INTERNAL)
-                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                                .withPort(9092)
+                                .withName(customListenerName)
+                                .withPort(9095)
                                 .withTls(false)
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                                 .endKafkaListenerAuthenticationScramSha512Auth()
@@ -237,7 +238,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withListenerName(customListenerName)
             .build();
 
         // Check brokers availability
@@ -251,7 +252,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9092, "kafka", "scram-sha-512")));
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9095, "kafka", "scram-sha-512", false)));
     }
 
     /**
@@ -271,7 +272,7 @@ public class ListenersST extends AbstractST {
                             .addNewGenericKafkaListener()
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                                .withPort(9093)
+                                .withPort(9096)
                                 .withTls(true)
                                 .withNewKafkaListenerAuthenticationScramSha512Auth()
                                 .endKafkaListenerAuthenticationScramSha512Auth()
@@ -311,7 +312,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = kubeClient().getService(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9093, "kafka", "scram-sha-512")));
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
     }
 
     @Test
@@ -325,13 +326,13 @@ public class ListenersST extends AbstractST {
                         .addNewGenericKafkaListener()
                             .withType(KafkaListenerType.INTERNAL)
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9097)
                             .withTls(true)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withType(KafkaListenerType.NODEPORT)
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9098)
                             .withTls(false)
                         .endGenericKafkaListener()
                     .endListeners()
@@ -394,13 +395,13 @@ public class ListenersST extends AbstractST {
                             .addNewGenericKafkaListener()
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                                .withPort(9093)
+                                .withPort(9099)
                                 .withTls(true)
                             .endGenericKafkaListener()
                             .addNewGenericKafkaListener()
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                                .withPort(9094)
+                                .withPort(9100)
                                 .withTls(false)
                                 .withNewConfiguration()
                                     .withNewBootstrap()
@@ -417,14 +418,15 @@ public class ListenersST extends AbstractST {
                 .endSpec()
                 .done();
 
-        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
-                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
         LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
                 KafkaResources.externalBootstrapServiceName(CLUSTER_NAME));
-        assertThat(kubeClient().getService(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId))
+        assertThat(kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME))
+                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
+        String firstExternalService = CLUSTER_NAME + "-kafka-" + Constants.EXTERNAL_LISTENER_DEFAULT_NAME + "-" + 0;
+        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort, firstExternalService);
+        assertThat(kubeClient().getService(firstExternalService)
                 .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
-        LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort,
-                KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId));
+
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -451,7 +453,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9101)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
@@ -490,7 +492,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9102)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(false)
                         .endGenericKafkaListener()
@@ -527,7 +529,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9103)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
@@ -575,7 +577,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9104)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -587,8 +589,8 @@ public class ListenersST extends AbstractST {
                             .endConfiguration()
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withName(customListenerName)
+                            .withPort(9105)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .withNewConfiguration()
@@ -613,7 +615,7 @@ public class ListenersST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withCertificateAuthorityCertificateName(customCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withListenerName(customListenerName)
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -656,8 +658,8 @@ public class ListenersST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withName(customListenerName)
+                            .withPort(9106)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -704,7 +706,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, customListenerName, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -714,7 +716,7 @@ public class ListenersST extends AbstractST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName("consumer-group-certs-2")
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withListenerName(customListenerName)
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
@@ -739,7 +741,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9107)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -752,7 +754,7 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9108)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .withNewConfiguration()
@@ -821,7 +823,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9109)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -834,7 +836,7 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9110)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .withNewConfiguration()
@@ -908,7 +910,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9111)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -921,7 +923,7 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9112)
                             .withType(KafkaListenerType.ROUTE)
                             .withTls(true)
                             .withNewConfiguration()
@@ -990,7 +992,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9112)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1003,7 +1005,7 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9113)
                             .withType(KafkaListenerType.ROUTE)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1074,13 +1076,13 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9113)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9114)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                         .endGenericKafkaListener()
@@ -1123,7 +1125,7 @@ public class ListenersST extends AbstractST {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9113)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1136,7 +1138,7 @@ public class ListenersST extends AbstractST {
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9114)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1241,7 +1243,7 @@ public class ListenersST extends AbstractST {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9113)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1254,7 +1256,7 @@ public class ListenersST extends AbstractST {
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9114)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .build()
@@ -1316,13 +1318,13 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9115)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9116)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                         .endGenericKafkaListener()
@@ -1365,7 +1367,7 @@ public class ListenersST extends AbstractST {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9115)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1378,7 +1380,7 @@ public class ListenersST extends AbstractST {
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9116)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1480,7 +1482,7 @@ public class ListenersST extends AbstractST {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9115)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1493,7 +1495,7 @@ public class ListenersST extends AbstractST {
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9116)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(true)
                             .build()
@@ -1547,13 +1549,13 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9117)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9118)
                             .withType(KafkaListenerType.ROUTE)
                             .withTls(true)
                         .endGenericKafkaListener()
@@ -1596,7 +1598,7 @@ public class ListenersST extends AbstractST {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9117)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1609,7 +1611,7 @@ public class ListenersST extends AbstractST {
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9118)
                             .withType(KafkaListenerType.ROUTE)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1712,7 +1714,7 @@ public class ListenersST extends AbstractST {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9117)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1725,7 +1727,7 @@ public class ListenersST extends AbstractST {
                             .build(),
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
+                            .withPort(9118)
                             .withType(KafkaListenerType.ROUTE)
                             .withTls(true)
                             .build()
@@ -1778,7 +1780,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9119)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1811,7 +1813,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9120)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
@@ -1845,7 +1847,7 @@ public class ListenersST extends AbstractST {
                     .withNewListeners()
                         .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
+                            .withPort(9121)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewConfiguration()
