@@ -76,7 +76,7 @@ Producer requests must also provide a `Content-Type` header that corresponds to 
 
 == Message format
 
-When sending messages using the `/topics/` endpoint, you enter the message payload in the `records` parameter in the request body.
+When sending messages using the `/topics` endpoint, you enter the message payload in the request body, in the `records` parameter.
 
 The `records` parameter can contain any of these optional fields:
 
@@ -85,7 +85,7 @@ The `records` parameter can contain any of these optional fields:
 * Message `value`
 * Destination `partition`
 
-.Example `POST` request
+.Example `POST` request to /topics
 [source,curl,subs=attributes+]
 ----
 curl -X POST \
@@ -100,13 +100,14 @@ curl -X POST \
             "headers": [
               {
                 "key": "key1",
-                "value": "value1"
+                "value": "QXBhY2hlIEthZmthIGlzIHRoZSBib21iIQ==" <1>
               }
             ]
         },
     ]
 }'
 ----
+<1> The header value in binary format and encoded as Base64.
 
 == Accept headers
 
