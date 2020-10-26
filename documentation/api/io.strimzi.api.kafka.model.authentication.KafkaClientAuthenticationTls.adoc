@@ -6,12 +6,13 @@ TLS client authentication uses a TLS certificate to authenticate.
 The certificate is specified in the `certificateAndKey` property and is always loaded from a Kubernetes secret.
 In the secret, the certificate must be stored in X509 format under two different keys: public and private.
 
-You can use the secrets created by the Cluster Operator for the Kafka cluster,
-or you can create your own TLS certificate file, then create a `Secret` from the file:
+You can use the secrets created by the User Operator,
+or you can create your own TLS certificate file, with the keys used for authentication, then create a `Secret` from the file:
 
 [source,shell,subs=+quotes]
 kubectl create secret generic _MY-SECRET_ \
---from-file=_MY-TLS-CERTIFICATE-FILE.crt_
+--from-file=_MY-PUBLIC-TLS-CERTIFICATE-FILE.crt_ \
+--from-file=_MY-PRIVATE.key_
 
 NOTE: TLS client authentication can only be used with TLS connections.
 
@@ -22,6 +23,6 @@ authentication:
   type: tls
   certificateAndKey:
     secretName: my-secret
-    certificate: public.crt
+    certificate: my-public-tls-certificate-file.crt
     key: private.key
 ----

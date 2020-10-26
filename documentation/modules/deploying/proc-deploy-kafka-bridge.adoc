@@ -14,7 +14,7 @@ In this procedure, we use the example file provided with Strimzi:
 * `examples/bridge/kafka-bridge.yaml`
 
 For information about configuring the `KafkaBridge` resource,
-see link:{BookURLUsing}#assembly-deployment-configuration-kafka-bridge-str[Kafka Bridge configuration^] in the _Using Strimzi_ guide.
+see link:{BookURLUsing}#assembly-config-kafka-bridge-str[Kafka Bridge cluster configuration^] in the _Using Strimzi_ guide.
 
 .Prerequisites
 

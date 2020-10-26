@@ -2700,6 +2700,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2758,6 +2759,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeHttpConfig.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2788,6 +2790,7 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2801,6 +2804,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeProducerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====

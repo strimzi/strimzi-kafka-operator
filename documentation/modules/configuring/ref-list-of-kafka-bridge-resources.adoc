@@ -3,7 +3,7 @@
 // assembly-deployment-configuration-kafka-bridge.adoc
 
 [id='ref-list-of-kafka-bridge-resources-{context}']
-= List of resources created as part of Kafka Bridge cluster
+= List of Kafka Bridge cluster resources
 
 The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
