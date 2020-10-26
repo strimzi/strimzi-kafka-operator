@@ -30,8 +30,8 @@ spec:
     config:
       min.insync.replicas: 3
     metrics: {
-      "lowercaseOutputName": true,
-      "rules": [
+        "lowercaseOutputName": true,
+        "rules": [
             {
               "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
               "name": "kafka_server_$1_$2_total"
