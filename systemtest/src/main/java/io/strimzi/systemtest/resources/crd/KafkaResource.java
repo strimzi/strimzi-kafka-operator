@@ -26,7 +26,6 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -125,9 +124,6 @@ public class KafkaResource {
         rule.put("pattern", "kafka.cruisecontrol<name=(.+)><>(\\w+)");
         rule.put("name", "kafka_cruisecontrol_$1_$2");
         rule.put("type", "GAUGE");
-
-        ArrayList<Map<String, Object>> rules = new ArrayList<>();
-        rules.add(rule);
 
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
