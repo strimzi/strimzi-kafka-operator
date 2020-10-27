@@ -10,6 +10,7 @@ The TLS sidecar can be configured using the `tlsSidecar` property in:
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator`
+* `Kafka.spec.cruiseControl`
 
 The TLS sidecar supports the following additional options:
 
