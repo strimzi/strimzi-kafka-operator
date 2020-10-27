@@ -148,7 +148,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     async.flag();
                 })));
     }
-}
 
     public void testCASecretsWithOwnerReference(VertxTestContext context) {
         OwnerReference ownerReference = new OwnerReferenceBuilder()
