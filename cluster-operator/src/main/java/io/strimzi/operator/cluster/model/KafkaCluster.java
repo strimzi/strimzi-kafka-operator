@@ -1891,4 +1891,9 @@ public class KafkaCluster extends AbstractModel {
     public KafkaVersion getKafkaVersion() {
         return this.kafkaVersion;
     }
+
+    @Override
+    protected boolean shouldPatchLoggerAppender() {
+        return true;
+    }
 }

@@ -60,8 +60,8 @@ public class CertificateAuthority implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("If true then the Certificate Authority certificates secrets owner reference is set to the Kafka object. " +
-    "Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets." +
-    "Default is true.")
+            "Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets. " +
+            "Default is true.")
     public boolean isGenerateSecretOwnerReference() {
         return generateSecretOwnerReference;
     }

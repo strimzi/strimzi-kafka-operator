@@ -59,7 +59,7 @@ listeners:
 <1> The TLS property is now required for all listeners.
 <2> Options: `ingress`, `loadbalancer`, `nodeport`, `route`.
 
-Make sure to use the the *exact* names and port numbers shown.
+Make sure to use the *exact* names and port numbers shown.
 
 For any additional `configuration` or `overrides` properties used with the old format, you need to update them to the new format.
 
@@ -68,7 +68,7 @@ Changes introduced to the listener `configuration`:
 * `overrides` is merged with the `configuration` section
 * `dnsAnnotations` has been renamed `annotations`
 * `preferredAddressType` has been renamed `preferredNodePortAddressType`
-* `address` has been renamed `alternativenames`
+* `address` has been renamed `alternativeNames`
 * `loadBalancerSourceRanges` and `externalTrafficPolicy` move to the listener configuration from the now deprecated `template`
 
 For example, this configuration:

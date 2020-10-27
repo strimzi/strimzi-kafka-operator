@@ -10,7 +10,7 @@
 
 = Deployment configuration
 
-This chapter describes how to configure different aspects of the supported deployments:
+This chapter describes how to configure different aspects of the supported deployments using custom resources:
 
 * Kafka clusters
 * Kafka Connect clusters
@@ -19,17 +19,20 @@ This chapter describes how to configure different aspects of the supported deplo
 * Kafka Bridge
 * Cruise Control
 
+NOTE: Labels applied to a custom resource are also applied to the Kubernetes resources comprising Kafka MirrorMaker.
+This provides a convenient mechanism for resources to be labeled as required.
+
+The _Deploying Strimzi_ guide describes how to link:{BookURLDeploying}#assembly-metrics-str[monitor your Strimzi deployment^].
+
 include::assembly-deployment-configuration-kafka.adoc[leveloffset=+1]
 
-include::assembly-deployment-configuration-kafka-connect.adoc[leveloffset=+1]
+include::configuring/assembly-config-kafka-connect.adoc[leveloffset=+1]
 
-include::assembly-deployment-configuration-kafka-connect-s2i.adoc[leveloffset=+1]
+include::configuring/assembly-config-mirrormaker.adoc[leveloffset=+1]
 
-include::assembly-deployment-configuration-kafka-mirror-maker.adoc[leveloffset=+1]
+include::configuring/assembly-config-mirrormaker2.adoc[leveloffset=+1]
 
-include::mirrormaker2/assembly-mirrormaker.adoc[leveloffset=+1]
-
-include::assembly-deployment-configuration-kafka-bridge.adoc[leveloffset=+1]
+include::configuring/assembly-config-kafka-bridge.adoc[leveloffset=+1]
 
 include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]
 

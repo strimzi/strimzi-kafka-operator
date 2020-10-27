@@ -1,0 +1,136 @@
+Configures external storage properties that define configuration options for Kafka Connect connectors.
+
+You can mount ConfigMaps or Secrets into a Kafka Connect pod as environment variables or volumes.
+Volumes and environment variables are configured in the `externalConfiguration` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
+
+When applied, the environment variables and volumes are available for use when developing your connectors.
+
+[id='property-kafka-connect-external-env-{context}']
+=== `env`
+
+The `env` property is used to specify one or more environment variables.
+These variables can contain a value from either a ConfigMap or a Secret.
+
+.Example Secret containing values for environment variables
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-creds
+type: Opaque
+data:
+  awsAccessKey: QUtJQVhYWFhYWFhYWFhYWFg=
+  awsSecretAccessKey: Ylhsd1lYTnpkMjl5WkE=
+----
+
+NOTE: The names of user-defined environment variables cannot start with `KAFKA_` or `STRIMZI_`.
+
+To mount a value from a Secret to an environment variable, use the `valueFrom` property and the `secretKeyRef`.
+
+.Example environment variables set to values from a Secret
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  externalConfiguration:
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: aws-creds
+            key: awsAccessKey
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: aws-creds
+            key: awsSecretAccessKey
+----
+
+A common use case for mounting Secrets to environment variables is when your connector needs to communicate with Amazon AWS and needs to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables with credentials.
+
+To mount a value from a ConfigMap to an environment variable, use `configMapKeyRef` in the `valueFrom` property as shown in the following example.
+
+.Example environment variables set to values from a ConfigMap
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  externalConfiguration:
+    env:
+      - name: MY_ENVIRONMENT_VARIABLE
+        valueFrom:
+          configMapKeyRef:
+            name: my-config-map
+            key: my-key
+----
+
+[id='property-kafka-connect-external-volumes-{context}']
+=== `volumes`
+
+You can also mount ConfigMaps or Secrets to a Kafka Connect pod as volumes.
+
+Using volumes instead of environment variables is useful in the following scenarios:
+
+* Mounting truststores or keystores with TLS certificates
+* Mounting a properties file that is used to configure Kafka Connect connectors
+
+.Example Secret with properties
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+type: Opaque
+stringData:
+  connector.properties: |- <1>
+    dbUsername: my-user <2>
+    dbPassword: my-password
+----
+<1> The connector configuration in properties file format.
+<2> Database username and password properties used in the configuration.
+
+In this example, a Secret named `mysecret` is mounted to a volume named `connector-config`.
+In the `config` property, a configuration provider (`FileConfigProvider`) is specified, which will load configuration values from external sources.
+The Kafka `FileConfigProvider` is given the alias `file`,
+and will read and extract database _username_ and _password_ property values from the file to use in the connector configuration.
+
+.Example external volumes set to values from a Secret
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    config.providers: file <1>
+    config.providers.file.class: org.apache.kafka.common.config.provider.FileConfigProvider <2>
+  #...
+  externalConfiguration:
+    volumes:
+      - name: connector-config <3>
+        secret:
+          secretName: mysecret <4>
+----
+<1> The alias for the configuration provider, which is used to define other configuration parameters.
+Use a comma-separated list if you want to add more than one provider.
+<2> The `FileConfigProvider` is the configuration provider that provides values from properties files.
+The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
+<3> The name of the volume containing the Secret. Each volume must specify a name in the `name` property and a reference to ConfigMap or Secret.
+<4> The name of the Secret.
+
+The volumes are mounted inside the Kafka Connect containers in the path `/opt/kafka/external-configuration/_<volume-name>_`.
+For example, the files from a volume named `connector-config` would appear in the directory `/opt/kafka/external-configuration/connector-config`.
+
+The `FileConfigProvider` is used to read the values from the mounted properties files in connector configurations.

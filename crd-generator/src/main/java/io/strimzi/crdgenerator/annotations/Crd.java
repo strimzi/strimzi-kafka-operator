@@ -18,13 +18,6 @@ import java.lang.annotation.Target;
 public @interface Crd {
 
     /**
-     * The {@code apiVersion} of the generated {@code CustomResourceDefinition}.
-     * (Not the {@code apiVersion} of your custom resource instances, which is {@link Spec#version()}).
-     * @return The {@code apiVersion} of the generated {@code CustomResourceDefinition}
-     */
-    String apiVersion();
-
-    /**
      * Info for the {@code spec} of the generated {@code CustomResourceDefinition}.
      * @return The spec.
      */
@@ -84,13 +77,6 @@ public @interface Crd {
         /**
          * @return The version of custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
-         * @see #versions()
-         */
-        String version() default "";
-
-        /**
-         * @return The version of custom resources that this is the definition for.
-         * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         Version[] versions() default {};
 
@@ -122,6 +108,7 @@ public @interface Crd {
             Scale[] scale() default {};
 
             @interface Status {
+                String apiVersion() default "all";
             }
 
             /**
@@ -129,6 +116,7 @@ public @interface Crd {
              * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#customresourcesubresourcescale-v1beta1-apiextensions-k8s-io">Kubernetes 1.18 API documtation</a>
              */
             @interface Scale {
+                String apiVersion() default "all";
                 String specReplicasPath();
                 String statusReplicasPath();
                 String labelSelectorPath() default "";
@@ -146,6 +134,8 @@ public @interface Crd {
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcecolumndefinition-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         @interface AdditionalPrinterColumn {
+            /** @return The api version range in which this appears */
+            String apiVersion() default "all";
             /** @return JSON path into the CR for the value to show */
             String jsonPath();
             /** @return The description of the column */

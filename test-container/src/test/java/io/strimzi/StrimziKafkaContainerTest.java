@@ -6,6 +6,7 @@ package io.strimzi;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -29,6 +30,7 @@ public class StrimziKafkaContainerTest {
 
     @Test
     void testAtLeastOneVersionKafkaIsPresent() {
+        assumeDocker();
         systemUnderTest = new StrimziKafkaContainer();
 
         LOGGER.info("Verifying that at least one kafka version is present.");
@@ -36,8 +38,13 @@ public class StrimziKafkaContainerTest {
         assertThat(StrimziKafkaContainer.getSupportedKafkaVersions(), is(not(nullValue())));
     }
 
+    private void assumeDocker() {
+        Assumptions.assumeTrue(System.getenv("DOCKER_CMD") == null || "docker".equals(System.getenv("DOCKER_CMD")));
+    }
+
     @Test
     void testLatestKafkaVersion() {
+        assumeDocker();
         systemUnderTest = new StrimziKafkaContainer();
 
         List<String> supportedKafkaVersions = new ArrayList<>(3);
@@ -66,6 +73,7 @@ public class StrimziKafkaContainerTest {
 
     @Test
     void testStartContainer() {
+        assumeDocker();
         systemUnderTest = new StrimziKafkaContainer();
 
         systemUnderTest.start();

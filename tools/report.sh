@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 oc_installed=false
 kubectl_installed=false
@@ -81,6 +81,20 @@ if [ -z $namespace ]; then
    usage
 fi
 
+$platform get ns $namespace &> /dev/null
+
+if [ $? = "1" ]; then
+	echo "Namespace $namespace not found! Exiting"
+	exit 1
+fi
+
+$platform get kafka $cluster -n $namespace &> /dev/null
+
+if [ $? = "1" ]; then
+	echo "Kafka cluster $cluster in namespace $namespace not found! Exiting"
+	exit 1
+fi
+
 direct=`mktemp -d`
 resources_to_fetch=(
 	"deployments"
@@ -104,11 +118,12 @@ fi
 
 get_masked_secrets() {
 	mkdir -p $direct/reports/"$1"
+	echo "$1"
 	resources=$($platform get $1 -l strimzi.io/cluster=$cluster -o name -n $namespace)
 	for line in $resources; do
 		filename=`echo $line | cut -f 2 -d "/"`
 		echo "   "$line
-		original_data=`oc get $line -o=jsonpath='{.data}' | cut -c5-`
+		original_data=`oc get $line -o=jsonpath='{.data}' -n $namespace | cut -c5-`
 		SAVEIFS=$IFS
     IFS=$'\n'
     original_data=($original_data)
@@ -194,14 +209,12 @@ for pod in $pods; do
 	  $platform logs $pod -c kafka -n $namespace > $direct/reports/podLogs/"$pod"-kafka.log
 	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
 	  $platform logs $pod -p -c kafka -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-kafka.log
-
 	  $platform exec -i $pod -n $namespace -c kafka -- cat /tmp/strimzi.properties > $direct/reports/configs/"$pod".cfg
 	elif [[ $pod =~ .*-zookeeper-[0-9]+ ]]; then
-	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log
+	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log	
 	  $platform logs $pod -c zookeeper -n $namespace > $direct/reports/podLogs/"$pod"-zookeeper.log
 	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
 	  $platform logs $pod -p -c zookeeper -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-zookeeper.log
-
 	  $platform exec -i $pod -n $namespace -c zookeeper -- cat /tmp/zookeeper.properties > $direct/reports/configs/"$pod".cfg
 	elif [[ $pod == *"-kafka-exporter-"* || $pod == *"-connect-"* || $pod == *"-bridge-"* || $pod == *"-mirror-maker-"* ]]; then
 	  $platform logs $pod -n $namespace > $direct/reports/podLogs/"$pod".log

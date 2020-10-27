@@ -10,6 +10,7 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -112,6 +113,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.zookeeperContainer = zookeeperContainer;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @DeprecatedProperty
     @Deprecated
     @Description("Template for the Zookeeper server TLS sidecar container. " +

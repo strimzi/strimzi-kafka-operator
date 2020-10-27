@@ -95,7 +95,8 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                 "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                "log4j.rootLogger=INFO, CONSOLE\n" +
+                "root.logger.level=INFO\n " +
+                "log4j.rootLogger=${root.logger.level}, CONSOLE\n" +
                 "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
                 "log4j.logger.org.apache.zookeeper=INFO\n" +
                 "log4j.logger.kafka=DEBUG\n" +

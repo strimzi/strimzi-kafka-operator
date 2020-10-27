@@ -1,0 +1,5 @@
+Configures TLS trusted certificates for connecting Kafka Connect to the cluster.
+
+=== `trustedCertificates`
+
+Provide a list of secrets using the xref:con-common-configuration-trusted-certificates-reference[`trustedCertificates` property].

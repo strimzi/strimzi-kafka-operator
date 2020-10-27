@@ -20,7 +20,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -40,6 +40,7 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.internal.readiness.OpenShiftReadiness;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -373,8 +374,11 @@ public class KubeClient {
     /**
      * Gets deployment config status
      */
-    public boolean getDeploymentConfigStatus(String deploymentConfigName) {
-        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).isReady();
+    public boolean getDeploymentConfigReadiness(String deploymentConfigName) {
+        // isReady() does not work because of https://github.com/fabric8io/kubernetes-client/issues/2537
+        // This method provides a temporary workaround by calling OpenShiftReadiness.isDeploymentConfigReady(...) directly.
+        // TODO: This should be changed to isReady() after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed.
+        return OpenShiftReadiness.isDeploymentConfigReady(getDeploymentConfig(deploymentConfigName));
     }
 
     // ==================================

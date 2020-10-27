@@ -8,12 +8,6 @@ metadata:
     component: kafkarebalances.kafka.strimzi.io-crd
 spec:
   group: kafka.strimzi.io
-  versions:
-    - name: v1alpha1
-      served: true
-      storage: true
-  version: v1alpha1
-  scope: Namespaced
   names:
     kind: KafkaRebalance
     listKind: KafkaRebalanceList
@@ -23,6 +17,7 @@ spec:
       - kr
     categories:
       - strimzi
+  scope: Namespaced
   additionalPrinterColumns:
     - name: Cluster
       description: The name of the Kafka cluster this resource rebalances
@@ -30,6 +25,13 @@ spec:
       type: string
   subresources:
     status: {}
+  conversion:
+    strategy: None
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  version: v1alpha1
   validation:
     openAPIV3Schema:
       properties:

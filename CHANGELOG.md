@@ -1,10 +1,18 @@
 # CHANGELOG
 
+## 0.21.0
+
+* Add support for `secretPrefix` property for User Operator to prefix all secret names created from KafkaUser resource.
+* Allow configuring labels and annotations for Cluster CA certificate secrets
+* Add the JAAS configuration string in the sasl.jaas.config property to the generated secrets for KafkaUser with SCRAM-SHA-512 authentication.
+
 ## 0.20.0
+
+**Note: This is the last version of Strimzi that will support Kubernetes 1.11 and higher. Future versions will drop support for Kubernetes 1.11-1.15 and support only Kubernetes 1.16 and higher.**
 
 * Add support for Kafka 2.5.1 and 2.6.0. Remove support for 2.4.0 and 2.4.1
 * Remove TLS sidecars from Kafka pods => Kafka now uses native TLS to connect to ZooKeeper
-* Updated to Cruise Control 2.5.11, which adds Kafka 2.6.0 support and fixes a previous issue with CPU utilization statistics for containers. As a result, the CPUCapacityGoal has now been enabled.
+* Updated to Cruise Control 2.5.11, which adds Kafka 2.6.0 support and fixes a previous issue with CPU utilization statistics for containers. As a result, the CpuCapacityGoal has now been enabled.
 * Cruise Control metrics integration:
   * Enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
   * New Grafana dashboard for the Cruise Control metrics
@@ -20,7 +28,10 @@
   * Rearranged graphs
 * Make `listeners` configurable as an array and add support for more different listeners in single cluster
 * Add support for configuring `hostAliases` in Pod templates
-* Add new resource state metric in the operators for reflecting the reconcile result on a specific resource 
+* Add new resource state metric in the operators for reflecting the reconcile result on a specific resource
+* Add improvements for `oauth` authentication, and `keycloak` authorization:
+  * Support for re-authentication was added, which also enforces access token lifespan on the Kafka client session
+  * Permission changes through Keycloak Authorization Services are now detected by Kafka Brokers
 
 ### Deprecations and removals
 

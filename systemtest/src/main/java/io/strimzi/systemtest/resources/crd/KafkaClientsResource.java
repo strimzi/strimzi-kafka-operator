@@ -43,10 +43,21 @@ public class KafkaClientsResource {
     }
 
     public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
-        return deployKafkaClients(tlsListener, kafkaClientsName, true, kafkaUsers);
+        return deployKafkaClients(tlsListener, kafkaClientsName, true,  null, kafkaUsers);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser...kafkaUsers) {
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, String listenerName,
+                                                        KafkaUser... kafkaUsers) {
+        return deployKafkaClients(tlsListener, kafkaClientsName, true, listenerName, kafkaUsers);
+    }
+
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
+                                                        KafkaUser... kafkaUsers) {
+        return deployKafkaClients(tlsListener, kafkaClientsName, hostnameVerification, null, kafkaUsers);
+    }
+
+    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
+                                                        String listenerName, KafkaUser... kafkaUsers) {
         Map<String, String> label = Collections.singletonMap(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
@@ -64,7 +75,7 @@ public class KafkaClientsResource {
                         .addToLabels("app", kafkaClientsName)
                         .addToLabels(label)
                     .endMetadata()
-                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, kafkaUsers))
+                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, listenerName, kafkaUsers))
                 .endTemplate()
             .endSpec()
             .build();
@@ -72,7 +83,8 @@ public class KafkaClientsResource {
         return KubernetesResource.deployNewDeployment(kafkaClient);
     }
 
-    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification, KafkaUser... kafkaUsers) {
+    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
+                                            String listenerName, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
             .withName(kafkaClientsName)
@@ -163,7 +175,7 @@ public class KafkaClientsResource {
                 if (tlsListener) {
                     String clusterName = kafkaUser.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
                     String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().get().getMetadata().getNamespace();
-                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(clusterNamespace, clusterName);
+                    String clusterCaSecretName = KafkaResource.getKafkaTlsListenerCaCertName(clusterNamespace, clusterName, listenerName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
                     String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
 

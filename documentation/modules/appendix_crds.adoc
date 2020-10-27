@@ -193,7 +193,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |Property                   |Description
 |name                1.2+<.<|Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
 |string
-|port                1.2+<.<|Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Depending on the listener type, it might not be the port number where the Kafka clients connect.
+|port                1.2+<.<|Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 |integer
 |type                1.2+<.<|Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. 
 
@@ -1121,6 +1121,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |initContainer             1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|clusterCaCert             1.2+<.<|Template for Secret with Kafka Cluster certificate public key.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-StatefulSetTemplate-{context}']
@@ -1465,6 +1467,8 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the ZooKeeper session.
 |integer
+|secretPrefix                    1.2+<.<|The prefix that will be added to the KafkaUser name to be used as the Secret name.
+|string
 |livenessProbe                   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe                  1.2+<.<|Pod readiness checking.
@@ -1877,6 +1881,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaConnectTls.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2037,6 +2042,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2160,6 +2166,7 @@ Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xre
 
 Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2693,6 +2700,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2751,6 +2759,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeHttpConfig.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2781,6 +2790,7 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====
@@ -2794,6 +2804,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
+include::../api/io.strimzi.api.kafka.model.KafkaBridgeProducerSpec.adoc[leveloffset=+1]
 
 [options="header"]
 |====

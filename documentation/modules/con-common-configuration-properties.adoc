@@ -61,6 +61,43 @@ spec:
 Allowed values are `TLSv1.1` and `TLSv1.2`.
 <4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.
 
+[id='con-common-configuration-trusted-certificates-{context}']
+=== `trustedCertificates`
+
+Having set `tls` to configure TLS encryption, use the `trustedCertificates` property to provide a list of secrets with key names under which the certificates are stored in X.509 format.
+
+You can use the secrets created by the Cluster Operator for the Kafka cluster,
+or you can create your own TLS certificate file, then create a `Secret` from the file:
+
+[source,shell,subs=+quotes]
+kubectl create secret generic _MY-SECRET_ \
+--from-file=_MY-TLS-CERTIFICATE-FILE.crt_
+
+.Example TLS encryption configuration
+[source,yaml,subs=attributes+]
+----
+tls:
+  trustedCertificates:
+    - secretName: my-cluster-cluster-cert
+      certificate: ca.crt
+    - secretName: my-cluster-cluster-cert
+      certificate: ca2.crt
+----
+
+If certificates are stored in the same secret, it can be listed multiple times.
+
+If you want to enable TLS, but use the default set of public certification authorities shipped with Java,
+you can specify `trustedCertificates` as an empty array:
+
+.Example of enabling TLS with the default Java certificates
+[source,yaml,subs=attributes+]
+----
+tls:
+  trustedCertificates: []
+----
+
+For information on configuring TLS client authentication, see xref:type-KafkaClientAuthenticationTls-reference[`KafkaClientAuthenticationTls` schema reference].
+
 [id='con-common-configuration-resources-{context}']
 === `resources`
 
@@ -241,7 +278,7 @@ Both `livenessProbe` and `readinessProbe` support the following options:
 * `successThreshold`
 * `failureThreshold`
 
-.An example of liveness and readiness probe configuration
+.Example of liveness and readiness probe configuration
 [source,yaml,subs="attributes+"]
 ----
 # ...

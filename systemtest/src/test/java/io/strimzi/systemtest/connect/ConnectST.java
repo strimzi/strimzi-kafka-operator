@@ -176,6 +176,7 @@ class ConnectST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -195,7 +196,7 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("plain")
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
@@ -252,6 +253,7 @@ class ConnectST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -290,6 +292,7 @@ class ConnectST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         int received = internalKafkaClient.receiveMessagesPlain();
@@ -373,7 +376,7 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("tls")
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
@@ -434,6 +437,7 @@ class ConnectST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -452,7 +456,7 @@ class ConnectST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -511,6 +515,7 @@ class ConnectST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -725,6 +730,7 @@ class ConnectST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         String execConnectPod =  kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
@@ -757,14 +763,14 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("tls")
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .withAuth(new KafkaListenerAuthenticationTls())
                             .endGenericKafkaListener()
                             .addNewGenericKafkaListener()
-                                .withName("external")
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
@@ -820,14 +826,14 @@ class ConnectST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .addNewGenericKafkaListener()
-                                .withName("tls")
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .withAuth(new KafkaListenerAuthenticationScramSha512())
                             .endGenericKafkaListener()
                             .addNewGenericKafkaListener()
-                                .withName("external")
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
@@ -887,6 +893,7 @@ class ConnectST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(securityProtocol)
             .withTopicName(TOPIC_NAME)
+            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
@@ -1024,22 +1031,31 @@ class ConnectST extends AbstractST {
     }
 
     @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
         String secretPassword = "password";
         String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
 
-        String secretEnv = "MY_CONNECTOR_SECRET";
+        String secretEnv = "MY_CONNECT_SECRET";
         String configMapEnv = "MY_CONNECT_CONFIG_MAP";
 
-        String configMapVolumeName = "connect-config-map";
-        String secretVolumeName = "connect-secret";
+        String dotedSecretEnv = "MY_DOTED_CONNECT_SECRET";
+        String dotedConfigMapEnv = "MY_DOTED_CONNECT_CONFIG_MAP";
+
+        String configMapName = "connect-config-map";
+        String secretName = "connect-secret";
+
+        String dotedConfigMapName = "connect.config.map";
+        String dotedSecretName = "connect.secret";
 
         String configMapKey = "my-key";
         String secretKey = "my-secret-key";
 
+        String configMapValue = "my-value";
+
         Secret connectSecret = new SecretBuilder()
             .withNewMetadata()
-                .withName("my-secret")
+                .withName(secretName)
             .endMetadata()
             .withType("Opaque")
             .addToData(secretKey, encodedPassword)
@@ -1047,13 +1063,30 @@ class ConnectST extends AbstractST {
 
         ConfigMap configMap = new ConfigMapBuilder()
             .editOrNewMetadata()
-                .withName("my-config-map")
+                .withName(configMapName)
             .endMetadata()
-            .addToData(configMapKey, "my-value")
+            .addToData(configMapKey, configMapValue)
+            .build();
+
+        Secret dotedConnectSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName(dotedSecretName)
+            .endMetadata()
+            .withType("Opaque")
+            .addToData(secretKey, encodedPassword)
+            .build();
+
+        ConfigMap dotedConfigMap = new ConfigMapBuilder()
+            .editOrNewMetadata()
+                .withName(dotedConfigMapName)
+            .endMetadata()
+            .addToData(configMapKey, configMapValue)
             .build();
 
         kubeClient().createSecret(connectSecret);
+        kubeClient().createSecret(dotedConnectSecret);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(dotedConfigMap);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -1064,12 +1097,20 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .withNewExternalConfiguration()
                     .addNewVolume()
-                        .withNewName(secretVolumeName)
-                        .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret").build())
+                        .withNewName(secretName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(secretName).build())
                     .endVolume()
                     .addNewVolume()
-                        .withNewName(configMapVolumeName)
-                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-config-map").build())
+                        .withNewName(configMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(dotedSecretName)
+                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(dotedSecretName).build())
+                    .endVolume()
+                    .addNewVolume()
+                        .withNewName(dotedConfigMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(dotedConfigMapName).build())
                     .endVolume()
                     .addNewEnv()
                         .withNewName(secretEnv)
@@ -1093,6 +1134,28 @@ class ConnectST extends AbstractST {
                                     .build())
                         .endValueFrom()
                     .endEnv()
+                    .addNewEnv()
+                        .withNewName(dotedSecretEnv)
+                        .withNewValueFrom()
+                            .withSecretKeyRef(
+                                new SecretKeySelectorBuilder()
+                                    .withKey(secretKey)
+                                    .withName(dotedConnectSecret.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
+                    .addNewEnv()
+                        .withNewName(dotedConfigMapEnv)
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(
+                                new ConfigMapKeySelectorBuilder()
+                                    .withKey(configMapKey)
+                                    .withName(dotedConfigMap.getMetadata().getName())
+                                    .withOptional(false)
+                                    .build())
+                        .endValueFrom()
+                    .endEnv()
                 .endExternalConfiguration()
             .endSpec()
             .done();
@@ -1101,15 +1164,25 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Check if the ENVs contains desired values");
         assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + secretEnv).out().trim(), equalTo(secretPassword));
-        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo("my-value"));
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + configMapEnv).out().trim(), equalTo(configMapValue));
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + dotedSecretEnv).out().trim(), equalTo(secretPassword));
+        assertThat(cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "printenv " + dotedConfigMapEnv).out().trim(), equalTo(configMapValue));
 
         LOGGER.info("Check if volumes contains desired values");
         assertThat(
-            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapVolumeName + "/" + configMapKey).out().trim(),
-            equalTo("my-value")
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapName + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
         );
         assertThat(
-            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + secretVolumeName + "/" + secretKey).out().trim(),
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + secretName + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedConfigMapName + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
+        );
+        assertThat(
+            cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretName + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
         );
     }
@@ -1119,8 +1192,8 @@ class ConnectST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         HostAlias hostAlias = new HostAliasBuilder()
-            .withIp("34.89.152.196")
-            .withHostnames("strimzi")
+            .withIp(aliasIp)
+            .withHostnames(aliasHostname)
             .build();
 
         KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
@@ -1135,16 +1208,9 @@ class ConnectST extends AbstractST {
 
         String connectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        LOGGER.info("Trying to ping strimzi.io by ping strimzi command");
-        String output = cmdKubeClient().execInPod(connectPodName, "ping", "-c", "5", "strimzi").out();
-
-        LOGGER.info("Checking output of ping");
-        assertThat(output, containsString("PING strimzi (34.89.152.196)"));
-        assertThat(output, containsString("5 packets transmitted, 5 received"));
-
         LOGGER.info("Checking the /etc/hosts file");
-        output = cmdKubeClient().execInPod(connectPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString("# Entries added by HostAliases.\n34.89.152.196\tstrimzi"));
+        String output = cmdKubeClient().execInPod(connectPodName, "cat", "/etc/hosts").out();
+        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll

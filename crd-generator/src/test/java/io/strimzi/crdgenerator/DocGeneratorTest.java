@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import io.strimzi.api.annotations.ApiVersion;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class DocGeneratorTest {
     public void simpleTest() throws IOException, ClassNotFoundException, URISyntaxException {
         assertThat(classInherits(Class.forName("io.strimzi.crdgenerator.KubeLinker"), Linker.class), is(notNullValue()));
         StringWriter w = new StringWriter();
-        DocGenerator crdGenerator = new DocGenerator(1, singletonList(ExampleCrd.class), w, new KubeLinker("{KubeApiReferenceBase}"));
+        DocGenerator crdGenerator = new DocGenerator(ApiVersion.V1, 1, singletonList(ExampleCrd.class), w, new KubeLinker("{KubeApiReferenceBase}"));
         crdGenerator.generate(ExampleCrd.class);
         String s = w.toString();
         assertEquals(CrdTestUtils.readResource("simpleTest.adoc"), s);

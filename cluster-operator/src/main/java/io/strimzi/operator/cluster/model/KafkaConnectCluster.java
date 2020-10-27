@@ -441,7 +441,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
                 } else  if (volume.getConfigMap() != null || volume.getSecret() != null) {
                     VolumeMount volumeMount = new VolumeMountBuilder()
-                            .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
+                            .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
                             .withMountPath(EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + name)
                             .build();
 
@@ -816,5 +816,10 @@ public class KafkaConnectCluster extends AbstractModel {
                 .build();
 
         return getClusterRoleBinding(subject, roleRef);
+    }
+
+    @Override
+    protected boolean shouldPatchLoggerAppender() {
+        return true;
     }
 }

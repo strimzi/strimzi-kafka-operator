@@ -90,7 +90,8 @@ public class Main {
                     KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
                             certManager, crdOperations,
                             config.getLabels(),
-                            secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
+                            secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace(),
+                            config.getSecretPrefix());
 
                     Promise<String> promise = Promise.promise();
                     UserOperator operator = new UserOperator(config.getNamespace(),

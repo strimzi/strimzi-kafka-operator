@@ -61,6 +61,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     private final Optional<LabelSelector> selector;
     private final KafkaUserQuotasOperator kafkaUserQuotasOperator;
     private PasswordGenerator passwordGenerator = new PasswordGenerator(12);
+    private final String secretPrefix;
 
     /**
      * @param vertx The Vertx instance.
@@ -74,6 +75,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * @param caCertName The name of the Secret containing the clients CA certificate.
      * @param caKeyName The name of the Secret containing the clients CA private key.
      * @param caNamespace The namespace of the Secret containing the clients CA certificate and private key.
+     * @param secretPrefix The prefix used to add to the name of the Secrets generated from the KafkaUser resources.
      */
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
@@ -82,7 +84,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              KafkaUserQuotasOperator kafkaUserQuotasOperator,
-                             SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
+                             SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace, String secretPrefix) {
         super(vertx, "KafkaUser", crdOperator, new MicrometerMetricsProvider());
         this.certManager = certManager;
         Map<String, String> matchLabels = labels.toMap();
@@ -94,6 +96,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         this.caCertName = caCertName;
         this.caKeyName = caKeyName;
         this.caNamespace = caNamespace;
+        this.secretPrefix = secretPrefix;
     }
 
     @Override
@@ -145,7 +148,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     protected Future<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
         Secret clientsCaCert = secretOperations.get(caNamespace, caCertName);
         Secret clientsCaKey = secretOperations.get(caNamespace, caKeyName);
-        Secret userSecret = secretOperations.get(reconciliation.namespace(), KafkaUserModel.getSecretName(reconciliation.name()));
+        Secret userSecret = secretOperations.get(reconciliation.namespace(), KafkaUserModel.getSecretName(secretPrefix, reconciliation.name()));
 
         KafkaUserStatus userStatus = new KafkaUserStatus();
         String namespace = reconciliation.namespace();
@@ -153,7 +156,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         KafkaUserModel user;
 
         try {
-            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, resource, clientsCaCert, clientsCaKey, userSecret);
+            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, resource, clientsCaCert, clientsCaKey, userSecret, secretPrefix);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(userStatus, e));
@@ -228,7 +231,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
         log.debug("{}: Deleting User", reconciliation, user, namespace);
-        return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
+        return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(secretPrefix, user), null),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),
                 scramShaCredentialOperator.reconcile(KafkaUserModel.getScramUserName(user), null)

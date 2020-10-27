@@ -1,0 +1,19 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-config-kafka-bridge-{context}']
+= Kafka Bridge cluster configuration
+
+This section describes how to configure a Kafka Bridge deployment in your Strimzi cluster.
+
+Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
+
+If you are using the Kafka Bridge, you configure the `KafkaBridge` resource.
+
+The full schema of the `KafkaBridge` resource is described in xref:type-KafkaBridge-reference[].
+
+//procedure to configure Kafka Bridge
+include::../../modules/configuring/proc-config-kafka-bridge.adoc[leveloffset=+1]
+//Resources created for Kafka Bridge
+include::../../modules/configuring/ref-list-of-kafka-bridge-resources.adoc[leveloffset=+1]

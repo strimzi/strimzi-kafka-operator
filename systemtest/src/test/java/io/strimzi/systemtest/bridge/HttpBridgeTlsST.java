@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -54,6 +55,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(internalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
@@ -74,6 +76,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
@@ -92,7 +95,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName("tls")
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)

@@ -574,7 +574,7 @@ class LoggingChangeST extends AbstractST {
     void testDynamicallySetConnectLoggingLevels() {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
-        loggers.put("log4j.rootLogger", "OFF");
+        loggers.put("connect.root.logger.level", "OFF");
         ilOff.setLoggers(loggers);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -593,7 +593,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
-        loggers.put("log4j.rootLogger", "DEBUG");
+        loggers.put("connect.root.logger.level", "DEBUG");
         ilDebug.setLoggers(loggers);
 
         KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, conn -> {
@@ -653,11 +653,11 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
         InlineLogging ilOff = new InlineLogging();
-        ilOff.setLoggers(Collections.singletonMap("log4j.rootLogger", "INFO"));
+        ilOff.setLoggers(Collections.singletonMap("kafka.root.logger.level", "INFO"));
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
-        ilDebug.setLoggers(Collections.singletonMap("log4j.rootLogger", "DEBUG"));
+        ilDebug.setLoggers(Collections.singletonMap("kafka.root.logger.level", "DEBUG"));
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setLogging(ilDebug);
         });
@@ -740,7 +740,7 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
         InlineLogging il = new InlineLogging();
-        il.setLoggers(Collections.singletonMap("log4j.rootLogger", "PAPRIKA"));
+        il.setLoggers(Collections.singletonMap("kafka.root.logger.level", "PAPRIKA"));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setLogging(il);
@@ -860,7 +860,7 @@ class LoggingChangeST extends AbstractST {
     void testDynamicallySetMM2LoggingLevels() {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
-        loggers.put("log4j.rootLogger", "OFF");
+        loggers.put("connect.root.logger.level", "OFF");
         ilOff.setLoggers(loggers);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME + "-source", 3).done();
@@ -874,7 +874,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
-        loggers.put("log4j.rootLogger", "DEBUG");
+        loggers.put("connect.root.logger.level", "DEBUG");
         ilDebug.setLoggers(loggers);
 
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(CLUSTER_NAME, mm2 -> {

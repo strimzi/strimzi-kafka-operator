@@ -15,7 +15,7 @@ In this procedure, we use the example files provided with Strimzi:
 * `examples/mirror-maker/kafka-mirror-maker-2.yaml`
 
 For information about configuring `KafkaMirrorMaker` or `KafkaMirrorMaker2` resources,
-see link:{BookURLUsing}#assembly-deployment-configuration-kafka-mirror-maker-str[Kafka MirrorMaker configuration^] in the _Using Strimzi_ guide.
+see link:{BookURLUsing}#assembly-deployment-configuration-kafka-mirror-maker-str[Kafka MirrorMaker cluster configuration^] in the _Using Strimzi_ guide.
 
 .Prerequisites
 

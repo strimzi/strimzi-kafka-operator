@@ -18,6 +18,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -146,6 +147,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.logging = logging;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @DeprecatedProperty
     @Deprecated
     @Description("TLS sidecar configuration")
@@ -242,6 +244,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.metrics = metrics;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -256,6 +259,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.affinity = affinity;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

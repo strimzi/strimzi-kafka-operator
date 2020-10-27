@@ -12,15 +12,6 @@ metadata:
     heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
-  versions:
-    - name: v1beta1
-      served: true
-      storage: true
-    - name: v1alpha1
-      served: true
-      storage: false
-  version: v1beta1
-  scope: Namespaced
   names:
     kind: Kafka
     listKind: KafkaList
@@ -30,6 +21,7 @@ spec:
       - k
     categories:
       - strimzi
+  scope: Namespaced
   additionalPrinterColumns:
     - name: Desired Kafka replicas
       description: The desired number of Kafka replicas in the cluster
@@ -41,6 +33,16 @@ spec:
       type: integer
   subresources:
     status: {}
+  conversion:
+    strategy: None
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+    - name: v1alpha1
+      served: true
+      storage: false
+  version: v1beta1
   validation:
     openAPIV3Schema:
       properties:
@@ -151,6 +153,7 @@ spec:
                 listeners:
                   oneOf:
                     - type: array
+                      minItems: 1
                       items:
                         type: object
                         properties:
@@ -160,7 +163,8 @@ spec:
                             description: Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
                           port:
                             type: integer
-                            description: Port number used by the listener. The port number has to be unique within a given Kafka cluster. The port number will be used for the listener inside Kafka. Depending on the listener type, it might not be the port number where the Kafka clients connect.
+                            minimum: 9092
+                            description: Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
                           type:
                             type: string
                             enum:
@@ -2222,6 +2226,20 @@ spec:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Kafka init container.
+                    clusterCaCert:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                              description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                            annotations:
+                              type: object
+                              description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Metadata applied to the resource.
+                      description: Template for Secret with Kafka Cluster certificate public key.
                   description: Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
                 version:
                   type: string
@@ -3755,6 +3773,9 @@ spec:
                       type: integer
                       minimum: 0
                       description: Timeout for the ZooKeeper session.
+                    secretPrefix:
+                      type: string
+                      description: The prefix that will be added to the KafkaUser name to be used as the Secret name.
                     livenessProbe:
                       type: object
                       properties:

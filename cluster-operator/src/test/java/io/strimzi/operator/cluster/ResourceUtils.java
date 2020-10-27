@@ -375,7 +375,7 @@ public class ResourceUtils {
 
         KafkaClusterSpec kafkaClusterSpec = new KafkaClusterSpec();
         kafkaClusterSpec.setReplicas(replicas);
-        kafkaClusterSpec.setListeners(new ArrayOrObjectKafkaListeners(emptyList(), null));
+        kafkaClusterSpec.setListeners(new ArrayOrObjectKafkaListeners(emptyList()));
         kafkaClusterSpec.setImage(image);
         if (kafkaLogging != null) {
             kafkaClusterSpec.setLogging(kafkaLogging);

@@ -56,13 +56,13 @@ public class ListenersValidatorTest {
     public void testValidateNewListeners() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
         GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
                 .withName("listener2")
-                .withPort(9001)
+                .withPort(9901)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
@@ -74,13 +74,13 @@ public class ListenersValidatorTest {
     public void testValidateThrowsException() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
         GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
                 .withName("listener2")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
@@ -94,19 +94,19 @@ public class ListenersValidatorTest {
     public void testValidateDuplicatePorts() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
         GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
                 .withName("listener2")
-                .withPort(9001)
+                .withPort(9901)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
         GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
                 .withName("listener3")
-                .withPort(9001)
+                .withPort(9901)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
@@ -115,34 +115,46 @@ public class ListenersValidatorTest {
     }
 
     @Test
-    public void testValidateForbiddenPorts() {
-        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
-                .withName("listener1")
-                .withPort(9091)
-                .withType(KafkaListenerType.INTERNAL)
-                .build();
-
-        List<GenericKafkaListener> listeners = asList(listener1);
-        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder("ports [9090, 9091, 9404, 9999] are forbidden and cannot be used"));
-    }
-
-    @Test
-    public void testValidateDuplicateNames() {
+    public void testValidateForbiddenPortByRange() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
                 .withPort(9000)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
+        List<GenericKafkaListener> listeners = asList(listener1);
+        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder("port 9000 is forbidden and cannot be used"));
+    }
+
+    @Test
+    public void testValidateForbiddenPortByException() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9404)
+                .withType(KafkaListenerType.INTERNAL)
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener1);
+        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder("port 9404 is forbidden and cannot be used"));
+    }
+
+    @Test
+    public void testValidateDuplicateNames() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .build();
+
         GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
                 .withName("listener2")
-                .withPort(9001)
+                .withPort(9901)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
         GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
-                .withPort(9002)
+                .withPort(9902)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
@@ -154,19 +166,19 @@ public class ListenersValidatorTest {
     public void testInvalidNames() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener 1")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
         GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
                 .withName("LISTENER2")
-                .withPort(9001)
+                .withPort(9901)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
         GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
                 .withName("listener12345678901234567890")
-                .withPort(9002)
+                .withPort(9902)
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
@@ -625,7 +637,7 @@ public class ListenersValidatorTest {
     public void testValidateOauth() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
-                .withPort(9000)
+                .withPort(9900)
                 .withType(KafkaListenerType.INTERNAL)
                 .withAuth(new KafkaListenerAuthenticationOAuthBuilder().build())
                 .build();

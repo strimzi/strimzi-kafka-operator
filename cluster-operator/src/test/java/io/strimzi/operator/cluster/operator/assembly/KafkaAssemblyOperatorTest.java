@@ -146,7 +146,7 @@ public class KafkaAssemblyOperatorTest {
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
         LOG_ZOOKEEPER_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "INFO"));
-        LOG_CONNECT_CONFIG.setLoggers(singletonMap("log4j.rootLogger", "INFO"));
+        LOG_CONNECT_CONFIG.setLoggers(singletonMap("connect.root.logger.level", "INFO"));
     }
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
@@ -592,19 +592,6 @@ public class KafkaAssemblyOperatorTest {
             expectedSecrets.add(EntityOperator.secretName(kafkaName));
         }
 
-        List<Secrets> caSecrets = getInitialCertificates(kafkaName);
-        if (getKafkaAssembly(kafkaName).getSpec().getClusterCa().isGenerateSecretOwnerReference()) {
-            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(1));
-        } else {
-            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(0));
-        }
-
-        if (getKafkaAssembly(kafkaName).getSpec().getClientsCa().isGenerateSecretOwnerReference()) {
-            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(1));
-        } else {
-            assertThat(caSecrets.get(0).getMetadata().getOwnerReferences().size(), is(0));
-        }
-
         when(mockDepOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
             String name = invocation.getArgument(1);
             Deployment desired = invocation.getArgument(2);
@@ -788,11 +775,6 @@ public class KafkaAssemblyOperatorTest {
                 .build();
 
         return kafka;
-    }
-
-    private List<Secret> getInitialCertificates(String clusterName) {
-        String kafkaNamespace = "test";
-        return ResourceUtils.createKafkaClusterInitialSecrets(kafkaNamespace, clusterName);
     }
 
     private static <T> Set<T> captured(ArgumentCaptor<T> captor) {

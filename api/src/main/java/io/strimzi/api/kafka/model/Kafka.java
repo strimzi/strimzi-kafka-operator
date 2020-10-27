@@ -31,7 +31,6 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        apiVersion = Kafka.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = Kafka.RESOURCE_KIND,
@@ -41,8 +40,8 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = Kafka.RESOURCE_GROUP,
                 scope = Kafka.SCOPE,
-                version = Kafka.V1BETA1,
                 versions = {
+                        @Crd.Spec.Version(name = Kafka.V1BETA2, served = true, storage = false),
                         @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
                         @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
                 },
@@ -77,9 +76,11 @@ import static java.util.Collections.unmodifiableList;
 @EqualsAndHashCode
 public class Kafka extends CustomResource implements HasSpecAndStatus<KafkaSpec, KafkaStatus>, UnknownPropertyPreserving {
 
+    public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1BETA1 = Constants.V1BETA1;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1BETA1, V1ALPHA1));
+    public static final String CONSUMED_VERSION = V1BETA1;
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";

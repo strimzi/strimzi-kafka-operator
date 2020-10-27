@@ -61,6 +61,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     public static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
     public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
+    public static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
@@ -68,6 +69,7 @@ public class EntityUserOperator extends AbstractModel {
     private String zookeeperConnect;
     private String watchedNamespace;
     private String resourceLabels;
+    private String secretPrefix;
     private long reconciliationIntervalMs;
     private long zookeeperSessionTimeoutMs;
     private int clientsCaValidityDays;
@@ -92,6 +94,7 @@ public class EntityUserOperator extends AbstractModel {
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.zookeeperSessionTimeoutMs = EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
+        this.secretPrefix = EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
         this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
@@ -161,6 +164,14 @@ public class EntityUserOperator extends AbstractModel {
         return kafkaBootstrapServers;
     }
 
+    public String getSecretPrefix() {
+        return secretPrefix;
+    }
+
+    public void setSecretPrefix(String secretPrefix) {
+        this.secretPrefix = secretPrefix;
+    }
+
     protected static String defaultBootstrapServers(String cluster) {
         return KafkaCluster.serviceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
@@ -220,6 +231,7 @@ public class EntityUserOperator extends AbstractModel {
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+                result.setSecretPrefix(userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix());
                 if (userOperatorSpec.getJvmOptions() != null) {
                     result.setJavaSystemProperties(userOperatorSpec.getJvmOptions().getJavaSystemProperties());
                 }
@@ -281,6 +293,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, EntityOperator.secretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         // Add shared environment variables used for all containers

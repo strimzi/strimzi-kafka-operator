@@ -27,7 +27,11 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.annotations.KubeVersion;
+import io.strimzi.api.annotations.VersionRange;
 import io.strimzi.crdgenerator.annotations.Alternative;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -96,7 +100,7 @@ class Property implements AnnotatedElement {
         }
     }
 
-    static Map<String, Property> properties(Class<?> crdClass) {
+    static Map<String, Property> properties(ApiVersion crApiVersion, Class<?> crdClass) {
         TreeMap<String, Property> unordered = new TreeMap<>();
         for (Method method : crdClass.getMethods()) {
             Class<?> returnType = method.getReturnType();
@@ -107,7 +111,8 @@ class Property implements AnnotatedElement {
                     && !hasMethod(HasMetadata.class, method)
                     && !method.isBridge();
             boolean isNotIgnored = !hasJsonIgnore(method)
-                    && !hasAnyGetter(method);
+                    && !hasAnyGetter(method)
+                    && isPresentInVersion(crApiVersion, method);
             if (isGetter
                     && isNotInherited
                     && isNotIgnored) {
@@ -120,7 +125,8 @@ class Property implements AnnotatedElement {
         }
         for (Field field : crdClass.getFields()) {
             boolean isProperty = !Modifier.isStatic(field.getModifiers());
-            boolean isNotIgnored = !field.isAnnotationPresent(JsonIgnore.class);
+            boolean isNotIgnored = !field.isAnnotationPresent(JsonIgnore.class)
+                    && isPresentInVersion(crApiVersion, field);
             if (isProperty && isNotIgnored) {
                 Property property = new Property(field);
                 Property existing = unordered.put(property.getName(), property);
@@ -131,6 +137,15 @@ class Property implements AnnotatedElement {
         }
         JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
         return sortedProperties(order != null ? order.value() : null, unordered);
+    }
+
+    private static boolean isPresentInVersion(ApiVersion crApiVersion, AnnotatedElement method) {
+        PresentInVersions annotation = method.getAnnotation(PresentInVersions.class);
+        if (annotation == null) {
+            return true;
+        } else {
+            return ApiVersion.parseRange(annotation.value()).contains(crApiVersion);
+        }
     }
 
     private static boolean hasAnyGetter(Method method) {
@@ -301,10 +316,20 @@ class Property implements AnnotatedElement {
         return getName().equals(discriminator(m.getDeclaringClass()));
     }
 
-    List<Property> getAlternatives() {
+    /**
+     * @param crApiVersion The API version of the CR being generated, or null if we're generating
+     *                     a schema for a kube version which doesn't support multiple versions.
+     * @param kubeVersions
+     * @return
+     */
+    List<Property> getAlternatives(ApiVersion crApiVersion, VersionRange<KubeVersion> kubeVersions) {
         List<Property> alternatives =
-                Property.properties(getType().getType()).values().stream()
-                        .filter(p -> p.getAnnotation(Alternative.class) != null).collect(Collectors.toList());
+                Property.properties(crApiVersion, getType().getType()).values().stream()
+                        .filter(p -> {
+                            Alternative annotation = p.getAnnotation(Alternative.class);
+                            return crApiVersion == null || (annotation != null && ApiVersion.parseRange(annotation.apiVersion()).contains(crApiVersion));
+                        })
+                        .collect(Collectors.toList());
         return alternatives;
     }
 

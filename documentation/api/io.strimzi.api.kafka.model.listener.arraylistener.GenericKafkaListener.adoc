@@ -63,6 +63,7 @@ listeners:
 
 The name and port must be unique within the Kafka cluster.
 The name can be up to 25 characters long, comprising lower-case letters and numbers.
+Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX.
 
 By specifying a unique name and port for each listener,
 you can configure multiple listeners.

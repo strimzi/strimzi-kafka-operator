@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -63,6 +64,7 @@ public class KafkaSpec extends Spec {
         this.zookeeper = zookeeper;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @DeprecatedProperty(
             movedToPath = "spec.entityOperator.topicOperator"
