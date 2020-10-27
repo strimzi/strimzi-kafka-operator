@@ -170,7 +170,7 @@ public class TopicOperatorTest {
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
@@ -186,7 +186,7 @@ public class TopicOperatorTest {
      * Trigger {@link TopicOperator#onResourceEvent(LogContext, KafkaTopic, io.fabric8.kubernetes.client.Watcher.Action)}
      * and have the Kafka and TopicStore respond with the given exceptions.
      */
-    private TopicOperator resourceAdded(VertxTestContext context, Exception createException, Exception storeException) throws InterruptedException {
+    private TopicOperator resourceAdded(VertxTestContext context, CountDownLatch latch, Exception createException, Exception storeException) throws InterruptedException {
         mockKafka.setCreateTopicResponse(topicName.toString(), createException);
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
@@ -233,6 +233,9 @@ public class TopicOperatorTest {
                 mockTopicStore.assertContains(context, expectedTopic);
                 mockK8s.assertNoEvents(context);
             }
+            if (latch != null) {
+                latch.countDown();
+            }
             async.flag();
         });
         if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
@@ -249,7 +252,7 @@ public class TopicOperatorTest {
      */
     @Test
     public void testOnKafkaTopicAdded(VertxTestContext context) throws InterruptedException {
-        resourceAdded(context, null, null);
+        resourceAdded(context, null, null, null);
     }
 
     /**
@@ -259,7 +262,7 @@ public class TopicOperatorTest {
     @Test
     public void testOnKafkaTopicAdded_TopicExistsException(VertxTestContext context) throws InterruptedException {
         Exception createException = new TopicExistsException("");
-        resourceAdded(context, createException, null);
+        resourceAdded(context, null, createException, null);
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
         assertNotReadyStatus(context, createException);
@@ -283,7 +286,7 @@ public class TopicOperatorTest {
     @Test
     public void testOnKafkaTopicAdded_ClusterAuthorizationException(VertxTestContext context) throws InterruptedException {
         Exception createException = new ClusterAuthorizationException("Test exception");
-        TopicOperator op = resourceAdded(context, createException, null);
+        TopicOperator op = resourceAdded(context, null, createException, null);
         assertNotReadyStatus(context, createException);
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
@@ -298,6 +301,7 @@ public class TopicOperatorTest {
     public void testOnKafkaTopicAdded_EntityExistsException(VertxTestContext context) throws InterruptedException {
         TopicStore.EntityExistsException storeException = new TopicStore.EntityExistsException();
         resourceAdded(context,
+                        null,
                 null,
                 storeException);
         // TODO what happens when we subsequently reconcile?
@@ -367,11 +371,11 @@ public class TopicOperatorTest {
                 MeterRegistry registry = metrics.meterRegistry();
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
             });
             async.flag();
         });
@@ -488,7 +492,7 @@ public class TopicOperatorTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         Checkpoint async = context.checkpoint(1);
-        topicOperator.reconcile(null, logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertExists(context, kubeTopic.getTopicName());
@@ -581,12 +585,12 @@ public class TopicOperatorTest {
                 MeterRegistry registry = metrics.meterRegistry();
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
             });
             context.completeNow();
         });
@@ -596,7 +600,7 @@ public class TopicOperatorTest {
         return topicOperator.new Reconciliation("test") {
             @Override
             public Future<Void> execute() {
-                return null;
+                return Future.succeededFuture();
             }
         };
     }
@@ -727,11 +731,11 @@ public class TopicOperatorTest {
                 MeterRegistry registry = metrics.meterRegistry();
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
             });
             context.completeNow();
         });
@@ -847,7 +851,7 @@ public class TopicOperatorTest {
     // + non-matching predicate
     // + error cases
 
-    private void resourceRemoved(VertxTestContext context, Exception deleteTopicException, Exception storeException) {
+    private void resourceRemoved(VertxTestContext context, CountDownLatch latch, Exception deleteTopicException, Exception storeException) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
@@ -897,6 +901,9 @@ public class TopicOperatorTest {
                 mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
             }
             async.flag();
+            if (latch != null) {
+                latch.countDown();
+            }
         });
     }
 
@@ -952,21 +959,21 @@ public class TopicOperatorTest {
     public void testOnKafkaTopicRemoved(VertxTestContext context) {
         Exception deleteTopicException = null;
         Exception storeException = null;
-        resourceRemoved(context, deleteTopicException, storeException);
+        resourceRemoved(context, null, deleteTopicException, storeException);
     }
 
     @Test
     public void testOnKafkaTopicRemoved_UnknownTopicOrPartitionException(VertxTestContext context) {
         Exception deleteTopicException = new UnknownTopicOrPartitionException();
         Exception storeException = null;
-        resourceRemoved(context, deleteTopicException, storeException);
+        resourceRemoved(context, null, deleteTopicException, storeException);
     }
 
     @Test
     public void testOnKafkaTopicRemoved_NoSuchEntityExistsException(VertxTestContext context) {
         Exception deleteTopicException = null;
         Exception storeException = new TopicStore.NoSuchEntityExistsException();
-        resourceRemoved(context, deleteTopicException, storeException);
+        resourceRemoved(context, null, deleteTopicException, storeException);
     }
 
     @Test
@@ -974,7 +981,7 @@ public class TopicOperatorTest {
         // Deals with the situation where the delete.topic.enable=false config is set in the broker
         Exception deleteTopicException = new TopicDeletionDisabledException("Topic deletion disable");
         Exception storeException = null;
-        resourceRemoved(context, deleteTopicException, storeException);
+        resourceRemoved(context, null, deleteTopicException, storeException);
     }
 
     private void topicDeleted(VertxTestContext context, Exception storeException, Exception k8sException) {
@@ -1060,7 +1067,7 @@ public class TopicOperatorTest {
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(2.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(1.0));
 
@@ -1091,7 +1098,7 @@ public class TopicOperatorTest {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
-        resourceAdded(context, null, null);
+        resourceAdded(context, null, null, null);
 
         Checkpoint async = context.checkpoint();
         reconcileFuture.onComplete(context.succeeding(e -> context.verify(() -> {
@@ -1113,22 +1120,25 @@ public class TopicOperatorTest {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
-        resourceAdded(context, null, null);
-        resourceRemoved(context, null, null);
+        CountDownLatch addLatch = new CountDownLatch(1);
+        resourceAdded(context, addLatch, null, null);
+        addLatch.await(30, TimeUnit.SECONDS);
+        CountDownLatch deleteLatch = new CountDownLatch(1);
+        resourceRemoved(context, deleteLatch,  null, null);
+        deleteLatch.await(30, TimeUnit.SECONDS);
 
         Checkpoint async = context.checkpoint();
-        reconcileFuture.onComplete(context.succeeding(e -> context.verify(() -> {
+        reconcileFuture.onComplete(context.succeeding(e -> {
             MeterRegistry registry = metrics.meterRegistry();
 
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
             async.flag();
-        })));
+        }));
     }
 
     /**

@@ -69,7 +69,7 @@ class TopicOperator {
     private Counter successfulReconciliationsCounter;
     private Counter lockedReconciliationsCounter;
     private AtomicInteger topicCounter;
-    private Timer reconciliationsTimer;
+    protected Timer reconciliationsTimer;
 
     enum EventType {
         INFO("Info"),
@@ -598,7 +598,14 @@ class TopicOperator {
                         k8sTopic, kafkaTopic, privateTopic);
             }
         }
-        return reconciliationResultHandler;
+
+        return reconciliationResultHandler.onComplete(res -> {
+            if (res.succeeded()) {
+                reconciliation.succeeded();
+            } else {
+                reconciliation.failed();
+            }
+        });
     }
 
     /**
@@ -914,18 +921,31 @@ class TopicOperator {
 
         public Reconciliation(String name) {
             this.name = name;
-            this.reconciliationTimerSample = Timer.start(metrics.meterRegistry());
-            reconciliationsCounter.increment();
+            if (isEventWatched()) {
+                LOGGER.debug("Metric {} triggered", this.name);
+                this.reconciliationTimerSample = Timer.start(metrics.meterRegistry());
+                reconciliationsCounter.increment();
+            }
         }
 
         public void failed() {
-            reconciliationTimerSample.stop(reconciliationsTimer);
-            failedReconciliationsCounter.increment();
+            if (isEventWatched()) {
+                LOGGER.debug("failed reconciliation {}", name);
+                reconciliationTimerSample.stop(reconciliationsTimer);
+                failedReconciliationsCounter.increment();
+            }
         }
 
         public void succeeded() {
-            reconciliationTimerSample.stop(reconciliationsTimer);
-            successfulReconciliationsCounter.increment();
+            if (isEventWatched()) {
+                LOGGER.debug("succeeded reconciliation {}", name);
+                reconciliationTimerSample.stop(reconciliationsTimer);
+                successfulReconciliationsCounter.increment();
+            }
+        }
+
+        private boolean isEventWatched() {
+            return !"onResourceEvent".equals(name) && !"reconcile-from-kafka".equals(name);
         }
 
         @Override
@@ -1229,6 +1249,11 @@ class TopicOperator {
         }).compose(reconcileState -> {
             List<Future> futs = new ArrayList<>();
             topicCounter.set(reconcileState.ktList.size());
+            if (reconcileState.ktList.size() == 0) {
+                reconciliationsCounter.increment();
+                successfulReconciliationsCounter.increment();
+                return Future.succeededFuture();
+            }
             for (KafkaTopic kt : reconcileState.ktList) {
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
                 Topic topic = TopicSerialization.fromTopicResource(kt);
@@ -1237,9 +1262,13 @@ class TopicOperator {
                     // we already failed to reconcile this topic in reconcileFromKafka(), /
                     // don't bother trying again
                     LOGGER.trace("{}: Already failed to reconcile {}", logContext, topicName);
+                    reconciliationsCounter.increment();
+                    failedReconciliationsCounter.increment();
                 } else if (reconcileState.succeeded.contains(topicName)) {
                     // we already succeeded in reconciling this topic in reconcileFromKafka()
                     LOGGER.trace("{}: Already successfully reconciled {}", logContext, topicName);
+                    reconciliationsCounter.increment();
+                    successfulReconciliationsCounter.increment();
                 } else if (reconcileState.undetermined.contains(topicName)) {
                     // The topic didn't exist in topicStore, but now we know which KT it corresponds to
                     futs.add(reconcileWithKubeTopic(logContext, kt, reconciliationType, new ResourceName(kt), topic.getTopicName()).compose(r -> {
