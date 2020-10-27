@@ -7,8 +7,6 @@
 
 The TLS sidecar can be configured using the `tlsSidecar` property in:
 
-* `Kafka.spec.kafka`
-* `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator`
 * `Kafka.spec.cruiseControl`
 
@@ -49,7 +47,8 @@ kind: Kafka
 metadata:
   name: my-cluster
 spec:
-  kafka:
+  # ...
+  cruiseControl:
     # ...
     tlsSidecar:
       image: my-org/my-image:latest
@@ -67,7 +66,5 @@ spec:
       livenessProbe:
         initialDelaySeconds: 15
         timeoutSeconds: 5
-    # ...
-  zookeeper:
     # ...
 ----
