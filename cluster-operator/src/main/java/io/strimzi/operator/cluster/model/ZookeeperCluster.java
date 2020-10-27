@@ -100,6 +100,12 @@ public class ZookeeperCluster extends AbstractModel {
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
 
+    /**
+     * Private key and certificate for each ZooKeeper Pod name
+     * used as server certificates for ZooKeeper nodes
+     */
+    private Map<String, CertAndKey> nodeCerts;
+
     public static String zookeeperClusterName(String cluster) {
         return KafkaResources.zookeeperStatefulSetName(cluster);
     }
@@ -476,38 +482,40 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
+     * Generates the ZooKeeper nodes certificates
+     *
+     * @param kafka The Kafka custom resource
+     * @param clusterCa The CA for cluster certificates
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
+     */
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+        log.debug("Generating certificates");
+        try {
+            nodeCerts = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
+        } catch (IOException e) {
+            log.warn("Error while generating certificates", e);
+        }
+        log.debug("End generating certificates");
+    }
+
+    /**
      * Generate the Secret containing the Zookeeper nodes certificates signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka.
      * It also contains the related Zookeeper nodes private keys.
      *
-     * @param clusterCa The cluster CA.
-     * @param kafka The Kafka resource.
-     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateNodesSecret() {
 
         Map<String, String> data = new HashMap<>(replicas * 4);
-
-        log.debug("Generating certificates");
-        Map<String, CertAndKey> certs;
-        try {
-            log.debug("Cluster communication certificates");
-            certs = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
-            log.debug("End generating certificates");
-            for (int i = 0; i < replicas; i++) {
-                CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));
-                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
-                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
-                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
-                data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
-            }
-
-        } catch (IOException e) {
-            log.warn("Error while generating certificates", e);
+        for (int i = 0; i < replicas; i++) {
+            CertAndKey cert = nodeCerts.get(ZookeeperCluster.zookeeperPodName(cluster, i));
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
-
         return createSecret(ZookeeperCluster.nodesSecretName(cluster), data);
     }
 
