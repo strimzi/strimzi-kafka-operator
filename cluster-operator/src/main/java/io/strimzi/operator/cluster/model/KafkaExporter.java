@@ -41,8 +41,9 @@ public class KafkaExporter extends AbstractModel {
 
     // Configuration defaults
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 15;
+    private static final int DEFAULT_HEALTHCHECK_PERIOD = 30;
+    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).withPeriodSeconds(DEFAULT_HEALTHCHECK_PERIOD).build();
 
     protected static final String ENV_VAR_KAFKA_EXPORTER_LOGGING = "KAFKA_EXPORTER_LOGGING";
     protected static final String ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION = "KAFKA_EXPORTER_KAFKA_VERSION";
