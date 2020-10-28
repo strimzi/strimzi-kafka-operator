@@ -262,8 +262,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkPvcs())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
+                .compose(state -> state.zkGenerateCertificates(this::dateSupplier))
                 .compose(state -> state.zkAncillaryCm())
-                .compose(state -> state.zkNodesSecret(this::dateSupplier))
+                .compose(state -> state.zkNodesSecret())
                 .compose(state -> state.zkPodDisruptionBudget())
                 .compose(state -> state.zkStatefulSet())
                 .compose(state -> state.zkScalingDown())
@@ -1436,8 +1437,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     );
         }
 
-        Future<ReconciliationState> zkNodesSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(ZookeeperCluster.nodesSecretName(name), zkCluster.generateNodesSecret(clusterCa, kafkaAssembly, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+        Future<ReconciliationState> zkNodesSecret() {
+            return updateCertificateSecretWithDiff(ZookeeperCluster.nodesSecretName(name), zkCluster.generateNodesSecret())
                     .map(changed -> {
                         existingZookeeperCertsChanged = changed;
                         return this;
@@ -1644,6 +1645,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkHeadlessServiceEndpointReadiness() {
             return withVoid(serviceOperations.endpointReadiness(namespace, zkCluster.getHeadlessServiceName(), 1_000, operationTimeoutMs));
+        }
+
+        Future<ReconciliationState> zkGenerateCertificates(Supplier<Date> dateSupplier) {
+            Promise<ReconciliationState> resultPromise = Promise.promise();
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                future -> {
+                    try {
+                        zkCluster.generateCertificates(kafkaAssembly, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier));
+                        future.complete(this);
+                    } catch (Throwable e) {
+                        future.fail(e);
+                    }
+                },
+                true,
+                resultPromise);
+            return resultPromise.future();
         }
 
         /*test*/ Future<ReconciliationState> getKafkaClusterDescription() {
