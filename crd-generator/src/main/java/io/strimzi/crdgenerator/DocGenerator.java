@@ -417,6 +417,11 @@ public class DocGenerator {
             }
 
             out.append("include::../" + filename + "[leveloffset=+1]").append(NL);
+            out.append(NL);
+            out.append("[id='type-").append(cls.getSimpleName()).append("-schema-{context}']").append(NL);
+            out.append("==== Schema reference").append(NL);
+            out.append(NL);
+
         } else if (description != null) {
             out.append(getDescription(description)).append(NL);
         }
