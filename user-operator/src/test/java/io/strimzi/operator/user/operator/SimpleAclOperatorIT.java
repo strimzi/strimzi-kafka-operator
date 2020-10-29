@@ -53,7 +53,7 @@ public class SimpleAclOperatorIT {
 
     private static Properties kafkaClusterConfig() {
         Properties config = new Properties();
-        config.setProperty("authorizer.class.name", "kafka.security.auth.SimpleAclAuthorizer");
+        config.setProperty("authorizer.class.name", "kafka.security.authorizer.AclAuthorizer");
         config.setProperty("super.users", "User:ANONYMOUS");
         return config;
     }

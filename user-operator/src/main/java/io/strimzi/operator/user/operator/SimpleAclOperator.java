@@ -36,12 +36,7 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * SimlpeAclOperator is responsible for managing the authorization rules in Apache Kafka / Apache Zookeeper.
- * It is using Kafka's SimpleAclAuthorizer class to interact with Zookeeper and manage Acl rules.
- * Since SimpleAclAuthorizer is written in Scala, this operator is using some Scala structures required for passing to / returned from the SimpleAclAuthorizer object.
- * This class expects the SimpleAclAuthorizer instance to be passed from the outside.
- * That is useful for testing and is similar to how the Kubernetes client is passed around.
  */
-@SuppressWarnings("deprecation")
 public class SimpleAclOperator {
     private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
 
@@ -130,8 +125,7 @@ public class SimpleAclOperator {
 
     /**
      * Update all ACLs for given user.
-     * SimpleAclAuthorizer doesn't support modification of existing rules.
-     * This class is using Sets to decide which rules need to be added and which need to be deleted.
+     * This method is using Sets to decide which rules need to be added and which need to be deleted.
      * It delagates to {@link #internalCreate internalCreate} and {@link #internalDelete internalDelete} methods for the actual addition or deletion.
      */
     protected Future<ReconcileResult<Set<SimpleAclRule>>> internalUpdate(String username, Set<SimpleAclRule> desired, Set<SimpleAclRule> current) {
