@@ -15,7 +15,7 @@ import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 /**
- * Immutable class which represents a single ACL rule for SimpleAclAuthorizer.
+ * Immutable class which represents a single ACL rule for AclAuthorizer.
  * The main reason for not using directly the classes from the api module is that we need immutable objects for use in Sets.
  */
 public class SimpleAclRule {
