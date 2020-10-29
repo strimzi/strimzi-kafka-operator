@@ -9,7 +9,7 @@ This chapter provides an overview of the Strimzi Kafka Bridge and helps you get 
 
 * To try out the Kafka Bridge in your local environment, see the xref:assembly-kafka-bridge-quickstart-{context}[] later in this chapter.
 
-* For detailed configuration steps, see xref:assembly-kafka-connect-{context}[]. 
+* For detailed configuration steps, see xref:assembly-config-kafka-bridge-{context}[]. 
 
 * To view the API documentation, see the {LatestBridgeAPIDocs}.
 
