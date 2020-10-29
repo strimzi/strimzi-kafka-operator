@@ -52,6 +52,10 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 
+[id='type-KafkaClusterSpec-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                    |Description
@@ -187,6 +191,10 @@ It must have the value `jbod` for the type `JbodStorage`.
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener.adoc[leveloffset=+1]
+
+[id='type-GenericKafkaListener-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -338,6 +346,10 @@ Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration.adoc[leveloffset=+1]
 
+[id='type-GenericKafkaListenerConfiguration-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                             |Description
@@ -390,6 +402,10 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 
 include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrap.adoc[leveloffset=+1]
 
+[id='type-GenericKafkaListenerConfigurationBootstrap-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                 |Description
@@ -411,6 +427,10 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
 
 include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker.adoc[leveloffset=+1]
+
+[id='type-GenericKafkaListenerConfigurationBroker-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -857,6 +877,10 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationSimple.adoc[leveloffset=+1]
 
+[id='type-KafkaAuthorizationSimple-schema-{context}']
+==== Schema reference
+
+
 The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationSimple` from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [options="header"]
@@ -874,6 +898,10 @@ It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationOpa.adoc[leveloffset=+1]
+
+[id='type-KafkaAuthorizationOpa-schema-{context}']
+==== Schema reference
+
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationOpa` from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
 It must have the value `opa` for the type `KafkaAuthorizationOpa`.
@@ -1147,6 +1175,10 @@ Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`],
 
 include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[leveloffset=+1]
 
+[id='type-MetadataTemplate-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property            |Description
@@ -1162,6 +1194,10 @@ include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[levelo
 Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset=+1]
+
+[id='type-PodTemplate-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -1216,6 +1252,10 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 
 include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc[leveloffset=+1]
 
+[id='type-ExternalServiceTemplate-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                         |Description
@@ -1234,6 +1274,10 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 
 include::../api/io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate.adoc[leveloffset=+1]
 
+[id='type-PodDisruptionBudgetTemplate-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property               |Description
@@ -1249,6 +1293,10 @@ include::../api/io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate.
 Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 include::../api/io.strimzi.api.kafka.model.template.ContainerTemplate.adoc[leveloffset=+1]
+
+[id='type-ContainerTemplate-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -1825,6 +1873,10 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 
+[id='type-KafkaConnectSpec-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                      |Description
@@ -1883,6 +1935,10 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 include::../api/io.strimzi.api.kafka.model.KafkaConnectTls.adoc[leveloffset=+1]
 
+[id='type-KafkaConnectTls-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                    |Description
@@ -1896,6 +1952,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectTls.adoc[leveloffset=+1]
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls.adoc[leveloffset=+1]
+
+[id='type-KafkaClientAuthenticationTls-schema-{context}']
+==== Schema reference
+
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationTls` from xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
@@ -1914,6 +1974,10 @@ It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512.adoc[leveloffset=+1]
+
+[id='type-KafkaClientAuthenticationScramSha512-schema-{context}']
+==== Schema reference
+
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationScramSha512` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `scram-sha-512` for the type `KafkaClientAuthenticationScramSha512`.
@@ -1950,6 +2014,10 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-Kafka
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain.adoc[leveloffset=+1]
 
+[id='type-KafkaClientAuthenticationPlain-schema-{context}']
+==== Schema reference
+
+
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationPlain` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
 It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 [options="header"]
@@ -1969,6 +2037,10 @@ It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth.adoc[leveloffset=+1]
+
+[id='type-KafkaClientAuthenticationOAuth-schema-{context}']
+==== Schema reference
+
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaClientAuthenticationOAuth` from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`].
 It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
@@ -2043,6 +2115,10 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[leveloffset=+1]
+
+[id='type-ExternalConfiguration-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -2167,6 +2243,10 @@ Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xre
 Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=+1]
+
+[id='type-KafkaConnectS2ISpec-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -2383,6 +2463,10 @@ Used in: xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizatio
 
 include::../api/io.strimzi.api.kafka.model.AclRule.adoc[leveloffset=+1]
 
+[id='type-AclRule-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property          |Description
@@ -2475,6 +2559,10 @@ Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
 
+[id='type-KafkaUserQuotas-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                  |Description
@@ -2492,6 +2580,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 include::../api/io.strimzi.api.kafka.model.template.KafkaUserTemplate.adoc[leveloffset=+1]
+
+[id='type-KafkaUserTemplate-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -2538,6 +2630,10 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset=+1]
+
+[id='type-KafkaMirrorMakerSpec-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -2589,6 +2685,10 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec.adoc[leveloffset=+1]
 
+[id='type-KafkaMirrorMakerConsumerSpec-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                     |Description
@@ -2615,6 +2715,10 @@ Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsu
 
 include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerTls.adoc[leveloffset=+1]
 
+[id='type-KafkaMirrorMakerTls-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                    |Description
@@ -2628,6 +2732,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerTls.adoc[leveloffset=
 Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec.adoc[leveloffset=+1]
+
+[id='type-KafkaMirrorMakerProducerSpec-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -2702,6 +2810,10 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 
+[id='type-KafkaBridgeSpec-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property                 |Description
@@ -2761,6 +2873,10 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaBridgeHttpConfig.adoc[leveloffset=+1]
 
+[id='type-KafkaBridgeHttpConfig-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property     |Description
@@ -2792,6 +2908,10 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec.adoc[leveloffset=+1]
 
+[id='type-KafkaBridgeConsumerSpec-schema-{context}']
+==== Schema reference
+
+
 [options="header"]
 |====
 |Property       |Description
@@ -2805,6 +2925,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec.adoc[leveloff
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaBridgeProducerSpec.adoc[leveloffset=+1]
+
+[id='type-KafkaBridgeProducerSpec-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -2976,6 +3100,10 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 include::../api/io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec.adoc[leveloffset=+1]
+
+[id='type-KafkaMirrorMaker2ClusterSpec-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
