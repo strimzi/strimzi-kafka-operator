@@ -114,7 +114,7 @@ listeners:
 [id='property-listener-config-dns-{context}']
 === `useServiceDnsDomain`
 
-The `useServiceDnsDomain` property is only used with `internal` listeners,
+The `useServiceDnsDomain` property is only used with `internal` listeners.
 It defines whether the fully-qualified DNS names that include the cluster service suffix (usually `.cluster.local`) are used.
 With `useServiceDnsDomain` set as `false`, the advertised addresses are generated without the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc`.
 With `useServiceDnsDomain` set as `true`, the advertised addresses are generated with the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc.cluster.local`.
