@@ -46,7 +46,6 @@ spec:
         tls: true
         authentication:
           type: tls <3>
-        useServiceDnsDomain: true <4>
     # ...
   zookeeper:
     # ...
@@ -54,7 +53,6 @@ spec:
 <1> Authorization xref:con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `AclAuthorizer` Kafka plugin].
 <2> List of user principals with unlimited access to Kafka. _CN_ is the common name from the client certificate when TLS authentication is used.
 <3> Listener authentication mechanisms may be configured for each listener, and xref:assembly-securing-kafka-brokers-{context}[specified as mutual TLS, SCRAM-SHA-512 or token-based OAuth 2.0].
-<4> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
 +
 If you are configuring an external listener, the configuration is dependent on the chosen connection mechanism.
 

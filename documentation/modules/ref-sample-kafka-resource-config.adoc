@@ -42,7 +42,8 @@ spec:
         port: 9092 <8>
         type: internal <9>
         tls: false <10>
-        useServiceDnsDomain: true <11>
+        configuration:
+          useServiceDnsDomain: true <11>
       - name: tls
         port: 9093
         type: internal
