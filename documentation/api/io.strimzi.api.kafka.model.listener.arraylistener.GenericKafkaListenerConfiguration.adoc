@@ -114,8 +114,26 @@ listeners:
 [id='property-listener-config-dns-{context}']
 === `useServiceDnsDomain`
 
-The `useServiceDnsDomain` property is only used with `internal` listeners,
-and defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
+The `useServiceDnsDomain` property is only used with `internal` listeners.
+It defines whether the fully-qualified DNS names that include the cluster service suffix (usually `.cluster.local`) are used.
+With `useServiceDnsDomain` set as `false`, the advertised addresses are generated without the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc`.
+With `useServiceDnsDomain` set as `true`, the advertised addresses are generated with the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc.cluster.local`.
 Default is `false`.
 
-With `useServiceDnsDomain` set as `false` and advertised addresses defined, the Kubernetes network can join an outside network.
+.Example of an internal listener configured to use the Service DNS domain
+[source,yaml,subs=attributes+]
+----
+listeners:
+  #...
+  - name: plain
+    port: 9092
+    type: internal
+    tls: false
+    configuration:
+      useServiceDnsDomain: true
+      # ...
+# ...
+----
+
+If your Kubernetes cluster uses a different service suffix than `.cluster.local`, you can configure the suffix using the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable in the Cluster Operator configuration.
+See xref:ref-operator-cluster-str[] for more details.
