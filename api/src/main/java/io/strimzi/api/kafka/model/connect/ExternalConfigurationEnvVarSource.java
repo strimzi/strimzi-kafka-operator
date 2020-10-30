@@ -48,7 +48,7 @@ public class ExternalConfigurationEnvVarSource implements Serializable, UnknownP
         this.secretKeyRef = secretKeyRef;
     }
 
-    @Description("Refernce to a key in a ConfigMap.")
+    @Description("Reference to a key in a ConfigMap.")
     @KubeLink(group = "core", version = "v1", kind = "configmapkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public ConfigMapKeySelector getConfigMapKeyRef() {
