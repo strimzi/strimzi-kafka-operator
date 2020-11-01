@@ -26,7 +26,7 @@ Output definitions specify where JMX metrics are pushed to, and in which data fo
 For information about supported data formats, see link:https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[Data formats^].
 How many seconds JmxTrans agent waits for before pushing new data can be configured through the `flushDelay` property.
 The `host` and `port` properties define the target host address and target port the data is pushed to.
-The `name` property is a required property that is referenced by the `Kafka.spec.kafka.jmxOptions.jmxTrans.queries` property.
+The `name` property is a required property that is referenced by the `Kafka.spec.jmxTrans.kafkaQueries` property.
 
 Here is an example configuration pushing JMX data in the Graphite format every 5 seconds to a Logstash database on \http://myLogstash:9999, and another pushing to `standardOut` (standard output):
 [source,yaml,subs=attributes+]
