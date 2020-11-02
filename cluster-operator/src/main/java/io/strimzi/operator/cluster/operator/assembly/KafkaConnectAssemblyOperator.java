@@ -188,7 +188,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return                  Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
      */
     Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connectCluster) {
-        return clusterRoleBindingOperations.reconcile(KafkaConnectCluster.initContainerClusterRoleBindingName(namespace, name),
+        return clusterRoleBindingOperations.reconcile(KafkaConnectResources.initContainerClusterRoleBindingName(name, namespace),
                 connectCluster.generateClusterRoleBinding());
     }
 }
