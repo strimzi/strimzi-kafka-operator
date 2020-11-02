@@ -52,7 +52,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: kafka-and-cruise-control-metrics
+  name: kafka-resources-metrics
   labels:
     app: strimzi
 spec:
@@ -60,7 +60,7 @@ spec:
     matchExpressions:
       - key: "strimzi.io/kind"
         operator: In
-        values: ["Kafka", "KafkaConnect"]
+        values: ["Kafka", "KafkaConnect", "KafkaConnectS2I", "KafkaMirrorMaker", "KafkaMirrorMaker2"]
   namespaceSelector:
     matchNames:
       - myproject
