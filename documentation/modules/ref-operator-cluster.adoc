@@ -274,7 +274,7 @@ and
 [source,yaml,options="nowrap"]
 .Example `ClusterRoleBinding` for the Cluster Operator for the Kafka client rack-awarness
 ----
-include::install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-clients-delegation[]
+include::install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml[]
 ----
 
 `ClusterRoles` containing only namespaced resources are bound using `RoleBindings` only.
