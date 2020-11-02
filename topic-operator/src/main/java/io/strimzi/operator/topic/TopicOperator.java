@@ -1252,7 +1252,6 @@ class TopicOperator {
             if (reconcileState.ktList.size() == 0) {
                 reconciliationsCounter.increment();
                 successfulReconciliationsCounter.increment();
-                return Future.succeededFuture();
             }
             for (KafkaTopic kt : reconcileState.ktList) {
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
