@@ -44,7 +44,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
-    public static final String NAMESPACE = "multi-listener-namespace";
+    public static final String NAMESPACE = "multi-listener";
 
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
@@ -292,7 +292,7 @@ public class MultipleListenersST extends AbstractST {
                         boolean stochasticCommunication = ThreadLocalRandom.current().nextInt(2) == 0;
 
                         testCaseListeners.add(new GenericKafkaListenerBuilder()
-                            .withName(KafkaListenerType.LOADBALANCER.toValue() + j)
+                            .withName(KafkaListenerType.LOADBALANCER.toValue().substring(0, 5) + j)
                             .withPort(11900 + j)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(stochasticCommunication)
