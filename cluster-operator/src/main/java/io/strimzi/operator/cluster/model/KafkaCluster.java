@@ -1564,7 +1564,7 @@ public class KafkaCluster extends AbstractModel {
                     .withKind("ClusterRole")
                     .build();
 
-            return getClusterRoleBinding(ks, roleRef);
+            return getClusterRoleBinding(KafkaResources.initContainerClusterRoleBindingName(cluster, namespace), ks, roleRef);
         } else {
             return null;
         }

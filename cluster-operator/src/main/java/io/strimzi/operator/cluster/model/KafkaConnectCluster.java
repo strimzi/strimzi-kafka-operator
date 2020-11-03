@@ -798,7 +798,6 @@ public class KafkaConnectCluster extends AbstractModel {
      * @return The cluster role binding.
      */
     public ClusterRoleBinding generateClusterRoleBinding() {
-
         if (rack == null) {
             return null;
         }
@@ -815,7 +814,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withKind("ClusterRole")
                 .build();
 
-        return getClusterRoleBinding(subject, roleRef);
+        return getClusterRoleBinding(KafkaConnectResources.initContainerClusterRoleBindingName(cluster, namespace), subject, roleRef);
     }
 
     @Override

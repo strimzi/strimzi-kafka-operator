@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.SystemProperty;
@@ -2848,7 +2849,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
 
-        assertThat(crb.getMetadata().getName(), is(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster)));
+        assertThat(crb.getMetadata().getName(), is(KafkaResources.initContainerClusterRoleBindingName(cluster, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
         assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));
@@ -2870,7 +2871,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
 
-        assertThat(crb.getMetadata().getName(), is(KafkaCluster.initContainerClusterRoleBindingName(testNamespace, cluster)));
+        assertThat(crb.getMetadata().getName(), is(KafkaResources.initContainerClusterRoleBindingName(cluster, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
         assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));

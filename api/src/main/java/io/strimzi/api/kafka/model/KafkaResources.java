@@ -203,4 +203,15 @@ public class KafkaResources {
     public static String zookeeperHeadlessServiceName(String clusterName) {
         return clusterName + "-zookeeper-nodes";
     }
+
+    /**
+     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
+     *
+     * @param cluster   The cluster name.
+     * @param namespace The namespace.
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String initContainerClusterRoleBindingName(String cluster, String namespace) {
+        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
+    }
 }
