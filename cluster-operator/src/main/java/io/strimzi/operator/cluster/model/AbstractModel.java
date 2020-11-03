@@ -54,6 +54,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JmxExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
@@ -206,7 +207,8 @@ public abstract class AbstractModel {
     protected static final String METRICS_PORT_NAME = "tcp-prometheus";
     protected static final int METRICS_PORT = 9404;
     protected static final String METRICS_PATH = "/metrics";
-    protected Map<String, Object> metricsConfig;
+    protected Iterable<Map.Entry<String, Object>> metricsConfig;
+    protected JmxExporterMetrics jmxExporterMetrics;
     protected String ancillaryConfigMapName;
     protected String logAndMetricsConfigMountPath;
     protected String logAndMetricsConfigVolumeName;
@@ -523,57 +525,55 @@ public abstract class AbstractModel {
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalLoggingConfigMap, ConfigMap externalMetricsConfigMap) {
         Map<String, String> data = new HashMap<>(2);
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalLoggingConfigMap));
-        if (isMetricsEnabled() && getMetricsConfig() != null) {
+        if (getJmxExporterMetrics() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
             data.put(ANCILLARY_CM_KEY_METRICS, parseMetrics(externalMetricsConfigMap));
         }
         return createConfigMap(ancillaryConfigMapName, data);
     }
 
-    public Map<String, Object> getMetricsConfig() {
-        return metricsConfig;
-    }
-
-    public boolean isExternalMetricsConfigured() {
-        return getMetricsConfig() != null && getMetricsConfig().get("type") != null && getMetricsConfig().get("type").equals("external") && getMetricsConfig().get("name") != null;
-    }
-
-    public String getExternalMetricsName() {
-        if (isExternalMetricsConfigured()) {
-            return getMetricsConfig().get("name").toString();
-        } else {
-            return null;
-        }
-    }
-
     protected String parseMetrics(ConfigMap externalCm) {
-        if (isMetricsEnabled() && getMetricsConfig() != null) {
-            if (getMetricsConfig().get("type") != null && getMetricsConfig().get("type").equals("external")) {
-                // external metrics
-                if (getMetricsConfig().get("name") != null) {
-                    if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(ANCILLARY_CM_KEY_METRICS)) {
-                        return externalCm.getData().get(ANCILLARY_CM_KEY_METRICS);
-                    } else {
-                        log.warn("ConfigMap {} with external metrics configuration does not exist or doesn't contain the configuration under the {} key. Metrics are empty.",
-                                getMetricsConfig().get("name"), ANCILLARY_CM_KEY_METRICS);
-                        return null;
-                    }
-                } else {
-                    log.warn("External metrics configured without the name of the external ConfigMap.");
-                }
+        if (jmxExporterMetrics != null) {
+            if (externalCm == null || externalCm.getData().get(jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getKey()) == null) {
+                log.warn("ConfigMap {} does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
+                        jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getName(),
+                        jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getKey());
             } else {
-                // inline metrics
+                return externalCm.getData().get(jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getKey());
+            }
+        } else {
+            if (isMetricsEnabled() && getMetricsConfig() != null) {
                 HashMap<String, Object> m = new HashMap<>();
-                for (Map.Entry<String, Object> entry : getMetricsConfig().entrySet()) {
+                for (Map.Entry<String, Object> entry : getMetricsConfig()) {
                     m.put(entry.getKey(), entry.getValue());
                 }
                 return new JsonObject(m).toString();
             }
         }
         return null;
+
     }
 
-    protected void setMetricsConfig(Map<String, Object> metricsConfig) {
+    protected Iterable<Map.Entry<String, Object>> getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    protected void setMetricsConfig(Iterable<Map.Entry<String, Object>> metricsConfig) {
         this.metricsConfig = metricsConfig;
+    }
+
+    protected void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
+        if (jmxExporterMetrics != null) {
+            this.jmxExporterMetrics = jmxExporterMetrics;
+            setMetricsEnabled(true);
+        }
+    }
+
+    public JmxExporterMetrics getJmxExporterMetrics() {
+        return jmxExporterMetrics;
+    }
+
+    public boolean isJmxExporterMetricsConfigured() {
+        return this.jmxExporterMetrics != null;
     }
 
     /**

@@ -38,7 +38,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-         "metrics", "logging", "template"})
+         "metrics", "jmxExporterMetrics", "logging", "template"})
 @EqualsAndHashCode
 public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -65,6 +65,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
+    private JmxExporterMetrics jmxExporterMetrics;
     private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
@@ -177,6 +178,8 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
         this.jvmOptions = jvmOptions;
     }
 
+    @DeprecatedProperty(movedToPath = "spec.zookeeper.jmxExporterMetrics")
+    @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
@@ -186,6 +189,17 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("The Prometheus JMX Exporter configuration. " +
+            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    public JmxExporterMetrics getJmxExporterMetrics() {
+        return jmxExporterMetrics;
+    }
+
+    public void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
+        this.jmxExporterMetrics = jmxExporterMetrics;
     }
 
     @PresentInVersions("v1alpha1-v1beta1")

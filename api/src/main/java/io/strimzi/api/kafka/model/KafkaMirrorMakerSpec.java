@@ -33,7 +33,7 @@ import java.util.Map;
         "replicas", "image", "whitelist",
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
-        "logging", "metrics", "tracing", "template"})
+        "logging", "metrics", "jmxExporterMetrics", "tracing", "template"})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec extends Spec {
     private static final long serialVersionUID = 1L;
@@ -55,6 +55,7 @@ public class KafkaMirrorMakerSpec extends Spec {
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics;
+    private JmxExporterMetrics jmxExporterMetrics;
     private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
 
@@ -121,6 +122,8 @@ public class KafkaMirrorMakerSpec extends Spec {
         this.producer = producer;
     }
 
+    @DeprecatedProperty(movedToPath = "spec.jmxExporterMetrics")
+    @Deprecated
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See {JMXExporter} for details of the structure of this configuration.")
@@ -130,6 +133,17 @@ public class KafkaMirrorMakerSpec extends Spec {
 
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("The Prometheus JMX Exporter configuration. " +
+            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    public JmxExporterMetrics getJmxExporterMetrics() {
+        return jmxExporterMetrics;
+    }
+
+    public void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
+        this.jmxExporterMetrics = jmxExporterMetrics;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

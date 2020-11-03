@@ -1443,6 +1443,26 @@ spec:
                 metrics:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+                jmxExporterMetrics:
+                  type: object
+                  properties:
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to a key in a ConfigMap.
+                      description: Value of the name and key if ConfigMap containing JMX configuration.
+                  required:
+                    - valueFrom
+                  description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
                 logging:
                   type: object
                   properties:
@@ -2645,6 +2665,26 @@ spec:
                   description: CPU and memory resources to reserve.
                 metrics:
                   type: object
+                  description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+                jmxExporterMetrics:
+                  type: object
+                  properties:
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to a key in a ConfigMap.
+                      description: Value of the name and key if ConfigMap containing JMX configuration.
+                  required:
+                    - valueFrom
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
                 logging:
                   type: object
@@ -5544,6 +5584,26 @@ spec:
                   description: 'The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl.'
                 metrics:
                   type: object
+                  description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+                jmxExporterMetrics:
+                  type: object
+                  properties:
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to a key in a ConfigMap.
+                      description: Value of the name and key if ConfigMap containing JMX configuration.
+                  required:
+                    - valueFrom
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
               description: Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified.
             jmxTrans:

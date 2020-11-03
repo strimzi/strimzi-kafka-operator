@@ -81,8 +81,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         ConfigMap loggingCm = bridge.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
                 null;
-        ConfigMap metricsCm = bridge.isExternalMetricsConfigured() ?
-                configMapOperations.get(namespace, bridge.getExternalMetricsName()) :
+        ConfigMap metricsCm = bridge.isJmxExporterMetricsConfigured() ?
+                configMapOperations.get(namespace, bridge.getJmxExporterMetrics().getValueFrom().getConfigMapKeyRef().getName()) :
                 null;
 
         ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(loggingCm, metricsCm);

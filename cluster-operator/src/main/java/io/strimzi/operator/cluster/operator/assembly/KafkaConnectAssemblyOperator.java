@@ -106,8 +106,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                 null;
 
-        ConfigMap metricsCm = connect.isExternalMetricsConfigured() ?
-                configMapOperations.get(namespace, connect.getExternalMetricsName()) :
+        ConfigMap metricsCm = connect.isJmxExporterMetricsConfigured() ?
+                configMapOperations.get(namespace, connect.getJmxExporterMetrics().getValueFrom().getConfigMapKeyRef().getName()) :
                 null;
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 

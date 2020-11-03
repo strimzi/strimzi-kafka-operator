@@ -196,7 +196,7 @@ public class ZookeeperCluster extends AbstractModel {
         return fromCrd(kafkaAssembly, versions, null, 0);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "deprecation"})
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
@@ -240,8 +240,9 @@ public class ZookeeperCluster extends AbstractModel {
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
             zk.setMetricsEnabled(true);
-            zk.setMetricsConfig(metrics);
+            zk.setMetricsConfig(metrics.entrySet());
         }
+        zk.setJmxExporterMetrics(zookeeperClusterSpec.getJmxExporterMetrics());
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();

@@ -1162,6 +1162,26 @@ spec:
             clientRackInitImage:
               type: string
               description: The image of the init container used for initializing the `client.rack`.
+            jmxExporterMetrics:
+              type: object
+              properties:
+                valueFrom:
+                  type: object
+                  properties:
+                    configMapKeyRef:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        name:
+                          type: string
+                        optional:
+                          type: boolean
+                      description: Reference to a key in a ConfigMap.
+                  description: Value of the name and key if ConfigMap containing JMX configuration.
+              required:
+                - valueFrom
+              description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
             rack:
               type: object
               properties:

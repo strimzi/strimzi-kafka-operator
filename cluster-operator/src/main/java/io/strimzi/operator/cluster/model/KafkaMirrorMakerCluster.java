@@ -123,6 +123,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
+    @SuppressWarnings("deprecation")
     public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
         KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker);
 
@@ -158,8 +159,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             Map<String, Object> metrics = spec.getMetrics();
             if (metrics != null) {
                 kafkaMirrorMakerCluster.setMetricsEnabled(true);
-                kafkaMirrorMakerCluster.setMetricsConfig(metrics);
+                kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
             }
+            kafkaMirrorMakerCluster.setJmxExporterMetrics(spec.getJmxExporterMetrics());
 
             /*setClientAuth(kafkaMirrorMakerCluster, spec.getConsumer());
             setClientAuth(kafkaMirrorMakerCluster, spec.getProducer());*/

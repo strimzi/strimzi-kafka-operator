@@ -29,7 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "version", "image", "resources", 
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing", 
+        "affinity", "tolerations", "logging", "metrics", "jmxExporterMetrics", "tracing",
         "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
 public abstract class AbstractKafkaConnectSpec extends Spec {
@@ -44,6 +44,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
+    private JmxExporterMetrics jmxExporterMetrics;
     private Map<String, Object> metrics;
     private Tracing tracing;
     private Affinity affinity;
@@ -130,6 +131,19 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
 
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
+    }
+
+    @DeprecatedProperty(movedToPath = "spec.jmxExporterMetrics")
+    @Deprecated
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("The Prometheus JMX Exporter configuration. " +
+            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    public JmxExporterMetrics getJmxExporterMetrics() {
+        return jmxExporterMetrics;
+    }
+
+    public void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
+        this.jmxExporterMetrics = jmxExporterMetrics;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

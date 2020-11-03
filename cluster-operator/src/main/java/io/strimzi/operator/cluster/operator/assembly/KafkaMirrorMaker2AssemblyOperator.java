@@ -136,8 +136,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         ConfigMap loggingCm = mirrorMaker2Cluster.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) mirrorMaker2Cluster.getLogging()).getName()) :
                 null;
-        ConfigMap metricsCm = mirrorMaker2Cluster.isExternalMetricsConfigured() ?
-                configMapOperations.get(namespace, mirrorMaker2Cluster.getExternalMetricsName()) :
+        ConfigMap metricsCm = mirrorMaker2Cluster.isJmxExporterMetricsConfigured() ?
+                configMapOperations.get(namespace, mirrorMaker2Cluster.getJmxExporterMetrics().getValueFrom().getConfigMapKeyRef().getName()) :
                 null;
 
         ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(loggingCm, metricsCm);

@@ -8,7 +8,11 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.JmxExporterMetrics;
+import io.strimzi.api.kafka.model.JmxExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -436,15 +440,39 @@ public class MetricsST extends AbstractST {
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsCm);
 
-        Map<String, Object> externalMetrics = new HashMap<>();
-        externalMetrics.put("type", "external");
-        externalMetrics.put("name", "external-metrics-cm");
+        // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
+        ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
+                .withName("external-metrics-cm")
+                .withKey("metrics-config.yml")
+                .build();
+        JmxExporterMetrics jmxExporterMetrics = new JmxExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(cmks)
+                .endValueFrom()
+                .build();
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
-            k.getSpec().getKafka().setMetrics(externalMetrics);
+            // JMX metrics have higher priority
+            k.getSpec().getKafka().setJmxExporterMetrics(jmxExporterMetrics);
+            k.getSpec().getKafka().setMetrics(null);
         });
+
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
         assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig));
+
+        // update metrics
+        ConfigMap externalMetricsUpdatedCm = new ConfigMapBuilder()
+                .withData(Collections.singletonMap("metrics-config.yml", expectedMetricsConfig.replace("true", "false")))
+                .withNewMetadata()
+                    .withName("external-metrics-cm")
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsUpdatedCm);
+        PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
+        actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig.replace("true", "false")));
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {

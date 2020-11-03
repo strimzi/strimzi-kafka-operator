@@ -1237,6 +1237,26 @@ spec:
                       - name
                   description: Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
               description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+            jmxExporterMetrics:
+              type: object
+              properties:
+                valueFrom:
+                  type: object
+                  properties:
+                    configMapKeyRef:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        name:
+                          type: string
+                        optional:
+                          type: boolean
+                      description: Reference to a key in a ConfigMap.
+                  description: Value of the name and key if ConfigMap containing JMX configuration.
+              required:
+                - valueFrom
+              description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
           required:
             - connectCluster
           description: The specification of the Kafka MirrorMaker 2.0 cluster.
