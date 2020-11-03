@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Status;
+import io.fabric8.kubernetes.api.model.StatusBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -20,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
+import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -283,6 +286,73 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         // Wait for the topic to be created
         waitForTopicInKafka(topicName);
         assertStatusReady(topicName);
+    }
+
+    @Test
+    public void testRecreateTopicWatcher() throws InterruptedException, ExecutionException, TimeoutException {
+        String topicName = "test-reconcile";
+        String topicName2 = "test-reconcile-2";
+
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
+        String resourceName = topicResource.getMetadata().getName();
+
+        operation().inNamespace(NAMESPACE).create(topicResource);
+
+        // Wait for the resource to be created
+        waitFor(() -> {
+            KafkaTopic createdResource = operation().inNamespace(NAMESPACE).withName(resourceName).get();
+            LOGGER.info("Polled kafkatopic {} waiting for creation", resourceName);
+
+            // modify resource
+            if (createdResource != null) {
+                createdResource.getSpec().setPartitions(2);
+                operation().inNamespace(NAMESPACE).withName(resourceName).patch(createdResource);
+            }
+
+            return createdResource != null;
+        }, "Expected the kafkatopic to have been created by now");
+
+        Status status = new StatusBuilder()
+                .withStatus("pokazene")
+                .withCode(HttpURLConnection.HTTP_GONE)
+                .withNewMessage("pokazene")
+                .build();
+        KubernetesClientException e = new KubernetesClientException(status);
+        LOGGER.info("stopping TW");
+        session.topicWatch.close();
+        session.topicsWatcher.stop();
+        session.watcher.onClose(e);
+
+        // trigger an immediate reconcile, while topic operator is dealing with resource modification
+        session.topicOperator.reconcileAllTopics("periodic");
+
+        // Wait for the topic to be created
+        waitForTopicInKafka(topicName);
+        assertStatusReady(topicName);
+
+        Topic topic2 = new Topic.Builder(topicName2, 1, (short) 1, emptyMap()).build();
+        KafkaTopic topicResource2 = TopicSerialization.toTopicResource(topic2, labels);
+        String resourceName2 = topicResource2.getMetadata().getName();
+
+        operation().inNamespace(NAMESPACE).create(topicResource2);
+
+        // Wait for the resource to be created
+        waitFor(() -> {
+            KafkaTopic createdResource = operation().inNamespace(NAMESPACE).withName(resourceName2).get();
+            LOGGER.info("Polled kafkatopic {} waiting for creation", resourceName2);
+
+            // modify resource
+            if (createdResource != null) {
+                createdResource.getSpec().setPartitions(2);
+                operation().inNamespace(NAMESPACE).withName(resourceName2).patch(createdResource);
+            }
+            return createdResource != null;
+        }, "Expected the kafkatopic to have been created by now");
+
+        // I assume the test should fail because of topic `test-reconcile-2` should not exist i
+        waitForTopicInKafka(topicName2);
+        assertStatusReady(topicName2);
     }
 
     // TODO: What happens if we create and then change labels to the resource predicate isn't matched any more

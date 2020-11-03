@@ -20,12 +20,14 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
     private final Future<Void> initReconcileFuture;
+    private final Runnable onHttpGoneTask;
 
     private TopicOperator topicOperator;
 
-    public K8sTopicWatcher(TopicOperator topicOperator, Future<Void> initReconcileFuture) {
+    public K8sTopicWatcher(TopicOperator topicOperator, Future<Void> initReconcileFuture, Runnable onHttpGoneTask) {
         this.topicOperator = topicOperator;
         this.initReconcileFuture = initReconcileFuture;
+        this.onHttpGoneTask = onHttpGoneTask;
     }
 
     @Override
@@ -67,7 +69,11 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     }
 
     @Override
-    public void onClose(KubernetesClientException e) {
+    public void onClose(KubernetesClientException exception) {
         LOGGER.debug("Closing {}", this);
+        if (exception != null) {
+            LOGGER.debug("Restarting  topic watcher due to ", exception);
+            onHttpGoneTask.run();
+        }
     }
 }
