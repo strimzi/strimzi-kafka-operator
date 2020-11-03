@@ -1336,28 +1336,16 @@ public abstract class AbstractModel {
         }
     }
 
-    protected ClusterRoleBinding getClusterRoleBinding(Subject subject, RoleRef roleRef) {
-
+    protected ClusterRoleBinding getClusterRoleBinding(String name, Subject subject, RoleRef roleRef) {
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                .withName(name)
                 .withOwnerReferences(createOwnerReference())
                 .withLabels(labels.toMap())
                 .endMetadata()
                 .withSubjects(subject)
                 .withRoleRef(roleRef)
                 .build();
-    }
-
-    /**
-     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
-     *
-     * @param namespace The namespace.
-     * @param cluster   The cluster name.
-     * @return The name of the init container's cluster role binding.
-     */
-    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
-        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
     }
 
     /**

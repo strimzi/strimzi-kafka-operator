@@ -89,4 +89,16 @@ public class KafkaConnectResources {
     public static String url(String clusterName, String namespace, int port) {
         return "http://" + qualifiedServiceName(clusterName, namespace) + ":" + port;
     }
+
+    /**
+     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
+     *
+     * @param clusterName   The cluster name.
+     * @param namespace     The namespace.
+     *
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
+        return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
+    }
 }
