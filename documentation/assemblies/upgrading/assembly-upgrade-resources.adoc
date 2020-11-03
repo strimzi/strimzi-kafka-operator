@@ -14,7 +14,7 @@ The `{KafkaApiVersionPrev}` API version is deprecated for the following Strimzi 
 * `KafkaTopic`
 * `KafkaUser`
 
-These resources that use the API version `{KafkaApiVersionPrev}` must be updated to use `{KafkaApiVersion}`.
+Update these resources to use the `{KafkaApiVersion}` API version.
 
 This section describes the upgrade steps for the resources.
 
@@ -35,7 +35,7 @@ metadata:
     upgrade: "Upgraded to {KafkaApiVersion}"
 ----
 
-The following sections contain a resource specific conversion guides:
+The following procedures describe the steps to update specific resources to use the `{KafkaApiVersion}` API version:
 
 * xref:proc-upgrade-kafka-resources-{context}[]
 * xref:proc-upgrade-kafka-connect-resources-{context}[]
