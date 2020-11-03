@@ -4,6 +4,9 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
@@ -22,6 +25,9 @@ import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -224,6 +230,41 @@ class RecoveryST extends AbstractST {
 
         LOGGER.info("Waiting for metric config {} re-creation", kafkaBridgeMetricsConfigName);
         ConfigMapUtils.waitForConfigMapRecovery(kafkaBridgeMetricsConfigName, kafkaBridgeMetricsConfigUid);
+
+        timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
+    }
+
+    @Test
+    void testRecoveryFromImpossibleMemoryRequest() {
+        String clusterName = "my-cluster";
+
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("memory", new Quantity("465458732Gi"));
+
+        ResourceRequirements resourceReq = new ResourceRequirementsBuilder()
+            .withRequests(requests)
+            .build();
+
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 3, 3)
+            .editSpec()
+                .editKafka()
+                    .withResources(resourceReq)
+                .endKafka()
+            .endSpec()
+            .build());
+
+        PodUtils.waitForPendingPod(clusterName + "-kafka");
+
+        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
+
+        requests.put("memory", new Quantity("512Mi"));
+        resourceReq.setRequests(requests);
+
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
+            kafka.getSpec().getKafka().setResources(resourceReq);
+        });
+
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
     }
