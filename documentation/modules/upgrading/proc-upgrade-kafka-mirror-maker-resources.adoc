@@ -30,7 +30,7 @@ with:
 +
 [source,shell,subs="attributes"]
 ----
-apiVersion:{KafkaMirrorMakerApiVersion}
+apiVersion: {KafkaMirrorMakerApiVersion}
 ----
 
 . If present, move:

@@ -30,7 +30,7 @@ with:
 +
 [source,shell,subs="attributes"]
 ----
-apiVersion:{KafkaApiVersion}
+apiVersion: {KafkaApiVersion}
 ----
 
 . If the `Kafka` resource has:

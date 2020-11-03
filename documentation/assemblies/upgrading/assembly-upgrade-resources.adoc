@@ -5,8 +5,16 @@
 [id='assembly-upgrade-resources-{context}']
 = Strimzi resource upgrades
 
-The `{KafkaApiVersionPrev}` API version is deprecated.
-Resources that use the API version `{KafkaApiVersionPrev}` must be updated to use `{KafkaApiVersion}`.
+The `{KafkaApiVersionPrev}` API version is deprecated for the following Strimzi resources:
+
+* `Kafka`
+* `KafkaConnect`
+* `KafkaConnectS2I`
+* `KafkaMirrorMaker`
+* `KafkaTopic`
+* `KafkaUser`
+
+These resources that use the API version `{KafkaApiVersionPrev}` must be updated to use `{KafkaApiVersion}`.
 
 This section describes the upgrade steps for the resources.
 
@@ -26,6 +34,15 @@ metadata:
   annotations:
     upgrade: "Upgraded to {KafkaApiVersion}"
 ----
+
+The following sections contain a resource specific conversion guides:
+
+* xref:proc-upgrade-kafka-resources-{context}[]
+* xref:proc-upgrade-kafka-connect-resources-{context}[]
+* xref:proc-upgrade-kafka-connect-s2i-resources-{context}[]
+* xref:proc-upgrade-kafka-mirror-maker-resources-{context}[]
+* xref:proc-upgrade-kafka-topic-resources-{context}[]
+* xref:proc-upgrade-kafka-user-resources-{context}[]
 
 include::modules/proc-upgrade-kafka-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-connect-resources.adoc[leveloffset=+1]
