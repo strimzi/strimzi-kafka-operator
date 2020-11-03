@@ -61,7 +61,7 @@
     action: drop
   - source_labels: [__name__]
     separator: ;
-    regex: container_(network_tcp_usage_total|tasks_state|cpu_usage_seconds_total|memory_failures_total|network_udp_usage_total)
+    regex: container_(network_tcp_usage_total|tasks_state|memory_failures_total|network_udp_usage_total)
     replacement: $1
     action: drop
 
