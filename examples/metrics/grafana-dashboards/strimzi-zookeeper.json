@@ -602,7 +602,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_user_seconds_total{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",pod=~\"$strimzi_cluster_name-$zk_node\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$kubernetes_namespace\",container=\"zookeeper\",pod=~\"$strimzi_cluster_name-$zk_node\"}[5m])) by (pod)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{pod}}",
