@@ -79,7 +79,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
     private KafkaJmxOptions jmxOptions;
-    private JmxExporterMetrics jmxExporterMetrics;
+    private MetricsConfig metricsConfig;
     private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
@@ -235,7 +235,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.jmxOptions = jmxOptions;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.kafka.jmxExporterMetrics")
+    @DeprecatedProperty(movedToPath = "spec.kafka.metricsConfig")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
@@ -248,15 +248,14 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.metrics = metrics;
     }
 
+    @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("The Prometheus JMX Exporter configuration. " +
-            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public JmxExporterMetrics getJmxExporterMetrics() {
-        return jmxExporterMetrics;
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
     }
 
-    public void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
-        this.jmxExporterMetrics = jmxExporterMetrics;
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
     }
 
     @PresentInVersions("v1alpha1-v1beta1")

@@ -161,7 +161,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 kafkaMirrorMakerCluster.setMetricsEnabled(true);
                 kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
             }
-            kafkaMirrorMakerCluster.setJmxExporterMetrics(spec.getJmxExporterMetrics());
+            kafkaMirrorMakerCluster.setMetricsConfigInCm(spec.getMetricsConfig());
 
             /*setClientAuth(kafkaMirrorMakerCluster, spec.getConsumer());
             setClientAuth(kafkaMirrorMakerCluster, spec.getProducer());*/

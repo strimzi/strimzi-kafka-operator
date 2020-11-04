@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.strimzi.api.kafka.model.JmxExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
@@ -136,9 +137,14 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         ConfigMap loggingCm = mirrorMaker2Cluster.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) mirrorMaker2Cluster.getLogging()).getName()) :
                 null;
-        ConfigMap metricsCm = mirrorMaker2Cluster.isJmxExporterMetricsConfigured() ?
-                configMapOperations.get(namespace, mirrorMaker2Cluster.getJmxExporterMetrics().getValueFrom().getConfigMapKeyRef().getName()) :
-                null;
+        ConfigMap metricsCm = null;
+        if (mirrorMaker2Cluster.isMetricsConfigured()) {
+            if (mirrorMaker2Cluster.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
+                metricsCm = configMapOperations.get(namespace, ((JmxExporterMetrics) mirrorMaker2Cluster.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+            } else {
+                log.warn("Unknown metrics type {}", mirrorMaker2Cluster.getMetricsConfigInCm().getType());
+            }
+        }
 
         ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 

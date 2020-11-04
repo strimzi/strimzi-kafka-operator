@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.JmxExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
@@ -81,9 +82,15 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         ConfigMap loggingCm = bridge.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
                 null;
-        ConfigMap metricsCm = bridge.isJmxExporterMetricsConfigured() ?
-                configMapOperations.get(namespace, bridge.getJmxExporterMetrics().getValueFrom().getConfigMapKeyRef().getName()) :
-                null;
+
+        ConfigMap metricsCm = null;
+        if (bridge.isMetricsConfigured()) {
+            if (bridge.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
+                metricsCm = configMapOperations.get(namespace, ((JmxExporterMetrics) bridge.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+            } else {
+                log.warn("Unknown metrics type {}", bridge.getMetricsConfigInCm().getType());
+            }
+        }
 
         ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
 

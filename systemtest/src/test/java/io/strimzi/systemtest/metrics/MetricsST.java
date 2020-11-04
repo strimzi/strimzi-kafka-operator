@@ -452,7 +452,7 @@ public class MetricsST extends AbstractST {
                 .build();
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             // JMX metrics have higher priority
-            k.getSpec().getKafka().setJmxExporterMetrics(jmxExporterMetrics);
+            k.getSpec().getKafka().setMetricsConfig(jmxExporterMetrics);
             k.getSpec().getKafka().setMetrics(null);
         });
 

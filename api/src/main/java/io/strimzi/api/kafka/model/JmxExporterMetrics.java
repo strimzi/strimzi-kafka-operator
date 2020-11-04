@@ -11,7 +11,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,14 +24,17 @@ import java.util.Map;
 @JsonPropertyOrder({"valueFrom"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class JmxExporterMetrics implements Serializable, UnknownPropertyPreserving {
+public class JmxExporterMetrics extends MetricsConfig {
 
     private static final long serialVersionUID = 1L;
+
+    public static final String TYPE_JMX_EXPORTER = "jmxExporterMetrics";
 
     private ExternalConfigurationMetrics valueFrom;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Value of the name and key if ConfigMap containing JMX configuration.")
+    @Description("ConfigMap where Prometheus JMX Exporter configuration is stored. " +
+            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
     @JsonProperty(required = true)
     public ExternalConfigurationMetrics getValueFrom() {
         return valueFrom;
@@ -50,6 +52,12 @@ public class JmxExporterMetrics implements Serializable, UnknownPropertyPreservi
     @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Description("Must be `" + TYPE_JMX_EXPORTER + "`")
+    @Override
+    public String getType() {
+        return TYPE_JMX_EXPORTER;
     }
 
 }

@@ -242,7 +242,7 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setMetricsEnabled(true);
             zk.setMetricsConfig(metrics.entrySet());
         }
-        zk.setJmxExporterMetrics(zookeeperClusterSpec.getJmxExporterMetrics());
+        zk.setMetricsConfigInCm(zookeeperClusterSpec.getMetricsConfig());
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();

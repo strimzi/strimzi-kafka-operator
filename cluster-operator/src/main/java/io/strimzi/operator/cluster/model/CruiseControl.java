@@ -215,7 +215,7 @@ public class CruiseControl extends AbstractModel {
                 cruiseControl.setMetricsEnabled(true);
                 cruiseControl.setMetricsConfig(metrics.entrySet());
             }
-            cruiseControl.setJmxExporterMetrics(spec.getJmxExporterMetrics());
+            cruiseControl.setMetricsConfigInCm(spec.getMetricsConfig());
 
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());

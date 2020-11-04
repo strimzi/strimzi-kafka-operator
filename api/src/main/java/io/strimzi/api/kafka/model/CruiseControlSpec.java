@@ -53,7 +53,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> metrics;
-    private JmxExporterMetrics jmxExporterMetrics;
+    private MetricsConfig metricsConfig;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The docker image for the pods.")
@@ -98,7 +98,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         this.config = config;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.cruiseControl.jmxExporterMetrics")
+    @DeprecatedProperty(movedToPath = "spec.cruiseControl.metricsConfig")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
@@ -111,15 +111,14 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         this.metrics = metrics;
     }
 
+    @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("The Prometheus JMX Exporter configuration. " +
-            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public JmxExporterMetrics getJmxExporterMetrics() {
-        return jmxExporterMetrics;
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
     }
 
-    public void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
-        this.jmxExporterMetrics = jmxExporterMetrics;
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
     }
 
     @Description("Logging configuration (log4j1) for Cruise Control.")

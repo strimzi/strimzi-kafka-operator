@@ -58,6 +58,7 @@ import io.strimzi.api.kafka.model.JmxExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -208,7 +209,7 @@ public abstract class AbstractModel {
     protected static final int METRICS_PORT = 9404;
     protected static final String METRICS_PATH = "/metrics";
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
-    protected JmxExporterMetrics jmxExporterMetrics;
+    protected MetricsConfig metricsConfigInCm;
     protected String ancillaryConfigMapName;
     protected String logAndMetricsConfigMountPath;
     protected String logAndMetricsConfigVolumeName;
@@ -525,20 +526,22 @@ public abstract class AbstractModel {
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalLoggingConfigMap, ConfigMap externalMetricsConfigMap) {
         Map<String, String> data = new HashMap<>(2);
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalLoggingConfigMap));
-        if (getJmxExporterMetrics() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
+        if (getMetricsConfigInCm() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
             data.put(ANCILLARY_CM_KEY_METRICS, parseMetrics(externalMetricsConfigMap));
         }
         return createConfigMap(ancillaryConfigMapName, data);
     }
 
     protected String parseMetrics(ConfigMap externalCm) {
-        if (jmxExporterMetrics != null) {
-            if (externalCm == null || externalCm.getData().get(jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getKey()) == null) {
-                log.warn("ConfigMap {} does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
-                        jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getName(),
-                        jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getKey());
-            } else {
-                return externalCm.getData().get(jmxExporterMetrics.getValueFrom().getConfigMapKeyRef().getKey());
+        if (metricsConfigInCm != null) {
+            if (metricsConfigInCm instanceof JmxExporterMetrics) {
+                if (externalCm == null || externalCm.getData().get(((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey()) == null) {
+                    log.warn("ConfigMap {} does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
+                            ((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName(),
+                            ((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                } else {
+                    return externalCm.getData().get(((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                }
             }
         } else {
             if (isMetricsEnabled() && getMetricsConfig() != null) {
@@ -561,19 +564,19 @@ public abstract class AbstractModel {
         this.metricsConfig = metricsConfig;
     }
 
-    protected void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
-        if (jmxExporterMetrics != null) {
-            this.jmxExporterMetrics = jmxExporterMetrics;
+    protected void setMetricsConfigInCm(MetricsConfig metricsConfigInCm) {
+        if (metricsConfigInCm != null) {
+            this.metricsConfigInCm = metricsConfigInCm;
             setMetricsEnabled(true);
         }
     }
 
-    public JmxExporterMetrics getJmxExporterMetrics() {
-        return jmxExporterMetrics;
+    public MetricsConfig getMetricsConfigInCm() {
+        return metricsConfigInCm;
     }
 
-    public boolean isJmxExporterMetricsConfigured() {
-        return this.jmxExporterMetrics != null;
+    public boolean isMetricsConfigured() {
+        return this.metricsConfigInCm != null;
     }
 
     /**

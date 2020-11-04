@@ -55,7 +55,7 @@ public class KafkaMirrorMakerSpec extends Spec {
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics;
-    private JmxExporterMetrics jmxExporterMetrics;
+    private MetricsConfig metricsConfig;
     private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
 
@@ -122,7 +122,7 @@ public class KafkaMirrorMakerSpec extends Spec {
         this.producer = producer;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.jmxExporterMetrics")
+    @DeprecatedProperty(movedToPath = "spec.metricsConfig")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
@@ -135,15 +135,14 @@ public class KafkaMirrorMakerSpec extends Spec {
         this.metrics = metrics;
     }
 
+    @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("The Prometheus JMX Exporter configuration. " +
-            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    public JmxExporterMetrics getJmxExporterMetrics() {
-        return jmxExporterMetrics;
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
     }
 
-    public void setJmxExporterMetrics(JmxExporterMetrics jmxExporterMetrics) {
-        this.jmxExporterMetrics = jmxExporterMetrics;
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
