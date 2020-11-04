@@ -110,6 +110,13 @@ public class KafkaConnectResource {
         return kafkaConnect;
     }
 
+
+    public static void allowNetworkPolicyForKafkaConnect(KafkaConnect kafkaConnect) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
+            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
+        }
+    }
+
     public static void deleteKafkaConnectWithoutWait(String resourceName) {
         kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
