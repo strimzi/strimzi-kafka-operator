@@ -33,7 +33,7 @@ import java.util.Map;
         "replicas", "image", "whitelist",
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
-        "logging", "metrics", "jmxExporterMetrics", "tracing", "template"})
+        "logging", "metrics", "metricsConfig", "tracing", "template"})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec extends Spec {
     private static final long serialVersionUID = 1L;

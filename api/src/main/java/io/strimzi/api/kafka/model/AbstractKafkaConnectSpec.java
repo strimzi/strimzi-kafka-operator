@@ -29,7 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "version", "image", "resources", 
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "tolerations", "logging", "metrics", "jmxExporterMetrics", "tracing",
+        "affinity", "tolerations", "logging", "metrics", "metricsConfig", "tracing",
         "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
 public abstract class AbstractKafkaConnectSpec extends Spec {

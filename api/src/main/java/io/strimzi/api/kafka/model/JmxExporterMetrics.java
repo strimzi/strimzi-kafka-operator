@@ -21,7 +21,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonPropertyOrder({"valueFrom"})
+@JsonPropertyOrder({"type", "valueFrom"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 public class JmxExporterMetrics extends MetricsConfig {

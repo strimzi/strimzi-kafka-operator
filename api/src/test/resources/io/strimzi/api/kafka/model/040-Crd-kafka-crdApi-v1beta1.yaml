@@ -870,6 +870,35 @@ spec:
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
+                  metricsConfig:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxExporterMetrics
+                        description: Metrics type. Only 'jmxExporterMetrics' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to a key in a ConfigMap.
+                        description: ConfigMap where Prometheus JMX Exporter configuration
+                          is stored. See https://github.com/prometheus/jmx_exporter
+                          for details of the structure of this configuration.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -1678,35 +1707,6 @@ spec:
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  metricsConfig:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                        enum:
-                        - jmxExporterMetrics
-                        description: Metrics type. Only 'jmxExporterMetrics' supported
-                          currently.
-                      valueFrom:
-                        type: object
-                        properties:
-                          configMapKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Reference to a key in a ConfigMap.
-                        description: ConfigMap where Prometheus JMX Exporter configuration
-                          is stored. See https://github.com/prometheus/jmx_exporter
-                          for details of the structure of this configuration.
-                    required:
-                    - type
-                    - valueFrom
-                    description: Metrics configuration.
                   version:
                     type: string
                     description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
@@ -1890,6 +1890,35 @@ spec:
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
+                  metricsConfig:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxExporterMetrics
+                        description: Metrics type. Only 'jmxExporterMetrics' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to a key in a ConfigMap.
+                        description: ConfigMap where Prometheus JMX Exporter configuration
+                          is stored. See https://github.com/prometheus/jmx_exporter
+                          for details of the structure of this configuration.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -2445,35 +2474,6 @@ spec:
                     description: Template for ZooKeeper cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  metricsConfig:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                        enum:
-                        - jmxExporterMetrics
-                        description: Metrics type. Only 'jmxExporterMetrics' supported
-                          currently.
-                      valueFrom:
-                        type: object
-                        properties:
-                          configMapKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Reference to a key in a ConfigMap.
-                        description: ConfigMap where Prometheus JMX Exporter configuration
-                          is stored. See https://github.com/prometheus/jmx_exporter
-                          for details of the structure of this configuration.
-                    required:
-                    - type
-                    - valueFrom
-                    description: Metrics configuration.
                 required:
                 - replicas
                 - storage
@@ -7663,6 +7663,35 @@ spec:
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
+                  metricsConfig:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxExporterMetrics
+                        description: Metrics type. Only 'jmxExporterMetrics' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to a key in a ConfigMap.
+                        description: ConfigMap where Prometheus JMX Exporter configuration
+                          is stored. See https://github.com/prometheus/jmx_exporter
+                          for details of the structure of this configuration.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -8626,35 +8655,6 @@ spec:
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  metricsConfig:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                        enum:
-                        - jmxExporterMetrics
-                        description: Metrics type. Only 'jmxExporterMetrics' supported
-                          currently.
-                      valueFrom:
-                        type: object
-                        properties:
-                          configMapKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Reference to a key in a ConfigMap.
-                        description: ConfigMap where Prometheus JMX Exporter configuration
-                          is stored. See https://github.com/prometheus/jmx_exporter
-                          for details of the structure of this configuration.
-                    required:
-                    - type
-                    - valueFrom
-                    description: Metrics configuration.
                   version:
                     type: string
                     description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
@@ -9063,6 +9063,35 @@ spec:
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
+                  metricsConfig:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxExporterMetrics
+                        description: Metrics type. Only 'jmxExporterMetrics' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to a key in a ConfigMap.
+                        description: ConfigMap where Prometheus JMX Exporter configuration
+                          is stored. See https://github.com/prometheus/jmx_exporter
+                          for details of the structure of this configuration.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -9693,35 +9722,6 @@ spec:
                     description: Template for ZooKeeper cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  metricsConfig:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                        enum:
-                        - jmxExporterMetrics
-                        description: Metrics type. Only 'jmxExporterMetrics' supported
-                          currently.
-                      valueFrom:
-                        type: object
-                        properties:
-                          configMapKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Reference to a key in a ConfigMap.
-                        description: ConfigMap where Prometheus JMX Exporter configuration
-                          is stored. See https://github.com/prometheus/jmx_exporter
-                          for details of the structure of this configuration.
-                    required:
-                    - type
-                    - valueFrom
-                    description: Metrics configuration.
                   tlsSidecar:
                     type: object
                     properties:
@@ -15420,6 +15420,35 @@ spec:
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
+                  metricsConfig:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxExporterMetrics
+                        description: Metrics type. Only 'jmxExporterMetrics' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to a key in a ConfigMap.
+                        description: ConfigMap where Prometheus JMX Exporter configuration
+                          is stored. See https://github.com/prometheus/jmx_exporter
+                          for details of the structure of this configuration.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -16383,35 +16412,6 @@ spec:
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  metricsConfig:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                        enum:
-                        - jmxExporterMetrics
-                        description: Metrics type. Only 'jmxExporterMetrics' supported
-                          currently.
-                      valueFrom:
-                        type: object
-                        properties:
-                          configMapKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Reference to a key in a ConfigMap.
-                        description: ConfigMap where Prometheus JMX Exporter configuration
-                          is stored. See https://github.com/prometheus/jmx_exporter
-                          for details of the structure of this configuration.
-                    required:
-                    - type
-                    - valueFrom
-                    description: Metrics configuration.
                   version:
                     type: string
                     description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
@@ -16820,6 +16820,35 @@ spec:
                     type: object
                     description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                       for details of the structure of this configuration.
+                  metricsConfig:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxExporterMetrics
+                        description: Metrics type. Only 'jmxExporterMetrics' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to a key in a ConfigMap.
+                        description: ConfigMap where Prometheus JMX Exporter configuration
+                          is stored. See https://github.com/prometheus/jmx_exporter
+                          for details of the structure of this configuration.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -17450,35 +17479,6 @@ spec:
                     description: Template for ZooKeeper cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  metricsConfig:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                        enum:
-                        - jmxExporterMetrics
-                        description: Metrics type. Only 'jmxExporterMetrics' supported
-                          currently.
-                      valueFrom:
-                        type: object
-                        properties:
-                          configMapKeyRef:
-                            type: object
-                            properties:
-                              key:
-                                type: string
-                              name:
-                                type: string
-                              optional:
-                                type: boolean
-                            description: Reference to a key in a ConfigMap.
-                        description: ConfigMap where Prometheus JMX Exporter configuration
-                          is stored. See https://github.com/prometheus/jmx_exporter
-                          for details of the structure of this configuration.
-                    required:
-                    - type
-                    - valueFrom
-                    description: Metrics configuration.
                   tlsSidecar:
                     type: object
                     properties:

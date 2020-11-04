@@ -29,7 +29,7 @@ import lombok.EqualsAndHashCode;
         "livenessProbe", "readinessProbe",
         "jvmOptions", "logging",
         "template", "brokerCapacity",
-        "config", "metrics", "jmxExporterMetrics"})
+        "config", "metrics", "metricsConfig"})
 @EqualsAndHashCode
 public class CruiseControlSpec implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;

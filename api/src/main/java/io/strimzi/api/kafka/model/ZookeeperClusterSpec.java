@@ -38,7 +38,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-         "metrics", "jmxExporterMetrics", "logging", "template"})
+         "metrics", "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
 public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializable {
 

@@ -97,14 +97,14 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |metrics              1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.kafka.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|metricsConfig        1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxExporterMetrics].
+|xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar           1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
-|metricsConfig        1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxExporterMetrics].
-|xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
 |version              1.2+<.<|The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
 |====
@@ -1060,6 +1060,38 @@ It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 |string
 |====
 
+[id='type-JmxExporterMetrics-{context}']
+### `JmxExporterMetrics` schema reference
+
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `JmxExporterMetrics` from other subtypes which may be added in the future.
+It must have the value `jmxExporterMetrics` for the type `JmxExporterMetrics`.
+[options="header"]
+|====
+|Property          |Description
+|type       1.2+<.<|Must be `jmxExporterMetrics`.
+|string
+|valueFrom  1.2+<.<|ConfigMap where Prometheus JMX Exporter configuration is stored. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|xref:type-ExternalConfigurationMetrics-{context}[`ExternalConfigurationMetrics`]
+|====
+
+[id='type-ExternalConfigurationMetrics-{context}']
+### `ExternalConfigurationMetrics` schema reference
+
+Used in: xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
+
+
+[options="header"]
+|====
+|Property                |Description
+|configMapKeyRef  1.2+<.<|Reference to a key in a ConfigMap. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[core/v1 configmapkeyselector].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[ConfigMapKeySelector]
+|====
+
 [id='type-InlineLogging-{context}']
 ### `InlineLogging` schema reference
 
@@ -1331,38 +1363,6 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |string
 |====
 
-[id='type-JmxExporterMetrics-{context}']
-### `JmxExporterMetrics` schema reference
-
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-
-The `type` property is a discriminator that distinguishes the use of the type `JmxExporterMetrics` from other subtypes which may be added in the future.
-It must have the value `jmxExporterMetrics` for the type `JmxExporterMetrics`.
-[options="header"]
-|====
-|Property          |Description
-|valueFrom  1.2+<.<|ConfigMap where Prometheus JMX Exporter configuration is stored. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|xref:type-ExternalConfigurationMetrics-{context}[`ExternalConfigurationMetrics`]
-|type       1.2+<.<|Must be `jmxExporterMetrics`.
-|string
-|====
-
-[id='type-ExternalConfigurationMetrics-{context}']
-### `ExternalConfigurationMetrics` schema reference
-
-Used in: xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
-
-
-[options="header"]
-|====
-|Property                |Description
-|configMapKeyRef  1.2+<.<|Reference to a key in a ConfigMap. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[core/v1 configmapkeyselector].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[ConfigMapKeySelector]
-|====
-
 [id='type-ZookeeperClusterSpec-{context}']
 ### `ZookeeperClusterSpec` schema reference
 
@@ -1400,12 +1400,12 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |metrics         1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.zookeeper.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxExporterMetrics].
+|xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
 |logging         1.2+<.<|Logging configuration for ZooKeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |template        1.2+<.<|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-|metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxExporterMetrics].
-|xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
 |tlsSidecar      1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration. The TLS sidecar is not used anymore and this option will be ignored.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
@@ -2730,14 +2730,14 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics         1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
+|metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxExporterMetrics].
+|xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
 |tracing         1.2+<.<|The configuration of tracing in Kafka MirrorMaker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template        1.2+<.<|Template to specify how Kafka MirrorMaker resources, `Deployments` and `Pods`, are generated.
 |xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 |livenessProbe   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
-|metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxExporterMetrics].
-|xref:type-JmxExporterMetrics-{context}[`JmxExporterMetrics`]
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
 |version         1.2+<.<|The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.

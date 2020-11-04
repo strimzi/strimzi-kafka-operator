@@ -43,7 +43,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "jmxOptions", "resources",
-        "metrics", "jmxExporterMetrics", "logging", "tlsSidecar", "template"})
+        "metrics", "metricsConfig", "logging", "tlsSidecar", "template"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable {
 
