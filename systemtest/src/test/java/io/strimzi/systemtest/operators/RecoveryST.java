@@ -254,7 +254,7 @@ class RecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitForPendingPod(clusterName + "-kafka");
+        PodUtils.waitForPendingPod(KafkaResources.kafkaStatefulSetName(clusterName));
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
