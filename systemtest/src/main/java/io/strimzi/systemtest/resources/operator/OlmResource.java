@@ -9,6 +9,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -43,30 +44,20 @@ public class OlmResource {
     private static Map<String, JsonObject> exampleResources = new HashMap<>();
 
     public static void clusterOperator(String namespace) {
-        clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, true);
+        clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
     }
 
-    public static void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, boolean isLatest) {
+    public static void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
         clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
-            olmInstallationStrategy, isLatest);
-    }
-
-    public static void upgradeAbleClusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, boolean isLatest) {
-        if (kubeClient().listPodsByPrefixInName(Constants.CO_POD_PREFIX_NAME).size() == 0) {
-            clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
-                olmInstallationStrategy, isLatest);
-        } else {
-            // upgrade if CO is present
-            upgradeClusterOperator();
-        }
+            olmInstallationStrategy, fromVersion);
     }
 
     public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, true);
+        clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, Environment.OLM_OPERATOR_VERSION_PREVIOUS);
     }
 
     public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
-                                       OlmInstallationStrategy olmInstallationStrategy, boolean isLatest) {
+                                       OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
 
         // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
         if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(namespace)) {
@@ -75,19 +66,20 @@ public class OlmResource {
 
         String csvName;
 
-        if (isLatest) {
+        if (fromVersion != null) {
+            createAndModifySubscription(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
+            // must be strimzi-cluster-operator.0.18.0v
+            csvName = Environment.OLM_APP_BUNDLE_PREFIX + "." + fromVersion;
+        } else {
             createAndModifySubscriptionLatestRelease(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy);
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + "." + Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION;
-        } else {
-            createAndModifySubscriptionPreviousRelease(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy);
-            csvName = Environment.OLM_APP_BUNDLE_PREFIX + "." + Environment.OLM_OPERATOR_PREVIOUS_RELEASE_VERSION;
         }
 
         // manual installation needs approval with patch
         if (olmInstallationStrategy == OlmInstallationStrategy.Manual) {
-            waitUntilSomeInstallPlanIsPresent();
+            OlmUtils.waitUntilSomeInstallPlanIsPresent();
             obtainInstallPlanName();
-            approveInstallation();
+            approveNonUsedInstallPlan();
         }
 
         // Make sure that operator will be deleted
@@ -103,18 +95,6 @@ public class OlmResource {
         waitFor(deploymentName, namespace, 1);
 
         exampleResources = parseExamplesFromCsv(csvName, namespace);
-    }
-
-    public static void waitUntilSomeInstallPlanIsPresent() {
-        TestUtils.waitFor("install plan is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                try {
-                    obtainInstallPlanName();
-                    return true;
-                } catch (RuntimeException e)  {
-                    return false;
-                }
-            });
     }
 
     /**
@@ -188,7 +168,7 @@ public class OlmResource {
      * Patches specific non used install plan, which will approve installation. Only for manual installation strategy.
      * Also updates closedMapInstallPlan map and set specific install plan to true.
      */
-    private static void approveInstallation() {
+    private static void approveNonUsedInstallPlan() {
         String nonUsedInstallPlan = getNonUsedInstallPlan();
 
         try {
@@ -218,7 +198,7 @@ public class OlmResource {
         }
 
         obtainInstallPlanName();
-        approveInstallation();
+        approveNonUsedInstallPlan();
     }
 
     /**

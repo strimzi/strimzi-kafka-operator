@@ -16,13 +16,17 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClient
 import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.json.JsonObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -31,8 +35,12 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static io.strimzi.systemtest.Environment.OLM_LATEST_CONTAINER_IMAGE_TAG;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class OlmUpgradeST extends AbstractUpgradeST {
 
@@ -44,41 +52,62 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private final String topicUpgradeName = "topic-upgrade";
     private final int messageUpgradeCount =  10_000;
     private final Map<String, List<String>> mapOfKafkaVersionsWithSupportedClusterOperators = getMapKafkaVersionsWithSupportedClusterOperatorVersions();
+    private boolean firstRun = true;
 
-    @Test
-    void testUpgrade() {
-        Map<String, String> kafkaSnapshot = null;
-        boolean isUpgradeAble = true;
+    @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
+    @MethodSource("loadJsonUpgradeData")
+    void testUpgrade(String from, String to, JsonObject parameters) {
 
-        while (isUpgradeAble) {
-            // 1. Create subscription (+ operator group) with version latest - 1 (manual approval strategy) already done...!
-            // 2. Approve installation
-            //   a) get name of install-plan
-            //   b) approve installation
-            OlmResource.upgradeAbleClusterOperator(namespace, OlmInstallationStrategy.Manual, false);
+        int clusterOperatorVersion = Integer.parseInt(from.split("\\.")[1]);
+        // only 0.|18|.0 and more is supported
+        assumeTrue(clusterOperatorVersion >= 18);
 
-            String currentVersionOfCo = OlmResource.getClusterOperatorVersion();
+        // 1. Create subscription (+ operator group) with manual approval strategy
+        // 2. Approve installation
+        //   a) get name of install-plan
+        //   b) approve installation
+        // strimzi-cluster-operator-v0.19.0 <-- need concatenate version with starting 'v' before version
+        if (firstRun) {
+            OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, "v" + from);
 
-            LOGGER.info("====================================================================================");
-            LOGGER.info("============== Verification version of CO:" + currentVersionOfCo);
-            LOGGER.info("====================================================================================");
+            String beforeUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
 
-            // wait until RU is finished (first run skipping)
-            if (kafkaSnapshot != null) {
-                StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
-            }
+            // 3. perform verification of from version
+            performUpgradeVerification(beforeUpgradeVersionOfCo);
 
-            // 3. perform verification of specific version
-            performUpgradeVerification();
-            kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-
+            // ?. save install-plan to closed-map
             OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
             OlmResource.obtainInstallPlanName();
-            isUpgradeAble = OlmResource.isUpgradeable();
         }
+
+        // 4. make snapshots
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        // 5. upgrade cluster operator
+        OlmResource.upgradeClusterOperator();
+
+        // 6. wait until RU is finished (first run skipping)
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
+
+        // 7. verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
+        String afterUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
+        assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + to));
+
+        // 8. perform verification of to version
+        performUpgradeVerification(afterUpgradeVersionOfCo);
+
+        // 9. save install-plan to closed-map
+        OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
+        OlmResource.obtainInstallPlanName();
+
+        firstRun = false;
     }
 
-    private void performUpgradeVerification() {
+    private void performUpgradeVerification(String version) {
+        LOGGER.info("====================================================================================");
+        LOGGER.info("============== Verification version of CO:" + version);
+        LOGGER.info("====================================================================================");
+
         // fetch the tag from imageName: docker.io/strimzi/operator:'[latest|0.19.0|0.18.0]'
         String containerImageTag = kubeClient().getDeployment(kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME))
             .getSpec()
@@ -91,7 +120,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         // NOT (latest image or default substring(1)) for skipping 'v'0.19.0 on the start...
         // '6.6.6' is the latest version of cluster operator
-        if (!containerImageTag.equals("6.6.6") && (!(containerImageTag.equals("latest") || containerImageTag.equals(Environment.OLM_OPERATOR_VERSION_DEFAULT.substring(1))))) {
+        if (!containerImageTag.equals(OLM_LATEST_CONTAINER_IMAGE_TAG) && (!(containerImageTag.equals("latest") || containerImageTag.equals(Environment.OLM_OPERATOR_VERSION_DEFAULT.substring(1))))) {
             try {
                 File dir = FileUtils.downloadAndUnzip("https://github.com/strimzi/strimzi-kafka-operator/releases/download/" + containerImageTag + "/strimzi-" + containerImageTag + ".zip");
 
@@ -106,6 +135,18 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         } else if (KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get() == null) {
             KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
         }
+
+        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+            .withTopicName(topicUpgradeName)
+            .withMessageCount(messageUpgradeCount)
+            .withDelayMs(1)
+            .build();
+
+        kafkaBasicClientJob.producerStrimzi().done();
+        kafkaBasicClientJob.consumerStrimzi().done();
 
         String currentKafkaVersion = KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion();
 
@@ -144,7 +185,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
                 Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
                 // we are gonna use latest Kafka
-                if (containerImageTag.equals("6.6.6")) {
+                if (containerImageTag.equals(OLM_LATEST_CONTAINER_IMAGE_TAG)) {
                     newKafkaVersion[0] = sortedKeys.last();
                 }
 
@@ -162,18 +203,6 @@ public class OlmUpgradeST extends AbstractUpgradeST {
                 StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
             }
         }
-
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-            .withTopicName(topicUpgradeName)
-            .withMessageCount(messageUpgradeCount)
-            .withDelayMs(1)
-            .build();
-
-        kafkaBasicClientJob.producerStrimzi().done();
-        kafkaBasicClientJob.consumerStrimzi().done();
 
         ClientUtils.waitForClientSuccess(producerName, namespace, messageUpgradeCount);
         ClientUtils.waitForClientSuccess(consumerName, namespace, messageUpgradeCount);

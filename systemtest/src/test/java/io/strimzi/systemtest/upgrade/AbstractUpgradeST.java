@@ -8,18 +8,22 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.params.provider.Arguments;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonObject;
 import javax.json.JsonReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class AbstractUpgradeST extends AbstractST {
 
@@ -94,5 +98,17 @@ public class AbstractUpgradeST extends AbstractST {
             }
         );
         return mapSupportedLogMessageVersions;
+    }
+
+    protected static Stream<Arguments> loadJsonUpgradeData() throws FileNotFoundException {
+        JsonArray upgradeData = readUpgradeJson();
+        List<Arguments> parameters = new LinkedList<>();
+
+        upgradeData.forEach(jsonData -> {
+            JsonObject data = (JsonObject) jsonData;
+            parameters.add(Arguments.of(data.getString("fromVersion"), data.getString("toVersion"), data));
+        });
+
+        return parameters.stream();
     }
 }

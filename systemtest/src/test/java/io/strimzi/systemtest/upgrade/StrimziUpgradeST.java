@@ -37,21 +37,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
@@ -561,19 +557,6 @@ public class StrimziUpgradeST extends AbstractST {
                 .endTemplate()
             .endSpec().done();
     }
-
-    private static Stream<Arguments> loadJsonUpgradeData() throws FileNotFoundException {
-        JsonArray upgradeData = readUpgradeJson();
-        List<Arguments> parameters = new LinkedList<>();
-
-        upgradeData.forEach(jsonData -> {
-            JsonObject data = (JsonObject) jsonData;
-            parameters.add(Arguments.of(data.getString("fromVersion"), data.getString("toVersion"), data));
-        });
-
-        return parameters.stream();
-    }
-
 
     @BeforeEach
     void setupEnvironment() {
