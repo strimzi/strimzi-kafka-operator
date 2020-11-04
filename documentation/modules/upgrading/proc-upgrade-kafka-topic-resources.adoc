@@ -30,7 +30,7 @@ with:
 +
 [source,shell,subs="attributes"]
 ----
-apiVersion:{KafkaTopicApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 ----
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.
