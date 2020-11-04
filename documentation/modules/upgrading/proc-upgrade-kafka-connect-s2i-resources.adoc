@@ -30,7 +30,7 @@ with:
 +
 [source,shell,subs="attributes"]
 ----
-apiVersion:{KafkaConnectS2IApiVersion}
+apiVersion: {KafkaConnectS2IApiVersion}
 ----
 
 . If present, move:
