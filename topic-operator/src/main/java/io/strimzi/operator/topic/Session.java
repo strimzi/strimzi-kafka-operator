@@ -207,8 +207,8 @@ public class Session extends AbstractVerticle {
                         if (!stopped) {
                             timerId = null;
                             boolean isInitialReconcile = oldTimerId == null;
+                            topicOperator.getPeriodicReconciliationsCounter().increment();
                             topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").onComplete(result -> {
-                                topicOperator.getPeriodicReconciliationsCounter().increment();
                                 if (isInitialReconcile) {
                                     initReconcilePromise.complete();
                                 }
