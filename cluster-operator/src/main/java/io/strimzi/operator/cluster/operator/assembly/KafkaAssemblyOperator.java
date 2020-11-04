@@ -30,7 +30,7 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JmxExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -1387,8 +1387,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         if (zkCluster.isMetricsConfigured()) {
-                            if (zkCluster.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
-                                configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxExporterMetrics) (zkCluster.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName()));
+                            if (zkCluster.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                                configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxPrometheusExporterMetrics) (zkCluster.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName()));
                             }
                         } else {
                             configMaps.add(Future.succeededFuture(null));
@@ -2424,8 +2424,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             if (kafkaCluster.isMetricsConfigured()) {
-                if (kafkaCluster.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
-                    metricsCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((JmxExporterMetrics) (kafkaCluster.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName());
+                if (kafkaCluster.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                    metricsCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((JmxPrometheusExporterMetrics) (kafkaCluster.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName());
                 }
             }
 
@@ -3013,8 +3013,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 Future<ConfigMap> futToMetricsConfigMap;
                 if (topicOperator != null && topicOperator.isMetricsConfigured()) {
-                    if (topicOperator.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
-                        futToMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxExporterMetrics) (topicOperator.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName());
+                    if (topicOperator.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                        futToMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxPrometheusExporterMetrics) (topicOperator.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName());
                     } else {
                         return Future.failedFuture("Unknown metrics type " + topicOperator.getMetricsConfigInCm().getType());
                     }
@@ -3031,8 +3031,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 Future<ConfigMap> futUoMetricsConfigMap;
                 if (userOperator != null && userOperator.isMetricsConfigured()) {
-                    if (userOperator.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
-                        futUoMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxExporterMetrics) (userOperator.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName());
+                    if (userOperator.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                        futUoMetricsConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxPrometheusExporterMetrics) (userOperator.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName());
                     } else {
                         return Future.failedFuture("Unknown metrics type " + userOperator.getMetricsConfigInCm().getType());
                     }
@@ -3201,8 +3201,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 ConfigMap metricsCm = null;
                 if (cruiseControl.isMetricsConfigured()) {
-                    if (cruiseControl.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
-                        metricsCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((JmxExporterMetrics) cruiseControl.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+                    if (cruiseControl.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                        metricsCm = configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((JmxPrometheusExporterMetrics) cruiseControl.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
                     } else {
                         log.warn("Unknown metrics type {}", cruiseControl.getMetricsConfigInCm().getType());
                     }

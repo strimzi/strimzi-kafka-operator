@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JmxExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
@@ -86,8 +86,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 null;
         ConfigMap metricsCm = null;
         if (mirror.isMetricsConfigured()) {
-            if (mirror.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
-                metricsCm = configMapOperations.get(namespace, ((JmxExporterMetrics) mirror.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+            if (mirror.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                metricsCm = configMapOperations.get(namespace, ((JmxPrometheusExporterMetrics) mirror.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
             } else {
                 log.warn("Unknown metrics type {}", mirror.getMetricsConfigInCm().getType());
             }

@@ -1449,8 +1449,8 @@ spec:
                     type:
                       type: string
                       enum:
-                        - jmxExporterMetrics
-                      description: Metrics type. Only 'jmxExporterMetrics' supported currently.
+                        - jmxPrometheusExporter
+                      description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
                     valueFrom:
                       type: object
                       properties:
@@ -2678,8 +2678,8 @@ spec:
                     type:
                       type: string
                       enum:
-                        - jmxExporterMetrics
-                      description: Metrics type. Only 'jmxExporterMetrics' supported currently.
+                        - jmxPrometheusExporter
+                      description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
                     valueFrom:
                       type: object
                       properties:
@@ -5603,8 +5603,8 @@ spec:
                     type:
                       type: string
                       enum:
-                        - jmxExporterMetrics
-                      description: Metrics type. Only 'jmxExporterMetrics' supported currently.
+                        - jmxPrometheusExporter
+                      description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
                     valueFrom:
                       type: object
                       properties:

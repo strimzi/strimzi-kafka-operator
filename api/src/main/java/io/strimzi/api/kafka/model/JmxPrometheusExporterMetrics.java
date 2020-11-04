@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JMX metrics config
+ * JMX Prometheus metrics config
  */
 @Buildable(
         editableEnabled = false,
@@ -24,11 +24,11 @@ import java.util.Map;
 @JsonPropertyOrder({"type", "valueFrom"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class JmxExporterMetrics extends MetricsConfig {
+public class JmxPrometheusExporterMetrics extends MetricsConfig {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_JMX_EXPORTER = "jmxExporterMetrics";
+    public static final String TYPE_JMX_EXPORTER = "jmxPrometheusExporter";
 
     private ExternalConfigurationMetrics valueFrom;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

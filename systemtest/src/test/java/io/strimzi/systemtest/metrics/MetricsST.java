@@ -11,8 +11,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.JmxExporterMetrics;
-import io.strimzi.api.kafka.model.JmxExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -445,14 +445,14 @@ public class MetricsST extends AbstractST {
                 .withName("external-metrics-cm")
                 .withKey("metrics-config.yml")
                 .build();
-        JmxExporterMetrics jmxExporterMetrics = new JmxExporterMetricsBuilder()
+        JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
                     .withConfigMapKeyRef(cmks)
                 .endValueFrom()
                 .build();
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             // JMX metrics have higher priority
-            k.getSpec().getKafka().setMetricsConfig(jmxExporterMetrics);
+            k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
             k.getSpec().getKafka().setMetrics(null);
         });
 

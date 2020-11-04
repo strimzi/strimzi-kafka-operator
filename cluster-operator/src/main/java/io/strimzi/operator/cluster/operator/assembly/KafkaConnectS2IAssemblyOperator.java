@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JmxExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
@@ -118,8 +118,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                 null;
         ConfigMap metricsCm = null;
         if (connect.isMetricsConfigured()) {
-            if (connect.getMetricsConfigInCm() instanceof JmxExporterMetrics) {
-                metricsCm = configMapOperations.get(namespace, ((JmxExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+            if (connect.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                metricsCm = configMapOperations.get(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
             } else {
                 log.warn("Unknown metrics type {}", connect.getMetricsConfigInCm().getType());
             }

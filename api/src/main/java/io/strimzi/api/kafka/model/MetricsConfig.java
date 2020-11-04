@@ -15,13 +15,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Describes the logging configuration
+ * Describes the metrics configuration
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = JmxExporterMetrics.TYPE_JMX_EXPORTER, value = JmxExporterMetrics.class),
+        @JsonSubTypes.Type(name = JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER, value = JmxPrometheusExporterMetrics.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
@@ -31,7 +31,7 @@ public abstract class MetricsConfig implements UnknownPropertyPreserving, Serial
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metrics type. Only 'jmxExporterMetrics' supported currently.")
+    @Description("Metrics type. Only 'jmxPrometheusExporter' supported currently.")
     public abstract String getType();
 
     @Override

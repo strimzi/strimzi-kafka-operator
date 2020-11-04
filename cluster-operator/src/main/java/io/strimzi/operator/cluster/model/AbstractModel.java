@@ -54,7 +54,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JmxExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
@@ -534,13 +534,13 @@ public abstract class AbstractModel {
 
     protected String parseMetrics(ConfigMap externalCm) {
         if (metricsConfigInCm != null) {
-            if (metricsConfigInCm instanceof JmxExporterMetrics) {
-                if (externalCm == null || externalCm.getData().get(((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey()) == null) {
+            if (metricsConfigInCm instanceof JmxPrometheusExporterMetrics) {
+                if (externalCm == null || externalCm.getData().get(((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey()) == null) {
                     log.warn("ConfigMap {} does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
-                            ((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName(),
-                            ((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                            ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName(),
+                            ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
                 } else {
-                    return externalCm.getData().get(((JmxExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                    return externalCm.getData().get(((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
                 }
             }
         } else {
