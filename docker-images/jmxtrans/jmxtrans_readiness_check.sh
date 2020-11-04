@@ -14,7 +14,8 @@ else
     export KAFKA_METRICS_PORT="$2"
 fi
 
-if nc -z "$KAFKA_HEADLESS_SERVICE" "$KAFKA_METRICS_PORT"; then
+nc -z "$KAFKA_HEADLESS_SERVICE" "$KAFKA_METRICS_PORT"
+if [ "$?" -ne 0 ]; then
     echo "Couldn't connect to $KAFKA_HEADLESS_SERVICE:$KAFKA_METRICS_PORT"
     exit 1
 fi
