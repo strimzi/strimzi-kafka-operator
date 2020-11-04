@@ -158,8 +158,6 @@ class KafkaRollerST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
-        assertTrue(checkRunningAndNotRunningKafkaPods(CLUSTER_NAME));
-
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()));
 
@@ -180,7 +178,7 @@ class KafkaRollerST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
-        assertTrue(checkRunningAndNotRunningKafkaPods(CLUSTER_NAME));
+        assertTrue(checkIfOneKafkaPodIsNotReady(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().setImage("strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION));
@@ -212,7 +210,7 @@ class KafkaRollerST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
-        assertTrue(checkRunningAndNotRunningKafkaPods(CLUSTER_NAME));
+        assertTrue(checkIfOneKafkaPodIsNotReady(CLUSTER_NAME));
 
         requests.put("cpu", new Quantity("250m"));
 
@@ -269,8 +267,6 @@ class KafkaRollerST extends AbstractST {
         // pods are stable in the Pending state
         PodUtils.waitUntilPodStabilityReplicasCount(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
 
-        assertTrue(checkRunningAndNotRunningKafkaPods(CLUSTER_NAME));
-
         LOGGER.info("Removing requirement for the affinity");
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null));
@@ -279,7 +275,7 @@ class KafkaRollerST extends AbstractST {
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
     }
 
-    boolean checkRunningAndNotRunningKafkaPods(String clusterName) {
+    boolean checkIfOneKafkaPodIsNotReady(String clusterName) {
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(clusterName));
         int runningKafkaPods = kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).collect(Collectors.toList()).size();
 
