@@ -40,6 +40,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -214,6 +215,42 @@ class UserST extends AbstractST {
                 throw new RuntimeException("Failed to encode username", e);
             }
         });
+    }
+
+    @Test
+    void testCreatingUsersWithSecretPrefix() {
+        String clusterName = "second-cluster";
+        String secretPrefix = "top-secret-";
+        String tlsUserName = "encrypted-leopold";
+        String scramShaUserName = "scramed-leopold";
+
+        KafkaResource.kafkaEphemeral(clusterName, 3)
+            .editSpec()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withNewSecretPrefix(secretPrefix)
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
+
+        KafkaUserResource.tlsUser(clusterName, tlsUserName).done();
+        KafkaUserResource.scramShaUser(clusterName, scramShaUserName).done();
+
+        Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
+        Secret scramShaSecret = kubeClient().getSecret(secretPrefix + scramShaUserName);
+
+        LOGGER.info("Checking if user secrets with secret prefixes exists");
+        assertNotNull(tlsSecret);
+        assertNotNull(scramShaSecret);
+
+        LOGGER.info("Checking if secrets contains right user names");
+        assertThat(tlsSecret.getMetadata().getOwnerReferences().get(0).getName(), is(tlsUserName));
+        assertThat(scramShaSecret.getMetadata().getOwnerReferences().get(0).getName(), is(scramShaUserName));
+
+        LOGGER.info("Checking if users are created without the secret prefixes");
+        assertNotNull(KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(tlsUserName).get());
+        assertNotNull(KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(scramShaUserName).get());
     }
 
     void createBigAmountOfUsers(String typeOfUser) {
