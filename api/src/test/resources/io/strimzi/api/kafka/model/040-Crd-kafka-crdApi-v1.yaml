@@ -275,6 +275,15 @@ spec:
                               type: boolean
                               description: Enable or disable ECDSA support by installing
                                 BouncyCastle crypto provider. Default value is `false`.
+                            enableOauthBearer:
+                              type: boolean
+                              description: Enable or disable OAuth authentication
+                                over SASL_OAUTHBEARER.Default value is `true`.
+                            enablePlain:
+                              type: boolean
+                              description: Enable or disable OAuth authentication
+                                over SASL_PLAIN. There is no re-authentication support
+                                when this mechanism is used.Default value is `false`.
                             fallbackUserNameClaim:
                               type: string
                               description: The fallback username claim to be used
@@ -331,7 +340,9 @@ spec:
                                 max time is reached, the client has to re-authenticate,
                                 otherwise the server will drop the connection. Not
                                 set by default - the authenticated session does not
-                                expire when the access token expires.
+                                expire when the access token expires. This option
+                                only applies to SASL_OAUTHBEARER authentication mechanism
+                                (when `enableOauthBearer` is `true`).
                             tlsTrustedCertificates:
                               type: array
                               items:

@@ -285,6 +285,10 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |boolean
 |enableECDSA                        1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
 |boolean
+|enableOauthBearer                  1.2+<.<|Enable or disable OAuth authentication over SASL_OAUTHBEARER.Default value is `true`.
+|boolean
+|enablePlain                        1.2+<.<|Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used.Default value is `false`.
+|boolean
 |fallbackUserNameClaim              1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string
 |fallbackUserNamePrefix             1.2+<.<|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
@@ -299,7 +303,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |integer
 |jwksRefreshSeconds                 1.2+<.<|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
 |integer
-|maxSecondsWithoutReauthentication  1.2+<.<|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+|maxSecondsWithoutReauthentication  1.2+<.<|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
 |integer
 |tlsTrustedCertificates             1.2+<.<|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array

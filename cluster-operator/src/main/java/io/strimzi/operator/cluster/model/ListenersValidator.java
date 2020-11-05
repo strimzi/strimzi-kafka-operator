@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.unmodifiableList;
 
 /**
@@ -396,11 +397,13 @@ public class ListenersValidator {
      */
     @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     private static void validateOauth(Set<String> errors, GenericKafkaListener listener) {
-        if (listener.getAuth() != null
-                && KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType())) {
+        if (isListenerWithOAuth(listener)) {
             KafkaListenerAuthenticationOAuth oAuth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
             String listenerName = listener.getName();
 
+            if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
+                errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to true");
+            }
             boolean hasJwksRefreshSecondsValidInput = oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
             boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
             boolean hasJwksMinRefreshPauseSecondsValidInput = oAuth.getJwksMinRefreshPauseSeconds() != null && oAuth.getJwksMinRefreshPauseSeconds() >= 0;

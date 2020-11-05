@@ -33,9 +33,16 @@ public class ListenersUtils {
      */
     public static boolean hasListenerWithOAuth(List<GenericKafkaListener> listeners)    {
         return listeners.stream()
-                .filter(listener -> listener.getAuth() != null && KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType()))
+                .filter(listener -> isListenerWithOAuth(listener))
                 .findFirst()
                 .isPresent();
+    }
+
+    public static boolean isListenerWithOAuth(GenericKafkaListener listener) {
+        if (listener.getAuth() == null || listener.getAuth().getType() == null)
+            return false;
+
+        return KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType());
     }
 
     /**

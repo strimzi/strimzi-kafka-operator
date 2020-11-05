@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-operator-entity-operator-delegation
+  labels:
+    app: strimzi
+# The Entity Operator cluster role must be bound to the cluster operator service account so that it can delegate the cluster role to the Entity Operator.
+# This must be done to avoid escalating privileges which would be blocked by Kubernetes.
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: myproject
+roleRef:
+  kind: ClusterRole
+  name: strimzi-entity-operator
+  apiGroup: rbac.authorization.k8s.io
