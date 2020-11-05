@@ -1,0 +1,30 @@
+Configures rack awareness to spread replicas across different racks.
+
+By configuring a `rack` for a Kafka cluster, consumers are allowed to fetch data from the closest replica.
+This is useful when a Kafka cluster spans multiple datacenters.
+
+A `topologyKey` value must match the label of the cluster node used by Kubernetes when scheduling Kafka broker pods to nodes.
+
+If the Kubernetes cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
+Usually, nodes are labeled with the `topology.kubernetes.io/zone` label (or `failure-domain.beta.kubernetes.io/zone` on older Kubernetes versions),
+which can be used as the `topologyKey` value.
+
+This has the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
+Consult your Kubernetes administrator regarding the node label that represents the zone or rack into which the node is deployed.
+
+.Example `rack` configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      topologyKey: topology.kubernetes.io/zone
+    # ...
+----
+
+For more information about Kubernetes node labels, see {K8sWellKnownLabelsAnnotationsAndTaints}.

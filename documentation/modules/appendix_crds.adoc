@@ -960,6 +960,11 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
+include::../api/io.strimzi.api.kafka.model.Rack.adoc[leveloffset=+1]
+
+[id='type-Rack-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
