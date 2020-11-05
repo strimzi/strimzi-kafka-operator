@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>cluster-operator-generator</artifactId>
+    <artifactId>config-model-generator</artifactId>
 
     <properties>
         <kafka-metadata-version>${kafka.version}</kafka-metadata-version>
