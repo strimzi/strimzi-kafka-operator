@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(ROLLING_UPDATE)
-class KafkaRollerST extends AbstractST {
+public class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
     static final String NAMESPACE = "kafka-roller-cluster-test";
 
@@ -178,7 +178,7 @@ class KafkaRollerST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
-        assertTrue(checkIfOneKafkaPodIsNotReady(CLUSTER_NAME));
+        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().setImage("strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION));
@@ -190,7 +190,7 @@ class KafkaRollerST extends AbstractST {
     }
 
     @Test
-    void testKafkaPodPending() {
+    public void testKafkaPodPending() {
         ResourceRequirements rr = new ResourceRequirementsBuilder()
                 .withRequests(Collections.emptyMap())
                 .build();
@@ -210,7 +210,7 @@ class KafkaRollerST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
-        assertTrue(checkIfOneKafkaPodIsNotReady(CLUSTER_NAME));
+        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(CLUSTER_NAME));
 
         requests.put("cpu", new Quantity("250m"));
 
@@ -275,7 +275,7 @@ class KafkaRollerST extends AbstractST {
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
     }
 
-    boolean checkIfOneKafkaPodIsNotReady(String clusterName) {
+    boolean checkIfExactlyOneKafkaPodIsNotReady(String clusterName) {
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(clusterName));
         int runningKafkaPods = kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).collect(Collectors.toList()).size();
 

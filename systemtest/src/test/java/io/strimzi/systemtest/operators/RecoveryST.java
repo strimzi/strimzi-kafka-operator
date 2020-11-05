@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
@@ -40,6 +41,7 @@ class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";
     static final String CLUSTER_NAME = "recovery-cluster";
+    static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
@@ -235,9 +237,19 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
     }
 
+    /**
+     * The main difference between this test and {@link io.strimzi.systemtest.rollingupdate.KafkaRollerST#testKafkaPodPending() testKafkaPodPending}
+     * is that in this test, we are deploying Kafka cluster with an impossible memory request,
+     * but in the {@link io.strimzi.systemtest.rollingupdate.KafkaRollerST#testKafkaPodPending() testKafkaPodPending}
+     * we first deploy Kafka cluster with a correct configuration, then change the configuration to an unschedulable one, waiting
+     * for one Kafka pod to be in the `Pending` phase. In this test, all 3 Kafka pods are `Pending`. After we
+     * check that Kafka pods are stable in `Pending` phase (for one minute), we change the memory request so that the pods are again schedulable
+     * and wait until the Kafka cluster recovers and becomes `Ready`.
+     */
     @Test
     void testRecoveryFromImpossibleMemoryRequest() {
         String clusterName = "my-cluster";
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
 
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("memory", new Quantity("465458732Gi"));
@@ -254,7 +266,8 @@ class RecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitForPendingPod(KafkaResources.kafkaStatefulSetName(clusterName));
+        PodUtils.waitForPendingPod(kafkaSsName);
+        PodUtils.verifyThatPendingPodsAreStable(kafkaSsName);
 
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
@@ -265,7 +278,7 @@ class RecoveryST extends AbstractST {
             kafka.getSpec().getKafka().setResources(resourceReq);
         });
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, 3);
         KafkaUtils.waitForKafkaReady(clusterName);
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
