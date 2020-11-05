@@ -24,8 +24,8 @@ In a consumer configuration, irrespective of any subsequent configuration:
 ----
 # ...
 bootstrap.servers=localhost:9092 <1>
-key.deserializer=org.apache.kafka.common.serialization.Deserializer  <2>
-value.deserializer=org.apache.kafka.common.serialization.Deserializer  <3>
+key.deserializer=org.apache.kafka.common.serialization.StringDeserializer  <2>
+value.deserializer=org.apache.kafka.common.serialization.StringDeserializer  <3>
 client.id=my-client <4>
 group.id=my-group-id <5>
 # ...
@@ -51,6 +51,9 @@ Each partition can only be assigned to a single consumer.
 
 If you do not already have as many consumers as partitions,
 you can scale data consumption by adding more consumer instances with the same `group.id`.
+Adding more consumers to a group than there are partitions will not help throughput,
+but it does mean that there are consumers on standby should one stop functioning.
+If you can meet throughput goals with fewer consumers, you save on resources.
 
 Consumers within the same consumer group send offset commits and heartbeats to the same broker.
 So the greater the number of consumers in the group, the higher the request load on the broker.
@@ -61,13 +64,6 @@ group.id=my-group-id <1>
 # ...
 ----
 <1> Add a consumer to a consumer group using a group id.
-
-.Adjusting the ratio of consumers to partitions
-
-Adding more consumers to a group than there are partitions will not help throughput,
-but it does mean that there are consumers on standby should one stop functioning.
-
-If you can meet throughput goals with fewer consumers, you save on resources.
 
 == Message ordering guarantees
 
@@ -165,7 +161,7 @@ On the consumer side, you can then use the `isolation.level` property to control
 The `isolation.level` property has two valid values:
 
 * `read_committed`
-* `read_uncommitted`
+* `read_uncommitted` (default)
 
 Use `read_committed` to ensure that only transactional messages that have been committed are read by the consumer.
 However, this will cause an increase in end-to-end latency, because the consumer won’t be able to return a message until the brokers have written the transaction markers that record the result of the transaction (_committed_ or _aborted_).
@@ -181,12 +177,12 @@ isolation.level=read_committed <2>
 
 == Recovering from failure to avoid data loss
 
-Use the `session.timeout.ms` and `heatbeat.interval.ms` properties to configure the time taken to check and recover from consumer failure within a consumer group.
+Use the `session.timeout.ms` and `heartbeat.interval.ms` properties to configure the time taken to check and recover from consumer failure within a consumer group.
 
 The `session.timeout.ms` property specifies the maximum amount of time in milliseconds a consumer within a consumer group can be out of contact with a broker before being considered inactive and a _rebalancing_ is triggered between the active consumers in the group.
 When the group rebalances, the partitions are reassigned to the members of the group.
 
-The `heatbeat.interval.ms` property specifies the interval in milliseconds between _heartbeat_ checks to the consumer group coordinator to indicate that the consumer is active and connected.
+The `heartbeat.interval.ms` property specifies the interval in milliseconds between _heartbeat_ checks to the consumer group coordinator to indicate that the consumer is active and connected.
 The heartbeat interval must be lower, usually by a third, than the session timeout interval.
 
 If you set the `session.timeout.ms` property lower, failing consumers are detected earlier, and rebalancing can take place quicker.
@@ -194,16 +190,19 @@ However, take care not to set the timeout so low that the broker fails to receiv
 
 Decreasing the heartbeat interval reduces the chance of accidental rebalancing, but more frequent heartbeats increases the overhead on broker resources.
 
-== Handling uncommitted offsets
+== Managing offset policy
 
-Use the `auto.offset.reset` property to control how the consumer behaves when offsets are not committed.
-This could be because the consumer was down for a period.
+Use the `auto.offset.reset` property to control how a consumer behaves when no offsets have been committed,
+or a committed offset is no longer valid or deleted.
+
+Suppose a consumer fails before an offset has been committed.
+The consumer that then assumes responsibility for consuming the messages will start reading from the reassigned topic partition based on the reset policy.
+The default value is `latest`, which starts at the end of the partition, and consequently means some messages are missed.
 To avoid data loss, but increase the amount of processing, use the `earliest` value to start at the beginning of the partition.
-The other allowed value is `latest`, which starts at the end of the partition, and consequently means some messages are missed.
 
 ----
 # ...
-heatbeat.interval.ms=3000 <1>
+heartbeat.interval.ms=3000 <1>
 session.timeout.ms=10000 <2>
 auto.offset.reset=earliest <3>
 # ...
