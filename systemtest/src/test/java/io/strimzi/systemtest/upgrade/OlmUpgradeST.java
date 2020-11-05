@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.json.JsonObject;
@@ -32,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Environment.OLM_LATEST_CONTAINER_IMAGE_TAG;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -50,55 +53,34 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private final String topicUpgradeName = "topic-upgrade";
     private final int messageUpgradeCount =  10_000;
     private final Map<String, List<String>> mapOfKafkaVersionsWithSupportedClusterOperators = getMapKafkaVersionsWithSupportedClusterOperatorVersions();
-    private boolean firstRun = true;
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
     @MethodSource("loadJsonUpgradeData")
-    void testUpgrade(String from, String to, JsonObject parameters) {
+    void testUpgrade(String fromVersion, String toVersion, JsonObject parameters) {
 
-        int clusterOperatorVersion = Integer.parseInt(from.split("\\.")[1]);
+        int clusterOperatorVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
         // only 0.|18|.0 and more is supported
         assumeTrue(clusterOperatorVersion >= 18);
 
-        // 1. Create subscription (+ operator group) with manual approval strategy
-        // 2. Approve installation
-        //   a) get name of install-plan
-        //   b) approve installation
-        // strimzi-cluster-operator-v0.19.0 <-- need concatenate version with starting 'v' before version
-        if (firstRun) {
-            OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, "v" + from);
-
-            String beforeUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
-
-            // 3. perform verification of from version
-            performUpgradeVerification(beforeUpgradeVersionOfCo);
-
-            // ?. save install-plan to closed-map
-            OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
-            OlmResource.obtainInstallPlanName();
-        }
-
-        // 4. make snapshots
+        // 5. make snapshots
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        // 5. upgrade cluster operator
+        // 6. upgrade cluster operator
         OlmResource.upgradeClusterOperator();
 
-        // 6. wait until RU is finished (first run skipping)
+        // 7. wait until RU is finished (first run skipping)
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
 
-        // 7. verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
+        // 8. verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
         String afterUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
-        assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + to));
+        assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + toVersion));
 
-        // 8. perform verification of to version
+        // 9. perform verification of to version
         performUpgradeVerification(afterUpgradeVersionOfCo);
 
-        // 9. save install-plan to closed-map
+        // 10. save install-plan to closed-map
         OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
         OlmResource.obtainInstallPlanName();
-
-        firstRun = false;
     }
 
     private void performUpgradeVerification(String version) {
@@ -213,6 +195,22 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         assertNoCoErrorsLogged(0);
     }
 
+    private String getFirstSupportedFromVersion() {
+
+        Stream<Arguments> argumentStream = loadJsonUpgradeData();
+
+        List<Arguments> supportedVersions = argumentStream.filter(arguments -> {
+            String fromVersion = (String) arguments.get()[0];
+            int middleFromVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
+            return middleFromVersion >= 18;
+        }).collect(Collectors.toList());
+
+        String firstSupportedFromVersion = (String) supportedVersions.get(0).get()[0];
+
+        LOGGER.info("We are gonna use first supported version for OLM upgrade: {}", firstSupportedFromVersion);
+
+        return firstSupportedFromVersion;
+    }
 
     private void deployKafkaFromFile(File dir, String imageTag) {
         File kafkaYaml = new File(dir, "strimzi-" + imageTag + "/examples/kafka/kafka-persistent.yaml");
@@ -235,5 +233,24 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         cluster.setNamespace(namespace);
         cluster.createNamespace(namespace);
+
+        // 1. Create subscription (+ operator group) with manual approval strategy
+        // 2. Approve installation
+        //   a) get name of install-plan
+        //   b) approve installation
+        // strimzi-cluster-operator-v0.19.0 <-- need concatenate version with starting 'v' before version
+        OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, "v" + getFirstSupportedFromVersion());
+
+        String beforeUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
+
+        // 3. perform verification of from version
+        performUpgradeVerification(beforeUpgradeVersionOfCo);
+
+        // ?. save install-plan to closed-map
+        OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
+        OlmResource.obtainInstallPlanName();
+
+        // 4. perform verification of to version
+        performUpgradeVerification(getFirstSupportedFromVersion());
     }
 }

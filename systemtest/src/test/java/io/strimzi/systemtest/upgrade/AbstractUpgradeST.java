@@ -15,7 +15,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,10 +29,14 @@ public class AbstractUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractUpgradeST.class);
 
-    protected static JsonArray readUpgradeJson() throws FileNotFoundException {
-        InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json");
-        JsonReader reader = Json.createReader(fis);
-        return reader.readArray();
+    protected static JsonArray readUpgradeJson() {
+        try (InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json")) {
+            JsonReader reader = Json.createReader(fis);
+            return reader.readArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json" + " file was not found.");
+        }
     }
 
     /**
@@ -54,11 +58,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         JsonArray jsonArray = null;
 
-        try {
-            jsonArray = AbstractUpgradeST.readUpgradeJson();
-        }  catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        jsonArray = AbstractUpgradeST.readUpgradeJson();
 
         Objects.requireNonNull(jsonArray).stream().iterator().forEachRemaining(
             item -> {
@@ -100,7 +100,7 @@ public class AbstractUpgradeST extends AbstractST {
         return mapSupportedLogMessageVersions;
     }
 
-    protected static Stream<Arguments> loadJsonUpgradeData() throws FileNotFoundException {
+    protected static Stream<Arguments> loadJsonUpgradeData() {
         JsonArray upgradeData = readUpgradeJson();
         List<Arguments> parameters = new LinkedList<>();
 
