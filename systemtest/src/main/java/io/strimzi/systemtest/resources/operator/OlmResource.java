@@ -36,7 +36,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class OlmResource {
     private static final Logger LOGGER = LogManager.getLogger(OlmResource.class);
 
-    private static final String NO_MORE_NON_USED_INSTALL_PLANS = "NoMoreNonUsedInstallPlans";
+    public static final String NO_MORE_NON_USED_INSTALL_PLANS = "NoMoreNonUsedInstallPlans";
 
     // only three versions
     private static final Map<String, Boolean> CLOSED_MAP_INSTALL_PLAN = new HashMap<>(3);
@@ -77,7 +77,7 @@ public class OlmResource {
 
         // manual installation needs approval with patch
         if (olmInstallationStrategy == OlmInstallationStrategy.Manual) {
-            OlmUtils.waitUntilSomeInstallPlanIsPresent();
+            OlmUtils.waitUntilNonUsedInstallPlanIsPresent(fromVersion);
             obtainInstallPlanName();
             approveNonUsedInstallPlan();
         }

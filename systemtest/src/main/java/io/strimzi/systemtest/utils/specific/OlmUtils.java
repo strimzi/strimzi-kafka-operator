@@ -5,22 +5,21 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.test.TestUtils;
-
-import static io.strimzi.systemtest.resources.operator.OlmResource.obtainInstallPlanName;
 
 public class OlmUtils {
 
     private OlmUtils() {}
 
-    public static void waitUntilSomeInstallPlanIsPresent() {
-        TestUtils.waitFor("install plan is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+    public static void waitUntilNonUsedInstallPlanIsPresent(String currentVersion) {
+        TestUtils.waitFor("install plan is present in version." + currentVersion, Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
             () -> {
                 try {
-                    obtainInstallPlanName();
-                    return true;
+                    OlmResource.obtainInstallPlanName();
+                    return !OlmResource.getNonUsedInstallPlan().equals(OlmResource.NO_MORE_NON_USED_INSTALL_PLANS);
                 } catch (RuntimeException e)  {
-                    return false;
+                    throw new RuntimeException("No install-plan was found upgrading from:"  + currentVersion + " version! It must exists.");
                 }
             });
     }

@@ -56,17 +56,13 @@ public class AbstractUpgradeST extends AbstractST {
         Map<String, List<String>> mapSupportedLogMessageVersions = new HashMap<>();
         String[] previousKafkaVersion = new String[1];
 
-        JsonArray jsonArray = null;
-
-        jsonArray = AbstractUpgradeST.readUpgradeJson();
-
-        Objects.requireNonNull(jsonArray).stream().iterator().forEachRemaining(
+        Objects.requireNonNull(AbstractUpgradeST.readUpgradeJson()).stream().iterator().forEachRemaining(
             item -> {
                 String clusterOperatorVersion = item.asJsonObject().getString("toVersion");
                 String kafkaVersion = item.asJsonObject().getJsonObject("proceduresAfter").asJsonObject().getString("kafkaVersion");
 
-                LOGGER.info("Cluster operator version is: {}", clusterOperatorVersion);
-                LOGGER.info("Kafka version: {}", kafkaVersion);
+                LOGGER.debug("Cluster operator version is: {}", clusterOperatorVersion);
+                LOGGER.debug("Kafka version: {}", kafkaVersion);
 
                 // if contains kafka version
                 if (mapSupportedLogMessageVersions.containsKey(kafkaVersion)) {

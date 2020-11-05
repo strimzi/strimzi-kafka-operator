@@ -18,6 +18,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.specific.OlmUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,7 +57,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
     @MethodSource("loadJsonUpgradeData")
-    void testUpgrade(String fromVersion, String toVersion, JsonObject parameters) {
+    void testChainUpgrade(String fromVersion, String toVersion, JsonObject parameters) {
 
         int clusterOperatorVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
         // only 0.|18|.0 and more is supported
@@ -65,22 +66,24 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // 5. make snapshots
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-        // 6. upgrade cluster operator
+        // 6. wait until non-used install plan is present (sometimes install-plan did not append immediately and we need to wait for at least 10m)
+        OlmUtils.waitUntilNonUsedInstallPlanIsPresent(fromVersion);
+
+        // 7. upgrade cluster operator
         OlmResource.upgradeClusterOperator();
 
-        // 7. wait until RU is finished (first run skipping)
+        // 8. wait until RU is finished (first run skipping)
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
 
-        // 8. verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
+        // 9. verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
         String afterUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
         assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + toVersion));
 
-        // 9. perform verification of to version
+        // 10. perform verification of to version
         performUpgradeVerification(afterUpgradeVersionOfCo);
 
-        // 10. save install-plan to closed-map
+        // 11. save install-plan to closed-map
         OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
-        OlmResource.obtainInstallPlanName();
     }
 
     private void performUpgradeVerification(String version) {
@@ -171,7 +174,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
                 KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
                     //  2.2.1 -> 2.2 (gonna trim from kafka version)
-                    String logMessageFormatVersion = newKafkaVersion[0].substring(0, 2);
+                    String logMessageFormatVersion = newKafkaVersion[0].substring(0, 3);
                     LOGGER.info("We are gonna update Kafka CR with following versions:\n" +
                         "Kafka version: {}\n" +
                         "Log message format version: {}", newKafkaVersion[0], logMessageFormatVersion);
