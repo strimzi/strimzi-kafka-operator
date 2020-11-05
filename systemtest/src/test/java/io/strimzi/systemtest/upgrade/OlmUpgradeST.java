@@ -251,9 +251,5 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         // ?. save install-plan to closed-map
         OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
-        OlmResource.obtainInstallPlanName();
-
-        // 4. perform verification of to version
-        performUpgradeVerification(getFirstSupportedFromVersion());
     }
 }

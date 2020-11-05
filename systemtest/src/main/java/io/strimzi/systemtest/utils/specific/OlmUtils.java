@@ -13,7 +13,7 @@ public class OlmUtils {
     private OlmUtils() {}
 
     public static void waitUntilNonUsedInstallPlanIsPresent(String currentVersion) {
-        TestUtils.waitFor("install plan is present in version." + currentVersion, Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
+        TestUtils.waitFor("install plan is present in version:" + currentVersion + ".", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
             () -> {
                 try {
                     OlmResource.obtainInstallPlanName();
