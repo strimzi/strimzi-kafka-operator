@@ -72,8 +72,6 @@ For example:
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
-  labels:
-    app: my-cluster
   name: my-cluster
   namespace: myproject
 spec:
