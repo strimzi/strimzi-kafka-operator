@@ -7,8 +7,8 @@
 
 Use configuration properties to optimize the performance of Kafka producers and consumers.
 
-A minimum set of configuration properties is required.
-But you can add or adjust properties to change how producers and consumers interact with Kafka.
+A minimum set of configuration properties is required,
+but you can add or adjust properties to change how producers and consumers interact with Kafka.
 For example, for producers you can tune latency and throughput of messages so that clients can respond to data in real time.
 Or you can change the configuration to provide stronger message durability guarantees.
 
