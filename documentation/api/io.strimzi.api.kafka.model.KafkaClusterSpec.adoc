@@ -116,7 +116,7 @@ spec:
     # ...
     rack:
       topologyKey: topology.kubernetes.io/zone
-      brokerRackInitImage: my-org/my-image:latest
+    brokerRackInitImage: my-org/my-image:latest
     # ...
 ----
 
