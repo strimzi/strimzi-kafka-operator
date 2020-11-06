@@ -71,6 +71,11 @@ For example:
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+metadata:
+  labels:
+    app: my-cluster
+  name: my-cluster
+  namespace: myproject
 spec:
   kafka:
     # ...
@@ -106,6 +111,10 @@ The override configuration differs according to the listener type.
 For example, you can override hosts for `route`, DNS names or IP addresses for `loadbalancer`, and node ports for `nodeport`.
 <9> Authoization specified as `simple`, which uses the `AclAuthorizer` Kafka plugin.
 <10> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
++
+WARNING: An OpenShift Route address comprises the name of the Kafka cluster, the name of the listener, and the name of the namespace it is created in.
+For example, `my-cluster-kafka-listener1-bootstrap-myproject` (_CLUSTER-NAME_-kafka-_LISTENER-NAME_-bootstrap-_NAMESPACE_).
+If you are using a `route` listener type, be careful that the whole length of the address does not exceed a maximum limit of 63 characters.
 
 . Create or update the `Kafka` resource.
 +
