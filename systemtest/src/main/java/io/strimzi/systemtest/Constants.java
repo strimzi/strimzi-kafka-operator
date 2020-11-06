@@ -37,7 +37,7 @@ public interface Constants {
     long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(1).toMillis();
 
     long OLM_UPGRADE_INSTALL_PLAN_TIMEOUT = Duration.ofMinutes(15).toMillis();
-    long OLM_UPGRADE_INSTALL_PLAN_POLL = Duration.ofMillis(3).toMillis();
+    long OLM_UPGRADE_INSTALL_PLAN_POLL = Duration.ofMinutes(1).toMillis();
 
 
     long GLOBAL_CLIENTS_POLL = Duration.ofSeconds(15).toMillis();
