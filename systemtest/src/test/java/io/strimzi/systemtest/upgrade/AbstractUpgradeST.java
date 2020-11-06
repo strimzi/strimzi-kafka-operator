@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +44,7 @@ public class AbstractUpgradeST extends AbstractST {
      * List cluster operator versions which supports specific kafka version. It uses StrimziUpgradeST.json file to parse
      * the 'toVersion' and 'proceduresAfter' JsonObjects.
      * example:
-     *      2.6.0->[HEAD]
+     *      2.6.0->[HEAD, 6.6.6]
      *      2.3.1->[0.15.0]
      *      2.4.0->[0.16.2, 0.17.0]
      *      2.5.0->[0.18.0, 0.19.0]
@@ -89,10 +90,16 @@ public class AbstractUpgradeST extends AbstractST {
                 }
 
                 mapSupportedLogMessageVersions.forEach((logVersion, supportedCoVersions) -> {
-                    System.out.println(logVersion + "->" + supportedCoVersions.toString());
+                    LOGGER.debug(logVersion + "->" + supportedCoVersions.toString());
                 });
             }
         );
+
+        List<String> kafkaLatestVersionSupportedByCo = mapSupportedLogMessageVersions.get(Environment.ST_KAFKA_VERSION);
+        // adding also 6.6.6 because HEAD and 6.6.6 is the same and must support latest version
+        kafkaLatestVersionSupportedByCo.add(Environment.OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT);
+        mapSupportedLogMessageVersions.put(Environment.ST_KAFKA_VERSION, kafkaLatestVersionSupportedByCo);
+
         return mapSupportedLogMessageVersions;
     }
 

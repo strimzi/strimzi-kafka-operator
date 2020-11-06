@@ -138,6 +138,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         LOGGER.info("Current Kafka message version is {}", currentKafkaVersion);
 
+
         if (mapOfKafkaVersionsWithSupportedClusterOperators.containsKey(currentKafkaVersion)) {
             // supported co version for specific kafka version
             List<String> supportedClusterOperatorVersion = mapOfKafkaVersionsWithSupportedClusterOperators.get(currentKafkaVersion);
