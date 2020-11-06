@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -41,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -55,11 +57,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(ROLLING_UPDATE)
-class KafkaRollerST extends AbstractST {
+public class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
     static final String NAMESPACE = "kafka-roller-cluster-test";
 
@@ -168,10 +171,14 @@ class KafkaRollerST extends AbstractST {
     void testKafkaPodImagePullBackOff() {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
-                kafka.getSpec().getKafka().setImage("strimzi/kafka:not-existent-tag"));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+            kafka.getSpec().getKafka().setImage("strimzi/kafka:not-existent-tag");
+            kafka.getSpec().getZookeeper().setImage("strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION);
+        });
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+
+        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(CLUSTER_NAME));
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
                 kafka.getSpec().getKafka().setImage("strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION));
@@ -183,7 +190,7 @@ class KafkaRollerST extends AbstractST {
     }
 
     @Test
-    void testKafkaPodPending() {
+    public void testKafkaPodPending() {
         ResourceRequirements rr = new ResourceRequirementsBuilder()
                 .withRequests(Collections.emptyMap())
                 .build();
@@ -202,6 +209,8 @@ class KafkaRollerST extends AbstractST {
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+
+        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(CLUSTER_NAME));
 
         requests.put("cpu", new Quantity("250m"));
 
@@ -264,6 +273,13 @@ class KafkaRollerST extends AbstractST {
 
         // kafka should get back ready in some reasonable time frame
         KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+    }
+
+    boolean checkIfExactlyOneKafkaPodIsNotReady(String clusterName) {
+        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(clusterName));
+        int runningKafkaPods = kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).collect(Collectors.toList()).size();
+
+        return runningKafkaPods == (kafkaPods.size() - 1);
     }
 
     @BeforeAll
