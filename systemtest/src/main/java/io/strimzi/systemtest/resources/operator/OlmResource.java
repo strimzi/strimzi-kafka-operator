@@ -263,8 +263,6 @@ public class OlmResource {
     public static void deleteOlm(String deploymentName, String namespace, String csvName) {
         ResourceManager.cmdKubeClient().exec("delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
         ResourceManager.cmdKubeClient().exec("delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
-
-        // TODO: installation  manual...
         ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);
         DeploymentUtils.waitForDeploymentDeletion(deploymentName);
     }
