@@ -77,6 +77,9 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         // 9. verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
         String afterUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
+
+        // if HEAD -> 6.6.6 version
+        toVersion = toVersion.equals("HEAD") ? Environment.OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT : toVersion;
         assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + toVersion));
 
         // 10. perform verification of to version
