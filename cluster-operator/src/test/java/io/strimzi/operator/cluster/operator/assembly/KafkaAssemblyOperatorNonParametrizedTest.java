@@ -154,7 +154,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     }
 
     @Test
-    public void testCASecretsWithOwnerReference(VertxTestContext context) {
+    public void testClusterCASecretsWithoutOwnerReference(VertxTestContext context) {
         OwnerReference ownerReference = new OwnerReferenceBuilder()
                         .withKind("Kafka")
                         .withName(NAME)
@@ -162,8 +162,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                         .withController(false)
                         .build();
 
-        CertificateAuthority clientCaConfig = new CertificateAuthority();
-        clientCaConfig.setGenerateSecretOwnerReference(false);
+        CertificateAuthority caConfig = new CertificateAuthority();
+        caConfig.setGenerateSecretOwnerReference(false);
 
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -175,14 +175,82 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                         .withReplicas(3)
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
-                        .withNewTemplate()
-                            .withNewClusterCaCert()
-                                .withNewMetadata()
-                                .endMetadata()
-                            .endClusterCaCert()
-                        .endTemplate()
                     .endKafka()
-                        .withClientsCa(clientCaConfig)
+                    .withClusterCa(caConfig)
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        SecretOperator secretOps = supplier.secretOperations;
+
+        ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
+        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), certManager, passwordGenerator,
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+
+        Checkpoint async = context.checkpoint();
+
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    assertThat(clusterCaCert.getAllValues(), hasSize(1));
+                    assertThat(clusterCaKey.getAllValues(), hasSize(1));
+                    assertThat(clientsCaCert.getAllValues(), hasSize(1));
+                    assertThat(clientsCaKey.getAllValues(), hasSize(1));
+
+                    Secret clusterCaCertSecret = clusterCaCert.getValue();
+                    Secret clusterCaKeySecret = clusterCaKey.getValue();
+                    Secret clientsCaCertSecret = clientsCaCert.getValue();
+                    Secret clientsCaKeySecret = clientsCaKey.getValue();
+
+                    assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences(), hasSize(0));
+                    assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences(), hasSize(0));
+                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
+
+                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testClientsCASecretsWithoutOwnerReference(VertxTestContext context) {
+        OwnerReference ownerReference = new OwnerReferenceBuilder()
+                        .withKind("Kafka")
+                        .withName(NAME)
+                        .withBlockOwnerDeletion(false)
+                        .withController(false)
+                        .build();
+
+        CertificateAuthority caConfig = new CertificateAuthority();
+        caConfig.setGenerateSecretOwnerReference(false);
+
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                        .withName(NAME)
+                        .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withClientsCa(caConfig)
                     .withNewZookeeper()
                         .withReplicas(3)
                         .withNewEphemeralStorage()
@@ -222,13 +290,12 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     Secret clientsCaKeySecret = clientsCaKey.getValue();
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
-                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(0));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(0));
                     assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(0));
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
-
 
                     async.flag();
                 })));
