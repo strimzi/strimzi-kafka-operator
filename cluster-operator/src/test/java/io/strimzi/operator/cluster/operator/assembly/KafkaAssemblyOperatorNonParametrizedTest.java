@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.certs.OpenSslCertManager;
@@ -161,6 +162,9 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                         .withController(false)
                         .build();
 
+        CertificateAuthority clientCaConfig = new CertificateAuthority();
+        clientCaConfig.setGenerateSecretOwnerReference(false);
+
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                         .withName(NAME)
@@ -178,6 +182,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                             .endClusterCaCert()
                         .endTemplate()
                     .endKafka()
+                        .withClientsCa(clientCaConfig)
                     .withNewZookeeper()
                         .withReplicas(3)
                         .withNewEphemeralStorage()
@@ -217,14 +222,12 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     Secret clientsCaKeySecret = clientsCaKey.getValue();
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
-                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(0));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
-                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(0));
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
-                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
-                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
 
 
                     async.flag();
