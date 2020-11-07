@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
@@ -149,21 +152,19 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 })));
     }
 
+    @Test
     public void testCASecretsWithOwnerReference(VertxTestContext context) {
         OwnerReference ownerReference = new OwnerReferenceBuilder()
-                    .withApiVersion("kafka.strimzi.io/v1beta1")
-                    .withKind("Kafka")
-                    .withName(NAME)
-                    .withUid("random-1234")
-                    .withBlockOwnerDeletion(false)
-                    .withController(false)
-                    .build();
-
+                        .withKind("Kafka")
+                        .withName(NAME)
+                        .withBlockOwnerDeletion(false)
+                        .withController(false)
+                        .build();
 
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
-                    .withName(NAME)
-                    .withNamespace(NAMESPACE)
+                        .withName(NAME)
+                        .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -173,7 +174,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                         .withNewTemplate()
                             .withNewClusterCaCert()
                                 .withNewMetadata()
-                                    .withOwnerReferences(ownerReference)
                                 .endMetadata()
                             .endClusterCaCert()
                         .endTemplate()
@@ -185,7 +185,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        
+
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
 
@@ -203,7 +203,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
-        
+
         op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
@@ -217,11 +217,17 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     Secret clientsCaKeySecret = clientsCaKey.getValue();
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
-                    assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
 
-                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(0));
+                    assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+                    assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+
 
                     async.flag();
                 })));
-        }
     }
+}
