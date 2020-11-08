@@ -23,7 +23,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "generateCertificateAuthority", "validityDays", "renewalDays" })
+@JsonPropertyOrder({ "generateCertificateAuthority", "generateSecretOwnerReference", "validityDays", "renewalDays" })
 @EqualsAndHashCode
 public class CertificateAuthority implements UnknownPropertyPreserving, Serializable {
 
@@ -31,6 +31,7 @@ public class CertificateAuthority implements UnknownPropertyPreserving, Serializ
 
     private int validityDays;
     private boolean generateCertificateAuthority = true;
+    private boolean generateSecretOwnerReference = true;
     private int renewalDays;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private CertificateExpirationPolicy certificateExpirationPolicy;
@@ -56,6 +57,17 @@ public class CertificateAuthority implements UnknownPropertyPreserving, Serializ
 
     public void setGenerateCertificateAuthority(boolean generateCertificateAuthority) {
         this.generateCertificateAuthority = generateCertificateAuthority;
+    }
+
+    @Description("If true then the Certificate Authority certificates secrets owner reference is set to the Kafka object. " +
+            "Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets. " +
+            "Default is true.")
+    public boolean isGenerateSecretOwnerReference() {
+        return generateSecretOwnerReference;
+    }
+
+    public void setGenerateSecretOwnerReference(boolean generateSecretOwnerReference) {
+        this.generateSecretOwnerReference = generateSecretOwnerReference;
     }
 
     @Description("The number of days in the certificate renewal period. " +
