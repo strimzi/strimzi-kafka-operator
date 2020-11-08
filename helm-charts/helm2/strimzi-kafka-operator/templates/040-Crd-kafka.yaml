@@ -4731,7 +4731,7 @@ spec:
                   description: If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
                 generateSecretOwnerReference:
                   type: boolean
-                  description: If true then the Certificate Authority certificates secrets owner reference is set to the Kafka object. Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets. Default is true.  
+                  description: If true then the Certificate Authority certificates secrets owner reference is set to the Kafka object. Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets. Default is true.
                 validityDays:
                   type: integer
                   minimum: 1
