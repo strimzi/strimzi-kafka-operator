@@ -4,22 +4,13 @@ A _rack_ can represent an availability zone, data center, or an actual rack in y
 By configuring a `rack` for a Kafka cluster, consumers can fetch data from the closest replica.
 This is useful for reducing the load on your network when a Kafka cluster spans multiple datacenters.
 
-To configure Kafka brokers for rack awareness specify:
-
-* A `topologyKey` value to match the label of the cluster node used by Kubernetes when scheduling Kafka broker pods to nodes
-* The `RackAwareReplicaSelector` implementation for the Kafka `ReplicaSelector` plugin
+To configure Kafka brokers for rack awareness, you specify a `topologyKey` value to match the label of the cluster node used by Kubernetes when scheduling Kafka broker pods to nodes.
 
 If the Kubernetes cluster is running on a cloud provider platform, the label must represent the availability zone where the node is running.
 Usually, nodes are labeled with the `topology.kubernetes.io/zone` label (or `failure-domain.beta.kubernetes.io/zone` on older Kubernetes versions),
 which can be used as the `topologyKey` value.
 
-The `ReplicaSelector` plugin provides the logic that enables clients to consume from the nearest replica.
-Specify `RackAwareReplicaSelector` for the `replica.selector.class` to switch from the default implementation.
-The default implementation uses `LeaderSelector` to always select the leader replica for the client.
-By switching from the leader replica to the replica follower, there is some cost to latency.
-If required, you can also customize your own implementation.
-
-The rack awareness configuration spreads the broker pods across zones, improving resiliency, and also sets a `broker.rack` configuration for each Kafka broker.
+The rack awareness configuration spreads the broker pods and partition replicas across zones, improving resiliency, and also sets a `broker.rack` configuration for each Kafka broker.
 The `broker.rack` configuration assigns a rack ID to each broker.
 
 Consult your Kubernetes administrator regarding the node label that represents the zone or rack into which the node is deployed.
@@ -41,6 +32,13 @@ spec:
       replica.selector.class: org.apache.kafka.common.replica.RackAwareReplicaSelector
     # ...
 ----
+
+Use the `RackAwareReplicaSelector` implementation for the Kafka `ReplicaSelector` plugin if you want clients to consume from the closest replica.
+The `ReplicaSelector` plugin provides the logic that enables clients to consume from the nearest replica.
+Specify `RackAwareReplicaSelector` for the `replica.selector.class` to switch from the default implementation.
+The default implementation uses `LeaderSelector` to always select the leader replica for the client.
+By switching from the leader replica to the replica follower, there is some cost to latency.
+If required, you can also customize your own implementation.
 
 For clients, including Kafka Connect, you specify the same topology key as the broker that the client will use to consume messages.
 
