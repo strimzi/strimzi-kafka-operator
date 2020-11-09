@@ -69,7 +69,7 @@ spec:
     port: tcp-prometheus
     relabelings:
     - separator: ;
-      regex: __meta_kubernetes_pod_label_(strimzi_.+)
+      regex: __meta_kubernetes_pod_label_(strimzi_io_.+)
       replacement: $1
       action: labelmap
     - sourceLabels: [__meta_kubernetes_namespace]
