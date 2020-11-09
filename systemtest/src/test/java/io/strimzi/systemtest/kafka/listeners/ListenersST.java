@@ -706,7 +706,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, customListenerName, aliceUser).done();
+        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, false, customListenerName, null, aliceUser).done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())

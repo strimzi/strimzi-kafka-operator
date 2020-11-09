@@ -9,15 +9,20 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,6 +46,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -226,6 +232,18 @@ class UserST extends AbstractST {
 
         KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
+                .editKafka()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                        .endGenericKafkaListener()
+                    .endListeners()
+                .endKafka()
                 .editEntityOperator()
                     .editUserOperator()
                         .withNewSecretPrefix(secretPrefix)
@@ -234,8 +252,29 @@ class UserST extends AbstractST {
             .endSpec()
             .done();
 
-        KafkaUserResource.tlsUser(clusterName, tlsUserName).done();
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
+        KafkaUser tlsUser = KafkaUserResource.tlsUser(clusterName, tlsUserName).done();
         KafkaUserResource.scramShaUser(clusterName, scramShaUserName).done();
+
+        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, true, null, secretPrefix, tlsUser).done();
+        String kafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsName)
+            .withNamespaceName(NAMESPACE)
+            .withTopicName(TOPIC_NAME)
+            .withKafkaUsername(tlsUserName)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withClusterName(clusterName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecretPrefix(secretPrefix)
+            .build();
+
+        internalKafkaClient.assertSentAndReceivedMessages(
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
+        );
 
         Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
         Secret scramShaSecret = kubeClient().getSecret(secretPrefix + scramShaUserName);
@@ -248,9 +287,19 @@ class UserST extends AbstractST {
         assertThat(tlsSecret.getMetadata().getOwnerReferences().get(0).getName(), is(tlsUserName));
         assertThat(scramShaSecret.getMetadata().getOwnerReferences().get(0).getName(), is(scramShaUserName));
 
-        LOGGER.info("Checking if users are created without the secret prefixes");
-        assertNotNull(KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(tlsUserName).get());
-        assertNotNull(KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(scramShaUserName).get());
+        LOGGER.info("Checking owner reference - if the secret will be deleted when we delete KafkaUser");
+
+        LOGGER.info("Deleting KafkaUser:{}", tlsUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(tlsUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(tlsUserName);
+
+        LOGGER.info("Deleting KafkaUser:{}", scramShaUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(scramShaUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(scramShaUserName);
+
+        LOGGER.info("Checking if secrets are deleted");
+        assertNull(kubeClient().getSecret(tlsSecret.getMetadata().getName()));
+        assertNull(kubeClient().getSecret(scramShaSecret.getMetadata().getName()));
     }
 
     void createBigAmountOfUsers(String typeOfUser) {

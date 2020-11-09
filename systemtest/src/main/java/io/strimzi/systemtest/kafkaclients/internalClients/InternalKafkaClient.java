@@ -27,6 +27,8 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     private static final Logger LOGGER = LogManager.getLogger(InternalKafkaClient.class);
 
     private String podName;
+    // name of KafkaUser with/without prefix for secret
+    private String completeKafkaUsername = secretPrefix == null ? kafkaUsername : secretPrefix + kafkaUsername;
 
     public static class Builder extends AbstractKafkaClient.Builder<Builder> {
 
@@ -75,7 +77,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
-            .withKafkaUsername(kafkaUsername)
+            .withKafkaUsername(completeKafkaUsername)
             .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .build();
@@ -105,7 +107,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
-            .withKafkaUsername(kafkaUsername)
+            .withKafkaUsername(completeKafkaUsername)
             .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .build();
@@ -135,7 +137,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
-            .withKafkaUsername(kafkaUsername)
+            .withKafkaUsername(completeKafkaUsername)
             .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .withConsumerGroupName(consumerGroup)
@@ -171,7 +173,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
             .withMaxMessages(messageCount)
-            .withKafkaUsername(kafkaUsername)
+            .withKafkaUsername(completeKafkaUsername)
             .withBootstrapServer(getBootstrapServerFromStatus())
             .withTopicName(topicName)
             .withConsumerGroupName(consumerGroup)

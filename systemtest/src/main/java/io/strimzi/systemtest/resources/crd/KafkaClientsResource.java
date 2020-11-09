@@ -43,21 +43,21 @@ public class KafkaClientsResource {
     }
 
     public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
-        return deployKafkaClients(tlsListener, kafkaClientsName, true,  null, kafkaUsers);
+        return deployKafkaClients(tlsListener, kafkaClientsName, true,  null, null, kafkaUsers);
     }
 
     public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, String listenerName,
                                                         KafkaUser... kafkaUsers) {
-        return deployKafkaClients(tlsListener, kafkaClientsName, true, listenerName, kafkaUsers);
+        return deployKafkaClients(tlsListener, kafkaClientsName, true, listenerName, null, kafkaUsers);
     }
 
     public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                                         KafkaUser... kafkaUsers) {
-        return deployKafkaClients(tlsListener, kafkaClientsName, hostnameVerification, null, kafkaUsers);
+        return deployKafkaClients(tlsListener, kafkaClientsName, hostnameVerification, null, null, kafkaUsers);
     }
 
     public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
-                                                        String listenerName, KafkaUser... kafkaUsers) {
+                                                        String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
         Map<String, String> label = Collections.singletonMap(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
@@ -75,7 +75,7 @@ public class KafkaClientsResource {
                         .addToLabels("app", kafkaClientsName)
                         .addToLabels(label)
                     .endMetadata()
-                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, listenerName, kafkaUsers))
+                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, listenerName, secretPrefix, kafkaUsers))
                 .endTemplate()
             .endSpec()
             .build();
@@ -84,7 +84,7 @@ public class KafkaClientsResource {
     }
 
     private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
-                                            String listenerName, KafkaUser... kafkaUsers) {
+                                            String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
             .withName(kafkaClientsName)
@@ -102,7 +102,7 @@ public class KafkaClientsResource {
 
         } else {
             for (KafkaUser kafkaUser : kafkaUsers) {
-                String kafkaUserName = kafkaUser.getMetadata().getName();
+                String kafkaUserName = secretPrefix == null ? kafkaUser.getMetadata().getName() : secretPrefix + kafkaUser.getMetadata().getName();
                 boolean tlsUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
                 boolean scramShaUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
 
@@ -115,9 +115,9 @@ public class KafkaClientsResource {
                 if (tlsListener) {
                     if (scramShaUser) {
                         producerConfiguration += "security.protocol=SASL_SSL\n";
-                        producerConfiguration += saslConfigs(kafkaUser);
+                        producerConfiguration += saslConfigs(kafkaUser, secretPrefix);
                         consumerConfiguration += "security.protocol=SASL_SSL\n";
-                        consumerConfiguration += saslConfigs(kafkaUser);
+                        consumerConfiguration += saslConfigs(kafkaUser, secretPrefix);
                     } else {
                         producerConfiguration += "security.protocol=SSL\n";
                         consumerConfiguration += "security.protocol=SSL\n";
@@ -131,9 +131,9 @@ public class KafkaClientsResource {
                 } else {
                     if (scramShaUser) {
                         producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                        producerConfiguration += saslConfigs(kafkaUser);
+                        producerConfiguration += saslConfigs(kafkaUser, secretPrefix);
                         consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                        consumerConfiguration += saslConfigs(kafkaUser);
+                        consumerConfiguration += saslConfigs(kafkaUser, secretPrefix);
                     } else {
                         producerConfiguration += "security.protocol=PLAINTEXT\n";
                         consumerConfiguration += "security.protocol=PLAINTEXT\n";
@@ -227,8 +227,9 @@ public class KafkaClientsResource {
         return podSpecBuilder.withContainers(containerBuilder.build()).build();
     }
 
-    static String saslConfigs(KafkaUser kafkaUser) {
-        Secret secret = ResourceManager.kubeClient().getSecret(kafkaUser.getMetadata().getName());
+    static String saslConfigs(KafkaUser kafkaUser, String secretPrefix) {
+        String secretName = secretPrefix == null ? kafkaUser.getMetadata().getName() : secretPrefix + kafkaUser.getMetadata().getName();
+        Secret secret = ResourceManager.kubeClient().getSecret(secretName);
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")), Charset.forName("UTF-8"));
         if (password.isEmpty()) {
