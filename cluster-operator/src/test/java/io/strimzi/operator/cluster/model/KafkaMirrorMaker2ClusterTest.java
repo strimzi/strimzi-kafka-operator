@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -82,6 +83,9 @@ public class KafkaMirrorMaker2ClusterTest {
     private final int healthDelay = 100;
     private final int healthTimeout = 10;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
+    private final String metricsCMName = "metrics-cm";
+    private final ConfigMap metricsCM = AbstractModelTest.getJmxMetricsCm(metricsCmJson, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String targetClusterAlias = "target";
@@ -107,7 +111,8 @@ public class KafkaMirrorMaker2ClusterTest {
 
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
-            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+            //.withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+            .withMetricsConfig(jmxMetricsConfig)
             .withImage(image)
             .withReplicas(replicas)
             .withReadinessProbe(new Probe(healthDelay, healthTimeout))
@@ -120,7 +125,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null, null);
+        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null, metricsCM);
         checkMetricsConfigMap(metricsCm);
     }
 

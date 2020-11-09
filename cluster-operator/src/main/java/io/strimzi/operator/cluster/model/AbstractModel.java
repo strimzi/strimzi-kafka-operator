@@ -552,7 +552,7 @@ public abstract class AbstractModel {
                 return new JsonObject(m).toString();
             }
         }
-        return null;
+        return "";
 
     }
 

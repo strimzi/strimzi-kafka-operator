@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -65,6 +66,10 @@ public class KafkaMirrorMakerClusterTest {
     private final int replicas = 2;
     private final String image = "my-image:latest";
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
+    private final String metricsCMName = "metrics-cm";
+    private final ConfigMap metricsCM = AbstractModelTest.getJmxMetricsCm(metricsCmJson, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+
     private final String producerConfigurationJson = "{\"foo\":\"bar\"}";
     private final String consumerConfigurationJson = "{\"foo\":\"buz\"}";
     private final String defaultProducerConfiguration = "";
@@ -101,6 +106,7 @@ public class KafkaMirrorMakerClusterTest {
             .withConsumer(consumer)
             .withWhitelist(whitelist)
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+            .withMetricsConfig(jmxMetricsConfig)
             .endSpec()
             .build();
 
@@ -109,7 +115,7 @@ public class KafkaMirrorMakerClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null, null);
+        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null, metricsCM);
         checkMetricsConfigMap(metricsCm);
     }
 

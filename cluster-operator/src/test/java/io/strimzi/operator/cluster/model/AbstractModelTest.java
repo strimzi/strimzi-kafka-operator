@@ -4,12 +4,16 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -24,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -213,5 +218,30 @@ public class AbstractModelTest {
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest"), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest-kafka-2.6.0"), is(ImagePullPolicy.ALWAYS.toString()));
+    }
+
+    public static JmxPrometheusExporterMetrics getJmxPrometheusExporterMetrics(String key, String name) {
+        JmxPrometheusExporterMetrics metricsConfig;
+
+        metricsConfig = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                .withNewConfigMapKeyRef(key, name, true)
+                .endValueFrom()
+                .build();
+
+        return metricsConfig;
+    }
+
+    public static ConfigMap getJmxMetricsCm(String data, String metricsCMName) {
+        ConfigMap metricsCM;
+
+        metricsCM = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(metricsCMName)
+                .endMetadata()
+                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, data))
+                .build();
+
+        return metricsCM;
     }
 }

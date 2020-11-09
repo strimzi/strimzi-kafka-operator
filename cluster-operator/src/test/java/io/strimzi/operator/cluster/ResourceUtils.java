@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
@@ -179,6 +180,7 @@ public class ResourceUtils {
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
                                     Map<String, Object> metricsCm,
+                                    MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfigurationJson,
                                     Map<String, Object> zooConfigurationJson) {
         return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay, healthTimeout))
@@ -186,10 +188,12 @@ public class ResourceUtils {
                     .editKafka()
                         .withMetrics(metricsCm)
                         .withConfig(kafkaConfigurationJson)
+                        .withMetricsConfig(metricsConfig)
                     .endKafka()
                     .editZookeeper()
                         .withConfig(zooConfigurationJson)
                         .withMetrics(metricsCm)
+                        .withMetricsConfig(metricsConfig)
                     .endZookeeper()
                 .endSpec()
                 .build();
@@ -324,10 +328,11 @@ public class ResourceUtils {
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
                                     Map<String, Object> metricsCm,
+                                    MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfigurationJson,
                                     Logging kafkaLogging, Logging zkLogging) {
         return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay,
-                    healthTimeout, metricsCm, kafkaConfigurationJson, emptyMap()))
+                    healthTimeout, metricsCm, metricsConfig, kafkaConfigurationJson, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withLogging(kafkaLogging)
@@ -356,6 +361,7 @@ public class ResourceUtils {
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
                                     Map<String, Object> metricsCm,
+                                    MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfiguration,
                                     Map<String, Object> zooConfiguration,
                                     Storage kafkaStorage,
@@ -391,6 +397,7 @@ public class ResourceUtils {
         if (metricsCm != null) {
             kafkaClusterSpec.setMetrics(metricsCm);
         }
+        kafkaClusterSpec.setMetricsConfig(metricsConfig);
 
         if (kafkaConfiguration != null) {
             kafkaClusterSpec.setConfig(kafkaConfiguration);
@@ -413,6 +420,7 @@ public class ResourceUtils {
         if (metricsCm != null) {
             zk.setMetrics(metricsCm);
         }
+        zk.setMetricsConfig(metricsConfig);
 
         spec.setKafkaExporter(keSpec);
         spec.setCruiseControl(ccSpec);
@@ -427,7 +435,7 @@ public class ResourceUtils {
      * Create a Kafka Connect S2I custom resource
      */
     public static KafkaConnectS2I createKafkaConnectS2I(String namespace, String name, int replicas,
-                                                        String image, int healthDelay, int healthTimeout, Map<String, Object> metrics,
+                                                        String image, int healthDelay, int healthTimeout, MetricsConfig metrics,
                                                         String connectConfig, boolean insecureSourceRepo, String bootstrapServers,
                                                         ResourceRequirements builResourceRequirements) {
 
@@ -439,7 +447,7 @@ public class ResourceUtils {
                     .withBootstrapServers(bootstrapServers)
                     .withLivenessProbe(new Probe(healthDelay, healthTimeout))
                     .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                    .withMetrics(metrics)
+                    .withMetricsConfig(metrics)
                     .withConfig((Map<String, Object>) TestUtils.fromJson(connectConfig, Map.class))
                     .withInsecureSourceRepository(insecureSourceRepo)
                     .withBuildResources(builResourceRequirements)
