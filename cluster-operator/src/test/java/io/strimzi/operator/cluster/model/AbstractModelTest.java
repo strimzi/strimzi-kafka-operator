@@ -221,27 +221,21 @@ public class AbstractModelTest {
     }
 
     public static JmxPrometheusExporterMetrics getJmxPrometheusExporterMetrics(String key, String name) {
-        JmxPrometheusExporterMetrics metricsConfig;
-
-        metricsConfig = new JmxPrometheusExporterMetricsBuilder()
+        JmxPrometheusExporterMetrics metricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
-                .withNewConfigMapKeyRef(key, name, true)
+                    .withNewConfigMapKeyRef(key, name, true)
                 .endValueFrom()
                 .build();
-
         return metricsConfig;
     }
 
     public static ConfigMap getJmxMetricsCm(String data, String metricsCMName) {
-        ConfigMap metricsCM;
-
-        metricsCM = new ConfigMapBuilder()
+        ConfigMap metricsCM = new ConfigMapBuilder()
                 .withNewMetadata()
-                .withName(metricsCMName)
+                    .withName(metricsCMName)
                 .endMetadata()
                 .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, data))
                 .build();
-
         return metricsCM;
     }
 }
