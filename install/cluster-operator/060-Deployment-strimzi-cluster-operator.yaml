@@ -75,15 +75,15 @@ spec:
                 2.5.1=quay.io/strimzi/kafka:latest-kafka-2.5.1
                 2.6.0=quay.io/strimzi/kafka:latest-kafka-2.6.0
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: strimzi/operator:latest
+              value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: strimzi/operator:latest
+              value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: strimzi/operator:latest
+              value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: strimzi/kafka-bridge:0.19.0
+              value: quay.io/strimzi/kafka-bridge:0.19.0
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
-              value: strimzi/jmxtrans:latest
+              value: quay.io/strimzi/jmxtrans:latest
           livenessProbe:
             httpGet:
               path: /healthy
