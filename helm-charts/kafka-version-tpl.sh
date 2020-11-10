@@ -14,29 +14,29 @@ get_default_kafka_version
 get_kafka_does_not_support
 
 # Set the default images
-entity_operator_tls_sidecar_version="{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tagPrefix .Values.imageTagOverride }}-kafka-${default_kafka_version}"
-kafka_exporter_version="{{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${default_kafka_version}"
+entity_operator_tls_sidecar_version="{{ default .Values.tlsSidecarEntityOperator.image.registry .Values.imageRegistryOverride }}/{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tagPrefix .Values.imageTagOverride }}-kafka-${default_kafka_version}"
+kafka_exporter_version="{{ default .Values.kafkaExporter.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${default_kafka_version}"
 
 for version in "${versions[@]}"
 do
-    zookeeper_version="{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
-    entity_operator_tls_sidecar_version="{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
-    kafka_exporter_version="{{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
-    cruise_control_version="{{ default .Values.cruiseControl.image.repository .Values.imageRepositoryOverride }}/{{ .Values.cruiseControl.image.name }}:{{ default .Values.cruiseControl.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
-    cruise_control_tls_sidecar_version="{{ default .Values.tlsSidecarCruiseControl.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarCruiseControl.image.name }}:{{ default .Values.tlsSidecarCruiseControl.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    zookeeper_version="{{ default .Values.zookeeper.image.registry .Values.imageRegistryOverride }}/{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    entity_operator_tls_sidecar_version="{{ default .Values.tlsSidecarEntityOperator.image.registry .Values.imageRegistryOverride }}/{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    kafka_exporter_version="{{ default .Values.kafkaExporter.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    cruise_control_version="{{ default .Values.cruiseControl.image.registry .Values.imageRegistryOverride }}/{{ default .Values.cruiseControl.image.repository .Values.imageRepositoryOverride }}/{{ .Values.cruiseControl.image.name }}:{{ default .Values.cruiseControl.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+    cruise_control_tls_sidecar_version="{{ default .Values.tlsSidecarCruiseControl.image.registry .Values.imageRegistryOverride }}/{{ default .Values.tlsSidecarCruiseControl.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarCruiseControl.image.name }}:{{ default .Values.tlsSidecarCruiseControl.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_versions="${kafka_versions}
-${version}={{ default .Values.kafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafka.image.name }}:{{ default .Values.kafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+${version}={{ default .Values.kafka.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafka.image.name }}:{{ default .Values.kafka.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_connect_versions="${kafka_connect_versions}
-${version}={{ default .Values.kafkaConnect.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.kafkaConnect.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+${version}={{ default .Values.kafkaConnect.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaConnect.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.kafkaConnect.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_connect_s2i_versions="${kafka_connect_s2i_versions}
-${version}={{ default .Values.kafkaConnects2i.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnects2i.image.name }}:{{ default .Values.kafkaConnects2i.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+${version}={{ default .Values.kafkaConnects2i.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaConnects2i.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnects2i.image.name }}:{{ default .Values.kafkaConnects2i.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_mirror_maker_versions="${kafka_mirror_maker_versions}
-${version}={{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+${version}={{ default .Values.kafkaMirrorMaker.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     kafka_exporter_versions="${kafka_exporter_versions}
-${version}={{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+${version}={{ default .Values.kafkaExporter.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaExporter.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.kafkaExporter.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     if [[ ${version_does_not_support[${version}]} != *"kafkaMirrorMaker2"* ]] ; then
       kafka_mirror_maker_2_versions="${kafka_mirror_maker_2_versions}
-${version}={{ default .Values.kafkaMirrorMaker2.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.kafkaMirrorMaker2.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
+${version}={{ default .Values.kafkaMirrorMaker2.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaMirrorMaker2.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.kafkaMirrorMaker2.image.tagPrefix .Values.imageTagOverride }}-kafka-${version}"
     fi
 done
 

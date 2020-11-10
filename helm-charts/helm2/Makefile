@@ -18,7 +18,10 @@ helm_lint:
 	# Linting Helm Chart
 	$(HELM_CLI) lint --debug $(CHART_PATH)
 
-helm_pkg: helm_lint
+helm_template:
+	../kafka-version-tpl.sh strimzi-kafka-operator/templates/_kafka_image_map.tpl
+
+helm_pkg: helm_lint helm_template
 	$(HELM_CLI) init --client-only
 	# Copying unarchived Helm Chart to release directory
 	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
