@@ -5,7 +5,7 @@
 [id='con-producer-config-properties-{context}']
 = Kafka producer configuration tuning
 
-Use a basic producer configuration with optional properties that are tailored to specific uses cases.
+Use a basic producer configuration with optional properties that are tailored to specific use cases.
 
 Adjusting your configuration to maximize throughput might increase latency or vice versa.
 You will need to experiment and tune your producer configuration to get the balance you need.
@@ -16,10 +16,10 @@ Connection and serializer properties are required for every producer.
 Generally, it is good practice to add a client id for tracking,
 and use compression on the producer to reduce batch sizes in requests.
 
-In this basic configuration:
+In a basic producer configuration:
 
-* The order of messages in a partition is not guaranteed
-* The acknowledgment of messages reaching the broker does not guarantee durability
+* The order of messages in a partition is not guaranteed.
+* The acknowledgment of messages reaching the broker does not guarantee durability.
 
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -127,7 +127,7 @@ transaction.timeout.ms=900000 <2>
 <2> Set the maximum allowed time for transactions in milliseconds before a timeout error is returned.
 The default is `900000` or 15 minutes.
 
-The choice of `transactional.id` is important in order that the transational guarantee is maintained.
+The choice of `transactional.id` is important in order that the transactional guarantee is maintained.
 Each transactional id should be used for a unique set of topic partitions.
 For example, this can be achieved using an external mapping of topic partition names to transactional ids,
 or by computing the transactional id from the topic partition names using a function that avoids collisions.
