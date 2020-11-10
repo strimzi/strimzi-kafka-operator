@@ -252,7 +252,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         assertThat(sentAfter, is(MESSAGE_COUNT));
     }
 
-    // This test is affected by https://issues.redhat.com/browse/ENTMQST-2033 so it needs longer operation timeout set in CO
+    // This test is affected by https://github.com/strimzi/strimzi-kafka-operator/issues/3913 so it needs longer operation timeout set in CO
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
             " new bootstrap DNS is appended inside certificate in subject alternative names property.")
     @Test
