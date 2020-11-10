@@ -144,7 +144,14 @@ Auto-committing can avoid data loss only when all messages are processed before 
 or the consumer closes.
 
 To minimize the likelihood of data loss or duplication, you can set `enable.auto.commit` to `false` and develop your client application to have more control over committing offsets.
-Or you can use `auto.commit.interval.ms=1` to decrease the intervals between commits.
+Or you can use `auto.commit.interval.ms` to decrease the intervals between commits.
+
+----
+# ...
+enable.auto.commit=false <1>
+# ...
+----
+<1> Auto commit is set to false to provide more control over committing offsets.
 
 By setting to `enable.auto.commit` to `false`, you can commit offsets after *all* processing has been performed and the message has been consumed.
 For example, you can set up your application to call the Kafka `commitSync` and `commitAsync` commit APIs.
@@ -158,7 +165,9 @@ The `commitAsync` API does not wait for the broker to respond to a commit reques
 but risks creating more duplicates when rebalancing.
 A common approach is to combine both commit APIs in an application, with the `commitSync` API used just before shutting the consumer down or rebalancing to make sure the final commit is successful.
 
-Also, consider using transactional ids and having idempotence enabled (`enable.idempotence=true`) on the producer side to guarantee exactly-once delivery.
+=== Controlling transactional messages
+
+Consider using transactional ids and enabling idempotence (`enable.idempotence=true`) on the producer side to guarantee exactly-once delivery.
 On the consumer side, you can then use the `isolation.level` property to control how transactional messages are read by the consumer.
 
 The `isolation.level` property has two valid values:
@@ -171,12 +180,11 @@ However, this will cause an increase in end-to-end latency, because the consumer
 
 ----
 # ...
-enable.auto.commit=false <1>
-isolation.level=read_committed <2>
+enable.auto.commit=false
+isolation.level=read_committed <1>
 # ...
 ----
-<1> Auto commit is set to false to provide more control over committing offsets.
-<2> Set to `read_committed` so that only committed messages are read by the consumer.
+<1> Set to `read_committed` so that only committed messages are read by the consumer.
 
 == Recovering from failure to avoid data loss
 
@@ -198,10 +206,14 @@ Decreasing the heartbeat interval reduces the chance of accidental rebalancing, 
 Use the `auto.offset.reset` property to control how a consumer behaves when no offsets have been committed,
 or a committed offset is no longer valid or deleted.
 
-Suppose a consumer fails before an offset has been committed.
-The consumer that then assumes responsibility for consuming the messages will start reading from the reassigned topic partition based on the reset policy.
-The default value is `latest`, which starts at the end of the partition, and consequently means some messages are missed.
-To avoid data loss, but increase the amount of processing, use the `earliest` value to start at the beginning of the partition.
+Suppose you deploy a consumer application for the first time, and it reads messages from an existing topic.
+Because this is the first time the `group.id` is used, the `__consumer_offsets` topic does not contain any offset information for this application.
+The new application can start processing all existing messages from the start of the log or only new messages.
+The default reset value is `latest`, which starts at the end of the partition, and consequently means some messages are missed.
+To avoid data loss, but increase the amount of processing, set `auto.offset.reset` to `earliest` to start at the beginning of the partition.
+
+Also consider using the `earliest` option to avoid messages being lost when the offsets retention period (`offsets.retention.minutes`) configured for a broker has ended.
+If a consumer group or standalone consumer is inactive and commits no offsets during the retention period, previously committed offsets are deleted from `__consumer_offsets`.
 
 ----
 # ...
