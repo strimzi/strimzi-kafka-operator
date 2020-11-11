@@ -235,6 +235,14 @@ class UserST extends AbstractST {
                 .editKafka()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
+                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
@@ -254,13 +262,18 @@ class UserST extends AbstractST {
 
         KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
         KafkaUser tlsUser = KafkaUserResource.tlsUser(clusterName, tlsUserName).done();
-        KafkaUserResource.scramShaUser(clusterName, scramShaUserName).done();
+        KafkaUser scramShaUser = KafkaUserResource.scramShaUser(clusterName, scramShaUserName).done();
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, true, null, secretPrefix, tlsUser).done();
-        String kafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        LOGGER.info("Deploying KafkaClients pod for TLS listener");
+        KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).done();
+        String tlsKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        LOGGER.info("Deploying KafkaClients pod for PLAIN listener");
+        KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).done();
+        String plainKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-plain-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsName)
+            .withUsingPodName(tlsKafkaClientsName)
             .withNamespaceName(NAMESPACE)
             .withTopicName(TOPIC_NAME)
             .withKafkaUsername(tlsUserName)
@@ -271,9 +284,23 @@ class UserST extends AbstractST {
             .withSecretPrefix(secretPrefix)
             .build();
 
+        LOGGER.info("Checking if TLS user is able to send messages");
         internalKafkaClient.assertSentAndReceivedMessages(
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
+        );
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(plainKafkaClientsName)
+            .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withKafkaUsername(scramShaUserName)
+            .build();
+
+        LOGGER.info("Checking if SCRAM-SHA user is able to send messages");
+        internalKafkaClient.assertSentAndReceivedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
