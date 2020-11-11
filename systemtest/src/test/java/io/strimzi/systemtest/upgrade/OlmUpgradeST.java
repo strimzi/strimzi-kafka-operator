@@ -20,6 +20,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -32,11 +33,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.systemtest.Constants.OLM_UPGRADE;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+@Tag(OLM_UPGRADE)
 public class OlmUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);
@@ -46,8 +49,6 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private final String consumerName = "consumer";
     private final String topicUpgradeName = "topic-upgrade";
     private final int messageUpgradeCount =  50_000; // 10k ~= 23s, 50k ~= 115s
-    private final int firstSupportedMiddleVersion = 18; // 0.'18'.0
-    private final int firstSupportedMajorVersion = 0;   // '0'.18.0
     private final KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
         .withProducerName(producerName)
         .withConsumerName(consumerName)
@@ -61,10 +62,8 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     @MethodSource("loadJsonUpgradeData")
     void testChainUpgrade(String fromVersion, String toVersion, JsonObject testParameters) {
 
-        int clusterOperatorMajorVersion = Integer.parseInt(fromVersion.split("\\.")[0]);
-        int clusterOperatorMiddleVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
         // only 0.|18|.0 and more is supported
-        assumeTrue(clusterOperatorMajorVersion >= firstSupportedMajorVersion && clusterOperatorMiddleVersion >= firstSupportedMiddleVersion);
+        assumeTrue(testParameters.getBoolean("olmUpgrade"));
 
         // perform verification of to version
         performUpgradeVerification(fromVersion, toVersion, testParameters);
@@ -138,21 +137,16 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private Object getFirstSupportedItemFromUpgradeJson(int indexOfItem) {
         Stream<Arguments> argumentStream = loadJsonUpgradeData();
 
-        List<Arguments> supportedVersions = argumentStream.filter(arguments -> {
-            String fromVersion = (String) arguments.get()[0];
-            int majorFromVersion = Integer.parseInt(fromVersion.split("\\.")[0]);
-            int middleFromVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
-            return majorFromVersion >= firstSupportedMajorVersion && middleFromVersion >= firstSupportedMiddleVersion;
-        }).collect(Collectors.toList());
+        List<Arguments> olmUpgradeSupported = argumentStream.filter(arguments -> ((JsonObject) arguments.get()[2]).getBoolean("olmUpgrade")).collect(Collectors.toList());
 
-        if (indexOfItem > supportedVersions.get(0).get().length) {
-            throw new RuntimeException("You are accessing to index:" + indexOfItem + " which is not in the scope of supportedVersions and size is:" + supportedVersions.get(0).get().length);
+        if (indexOfItem > olmUpgradeSupported.get(0).get().length) {
+            throw new RuntimeException("You are accessing to index:" + indexOfItem + " which is not in the scope of supportedVersions and size is:" + olmUpgradeSupported.get(0).get().length);
         } else if (indexOfItem == 0 || indexOfItem == 1) {
-            String firstSupportedFromVersion = (String) supportedVersions.get(0).get()[indexOfItem];
+            String firstSupportedFromVersion = (String) olmUpgradeSupported.get(0).get()[indexOfItem];
             LOGGER.info("We are gonna use first supported version for OLM upgrade: {}", firstSupportedFromVersion);
             return firstSupportedFromVersion;
         } else {
-            JsonObject upgradeInformation = (JsonObject) supportedVersions.get(0).get()[indexOfItem];
+            JsonObject upgradeInformation = (JsonObject) olmUpgradeSupported.get(0).get()[indexOfItem];
             LOGGER.info("We are gonna use first supported upgrade information provided by json file for OLM upgrade: {}", upgradeInformation);
             return upgradeInformation;
         }

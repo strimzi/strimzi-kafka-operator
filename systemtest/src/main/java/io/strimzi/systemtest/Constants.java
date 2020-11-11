@@ -131,6 +131,11 @@ public interface Constants {
     String UPGRADE = "upgrade";
 
     /**
+     * Tag for olm upgrade tests
+     */
+    String OLM_UPGRADE = "olmupgrade";
+
+    /**
      * Tag for smoke tests
      */
     String SMOKE = "smoke";
