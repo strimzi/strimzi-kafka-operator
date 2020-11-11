@@ -65,7 +65,6 @@ public interface Constants {
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
-    String CO_POD_PREFIX_NAME = "strimzi-cluster-operator-";
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
     String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
 
