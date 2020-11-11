@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
@@ -29,6 +31,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -612,6 +615,20 @@ class RollingUpdateST extends AbstractST {
         kafkaMetrics.put("lowercaseOutputName", true);
         kafkaMetrics.put("rules", Collections.singletonList(kafkaRule));
 
+        String metricsCMNameK = "k-metrics-cm";
+        ConfigMap metricsCMK = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(metricsCMNameK)
+                .endMetadata()
+                .withData(singletonMap("metrics-config.yml", new JsonObject(kafkaMetrics).toString()))
+                .build();
+
+        JmxPrometheusExporterMetrics kafkaMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                .withNewConfigMapKeyRef("metrics-config.yml", metricsCMNameK, true)
+                .endValueFrom()
+                .build();
+
         //Zookeeper
         Map<String, Object> zookeeperLabels = new HashMap<>();
         zookeeperLabels.put("replicaId", "$2");
@@ -625,16 +642,33 @@ class RollingUpdateST extends AbstractST {
         zookeeperMetrics.put("lowercaseOutputName", true);
         zookeeperMetrics.put("rules", Collections.singletonList(zookeeperRule));
 
+        String metricsCMNameZk = "zk-metrics-cm";
+        ConfigMap metricsCMZk = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(metricsCMNameZk)
+                .endMetadata()
+                .withData(singletonMap("metrics-config.yml", new JsonObject(zookeeperMetrics).toString()))
+                .build();
+
+        JmxPrometheusExporterMetrics zkMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                .withNewConfigMapKeyRef("metrics-config.yml", metricsCMNameZk, true)
+                .endValueFrom()
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(metricsCMK);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(metricsCMZk);
+
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
                 .editSpec()
-                    .editKafka()
-                        .withMetrics(kafkaMetrics)
-                    .endKafka()
-                    .editOrNewZookeeper()
-                        .withMetrics(zookeeperMetrics)
-                    .endZookeeper()
-                    .withNewKafkaExporter()
-                    .endKafkaExporter()
+                .editKafka()
+                .withMetricsConfig(kafkaMetricsConfig)
+                .endKafka()
+                .editOrNewZookeeper()
+                .withMetricsConfig(zkMetricsConfig)
+                .endZookeeper()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
                 .endSpec()
                 .done();
 
@@ -661,18 +695,35 @@ class RollingUpdateST extends AbstractST {
         zookeeperRule.replace("name", "zookeeper_$3", "zookeeper_$2");
         zookeeperRule.replace("labels", zookeeperLabels, null);
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setMetrics(kafkaMetrics);
-            kafka.getSpec().getZookeeper().setMetrics(zookeeperMetrics);
-        });
+        metricsCMZk = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(metricsCMNameZk)
+                .endMetadata()
+                .withData(singletonMap("metrics-config.yml", new JsonObject(zookeeperMetrics).toString()))
+                .build();
 
-        LOGGER.info("Check if Kafka and Zookeeper pods doesn't rolled");
+        metricsCMK = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(metricsCMNameK)
+                .endMetadata()
+                .withData(singletonMap("metrics-config.yml", new JsonObject(kafkaMetrics).toString()))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(metricsCMK);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(metricsCMZk);
+
+        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        LOGGER.info("Check if Kafka and Zookeeper pods didn't roll");
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(zkPods));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
 
         LOGGER.info("Check if Kafka and Zookeeper metrics are changed");
-        assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getKafka().getMetrics(), is(kafkaMetrics));
-        assertThat(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getZookeeper().getMetrics(), is(zookeeperMetrics));
+        assertThat(kubeClient().getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).get().getData().get("metrics-config.yml"),
+                is(kubeClient().getClient().configMaps().inNamespace(NAMESPACE).withName(metricsCMNameK).get().getData().get("metrics-config.yml")));
+        assertThat(kubeClient().getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME)).get().getData().get("metrics-config.yml"),
+                is(kubeClient().getClient().configMaps().inNamespace(NAMESPACE).withName(metricsCMNameZk).get().getData().get("metrics-config.yml")));
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
 
@@ -685,8 +736,8 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Removing metrics from Kafka and Zookeeper and setting them to null");
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setMetrics(null);
-            kafka.getSpec().getZookeeper().setMetrics(null);
+            kafka.getSpec().getKafka().setMetricsConfig(null);
+            kafka.getSpec().getZookeeper().setMetricsConfig(null);
         });
 
         LOGGER.info("Wait if Kafka and Zookeeper pods will roll");
