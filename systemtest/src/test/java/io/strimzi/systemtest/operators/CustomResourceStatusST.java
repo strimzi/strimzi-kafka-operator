@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
@@ -387,7 +386,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(CLUSTER_NAME);
 
         KafkaMirrorMaker2Resource.deleteKafkaMirrorMaker2WithoutWait(CLUSTER_NAME);
-        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME));
+        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
     }
 
     @Test
@@ -432,9 +431,9 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     void deployTestSpecificResources() throws Exception {
-        installClusterOperator(NAMESPACE);
+        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()

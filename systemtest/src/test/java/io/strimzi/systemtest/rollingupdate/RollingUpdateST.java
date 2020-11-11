@@ -705,6 +705,6 @@ class RollingUpdateST extends AbstractST {
     @BeforeAll
     void setup() throws Exception {
         ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
+        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 }
