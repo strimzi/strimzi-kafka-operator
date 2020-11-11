@@ -32,6 +32,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -332,5 +333,14 @@ public class KafkaUtils {
         dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info(key + " -> "  + value));
 
         return dynamicConfigsWithExceptions;
+    }
+
+    /**
+     * Generated random name for the Kafka resource based on prefix
+     * @param clusterName name prefix
+     * @return name with prefix and random salt
+     */
+    public static String generateRandomNameOfKafka(String clusterName) {
+        return clusterName + "-" + new Random().nextInt(Integer.MAX_VALUE);
     }
 }
