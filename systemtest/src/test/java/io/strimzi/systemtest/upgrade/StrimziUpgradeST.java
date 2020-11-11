@@ -50,7 +50,6 @@ import java.util.Objects;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
-import static io.strimzi.systemtest.upgrade.AbstractUpgradeST.readUpgradeJson;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -66,17 +65,8 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
     public static final String NAMESPACE = "strimzi-upgrade-test";
-    private String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-    private String kafkaStsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-    private String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-
-    private Map<String, String> zkPods;
-    private Map<String, String> kafkaPods;
-    private Map<String, String> eoPods;
-    private Map<String, String> coPods;
 
     private File coDir = null;
-    private File kafkaYaml = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
 
@@ -255,12 +245,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
             cmdKubeClient().create(kafkaYaml);
             // Wait for readiness
-            LOGGER.info("Waiting for Zookeeper StatefulSet");
-            StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-zookeeper", 3);
-            LOGGER.info("Waiting for Kafka StatefulSet");
-            StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-kafka", 3);
-            LOGGER.info("Waiting for EO Deployment");
-            DeploymentUtils.waitForDeploymentAndPodsReady(CLUSTER_NAME + "-entity-operator", 1);
+            waitForReadinessOfKafkaCluster();
         }
         // We don't need to update KafkaUser during chain upgrade this way
         if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
@@ -467,13 +452,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         }
     }
 
-    private void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
-        eoPods = DeploymentUtils.depSnapshot(eoDepName);
-    }
-
     private void checkAllImages(JsonObject images) {
         if (images.isEmpty()) {
             fail("There are no expected images");
@@ -500,46 +478,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
                 LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
                 assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(image));
             }
-        }
-    }
-
-    private void changeKafkaAndLogFormatVersion(JsonObject procedures) {
-        if (!procedures.isEmpty()) {
-            String kafkaVersion = procedures.getString("kafkaVersion");
-            if (!kafkaVersion.isEmpty()) {
-                LOGGER.info("Going to set Kafka version to " + kafkaVersion);
-                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
-                LOGGER.info("Wait until kafka rolling update is finished");
-                if (!kafkaVersion.equals("2.0.0")) {
-                    StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
-                }
-                makeSnapshots();
-            }
-
-            String logMessageVersion = procedures.getString("logMessageVersion");
-            if (!logMessageVersion.isEmpty()) {
-                LOGGER.info("Going to set log message format version to " + logMessageVersion);
-                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
-                LOGGER.info("Wait until kafka rolling update is finished");
-                StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
-                makeSnapshots();
-            }
-        }
-    }
-
-    void logPodImages() {
-        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(zkStsName));
-        for (Pod pod : pods) {
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
-        }
-        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(kafkaStsName));
-        for (Pod pod : pods) {
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
-        }
-        pods = kubeClient().listPods(kubeClient().getDeploymentSelectors(eoDepName));
-        for (Pod pod : pods) {
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(1).getImage());
         }
     }
 

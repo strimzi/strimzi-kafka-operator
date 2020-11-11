@@ -4,8 +4,13 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,20 +20,31 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class AbstractUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractUpgradeST.class);
+
+    protected Map<String, String> zkPods;
+    protected Map<String, String> kafkaPods;
+    protected Map<String, String> eoPods;
+    protected Map<String, String> coPods;
+
+    protected String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+    protected String kafkaStsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+    protected String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+
+    protected File kafkaYaml;
 
     protected static JsonArray readUpgradeJson() {
         try (InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json")) {
@@ -38,69 +54,6 @@ public class AbstractUpgradeST extends AbstractST {
             e.printStackTrace();
             throw new RuntimeException(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json" + " file was not found.");
         }
-    }
-
-    /**
-     * List cluster operator versions which supports specific kafka version. It uses StrimziUpgradeST.json file to parse
-     * the 'toVersion' and 'proceduresAfter' JsonObjects.
-     * example:
-     *      2.6.0->[HEAD, 6.6.6]
-     *      2.3.1->[0.15.0]
-     *      2.4.0->[0.16.2, 0.17.0]
-     *      2.5.0->[0.18.0, 0.19.0]
-     *      2.2.1->[0.12.1]
-     *      2.3.0->[0.13.0, 0.14.0]
-     * @return map key -> kafka version | value -> list of cluster operator versions
-     */
-    protected static Map<String, List<String>> getMapKafkaVersionsWithSupportedClusterOperatorVersions() {
-        // message format -> [co versions]
-        Map<String, List<String>> mapSupportedLogMessageVersions = new HashMap<>();
-        String[] previousKafkaVersion = new String[1];
-
-        Objects.requireNonNull(AbstractUpgradeST.readUpgradeJson()).stream().iterator().forEachRemaining(
-            item -> {
-                String clusterOperatorVersion = item.asJsonObject().getString("toVersion");
-                String kafkaVersion = item.asJsonObject().getJsonObject("proceduresAfter").asJsonObject().getString("kafkaVersion");
-
-                LOGGER.debug("Cluster operator version is: {}", clusterOperatorVersion);
-                LOGGER.debug("Kafka version: {}", kafkaVersion);
-
-                // if contains kafka version
-                if (mapSupportedLogMessageVersions.containsKey(kafkaVersion)) {
-                    mapSupportedLogMessageVersions.get(kafkaVersion).add(clusterOperatorVersion);
-                } else if (kafkaVersion.equals("")) {
-                    mapSupportedLogMessageVersions.get(previousKafkaVersion[0]).add(clusterOperatorVersion);
-                } else {
-                    // first list created
-                    if (mapSupportedLogMessageVersions.get(kafkaVersion) == null) {
-                        List<String> clusterOperatorVersions = new ArrayList<>(4);
-                        clusterOperatorVersions.add(clusterOperatorVersion);
-                        mapSupportedLogMessageVersions.put(kafkaVersion, clusterOperatorVersions);
-                    } else {
-                        // already created and just appending
-                        // adding another co version to specific kafka version
-                        mapSupportedLogMessageVersions.put(kafkaVersion, mapSupportedLogMessageVersions.get(kafkaVersion));
-                        mapSupportedLogMessageVersions.get(kafkaVersion).add(clusterOperatorVersion);
-                    }
-                }
-
-                // skipping if kafka version is empty and does not override previous one...
-                if (!kafkaVersion.equals("")) {
-                    previousKafkaVersion[0] = kafkaVersion;
-                }
-
-                mapSupportedLogMessageVersions.forEach((logVersion, supportedCoVersions) -> {
-                    LOGGER.debug(logVersion + "->" + supportedCoVersions.toString());
-                });
-            }
-        );
-
-        List<String> kafkaLatestVersionSupportedByCo = mapSupportedLogMessageVersions.get(Environment.ST_KAFKA_VERSION);
-        // adding also 6.6.6 because HEAD and 6.6.6 is the same and must support latest version
-        kafkaLatestVersionSupportedByCo.add(Environment.OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT);
-        mapSupportedLogMessageVersions.put(Environment.ST_KAFKA_VERSION, kafkaLatestVersionSupportedByCo);
-
-        return mapSupportedLogMessageVersions;
     }
 
     protected static Stream<Arguments> loadJsonUpgradeData() {
@@ -113,5 +66,61 @@ public class AbstractUpgradeST extends AbstractST {
         });
 
         return parameters.stream();
+    }
+
+    protected void makeSnapshots() {
+        coPods = DeploymentUtils.depSnapshot(kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME));
+        zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
+        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
+        eoPods = DeploymentUtils.depSnapshot(eoDepName);
+    }
+
+    protected void changeKafkaAndLogFormatVersion(JsonObject procedures) {
+        if (!procedures.isEmpty()) {
+            String kafkaVersion = procedures.getString("kafkaVersion");
+            if (!kafkaVersion.isEmpty()) {
+                LOGGER.info("Going to set Kafka version to " + kafkaVersion);
+                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
+                LOGGER.info("Wait until kafka rolling update is finished");
+                if (!kafkaVersion.equals("2.0.0")) {
+                    StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
+                }
+                makeSnapshots();
+            }
+
+            String logMessageVersion = procedures.getString("logMessageVersion");
+            if (!logMessageVersion.isEmpty()) {
+                LOGGER.info("Going to set log message format version to " + logMessageVersion);
+                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
+                LOGGER.info("Wait until kafka rolling update is finished");
+                StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
+                makeSnapshots();
+            }
+        }
+    }
+
+    protected void logPodImages() {
+        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(zkStsName));
+        for (Pod pod : pods) {
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
+        }
+        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(kafkaStsName));
+        for (Pod pod : pods) {
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
+        }
+        pods = kubeClient().listPods(kubeClient().getDeploymentSelectors(eoDepName));
+        for (Pod pod : pods) {
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
+            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(1).getImage());
+        }
+    }
+
+    protected void waitForReadinessOfKafkaCluster() {
+        LOGGER.info("Waiting for Zookeeper StatefulSet");
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-zookeeper", 3);
+        LOGGER.info("Waiting for Kafka StatefulSet");
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-kafka", 3);
+        LOGGER.info("Waiting for EO Deployment");
+        DeploymentUtils.waitForDeploymentAndPodsReady(CLUSTER_NAME + "-entity-operator", 1);
     }
 }

@@ -68,7 +68,7 @@ public class OlmResource {
 
         if (fromVersion != null) {
             createAndModifySubscription(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
-            // must be strimzi-cluster-operator.0.18.0v
+            // must be strimzi-cluster-operator.v0.18.0
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + "." + fromVersion;
         } else {
             createAndModifySubscriptionLatestRelease(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy);
