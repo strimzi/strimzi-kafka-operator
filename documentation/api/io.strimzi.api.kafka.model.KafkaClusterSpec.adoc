@@ -121,5 +121,5 @@ spec:
 ----
 
 NOTE: Overriding container images is recommended only in special situations, where you need to use a different container registry.
-For example, because your network does not allow access to the container repository used by Strimzi. In such a case, you should either copy the Strimzi images or build them from the source.
+For example, because your network does not allow access to the container registry used by Strimzi. In this case, you should either copy the Strimzi images or build them from the source.
 If the configured image is not compatible with Strimzi images, it might not work properly.

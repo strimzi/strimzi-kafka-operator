@@ -65,6 +65,6 @@ so the client can consume from the nearest replica.
 image::rack-config-availability-zones.png[consuming from replicas in the same availability zone]
 
 If there are multiple replicas in the same rack, `RackAwareReplicaSelector` always selects the most up-to-date replica.
-If the rack ID is not specified, or if it can’t find a replica with the same rack ID, it will fall back to the leader replica.
+If the rack ID is not specified, or if it cannot find a replica with the same rack ID, it will fall back to the leader replica.
 
 For more information about Kubernetes node labels, see {K8sWellKnownLabelsAnnotationsAndTaints}.
