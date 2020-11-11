@@ -9,7 +9,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.operator.OlmResource;
@@ -60,9 +59,10 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     @MethodSource("loadJsonUpgradeData")
     void testChainUpgrade(String fromVersion, String toVersion, JsonObject testParameters) {
 
-        int clusterOperatorVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
+        int clusterOperatorMajorVersion = Integer.parseInt(fromVersion.split("\\.")[0]);
+        int clusterOperatorMiddleVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
         // only 0.|18|.0 and more is supported
-        assumeTrue(clusterOperatorVersion >= 18);
+        assumeTrue(clusterOperatorMajorVersion >= 0 && clusterOperatorMiddleVersion >= 18);
 
         // perform verification of to version
         performUpgradeVerification(fromVersion, toVersion, testParameters);
@@ -75,6 +75,9 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         kafkaBasicClientJob.producerStrimzi().done();
         kafkaBasicClientJob.consumerStrimzi().done();
+
+        String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        LOGGER.info("Old deployment name of cluster operator is {}", clusterOperatorDeploymentName);
 
         // ======== Cluster Operator upgrade starts ========
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -89,11 +92,15 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaSnapshot);
         // ======== Cluster Operator upgrade ends ========
 
+        clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        LOGGER.info("New deployment name of cluster operator is {}", clusterOperatorDeploymentName);
+        ResourceManager.setCoDeploymentName(clusterOperatorDeploymentName);
+
         // verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
         String afterUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
 
         // if HEAD -> 6.6.6 version
-        toVersion = toVersion.equals("HEAD") ? Environment.OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT : toVersion;
+        toVersion = toVersion.equals("HEAD") ? "6.6.6" : toVersion;
         assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + toVersion));
 
         // ======== Kafka upgrade starts ========
@@ -178,14 +185,12 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         File dir = FileUtils.downloadAndUnzip(url);
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
-        if (KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get() == null) {
-            // Deploy a Kafka cluster
-            kafkaYaml = new File(dir, firstSupportedItemFromUpgradeJsonArray.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-            LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
-            KubeClusterResource.cmdKubeClient().create(kafkaYaml);
-            // Wait for readiness
-            waitForReadinessOfKafkaCluster();
-        }
+        kafkaYaml = new File(dir, firstSupportedItemFromUpgradeJsonArray.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
+        LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
+        KubeClusterResource.cmdKubeClient().create(kafkaYaml);
+        // Wait for readiness
+        waitForReadinessOfKafkaCluster();
+
         OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
     }
 }

@@ -7,7 +7,7 @@ package io.strimzi.systemtest.upgrade;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -69,7 +69,7 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME));
+        coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
         kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
         eoPods = DeploymentUtils.depSnapshot(eoDepName);

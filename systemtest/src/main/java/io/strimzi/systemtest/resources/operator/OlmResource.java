@@ -184,7 +184,7 @@ public class OlmResource {
 
             Exec.exec("bash", patchScript.getAbsolutePath());
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -193,7 +193,7 @@ public class OlmResource {
      * changing the install plan YAML
      */
     public static void upgradeClusterOperator() {
-        if (kubeClient().listPodsByPrefixInName(Constants.CO_POD_PREFIX_NAME).get(0) == null) {
+        if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).get(0) == null) {
             throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
         }
 
@@ -213,7 +213,7 @@ public class OlmResource {
             TestUtils.writeFile(operatorGroupFile.getAbsolutePath(), operatorGroup.replace("${OPERATOR_NAMESPACE}", namespace));
             ResourceManager.cmdKubeClient().apply(operatorGroupFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -244,7 +244,7 @@ public class OlmResource {
 
             ResourceManager.cmdKubeClient().apply(subscriptionFile);
         }  catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -252,12 +252,6 @@ public class OlmResource {
                                                                  long operationTimeout, OlmInstallationStrategy installationStrategy) {
         createAndModifySubscription(namespace, reconciliationInterval, operationTimeout, installationStrategy,
             Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION);
-    }
-
-    private static void createAndModifySubscriptionPreviousRelease(String namespace, long reconciliationInterval,
-                                                                  long operationTimeout, OlmInstallationStrategy installationStrategy) {
-        createAndModifySubscription(namespace, reconciliationInterval, operationTimeout, installationStrategy,
-            Environment.OLM_OPERATOR_PREVIOUS_RELEASE_VERSION);
     }
 
     public static void deleteOlm(String deploymentName, String namespace, String csvName) {
