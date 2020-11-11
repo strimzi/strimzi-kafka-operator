@@ -22,7 +22,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -35,14 +35,15 @@ import java.util.Map;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
 class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";
-    static final String CLUSTER_NAME = "recovery-cluster";
-    static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
+    static String clusterName;
+    static String kafkaClientsName;
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
@@ -50,8 +51,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromEntityOperatorDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", CLUSTER_NAME);
-        String entityOperatorDeploymentName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", clusterName);
+        String entityOperatorDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
         String entityOperatorDeploymentUid = kubeClient().getDeploymentUid(entityOperatorDeploymentName);
         kubeClient().deleteDeployment(entityOperatorDeploymentName);
         PodUtils.waitForPodsWithPrefixDeletion(entityOperatorDeploymentName);
@@ -67,8 +68,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromKafkaStatefulSetDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
-        String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", clusterName);
+        String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(clusterName);
         String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
         kubeClient().deleteStatefulSet(kafkaStatefulSetName);
@@ -87,8 +88,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromZookeeperStatefulSetDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
-        String zookeeperStatefulSetName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", clusterName);
+        String zookeeperStatefulSetName = KafkaResources.zookeeperStatefulSetName(clusterName);
         String zookeeperStatefulSetUid = kubeClient().getStatefulSetUid(zookeeperStatefulSetName);
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
         kubeClient().deleteStatefulSet(zookeeperStatefulSetName);
@@ -106,8 +107,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromKafkaServiceDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
-        String kafkaServiceName = KafkaResources.bootstrapServiceName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaService with cluster {}", clusterName);
+        String kafkaServiceName = KafkaResources.bootstrapServiceName(clusterName);
         String kafkaServiceUid = kubeClient().getServiceUid(kafkaServiceName);
         kubeClient().deleteService(kafkaServiceName);
 
@@ -121,8 +122,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromZookeeperServiceDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
-        String zookeeperServiceName = KafkaResources.zookeeperServiceName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaService with cluster {}", clusterName);
+        String zookeeperServiceName = KafkaResources.zookeeperServiceName(clusterName);
         String zookeeperServiceUid = kubeClient().getServiceUid(zookeeperServiceName);
         kubeClient().deleteService(zookeeperServiceName);
 
@@ -136,8 +137,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromKafkaHeadlessServiceDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
-        String kafkaHeadlessServiceName = KafkaResources.brokersServiceName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", clusterName);
+        String kafkaHeadlessServiceName = KafkaResources.brokersServiceName(clusterName);
         String kafkaHeadlessServiceUid = kubeClient().getServiceUid(kafkaHeadlessServiceName);
         kubeClient().deleteService(kafkaHeadlessServiceName);
 
@@ -151,8 +152,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromZookeeperHeadlessServiceDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
-        String zookeeperHeadlessServiceName = KafkaResources.zookeeperHeadlessServiceName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", clusterName);
+        String zookeeperHeadlessServiceName = KafkaResources.zookeeperHeadlessServiceName(clusterName);
         String zookeeperHeadlessServiceUid = kubeClient().getServiceUid(zookeeperHeadlessServiceName);
         kubeClient().deleteService(zookeeperHeadlessServiceName);
 
@@ -166,8 +167,8 @@ class RecoveryST extends AbstractST {
     void testRecoveryFromKafkaMetricsConfigDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
-        String kafkaMetricsConfigName = KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", clusterName);
+        String kafkaMetricsConfigName = KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName);
         String kafkaMetricsConfigUid = kubeClient().getConfigMapUid(kafkaMetricsConfigName);
         kubeClient().deleteConfigMap(kafkaMetricsConfigName);
 
@@ -180,9 +181,9 @@ class RecoveryST extends AbstractST {
     @Test
     void testRecoveryFromZookeeperMetricsConfigDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-        LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
+        LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", clusterName);
         // kafka cluster already deployed
-        String zookeeperMetricsConfigName = KafkaResources.zookeeperMetricsAndLogConfigMapName(CLUSTER_NAME);
+        String zookeeperMetricsConfigName = KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName);
         String zookeeperMetricsConfigUid = kubeClient().getConfigMapUid(zookeeperMetricsConfigName);
         kubeClient().deleteConfigMap(zookeeperMetricsConfigName);
 
@@ -196,9 +197,9 @@ class RecoveryST extends AbstractST {
     @Tag(BRIDGE)
     void testRecoveryFromKafkaBridgeDeploymentDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-        LOGGER.info("Running deleteKafkaBridgeDeployment with cluster {}", CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaBridgeDeployment with cluster {}", clusterName);
         // kafka cluster already deployed
-        String kafkaBridgeDeploymentName = KafkaBridgeResources.deploymentName(CLUSTER_NAME);
+        String kafkaBridgeDeploymentName = KafkaBridgeResources.deploymentName(clusterName);
         String kafkaBridgeDeploymentUid = kubeClient().getDeploymentUid(kafkaBridgeDeploymentName);
         kubeClient().deleteDeployment(kafkaBridgeDeploymentName);
         PodUtils.waitForPodsWithPrefixDeletion(kafkaBridgeDeploymentName);
@@ -212,8 +213,8 @@ class RecoveryST extends AbstractST {
     @Tag(BRIDGE)
     void testRecoveryFromKafkaBridgeServiceDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-        LOGGER.info("Running deleteKafkaBridgeService with cluster {}", CLUSTER_NAME);
-        String kafkaBridgeServiceName = KafkaBridgeResources.serviceName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaBridgeService with cluster {}", clusterName);
+        String kafkaBridgeServiceName = KafkaBridgeResources.serviceName(clusterName);
         String kafkaBridgeServiceUid = kubeClient().namespace(NAMESPACE).getServiceUid(kafkaBridgeServiceName);
         kubeClient().deleteService(kafkaBridgeServiceName);
 
@@ -227,8 +228,8 @@ class RecoveryST extends AbstractST {
     @Tag(BRIDGE)
     void testRecoveryFromKafkaBridgeMetricsConfigDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
-        LOGGER.info("Running deleteKafkaBridgeMetricsConfig with cluster {}", CLUSTER_NAME);
-        String kafkaBridgeMetricsConfigName = KafkaBridgeResources.metricsAndLogConfigMapName(CLUSTER_NAME);
+        LOGGER.info("Running deleteKafkaBridgeMetricsConfig with cluster {}", clusterName);
+        String kafkaBridgeMetricsConfigName = KafkaBridgeResources.metricsAndLogConfigMapName(clusterName);
         String kafkaBridgeMetricsConfigUid = kubeClient().getConfigMapUid(kafkaBridgeMetricsConfigName);
         kubeClient().deleteConfigMap(kafkaBridgeMetricsConfigName);
 
@@ -287,16 +288,19 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
     }
 
-    @BeforeAll
+    @BeforeEach
     void setup() throws Exception {
-        ResourceManager.setClassResources();
+        ResourceManager.setMethodResources();
         installClusterOperator(NAMESPACE);
         deployTestSpecificResources();
     }
 
     void deployTestSpecificResources() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
+        clusterName = generateRandomNameOfKafka("recovery-cluster");
+        kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + clusterName;
+
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1).done();
+        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1).done();
     }
 }
