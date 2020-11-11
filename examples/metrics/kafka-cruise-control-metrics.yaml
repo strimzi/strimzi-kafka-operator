@@ -30,9 +30,18 @@ spec:
     topicOperator: {}
     userOperator: {}
   cruiseControl:
-    metrics:
-      lowercaseOutputName: true
-      rules:
-      - pattern: kafka.cruisecontrol<name=(.+)><>(\w+)
-        name: kafka_cruisecontrol_$1_$2
-        type: GAUGE
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: cruise-control-metrics
+          key: metrics-config.yml
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cruise-control-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: '{"lowercaseOutputName":true,"rules":[{"name":"kafka_cruisecontrol_$1_$2","pattern":"kafka.cruisecontrol<name=(.+)><>(\\w+)","type":"GAUGE"}]}'
