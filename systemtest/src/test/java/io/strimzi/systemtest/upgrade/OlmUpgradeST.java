@@ -46,6 +46,8 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private final String consumerName = "consumer";
     private final String topicUpgradeName = "topic-upgrade";
     private final int messageUpgradeCount =  50_000; // 10k ~= 23s, 50k ~= 115s
+    private final int firstSupportedMiddleVersion = 18; // 0.'18'.0
+    private final int firstSupportedMajorVersion = 0;   // '0'.18.0
     private final KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
         .withProducerName(producerName)
         .withConsumerName(consumerName)
@@ -62,7 +64,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         int clusterOperatorMajorVersion = Integer.parseInt(fromVersion.split("\\.")[0]);
         int clusterOperatorMiddleVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
         // only 0.|18|.0 and more is supported
-        assumeTrue(clusterOperatorMajorVersion >= 0 && clusterOperatorMiddleVersion >= 18);
+        assumeTrue(clusterOperatorMajorVersion >= firstSupportedMajorVersion && clusterOperatorMiddleVersion >= firstSupportedMiddleVersion);
 
         // perform verification of to version
         performUpgradeVerification(fromVersion, toVersion, testParameters);
@@ -138,8 +140,9 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         List<Arguments> supportedVersions = argumentStream.filter(arguments -> {
             String fromVersion = (String) arguments.get()[0];
+            int majorFromVersion = Integer.parseInt(fromVersion.split("\\.")[0]);
             int middleFromVersion = Integer.parseInt(fromVersion.split("\\.")[1]);
-            return middleFromVersion >= 18;
+            return majorFromVersion >= firstSupportedMajorVersion && middleFromVersion >= firstSupportedMiddleVersion;
         }).collect(Collectors.toList());
 
         if (indexOfItem > supportedVersions.get(0).get().length) {
