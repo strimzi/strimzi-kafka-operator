@@ -272,6 +272,13 @@ class UserST extends AbstractST {
         KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).done();
         String plainKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-plain-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
+        Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
+        Secret scramShaSecret = kubeClient().getSecret(secretPrefix + scramShaUserName);
+
+        LOGGER.info("Checking if user secrets with secret prefixes exists");
+        assertNotNull(tlsSecret);
+        assertNotNull(scramShaSecret);
+
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(tlsKafkaClientsName)
             .withNamespaceName(NAMESPACE)
@@ -292,7 +299,7 @@ class UserST extends AbstractST {
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withUsingPodName(plainKafkaClientsName)
-            .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
+            .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .withKafkaUsername(scramShaUserName)
             .build();
@@ -302,17 +309,6 @@ class UserST extends AbstractST {
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
         );
-
-        Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
-        Secret scramShaSecret = kubeClient().getSecret(secretPrefix + scramShaUserName);
-
-        LOGGER.info("Checking if user secrets with secret prefixes exists");
-        assertNotNull(tlsSecret);
-        assertNotNull(scramShaSecret);
-
-        LOGGER.info("Checking if secrets contains right user names");
-        assertThat(tlsSecret.getMetadata().getOwnerReferences().get(0).getName(), is(tlsUserName));
-        assertThat(scramShaSecret.getMetadata().getOwnerReferences().get(0).getName(), is(scramShaUserName));
 
         LOGGER.info("Checking owner reference - if the secret will be deleted when we delete KafkaUser");
 
