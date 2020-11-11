@@ -193,7 +193,7 @@ public class OlmResource {
      * changing the install plan YAML
      */
     public static void upgradeClusterOperator() {
-        if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).get(0) == null) {
+        if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
             throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
         }
 

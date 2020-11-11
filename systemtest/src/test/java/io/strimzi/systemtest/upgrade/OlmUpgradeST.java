@@ -5,10 +5,10 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.operator.OlmResource;
@@ -60,7 +60,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
     @MethodSource("loadJsonUpgradeData")
-    void testChainUpgrade(String fromVersion, String toVersion, JsonObject testParameters) {
+    void testChainUpgrade(String fromVersion, String toVersion, JsonObject testParameters) throws IOException {
 
         // only 0.|18|.0 and more is supported
         assumeTrue(testParameters.getBoolean("olmUpgrade"));
@@ -69,10 +69,42 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         performUpgradeVerification(fromVersion, toVersion, testParameters);
     }
 
-    private void performUpgradeVerification(String fromVersion, String toVersion, JsonObject testParameters) {
+    private void performUpgradeVerification(String fromVersion, String toVersion, JsonObject testParameters) throws IOException {
         LOGGER.info("====================================================================================");
         LOGGER.info("============== Verification version of CO:" + fromVersion + " => " + toVersion);
         LOGGER.info("====================================================================================");
+
+        // In chainUpgrade we want to setup CO only at the start
+        if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
+
+            // we need to push CO class stack because of subscription (if CO is in method stack after upgrade subscription will be deleted)
+            ResourceManager.setClassResources();
+
+            // 1. Create subscription (+ operator group) with manual approval strategy
+            // 2. Approve installation
+            //   a) get name of install-plan
+            //   b) approve installation
+            // strimzi-cluster-operator-v0.19.0 <-- need concatenate version with starting 'v' before version
+            OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, "v" + getFirstSupportedItemFromUpgradeJson().getString("fromVersion"));
+        }
+
+        // In chainUpgrade we want to setup Kafka only at the start and then upgrade it via CO
+        if (KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get() == null) {
+            JsonObject firstSupportedItemFromUpgradeJsonArray = getFirstSupportedItemFromUpgradeJson();
+            String url = firstSupportedItemFromUpgradeJsonArray.getString("urlFrom");
+            File dir = FileUtils.downloadAndUnzip(url);
+
+            // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
+            kafkaYaml = new File(dir, firstSupportedItemFromUpgradeJsonArray.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
+            LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
+            KubeClusterResource.cmdKubeClient().create(kafkaYaml);
+            // Wait for readiness
+            waitForReadinessOfKafkaCluster();
+
+            OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
+
+            ResourceManager.setMethodResources();
+        }
 
         kafkaBasicClientJob.producerStrimzi().done();
         kafkaBasicClientJob.consumerStrimzi().done();
@@ -128,66 +160,23 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
     /**
      * Loads auxiliary information from StrimziUpgradeST.json
-     * [0] -> from version
-     * [1] -> to version
-     * [2] -> whole JsonObject for first supported version
-     * @param indexOfItem specific index which you want to access
-     * @return exception || first supported version || json object with upgrade information
+     * @return json object with upgrade information
      */
-    private Object getFirstSupportedItemFromUpgradeJson(int indexOfItem) {
+    private JsonObject getFirstSupportedItemFromUpgradeJson() {
         Stream<Arguments> argumentStream = loadJsonUpgradeData();
 
         List<Arguments> olmUpgradeSupported = argumentStream.filter(arguments -> ((JsonObject) arguments.get()[2]).getBoolean("olmUpgrade")).collect(Collectors.toList());
 
-        if (indexOfItem > olmUpgradeSupported.get(0).get().length) {
-            throw new RuntimeException("You are accessing to index:" + indexOfItem + " which is not in the scope of supportedVersions and size is:" + olmUpgradeSupported.get(0).get().length);
-        } else if (indexOfItem == 0 || indexOfItem == 1) {
-            String firstSupportedFromVersion = (String) olmUpgradeSupported.get(0).get()[indexOfItem];
-            LOGGER.info("We are gonna use first supported version for OLM upgrade: {}", firstSupportedFromVersion);
-            return firstSupportedFromVersion;
-        } else {
-            JsonObject upgradeInformation = (JsonObject) olmUpgradeSupported.get(0).get()[indexOfItem];
-            LOGGER.info("We are gonna use first supported upgrade information provided by json file for OLM upgrade: {}", upgradeInformation);
-            return upgradeInformation;
-        }
+        JsonObject upgradeInformation = (JsonObject) olmUpgradeSupported.get(0).get()[2];
+        LOGGER.info("We are gonna use first supported upgrade information provided by json file for OLM upgrade: {}", upgradeInformation);
+        return upgradeInformation;
     }
 
     @BeforeAll
-    void setup() throws IOException {
+    void setup() {
         ResourceManager.setClassResources();
 
         cluster.setNamespace(namespace);
         cluster.createNamespace(namespace);
-
-        // 1. Create subscription (+ operator group) with manual approval strategy
-        // 2. Approve installation
-        //   a) get name of install-plan
-        //   b) approve installation
-        // strimzi-cluster-operator-v0.19.0 <-- need concatenate version with starting 'v' before version
-        OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, "v" + getFirstSupportedItemFromUpgradeJson(0));
-
-        // 3. deploy Kafka
-        // fetch the tag from imageName: docker.io/strimzi/operator:'[latest|0.19.0|0.18.0]'
-        String containerImageTag = kubeClient().getDeployment(kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME))
-            .getSpec()
-            .getTemplate()
-            .getMetadata()
-            .getAnnotations()
-            .get("containerImage").split(":")[1];
-
-        LOGGER.info("Image tag of strimzi operator is {}", containerImageTag);
-
-        JsonObject firstSupportedItemFromUpgradeJsonArray = (JsonObject) getFirstSupportedItemFromUpgradeJson(2);
-        String url = firstSupportedItemFromUpgradeJsonArray.getString("urlFrom");
-        File dir = FileUtils.downloadAndUnzip(url);
-
-        // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
-        kafkaYaml = new File(dir, firstSupportedItemFromUpgradeJsonArray.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-        LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
-        KubeClusterResource.cmdKubeClient().create(kafkaYaml);
-        // Wait for readiness
-        waitForReadinessOfKafkaCluster();
-
-        OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
     }
 }
