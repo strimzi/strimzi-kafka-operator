@@ -15,6 +15,7 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClient
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
@@ -172,10 +173,8 @@ public class ZookeeperUpgradeST extends AbstractST {
                 "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
         LOGGER.info("Pre-change Zookeeper version query returned: " + zkResult);
 
-        String kafkaVersionCommand = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1";
-        String kafkaResult = cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
-                "kafka", "/bin/bash", "-c", kafkaVersionCommand).out().trim();
-        LOGGER.info("Pre-change Kafka version query returned: " + kafkaResult);
+        String kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        LOGGER.info("Pre-change Kafka version query returned: " + kafkaVersionResult);
 
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
         kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -215,12 +214,11 @@ public class ZookeeperUpgradeST extends AbstractST {
                 " was expected", zkResult, is(newVersion.zookeeperVersion()));
 
         // Extract the Kafka version number from the jars in the lib directory
-        kafkaResult = cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(CLUSTER_NAME, 0),
-                "kafka", "/bin/bash", "-c", kafkaVersionCommand).out().trim();
-        LOGGER.info("Post-change Kafka version query returned: " + kafkaResult);
+        kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        LOGGER.info("Post-change Kafka version query returned: " + kafkaVersionResult);
 
-        assertThat("Kafka container had version " + kafkaResult + " where " + newVersion.version() +
-                " was expected", kafkaResult, is(newVersion.version()));
+        assertThat("Kafka container had version " + kafkaVersionResult + " where " + newVersion.version() +
+                " was expected", kafkaVersionResult, is(newVersion.version()));
 
 
         if (testContext.getDisplayName().contains("Upgrade") && !sameMinorVersion) {
