@@ -343,4 +343,15 @@ public class KafkaUtils {
     public static String generateRandomNameOfKafka(String clusterName) {
         return clusterName + "-" + new Random().nextInt(Integer.MAX_VALUE);
     }
+
+    public static String getVersionFromKafkaPodLibs(String kafkaPodName) {
+        String command = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1 | cut -d \"-\" -f2";
+        return cmdKubeClient().execInPodContainer(
+            kafkaPodName,
+            "kafka",
+            "/bin/bash",
+            "-c",
+            command
+        ).out().trim();
+    }
 }
