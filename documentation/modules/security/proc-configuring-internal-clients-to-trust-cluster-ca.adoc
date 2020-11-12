@@ -50,7 +50,7 @@ spec:
   volumes:
   - name: secret-volume
     secret:
-      secretName: my-cluster-cluster-cert
+      secretName: my-cluster-cluster-ca-cert
 ----
 +
 Here we're mounting:
@@ -89,7 +89,7 @@ spec:
   volumes:
   - name: secret-volume
     secret:
-      secretName: my-cluster-cluster-cert
+      secretName: my-cluster-cluster-ca-cert
 ----
 
 . Use the certificate with clients that use certificates in X.509 format.
