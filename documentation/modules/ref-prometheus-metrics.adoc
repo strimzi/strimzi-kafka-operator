@@ -5,15 +5,15 @@
 [id='ref-metrics-{context}']
 = Metrics configuration
 
-Prometheus metrics are enabled by configuring the `metrics` property in following resources:
+Prometheus metrics are enabled by configuring the `metricsConfig` property in following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 
-When the `metrics` property is not defined in the resource, the Prometheus metrics will be disabled.
-To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
+When the `metricsConfig` property is not defined in the resource, the Prometheus metrics will be disabled.
+To enable Prometheus metrics export without any further configuration, you can set reference to a ConfigMap containing empty data under specified key.
 
 .Example of enabling metrics without any further configuration
 [source,yaml,subs=attributes+]
@@ -25,13 +25,18 @@ metadata:
 spec:
   kafka:
     # ...
-    metrics: {}
+    metricsConfig:
+     type: jmxPrometheusExporter
+     valueFrom:
+       configMapKeyRef:
+         name: my-config-map
+         key: my-key
     # ...
   zookeeper:
     # ...
 ----
 
-The `metrics` property might contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+The `metricsConfig` property might contain a reference to the ConfigMap containing additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
 
 .Example of enabling metrics with additional Prometheus JMX Exporter configuration
 [source,yaml,subs=attributes+]
@@ -43,15 +48,12 @@ metadata:
 spec:
   kafka:
     # ...
-    metrics:
-      lowercaseOutputName: true
-      rules:
-        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
-          name: "kafka_server_$1_$2_total"
-        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count"
-          name: "kafka_server_$1_$2_total"
-          labels:
-            topic: "$3"
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: my-config-map
+          key: my-key
     # ...
   zookeeper:
     # ...

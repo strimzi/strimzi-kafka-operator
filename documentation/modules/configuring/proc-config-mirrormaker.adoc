@@ -91,16 +91,12 @@ spec:
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  metrics: <18>
-    lowercaseOutputName: true
-    rules:
-      - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
-        name: "kafka_server_$1_$2_total"
-      - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*,
-        topic=(.+)><>Count"
-        name: "kafka_server_$1_$2_total"
-        labels:
-          topic: "$3"
+  metricsConfig: <18>
+   type: jmxPrometheusExporter
+   valueFrom:
+     configMapKeyRef:
+       name: my-config-map
+       key: my-key
   jvmOptions: <19>
     "-Xmx": "1g"
     "-Xms": "1g"
@@ -146,7 +142,7 @@ spec:
 <15> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <16> Specified xref:property-mm-loggers-reference[loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. MirrorMaker has a single logger called `mirrormaker.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <17> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<18> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled with configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using `metrics: {}`.
+<18> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled with ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing empty data under specified key.
 <19> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <20> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
 <21> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.

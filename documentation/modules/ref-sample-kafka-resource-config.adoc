@@ -74,18 +74,12 @@ spec:
       size: 10000Gi <20>
     rack: <21>
       topologyKey: topology.kubernetes.io/zone
-    metrics: <22>
-      lowercaseOutputName: true
-      rules: <23>
-      # Special cases and very specific rules
-      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
-        name: kafka_server_$1_$2
-        type: GAUGE
-        labels:
-          clientId: "$3"
-          topic: "$4"
-          partition: "$5"
-        # ...
+    metricsConfig: <22>
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef: <23>
+          name: my-config-map
+          key: my-key
   zookeeper: <24>
     replicas: 3
     resources:
@@ -101,7 +95,7 @@ spec:
     storage:
       type: persistent-claim
       size: 1000Gi
-    metrics:
+    metricsConfig:
       # ...
   entityOperator: <25>
     topicOperator:
@@ -148,7 +142,7 @@ spec:
 <20> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
 <21> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
 <22> Kafka link:{BookURLDeploying}#assembly-metrics-setup-str[metrics configuration for use with Prometheus].
-<23> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A set of rules provided with Strimzi may be copied to your Kafka resource configuration.
+<23> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A reference to ConfigMap containing set of configured rules provided with Strimzi may be copied to your Kafka resource configuration.
 <24> xref:assembly-zookeeper-node-configuration-{context}[ZooKeeper-specific configuration], which contains properties similar to the Kafka configuration.
 <25> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
 <26> Kafka Exporter configuration, which is used xref:assembly-kafka-exporter-configuration-{context}[to expose data as Prometheus metrics].

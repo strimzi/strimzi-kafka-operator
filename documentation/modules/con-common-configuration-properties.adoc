@@ -294,18 +294,18 @@ livenessProbe:
 For more information about the `livenessProbe` and `readinessProbe` options, see xref:type-Probe-reference[Probe schema reference].
 
 [id='con-common-configuration-prometheus-{context}']
-=== `metrics`
+=== `metricsConfig`
 
-Use the `metrics` property to enable and configure Prometheus metrics.
+Use the `metricsConfig` property to enable and configure Prometheus metrics.
 
-The `metrics` property can also contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+The `metricsConfig` property contains a reference to the ConfigMap containing additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
 Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
 
-To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
+To enable Prometheus metrics export without any further configuration, you can set reference to a ConfigMap containing empty data under specified key.
 
 When metrics are enabled, they are exposed on port 9404.
 
-When the `metrics` property is not defined in the resource, the Prometheus metrics are disabled.
+When the `metricsConfig` property is not defined in the resource, the Prometheus metrics are disabled.
 
 For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
 
