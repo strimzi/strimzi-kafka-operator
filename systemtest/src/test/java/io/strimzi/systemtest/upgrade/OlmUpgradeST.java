@@ -133,7 +133,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         String afterUpgradeVersionOfCo = OlmResource.getClusterOperatorVersion();
 
         // if HEAD -> 6.6.6 version
-        toVersion = toVersion.equals("HEAD") ? "6.6.6" : toVersion;
+        toVersion = toVersion.equals("HEAD") ? Environment.OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT : toVersion;
         assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + toVersion));
 
         // ======== Kafka upgrade starts ========

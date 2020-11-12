@@ -53,7 +53,7 @@ public class OlmResource {
     }
 
     public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, Environment.OLM_OPERATOR_VERSION_PREVIOUS);
+        clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
     }
 
     public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
