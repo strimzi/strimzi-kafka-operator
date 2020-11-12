@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -363,6 +364,9 @@ public class KafkaBrokerConfigurationBuilder {
 
         if (oauth.isDisableTlsHostnameVerification()) {
             addOption(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+        }
+        if (oauth.isEnablePlain()) {
+            addOption(options, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
         }
 
         return options;

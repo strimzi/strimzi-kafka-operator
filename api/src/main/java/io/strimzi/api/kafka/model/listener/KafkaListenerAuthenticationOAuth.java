@@ -53,6 +53,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean enableECDSA = false;
     private Integer maxSecondsWithoutReauthentication;
     private boolean enablePlain = false;
+    private String tokenEndpointUri;
     private boolean enableOauthBearer = true;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
@@ -303,4 +304,15 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     public void setEnablePlain(boolean enablePlain) {
         this.enablePlain = enablePlain;
     }
+
+    @Description("URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. ")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getTokenEndpointUri() {
+        return tokenEndpointUri;
+    }
+
+    public void setTokenEndpointUri(String tokenEndpointUri) {
+        this.tokenEndpointUri = tokenEndpointUri;
+    }
+
 }

@@ -362,6 +362,11 @@ spec:
                                 - secretName
                               description: Trusted certificates for TLS connection
                                 to the OAuth server.
+                            tokenEndpointUri:
+                              type: string
+                              description: 'URI of the Token Endpoint to use with
+                                SASL_PLAIN mechanism when the client authenticates
+                                with clientId and a secret. '
                             type:
                               type: string
                               enum:
@@ -780,6 +785,11 @@ spec:
                                   - secretName
                                 description: Trusted certificates for TLS connection
                                   to the OAuth server.
+                              tokenEndpointUri:
+                                type: string
+                                description: 'URI of the Token Endpoint to use with
+                                  SASL_PLAIN mechanism when the client authenticates
+                                  with clientId and a secret. '
                               type:
                                 type: string
                                 enum:
@@ -1014,6 +1024,11 @@ spec:
                                   - secretName
                                 description: Trusted certificates for TLS connection
                                   to the OAuth server.
+                              tokenEndpointUri:
+                                type: string
+                                description: 'URI of the Token Endpoint to use with
+                                  SASL_PLAIN mechanism when the client authenticates
+                                  with clientId and a secret. '
                               type:
                                 type: string
                                 enum:
@@ -1272,6 +1287,11 @@ spec:
                                   - secretName
                                 description: Trusted certificates for TLS connection
                                   to the OAuth server.
+                              tokenEndpointUri:
+                                type: string
+                                description: 'URI of the Token Endpoint to use with
+                                  SASL_PLAIN mechanism when the client authenticates
+                                  with clientId and a secret. '
                               type:
                                 type: string
                                 enum:
