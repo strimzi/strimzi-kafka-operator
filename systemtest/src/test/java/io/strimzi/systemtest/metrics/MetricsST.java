@@ -32,8 +32,10 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
@@ -473,6 +475,77 @@ public class MetricsST extends AbstractST {
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
         assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig.replace("true", "false")));
+    }
+
+    @Test
+    void testMetricsConfigMapErrors() {
+        // specified ConfigMap does exist - disabled metrics
+        ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
+                .withName("external-metrics-cm-error")
+                .withKey("metrics-config-error.yml")
+                .build();
+        JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(cmks)
+                .endValueFrom()
+                .build();
+        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
+            k.getSpec().getKafka().setMetrics(null);
+        });
+
+        // Changing metrics on -> off triggers RU (envar was changed)
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(SECOND_CLUSTER), 1);
+
+        assertThat(StUtils.checkEnvVarInPod(KafkaResources.kafkaPodName(SECOND_CLUSTER, 0), "KAFKA_METRICS_ENABLED"), is("false"));
+
+        ConfigMap externalMetricsCm = new ConfigMapBuilder()
+                .withData(Collections.singletonMap("metrics-config.yml", ""))
+                .withNewMetadata()
+                .withName("external-metrics-cm")
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsCm);
+
+        // specified ConfigMap does exist but does not contain specified key - metrics disabled
+        cmks = new ConfigMapKeySelectorBuilder()
+                .withName("external-metrics-cm")
+                .withKey("metrics-config-error.yml")
+                .build();
+        JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics2 = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(cmks)
+                .endValueFrom()
+                .build();
+
+        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics2);
+            k.getSpec().getKafka().setMetrics(null);
+        });
+
+        PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
+        assertThat(StUtils.checkEnvVarInPod(KafkaResources.kafkaPodName(SECOND_CLUSTER, 0), "KAFKA_METRICS_ENABLED"), is("false"));
+
+        // specified ConfigMap does exist and does contain specified key - data are empty -> metrics enabled
+        cmks = new ConfigMapKeySelectorBuilder()
+                .withName("external-metrics-cm")
+                .withKey("metrics-config.yml")
+                .build();
+        JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics3 = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(cmks)
+                .endValueFrom()
+                .build();
+
+        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics3);
+            k.getSpec().getKafka().setMetrics(null);
+        });
+
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(SECOND_CLUSTER), 1);
+        assertThat(StUtils.checkEnvVarInPod(KafkaResources.kafkaPodName(SECOND_CLUSTER, 0), "KAFKA_METRICS_ENABLED"), is("true"));
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {

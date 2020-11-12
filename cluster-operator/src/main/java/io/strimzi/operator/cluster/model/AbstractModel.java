@@ -527,7 +527,11 @@ public abstract class AbstractModel {
         Map<String, String> data = new HashMap<>(2);
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalLoggingConfigMap));
         if (getMetricsConfigInCm() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
-            data.put(ANCILLARY_CM_KEY_METRICS, parseMetrics(externalMetricsConfigMap));
+            String parseResult = parseMetrics(externalMetricsConfigMap);
+            if (parseResult != null) {
+                this.setMetricsEnabled(true);
+                data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
+            }
         }
         return createConfigMap(ancillaryConfigMapName, data);
     }
@@ -535,12 +539,17 @@ public abstract class AbstractModel {
     protected String parseMetrics(ConfigMap externalCm) {
         if (metricsConfigInCm != null) {
             if (metricsConfigInCm instanceof JmxPrometheusExporterMetrics) {
-                if (externalCm == null || externalCm.getData().get(((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey()) == null) {
-                    log.warn("ConfigMap {} does not exist or doesn't contain the configuration under the key {}. Default metrics settings are used.",
-                            ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName(),
-                            ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                if (externalCm == null) {
+                    log.warn("ConfigMap {} does not exist. Metrics disabled.",
+                            ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName());
                 } else {
-                    return externalCm.getData().get(((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                    String data = externalCm.getData().get(((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                    if (data == null) {
+                        log.warn("ConfigMap {} does not contain specified key {}. Metrics disabled.", ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName(),
+                                ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
+                    } else {
+                        return data;
+                    }
                 }
             } else {
                 log.warn("Unknown type of metrics {}", metricsConfigInCm.getClass());
@@ -554,7 +563,7 @@ public abstract class AbstractModel {
                 return new JsonObject(m).toString();
             }
         }
-        return "";
+        return null;
 
     }
 
@@ -569,7 +578,6 @@ public abstract class AbstractModel {
     protected void setMetricsConfigInCm(MetricsConfig metricsConfigInCm) {
         if (metricsConfigInCm != null) {
             this.metricsConfigInCm = metricsConfigInCm;
-            setMetricsEnabled(true);
         }
     }
 

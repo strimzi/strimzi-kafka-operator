@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +22,6 @@ import java.util.Map;
 )
 @JsonPropertyOrder({"type", "valueFrom"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
 public class JmxPrometheusExporterMetrics extends MetricsConfig {
 
     private static final long serialVersionUID = 1L;
@@ -42,16 +40,6 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
 
     public void setValueFrom(ExternalConfigurationMetrics valueFrom) {
         this.valueFrom = valueFrom;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
     }
 
     @Description("Must be `" + TYPE_JMX_EXPORTER + "`")
