@@ -536,12 +536,14 @@ public abstract class AbstractModel {
         if (metricsConfigInCm != null) {
             if (metricsConfigInCm instanceof JmxPrometheusExporterMetrics) {
                 if (externalCm == null || externalCm.getData().get(((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey()) == null) {
-                    log.warn("ConfigMap {} does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
+                    log.warn("ConfigMap {} does not exist or doesn't contain the configuration under the key {}. Default metrics settings are used.",
                             ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName(),
                             ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
                 } else {
                     return externalCm.getData().get(((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getKey());
                 }
+            } else {
+                log.warn("Unknown type of metrics {}", metricsConfigInCm.getClass());
             }
         } else {
             if (isMetricsEnabled() && getMetricsConfig() != null) {

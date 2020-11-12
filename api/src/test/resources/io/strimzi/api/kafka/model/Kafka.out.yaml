@@ -105,15 +105,12 @@ spec:
     resources:
       limits:
         memory: "5Gi"
-    metrics:
-      lowercaseOutputName: true
-      rules:
-      - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
-        name: "kafka_server_$1_$2_total"
-      - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count"
-        name: "kafka_server_$1_$2_total"
-        labels:
-          topic: "$3"
+    metricsConfig:
+      type: "jmxPrometheusExporter"
+      valueFrom:
+        configMapKeyRef:
+          key: "my-key"
+          name: "my-config-map"
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"
