@@ -93,3 +93,33 @@ spec:
       zookeeper.connection.timeout.ms: 6000
     # ...
 ----
+
+[id='property-kafka-brokerRackInitImage-{context}']
+=== `brokerRackInitImage`
+
+When rack awareness is enabled, Kafka broker pods use init container to collect the labels from the Kubernetes cluster nodes.
+The container image used for this container can be configured using the `brokerRackInitImage` property.
+When the `brokerRackInitImage` field is missing, the following images are used in order of priority:
+
+. Container image specified in `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable in the Cluster Operator configuration.
+. `{DockerKafkaInit}` container image.
+
+.Example `brokerRackInitImage` configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      topologyKey: topology.kubernetes.io/zone
+    brokerRackInitImage: my-org/my-image:latest
+    # ...
+----
+
+NOTE: Overriding container images is recommended only in special situations, where you need to use a different container registry.
+For example, because your network does not allow access to the container registry used by Strimzi. In this case, you should either copy the Strimzi images or build them from the source.
+If the configured image is not compatible with Strimzi images, it might not work properly.
