@@ -9,15 +9,20 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +45,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -214,6 +221,108 @@ class UserST extends AbstractST {
                 throw new RuntimeException("Failed to encode username", e);
             }
         });
+    }
+
+    @Test
+    void testCreatingUsersWithSecretPrefix() {
+        String clusterName = "second-cluster";
+        String secretPrefix = "top-secret-";
+        String tlsUserName = "encrypted-leopold";
+        String scramShaUserName = "scramed-leopold";
+
+        KafkaResource.kafkaEphemeral(clusterName, 3)
+            .editSpec()
+                .editKafka()
+                    .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                        .endGenericKafkaListener()
+                        .addNewGenericKafkaListener()
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                        .endGenericKafkaListener()
+                    .endListeners()
+                .endKafka()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withNewSecretPrefix(secretPrefix)
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
+
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
+        KafkaUser tlsUser = KafkaUserResource.tlsUser(clusterName, tlsUserName).done();
+        KafkaUser scramShaUser = KafkaUserResource.scramShaUser(clusterName, scramShaUserName).done();
+
+        LOGGER.info("Deploying KafkaClients pod for TLS listener");
+        KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).done();
+        String tlsKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        LOGGER.info("Deploying KafkaClients pod for PLAIN listener");
+        KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).done();
+        String plainKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-plain-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
+        Secret scramShaSecret = kubeClient().getSecret(secretPrefix + scramShaUserName);
+
+        LOGGER.info("Checking if user secrets with secret prefixes exists");
+        assertNotNull(tlsSecret);
+        assertNotNull(scramShaSecret);
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(tlsKafkaClientsName)
+            .withNamespaceName(NAMESPACE)
+            .withTopicName(TOPIC_NAME)
+            .withKafkaUsername(tlsUserName)
+            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withClusterName(clusterName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withSecretPrefix(secretPrefix)
+            .build();
+
+        LOGGER.info("Checking if TLS user is able to send messages");
+        internalKafkaClient.assertSentAndReceivedMessages(
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
+        );
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(plainKafkaClientsName)
+            .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withKafkaUsername(scramShaUserName)
+            .build();
+
+        LOGGER.info("Checking if SCRAM-SHA user is able to send messages");
+        internalKafkaClient.assertSentAndReceivedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
+        LOGGER.info("Checking owner reference - if the secret will be deleted when we delete KafkaUser");
+
+        LOGGER.info("Deleting KafkaUser:{}", tlsUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(tlsUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(tlsUserName);
+
+        LOGGER.info("Deleting KafkaUser:{}", scramShaUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(scramShaUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(scramShaUserName);
+
+        LOGGER.info("Checking if secrets are deleted");
+        assertNull(kubeClient().getSecret(tlsSecret.getMetadata().getName()));
+        assertNull(kubeClient().getSecret(scramShaSecret.getMetadata().getName()));
     }
 
     void createBigAmountOfUsers(String typeOfUser) {

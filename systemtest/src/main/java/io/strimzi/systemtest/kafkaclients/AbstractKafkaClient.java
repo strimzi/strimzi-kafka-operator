@@ -32,6 +32,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     protected String listenerName;
     protected ProducerProperties producerProperties;
     protected ConsumerProperties consumerProperties;
+    protected String secretPrefix;
 
     public abstract static class Builder<SELF extends Builder<SELF>> {
 
@@ -47,6 +48,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         protected String listenerName;
         private ProducerProperties producerProperties;
         private ConsumerProperties consumerProperties;
+        private String secretPrefix;
 
         public SELF withTopicName(String topicName) {
             this.topicName = topicName;
@@ -108,6 +110,11 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             return self();
         }
 
+        public SELF withSecretPrefix(String secretPrefix) {
+            this.secretPrefix = secretPrefix;
+            return self();
+        }
+
         @SuppressWarnings("unchecked")
         protected SELF self() {
             return (SELF) this;
@@ -136,7 +143,8 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             .withCertificateAuthorityCertificateName(caCertName)
             .withListenerName(listenerName)
             .withProducerProperties(producerProperties)
-            .withConsumerProperties(consumerProperties);
+            .withConsumerProperties(consumerProperties)
+            .withSecretPrefix(secretPrefix);
     }
 
     protected AbstractKafkaClient(Builder<?> builder) {
@@ -154,6 +162,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         listenerName = builder.listenerName;
         producerProperties = builder.producerProperties;
         consumerProperties = builder.consumerProperties;
+        secretPrefix = builder.secretPrefix;
     }
 
     private void verifyEssentialInstanceAttributes() {
@@ -242,6 +251,9 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     public String getListenerName() {
         return listenerName;
     }
+    public String getSecretPrefix() {
+        return secretPrefix;
+    }
 
     @Override
     public String toString() {
@@ -258,6 +270,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             ", listenerName='" + listenerName + '\'' +
             ", producerProperties=" + producerProperties +
             ", consumerProperties=" + consumerProperties +
+            ", secretPrefix=" + secretPrefix +
             '}';
     }
 }
