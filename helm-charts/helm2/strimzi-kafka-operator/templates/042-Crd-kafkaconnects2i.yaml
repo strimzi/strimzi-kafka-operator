@@ -427,6 +427,13 @@ spec:
                               type: string
                             user:
                               type: string
+                        seccompProfile:
+                          type: object
+                          properties:
+                            localhostProfile:
+                              type: string
+                            type:
+                              type: string
                         supplementalGroups:
                           type: array
                           items:
@@ -766,6 +773,13 @@ spec:
                               type: string
                             user:
                               type: string
+                        seccompProfile:
+                          type: object
+                          properties:
+                            localhostProfile:
+                              type: string
+                            type:
+                              type: string
                         windowsOptions:
                           type: object
                           properties:
@@ -830,6 +844,13 @@ spec:
                             type:
                               type: string
                             user:
+                              type: string
+                        seccompProfile:
+                          type: object
+                          properties:
+                            localhostProfile:
+                              type: string
+                            type:
                               type: string
                         windowsOptions:
                           type: object

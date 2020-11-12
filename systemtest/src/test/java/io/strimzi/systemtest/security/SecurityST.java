@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
