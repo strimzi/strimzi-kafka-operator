@@ -6,6 +6,7 @@ watchNamespaces: []
 watchAnyNamespace: false
 
 image:
+  registry: quay.io
   repository: strimzi
   name: operator
   tag: latest
@@ -25,61 +26,73 @@ nodeSelector: {}
 # Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
 zookeeper:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 kafka:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 kafkaConnect:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 kafkaConnects2i:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 topicOperator:
   image:
+    registry: quay.io
     repository: strimzi
     name: operator
     tag: latest
 userOperator:
   image:
+    registry: quay.io
     repository: strimzi
     name: operator
     tag: latest
 kafkaInit:
   image:
+    registry: quay.io
     repository: strimzi
     name: operator
     tag: latest
 tlsSidecarEntityOperator:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 kafkaMirrorMaker:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 kafkaBridge:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka-bridge
     tag: 0.19.0
 kafkaExporter:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 jmxTrans:
   image:
+    registry: quay.io
     repository: strimzi
     name: jmxtrans
     tag: latest
@@ -90,11 +103,13 @@ kafkaMirrorMaker2:
     tagPrefix: latest
 cruiseControl:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
 tlsSidecarCruiseControl:
   image:
+    registry: quay.io
     repository: strimzi
     name: kafka
     tagPrefix: latest
@@ -112,6 +127,8 @@ readinessProbe:
   initialDelaySeconds: 10
   periodSeconds: 30
 
+# Override the docker registry used by all Strimzi images
+imageRegistryOverride: ""
 # Override the docker image repository used by all Strimzi images
 imageRepositoryOverride: ""
 # Override the docker image tag used by all Strimzi images

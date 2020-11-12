@@ -12,7 +12,7 @@ if [ ${JAVA_MAJOR_VERSION} -eq 11 ] ; then
 fi
 
 export DOCKER_ORG=${DOCKER_ORG:-strimzici}
-export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
+export DOCKER_REGISTRY=${DOCKER_REGISTRY:-quay.io}
 export DOCKER_TAG=$COMMIT
 
 make docu_check
@@ -62,7 +62,7 @@ else
         echo "Main build on master branch or release tag - going to push to Docker Hub, Nexus and website"
         
         echo "Login into Docker Hub ..."
-        docker login -u $DOCKER_USER -p $DOCKER_PASS
+        docker login -u $DOCKER_USER -p $DOCKER_PASS $DOCKER_REGISTRY
 
         export DOCKER_ORG=strimzi
         

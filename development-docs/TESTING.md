@@ -201,9 +201,9 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | :------------------------------------: | :--------------------------------------------------------------------------------------: | :----------------------------------------------: |
 | DOCKER_ORG                             | Specify the organization/repo containing the image used in system tests                  | strimzi                                          |
 | DOCKER_TAG                             | Specify the image tags used in system tests                                              | latest                                           |
-| DOCKER_REGISTRY                        | Specify the docker registry used in system tests                                         | docker.io                                        |
-| TEST_CLIENT_IMAGE                      | Specify the test client image used in system tests                                       | docker.io/strimzi/test-client:latest-kafka-2.3.0 |
-| BRIDGE_IMAGE                           | Specify the kafka bridge image used in system tests                                      | docker.io/strimzi/kafka-bridge:latest            |
+| DOCKER_REGISTRY                        | Specify the docker registry used in system tests                                         | quay.io                                        |
+| TEST_CLIENT_IMAGE                      | Specify the test client image used in system tests                                       | quay.io/strimzi/test-client:latest-kafka-2.3.0 |
+| BRIDGE_IMAGE                           | Specify the kafka bridge image used in system tests                                      | quay.io/strimzi/kafka-bridge:latest            |
 | TEST_LOG_DIR                           | Directory for storing logs collected during the tests                                    | ../systemtest/target/logs/                       |
 | ST_KAFKA_VERSION                       | Kafka version used in images during the system tests                                     | 2.3.0                                            |
 | STRIMZI_DEFAULT_LOG_LEVEL              | Log level for the cluster operator                                                       | DEBUG                                            |

@@ -27,7 +27,7 @@ next_version:
 
 bridge_version:
 	# Set Kafka Bridge version to its own version
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
 	for HELM_VERSION in 2 3; do	\
 		CHART_PATH=./helm-charts/helm$$HELM_VERSION/strimzi-kafka-operator;	\
 		$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml;	\
@@ -49,14 +49,14 @@ release_prepare:
 release_version:
 	# TODO: This would be replaced ideally once Helm Chart templating is used for cluster and topic operator examples
 	echo "Changing Docker image tags in install to :$(RELEASE_VERSION)"
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/operator:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/operator:[a-zA-Z0-9_.-]\+/strimzi\/operator:$(RELEASE_VERSION)/g' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/strimzi\/kafka:$(RELEASE_VERSION)-kafka-\1/g' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+/strimzi\/jmxtrans:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?quay.io\/strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/operator:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/operator:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/operator:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/quay.io\/strimzi\/kafka:$(RELEASE_VERSION)-kafka-\1/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=quay.io\/strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/jmxtrans:$(RELEASE_VERSION)/g' {} \;
 	# Set Kafka Bridge version to its own version
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
 
 release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
@@ -76,7 +76,7 @@ release_helm_version:
 		$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml;	\
 		$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md;	\
 		$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md;	\
-		$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml;	\
+		$(SED) -i '/name: quay.io\/kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml;	\
 		$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md;	\
 	done
 
