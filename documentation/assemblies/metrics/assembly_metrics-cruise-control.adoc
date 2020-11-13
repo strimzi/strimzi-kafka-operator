@@ -15,7 +15,7 @@ The example Grafana dashboard for Cruise Control provides:
 
 == Configuring Cruise Control
 
-You can enable the Cruise Control metrics in the `Kafka` resource using the `cruiseControl.metricsConfig` property that contains a reference to the ConfigMap containing the JMX exporter configuration about the metrics to expose.
+Enable Cruise Control metrics using the `cruiseControl.metricsConfig` property in the `Kafka` resource to provide a reference to a ConfigMap that contains JMX exporter configuration for the metrics to expose.
 
 For example:
 [source,yaml,subs="attributes+"]

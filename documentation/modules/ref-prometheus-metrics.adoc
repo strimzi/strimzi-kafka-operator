@@ -12,10 +12,10 @@ Prometheus metrics are enabled by configuring the `metricsConfig` property in fo
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 
-When the `metricsConfig` property is not defined in the resource, the Prometheus metrics will be disabled.
-To enable Prometheus metrics export without any further configuration, you can set reference to a ConfigMap containing empty data under specified key.
+When the `metricsConfig` property is not defined in the resource, the Prometheus metrics are disabled.
+To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing empty data under a specified key.
 
-.Example of enabling metrics without any further configuration
+.Enabling metrics without further configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -36,9 +36,9 @@ spec:
     # ...
 ----
 
-The `metricsConfig` property might contain a reference to the ConfigMap containing additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+Alternatively, the `metricsConfig` property can reference a ConfigMap that contains additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
 
-.Example of enabling metrics with additional Prometheus JMX Exporter configuration
+.Enabling metrics with additional Prometheus JMX Exporter configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
