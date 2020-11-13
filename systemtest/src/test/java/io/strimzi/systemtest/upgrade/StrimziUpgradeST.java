@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
@@ -38,25 +37,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import javax.json.JsonValue;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
@@ -70,23 +61,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(UPGRADE)
-public class StrimziUpgradeST extends AbstractST {
+public class StrimziUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
     public static final String NAMESPACE = "strimzi-upgrade-test";
-    private String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-    private String kafkaStsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-    private String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-
-    private Map<String, String> zkPods;
-    private Map<String, String> kafkaPods;
-    private Map<String, String> eoPods;
-    private Map<String, String> coPods;
 
     private File coDir = null;
-    private File kafkaDir = null;
-    private File kafkaYaml = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
 
@@ -100,7 +81,8 @@ public class StrimziUpgradeST extends AbstractST {
     // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.json
     // main idea of the test and usage of latestReleasedVersion: upgrade CO from version X, kafka Y, to CO version Z and kafka Y + 1 at the end
     private final String strimziReleaseWithOlderKafkaVersion = "0.19.0";
-    private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip", strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
+    private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
+        strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
     @MethodSource("loadJsonUpgradeData")
@@ -263,12 +245,7 @@ public class StrimziUpgradeST extends AbstractST {
             LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
             cmdKubeClient().create(kafkaYaml);
             // Wait for readiness
-            LOGGER.info("Waiting for Zookeeper StatefulSet");
-            StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-zookeeper", 3);
-            LOGGER.info("Waiting for Kafka StatefulSet");
-            StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-kafka", 3);
-            LOGGER.info("Waiting for EO Deployment");
-            DeploymentUtils.waitForDeploymentAndPodsReady(CLUSTER_NAME + "-entity-operator", 1);
+            waitForReadinessOfKafkaCluster();
         }
         // We don't need to update KafkaUser during chain upgrade this way
         if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
@@ -475,13 +452,6 @@ public class StrimziUpgradeST extends AbstractST {
         }
     }
 
-    private void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
-        eoPods = DeploymentUtils.depSnapshot(eoDepName);
-    }
-
     private void checkAllImages(JsonObject images) {
         if (images.isEmpty()) {
             fail("There are no expected images");
@@ -511,46 +481,6 @@ public class StrimziUpgradeST extends AbstractST {
         }
     }
 
-    private void changeKafkaAndLogFormatVersion(JsonObject procedures) {
-        if (!procedures.isEmpty()) {
-            String kafkaVersion = procedures.getString("kafkaVersion");
-            if (!kafkaVersion.isEmpty()) {
-                LOGGER.info("Going to set Kafka version to " + kafkaVersion);
-                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
-                LOGGER.info("Wait until kafka rolling update is finished");
-                if (!kafkaVersion.equals("2.0.0")) {
-                    StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
-                }
-                makeSnapshots();
-            }
-
-            String logMessageVersion = procedures.getString("logMessageVersion");
-            if (!logMessageVersion.isEmpty()) {
-                LOGGER.info("Going to set log message format version to " + logMessageVersion);
-                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
-                LOGGER.info("Wait until kafka rolling update is finished");
-                StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
-                makeSnapshots();
-            }
-        }
-    }
-
-    void logPodImages() {
-        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(zkStsName));
-        for (Pod pod : pods) {
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
-        }
-        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(kafkaStsName));
-        for (Pod pod : pods) {
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
-        }
-        pods = kubeClient().listPods(kubeClient().getDeploymentSelectors(eoDepName));
-        for (Pod pod : pods) {
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
-            LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(1).getImage());
-        }
-    }
-
     void deployClients(String image, KafkaUser kafkaUser) {
         // Deploy new clients
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
@@ -563,24 +493,6 @@ public class StrimziUpgradeST extends AbstractST {
                     .endSpec()
                 .endTemplate()
             .endSpec().done();
-    }
-
-    private static Stream<Arguments> loadJsonUpgradeData() throws FileNotFoundException {
-        JsonArray upgradeData = readUpgradeJson();
-        List<Arguments> parameters = new LinkedList<>();
-
-        upgradeData.forEach(jsonData -> {
-            JsonObject data = (JsonObject) jsonData;
-            parameters.add(Arguments.of(data.getString("fromVersion"), data.getString("toVersion"), data));
-        });
-
-        return parameters.stream();
-    }
-
-    private static JsonArray readUpgradeJson() throws FileNotFoundException {
-        InputStream fis = new FileInputStream(TestUtils.USER_PATH + "/src/main/resources/StrimziUpgradeST.json");
-        JsonReader reader = Json.createReader(fis);
-        return reader.readArray();
     }
 
     @BeforeEach
