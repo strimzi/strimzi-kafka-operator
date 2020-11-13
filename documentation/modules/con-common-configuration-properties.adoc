@@ -303,7 +303,7 @@ Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the
 
 To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing empty data under a specified key.
 
-ConfigMap example with metrics configuration for Kafka:
+.Example ConfigMap with metrics configuration for Kafka
 
 [source,yaml,subs="+attributes"]
 ----
