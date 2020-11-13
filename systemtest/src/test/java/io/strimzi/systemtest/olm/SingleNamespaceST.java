@@ -80,7 +80,7 @@ public class SingleNamespaceST extends OlmAbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);

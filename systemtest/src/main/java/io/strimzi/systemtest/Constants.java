@@ -36,6 +36,9 @@ public interface Constants {
     long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(10).toMillis();
     long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(1).toMillis();
 
+    long OLM_UPGRADE_INSTALL_PLAN_TIMEOUT = Duration.ofMinutes(15).toMillis();
+    long OLM_UPGRADE_INSTALL_PLAN_POLL = Duration.ofMinutes(1).toMillis();
+
 
     long GLOBAL_CLIENTS_POLL = Duration.ofSeconds(15).toMillis();
     long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
@@ -125,6 +128,11 @@ public interface Constants {
      * Tag for upgrade tests.
      */
     String UPGRADE = "upgrade";
+
+    /**
+     * Tag for olm upgrade tests
+     */
+    String OLM_UPGRADE = "olmupgrade";
 
     /**
      * Tag for smoke tests
