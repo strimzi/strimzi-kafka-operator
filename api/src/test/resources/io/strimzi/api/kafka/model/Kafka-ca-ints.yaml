@@ -1,0 +1,33 @@
+---
+kind: "Kafka"
+metadata:
+  name: "my-cluster"
+  namespace: "my-namespace"
+spec:
+  kafka:
+    replicas: 1
+    storage:
+      type: "ephemeral"
+    listeners:
+    - name: "lst"
+      port: 9092
+      type: "internal"
+      tls: true
+  zookeeper:
+    replicas: 1
+    storage:
+      type: "ephemeral"
+  entityOperator:
+    topicOperator:
+      reconciliationIntervalSeconds: 90
+      zookeeperSessionTimeoutSeconds: 20
+      topicMetadataMaxAttempts: 6
+    userOperator:
+      reconciliationIntervalSeconds: 120
+      zookeeperSessionTimeoutSeconds: 6
+  clusterCa:
+    generateCertificateAuthority: true
+    generateSecretOwnerReference: false
+  clientsCa:
+    generateCertificateAuthority: true
+    generateSecretOwnerReference: false

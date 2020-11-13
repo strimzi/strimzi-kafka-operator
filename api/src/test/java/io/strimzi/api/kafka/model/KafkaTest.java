@@ -78,6 +78,52 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
     }
 
     @Test
+    public void testCertificationAuthorityBuilderAndInts() throws URISyntaxException {
+        List<GenericKafkaListener> listeners = Collections.singletonList(
+                new GenericKafkaListenerBuilder()
+                        .withName("lst")
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                        .build()
+        );
+
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewZookeeper()
+                        .withReplicas(1)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewKafka()
+                        .withReplicas(1)
+                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
+                    .withNewClientsCa()
+                        .withGenerateSecretOwnerReference(false)
+                    .endClientsCa()
+                    .withNewClusterCa()
+                        .withGenerateSecretOwnerReference(false)
+                    .endClusterCa()
+                .endSpec()
+                .build();
+
+        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(this.getClass().getResource("Kafka-ca-ints.yaml").toURI().getPath())));
+    }
+
+    @Test
     public void testNewListenerSerialization() throws URISyntaxException {
         List<GenericKafkaListener> listeners = Collections.singletonList(
                 new GenericKafkaListenerBuilder()
