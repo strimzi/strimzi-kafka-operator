@@ -6,23 +6,14 @@ metadata:
     app: strimzi
 rules:
   - apiGroups:
-      - ""
-    resources:
-      # The cluster operator needs to access and manage service accounts to grant Strimzi components cluster permissions
-      - serviceaccounts
-    verbs:
-      - get
-      - create
-      - delete
-      - patch
-      - update
-  - apiGroups:
       - "rbac.authorization.k8s.io"
     resources:
       # The cluster operator needs to access and manage rolebindings to grant Strimzi components cluster permissions
       - rolebindings
     verbs:
       - get
+      - list
+      - watch
       - create
       - delete
       - patch
@@ -30,10 +21,15 @@ rules:
   - apiGroups:
       - ""
     resources:
+      # The cluster operator needs to access and delete pods, this is to allow it to monitor pod health and coordinate rolling updates
+      - pods
+      # The cluster operator needs to access and manage service accounts to grant Strimzi components cluster permissions
+      - serviceaccounts
       # The cluster operator needs to access and manage config maps for Strimzi components configuration
       - configmaps
-      # The cluster operator needs to access and manage services to expose Strimzi components to network traffic
+      # The cluster operator needs to access and manage services and endpoints to expose Strimzi components to network traffic
       - services
+      - endpoints
       # The cluster operator needs to access and manage secrets to handle credentials
       - secrets
       # The cluster operator needs to access and manage persistent volume claims to bind them to Strimzi components for persistent data
@@ -81,24 +77,6 @@ rules:
       - delete
       - patch
       - update
-  - apiGroups:
-      - ""
-    resources:
-      # The cluster operator needs to access and delete pods, this is to allow it to monitor pod health and coordinate rolling updates
-      - pods
-    verbs:
-      - get
-      - list
-      - watch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - endpoints
-    verbs:
-      - get
-      - list
-      - watch
   - apiGroups:
       # The cluster operator needs the extensions api as the operator supports Kubernetes version 1.11+
       # apps/v1 was introduced in Kubernetes 1.14
@@ -172,12 +150,12 @@ rules:
       - buildconfigs
       - builds
     verbs:
-      - create
-      - delete
       - get
       - list
-      - patch
       - watch
+      - create
+      - delete
+      - patch
       - update
   - apiGroups:
       # OpenShift S2I requirements
@@ -186,11 +164,11 @@ rules:
       - imagestreams
       - imagestreams/status
     verbs:
-      - create
-      - delete
       - get
       - list
       - watch
+      - create
+      - delete
       - patch
       - update
   - apiGroups:
@@ -215,6 +193,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       - create
       - delete
       - patch
