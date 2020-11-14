@@ -35,10 +35,12 @@ import org.junit.jupiter.api.Test;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderTest.IsEquivalent.isEquivalent;
 import static java.util.Arrays.asList;
@@ -908,6 +910,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withMaxSecondsWithoutReauthentication(3600)
                     .withJwksMinRefreshPauseSeconds(5)
                     .withEnablePlain(true)
+                    .withTokenEndpointUri("http://token")
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
@@ -932,7 +935,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.crypto.provider.bouncycastle=\"true\" oauth.username.claim=\"preferred_username\";",
                 "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
-                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.crypto.provider.bouncycastle=\"true\" oauth.username.claim=\"preferred_username\";",
+                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.crypto.provider.bouncycastle=\"true\" oauth.username.claim=\"preferred_username\" oauth.token.endpoint.uri=\"http://token\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER,PLAIN",
                 "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
     }
@@ -1078,6 +1081,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withValidTokenType("access_token")
                 .withDisableTlsHostnameVerification(true)
                 .withMaxSecondsWithoutReauthentication(3600)
+                .withEnablePlain(true)
+                .withTokenEndpointUri("http://token")
                 .build();
 
         List<String> expectedOptions = new ArrayList<>(5);
@@ -1099,6 +1104,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_TOKEN_TYPE, "access_token"));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
 
+        // enablePlain and tokenEndpointUri are handled separately from getOAuthOptions
         List<String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
 
         assertThat(actualOptions, is(equalTo(expectedOptions)));
@@ -1134,7 +1140,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             return expectedLines.containsAll(actualLines) && actualLines.containsAll(expectedLines);
         }
 
-        private String getLinesAsString(List<String> configLines)   {
+        private String getLinesAsString(Collection<String> configLines)   {
             StringWriter stringWriter = new StringWriter();
             PrintWriter writer = new PrintWriter(stringWriter);
 
@@ -1147,7 +1153,15 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         @Override
         public void describeTo(Description description) {
-            description.appendText(getLinesAsString(expectedLines));
+            description.appendText(getLinesAsString(new TreeSet(expectedLines)));
+        }
+
+        @Override
+        protected void describeMismatchSafely(String item, Description mismatchDescription) {
+            mismatchDescription.appendText(" was: \n")
+                    .appendText(getLinesAsString(new TreeSet(ModelUtils.getLinesWithoutCommentsAndEmptyLines(item))))
+                    .appendText("\n\nOriginal value: \n")
+                    .appendText(item);
         }
 
         public static Matcher<String> isEquivalent(String expectedConfig) {

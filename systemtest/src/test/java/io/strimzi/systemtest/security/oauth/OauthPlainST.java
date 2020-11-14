@@ -422,6 +422,8 @@ public class OauthPlainST extends OauthAbstractST {
                                 .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
                                 .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                .withEnablePlain(true)
+                                .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                             .endKafkaListenerAuthenticationOAuth()
                         .endGenericKafkaListener()
                     .endListeners()

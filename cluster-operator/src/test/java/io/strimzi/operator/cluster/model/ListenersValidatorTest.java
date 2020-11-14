@@ -728,4 +728,35 @@ public class ListenersValidatorTest {
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), empty());
     }
+
+    @Test
+    public void testValidateOauthPlain() {
+        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
+                .withEnableOauthBearer(false);
+
+        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withAuth(authBuilder.build());
+
+        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener);
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: At least one of 'enablePlain', 'enableOauthBearer' has to be set to true")));
+
+        // enable plain
+        authBuilder.withEnablePlain(true);
+        listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+        List<GenericKafkaListener> listeners2 = asList(listener);
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: When `enablePlain` is `true` the `tokenEndpointUri` has to be specified.")));
+    }
 }

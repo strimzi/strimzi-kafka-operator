@@ -282,6 +282,7 @@ public class KafkaBrokerConfigurationBuilder {
             }
 
             if (oauth.isEnablePlain()) {
+                addOption(options, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
                 writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
                 writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required %s;", listenerNameInProperty, String.join(" ", options)));
                 if (enabledMechanisms.length() > 0) {
@@ -364,9 +365,6 @@ public class KafkaBrokerConfigurationBuilder {
 
         if (oauth.isDisableTlsHostnameVerification()) {
             addOption(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
-        }
-        if (oauth.isEnablePlain()) {
-            addOption(options, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
         }
 
         return options;
