@@ -694,6 +694,12 @@ spec:
                           type: object
                           description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                       description: Metadata applied to the resource.
+                    deploymentStrategy:
+                      type: string
+                      enum:
+                        - RollingUpdate
+                        - Recreate
+                      description: DeploymentStrategy which will be used for this Deployment. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
                   description: Template for Kafka MirrorMaker `Deployment`.
                 pod:
                   type: object

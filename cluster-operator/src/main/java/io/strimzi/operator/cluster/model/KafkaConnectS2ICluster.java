@@ -106,13 +106,21 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .endImageChangeParams()
                 .build();
 
-        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
-                .withType("Rolling")
-                .withNewRollingParams()
+        DeploymentStrategy updateStrategy;
+
+        if (templateDeploymentStrategy == io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE) {
+            updateStrategy = new DeploymentStrategyBuilder()
+                    .withType("Rolling")
+                    .withNewRollingParams()
                     .withMaxSurge(new IntOrString(1))
                     .withMaxUnavailable(new IntOrString(0))
-                .endRollingParams()
-                .build();
+                    .endRollingParams()
+                    .build();
+        } else {
+            updateStrategy = new DeploymentStrategyBuilder()
+                    .withType("Recreate")
+                    .build();
+        }
 
         DeploymentConfig dc = new DeploymentConfigBuilder()
                 .withNewMetadata()

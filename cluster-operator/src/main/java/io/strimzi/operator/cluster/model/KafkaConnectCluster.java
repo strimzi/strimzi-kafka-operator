@@ -30,9 +30,6 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
-import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
@@ -235,11 +232,7 @@ public class KafkaConnectCluster extends AbstractModel {
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
 
-            if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
-                kafkaConnect.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                kafkaConnect.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-            }
-
+            ModelUtils.parseDeploymentTemplate(kafkaConnect, template.getDeployment());
             ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
 
             if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
@@ -467,16 +460,8 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
-                .withType("RollingUpdate")
-                .withRollingUpdate(new RollingUpdateDeploymentBuilder()
-                        .withMaxSurge(new IntOrString(1))
-                        .withMaxUnavailable(new IntOrString(0))
-                        .build())
-                .build();
-
         return createDeployment(
-                updateStrategy,
+                getDeploymentStrategy(),
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
