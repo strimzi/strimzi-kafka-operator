@@ -525,7 +525,7 @@
       "thresholds": "1,2",
       "timeFrom": null,
       "timeShift": null,
-      "title": "Partitions at mininimum ISR",
+      "title": "Partitions at minimum ISR",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -607,7 +607,7 @@
       "thresholds": "1,2",
       "timeFrom": null,
       "timeShift": null,
-      "title": "Partitions under mininimum ISR",
+      "title": "Partitions under minimum ISR",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
