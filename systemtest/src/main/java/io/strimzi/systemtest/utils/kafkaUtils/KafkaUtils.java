@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -15,6 +16,7 @@ import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -50,6 +52,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUtils.class);
+    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private KafkaUtils() {}
 
@@ -353,5 +356,22 @@ public class KafkaUtils {
             "-c",
             command
         ).out().trim();
+    }
+
+    public static void waitForKafkaDeletion(String kafkaClusterName) {
+        LOGGER.info("Waiting for deletion of Kafka:{}", kafkaClusterName);
+        TestUtils.waitFor("Kafka deletion " + kafkaClusterName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+            () -> {
+                if (KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get() == null &&
+                    kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                    return true;
+                } else {
+                    KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                    return false;
+                }
+            },
+            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get()));
     }
 }

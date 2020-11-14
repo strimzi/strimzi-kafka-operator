@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -90,6 +91,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -1436,6 +1439,64 @@ class SecurityST extends AbstractST {
 
         KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+    }
+
+    @Test
+    void testOwnerReferenceOfCASecrets() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editOrNewSpec()
+                .withNewClusterCa()
+                    .withGenerateSecretOwnerReference(false)
+                    .withRenewalDays(30)
+                    .withValidityDays(365)
+                .endClusterCa()
+                .withNewClientsCa()
+                    .withGenerateSecretOwnerReference(false)
+                    .withRenewalDays(30)
+                    .withValidityDays(365)
+                .endClientsCa()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Listing all cluster CAs for {}", CLUSTER_NAME);
+        List<Secret> caSecrets = kubeClient().listSecrets().stream()
+            .filter(secret -> secret.getMetadata().getName().contains("cluster-ca") || secret.getMetadata().getName().contains("clients-ca")).collect(Collectors.toList());
+
+        LOGGER.info("Deleting Kafka:{}", CLUSTER_NAME);
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(CLUSTER_NAME);
+
+        LOGGER.info("Checking actual secrets after Kafka deletion");
+        caSecrets.forEach(caSecret -> {
+            LOGGER.info("Checking that {} secret is still present", caSecret.getMetadata().getName());
+            assertNotNull(kubeClient().getSecret(caSecret.getMetadata().getName()));
+        });
+
+        LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editOrNewSpec()
+                .editOrNewClusterCa()
+                    .withGenerateSecretOwnerReference(true)
+                    .withRenewalDays(30)
+                    .withValidityDays(365)
+                .endClusterCa()
+                .editOrNewClientsCa()
+                    .withGenerateSecretOwnerReference(true)
+                    .withRenewalDays(30)
+                    .withValidityDays(365)
+                .endClientsCa()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Deleting Kafka:{}", CLUSTER_NAME);
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(CLUSTER_NAME);
+
+        LOGGER.info("Checking actual secrets after Kafka deletion");
+        caSecrets.forEach(caSecret -> {
+            LOGGER.info("Checking that {} secret is deleted", caSecret.getMetadata().getName());
+            assertNull(kubeClient().getSecret(caSecret.getMetadata().getName()));
+        });
     }
 
     @BeforeAll
