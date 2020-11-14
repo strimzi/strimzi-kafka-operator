@@ -143,7 +143,6 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     /**
-     /**
      * Asynchronously deletes the resource in the given {@code namespace} with the given {@code name},
      * returning a Future which completes once the resource
      * is observed to have been deleted.
@@ -157,6 +156,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      */
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
+
         Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
                 deleteTimeoutMs(),
             "observe deletion of " + resourceKind + " " + namespace + "/" + name,
@@ -168,7 +168,9 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
                     return null;
                 }
             });
+
         Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
+
         return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 

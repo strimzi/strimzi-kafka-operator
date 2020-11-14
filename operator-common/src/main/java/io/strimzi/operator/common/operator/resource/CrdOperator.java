@@ -18,6 +18,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.strimzi.operator.common.Util;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -66,6 +68,33 @@ public class CrdOperator<C extends KubernetesClient,
     @Override
     protected MixedOperation<T, L, D, Resource<T, D>> operation() {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), cls, listCls, doneableCls);
+    }
+
+    /**
+     * The selfClosingWatch does not work for Custom Resources. Therefore we override the method and delete custom
+     * resources without it.
+     *
+     * @param namespace Namespace of the resource which should be deleted
+     * @param name Name of the resource which should be deleted
+     * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
+     *
+     * @return A future which will be completed on the context thread
+     *         once the resource has been deleted.
+     */
+    @Override
+    protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
+        Resource<T, D> resourceOp = operation().inNamespace(namespace).withName(name);
+
+        Future<Void> watchForDeleteFuture = Util.waitFor(vertx,
+            String.format("%s resource %s", resourceKind, name),
+            "deleted",
+            1_000,
+            deleteTimeoutMs(),
+            () -> resourceOp.get() != null);
+
+        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
+
+        return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 
     public Future<T> patchAsync(T resource) {

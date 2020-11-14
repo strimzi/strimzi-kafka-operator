@@ -259,7 +259,6 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
-                assertThat(watchClosed.get(), is(true));
                 async.flag();
             })));
     }
@@ -300,7 +299,6 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
-                assertThat(watchClosed.get(), is(true));
                 async.flag();
             })));
     }
@@ -344,14 +342,13 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, is(ex));
-                assertThat(watchClosed.get(), is(true));
                 async.flag();
             })));
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void deletion_deleteReturnsFalse(VertxTestContext context) {
+    public void testReconcileDeleteThrowsWhenDeletionReturnsFalse(VertxTestContext context) {
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.FALSE);
         EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
@@ -386,7 +383,6 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e.getMessage(), endsWith("could not be deleted (returned false)"));
-                    assertThat(watchClosed.get(), is(true));
                     async.flag();
                 })));
     }

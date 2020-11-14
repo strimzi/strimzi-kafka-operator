@@ -29,7 +29,12 @@ public class NodeOperatorTest extends AbstractNonNamespacedResourceOperatorTest<
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, Node, NodeList,
             DoneableNode, Resource<Node, DoneableNode>> createResourceOperations(
                     Vertx vertx, KubernetesClient mockClient) {
-        return new NodeOperator(vertx, mockClient);
+        return new NodeOperator(vertx, mockClient) {
+            @Override
+            protected long deleteTimeoutMs() {
+                return 100;
+            }
+        };
     }
 
     @Override
