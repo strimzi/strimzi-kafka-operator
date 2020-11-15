@@ -316,14 +316,14 @@ class UserST extends AbstractST {
         LOGGER.info("Deleting KafkaUser:{}", tlsUserName);
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(tlsUserName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(tlsUserName);
-        SecretUtils.waitForSecretDeletion(tlsSecret.getMetadata().getName());
 
         LOGGER.info("Deleting KafkaUser:{}", scramShaUserName);
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(scramShaUserName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(scramShaUserName);
-        SecretUtils.waitForSecretDeletion(scramShaSecret.getMetadata().getName());
 
         LOGGER.info("Checking if secrets are deleted");
+        SecretUtils.waitForSecretDeletion(tlsSecret.getMetadata().getName());
+        SecretUtils.waitForSecretDeletion(scramShaSecret.getMetadata().getName());
         assertNull(kubeClient().getSecret(tlsSecret.getMetadata().getName()));
         assertNull(kubeClient().getSecret(scramShaSecret.getMetadata().getName()));
     }

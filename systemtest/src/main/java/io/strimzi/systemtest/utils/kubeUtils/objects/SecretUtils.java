@@ -51,10 +51,10 @@ public class SecretUtils {
     }
 
     public static void waitForSecretDeletion(String secretName, Runnable onTimeout) {
-        LOGGER.info("Waiting for Secret {}", secretName);
+        LOGGER.info("Waiting for Secret deletion {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-                () -> kubeClient().getSecret(secretName) == null,
-                onTimeout);
+            () -> kubeClient().getSecret(secretName) == null,
+            onTimeout);
         LOGGER.info("Secret {} deleted", secretName);
     }
 
