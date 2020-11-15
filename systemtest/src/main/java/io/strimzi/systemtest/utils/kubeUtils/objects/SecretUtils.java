@@ -46,6 +46,18 @@ public class SecretUtils {
         LOGGER.info("Secret {} created", secretName);
     }
 
+    public static void waitForSecretDeletion(String secretName) {
+        waitForSecretDeletion(secretName, () -> { });
+    }
+
+    public static void waitForSecretDeletion(String secretName, Runnable onTimeout) {
+        LOGGER.info("Waiting for Secret {}", secretName);
+        TestUtils.waitFor("Expected secret " + secretName + " deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+                () -> kubeClient().getSecret(secretName) == null,
+                onTimeout);
+        LOGGER.info("Secret {} deleted", secretName);
+    }
+
     public static void createSecret(String secretName, String dataKey, String dataValue) {
         LOGGER.info("Creating secret {}", secretName);
         kubeClient().createSecret(new SecretBuilder()

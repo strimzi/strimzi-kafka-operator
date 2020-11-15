@@ -20,6 +20,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -315,10 +316,12 @@ class UserST extends AbstractST {
         LOGGER.info("Deleting KafkaUser:{}", tlsUserName);
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(tlsUserName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(tlsUserName);
+        SecretUtils.waitForSecretDeletion(tlsSecret.getMetadata().getName());
 
         LOGGER.info("Deleting KafkaUser:{}", scramShaUserName);
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(scramShaUserName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(scramShaUserName);
+        SecretUtils.waitForSecretDeletion(scramShaSecret.getMetadata().getName());
 
         LOGGER.info("Checking if secrets are deleted");
         assertNull(kubeClient().getSecret(tlsSecret.getMetadata().getName()));
