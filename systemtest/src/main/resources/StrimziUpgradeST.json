@@ -331,21 +331,21 @@
     "fromVersion":"0.19.0",
     "toVersion":"HEAD",
     "fromExamples":"strimzi-0.19.0",
-    "toExamples":"strimzi-0.20.0",
+    "toExamples":"HEAD",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.20.0/strimzi-0.20.0.zip",
+    "urlTo":"HEAD",
     "generateTopics": true,
     "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.20.0-kafka-2.5.0",
-      "kafka": "strimzi/kafka:0.20.0-kafka-2.5.0",
-      "topicOperator": "strimzi/operator:0.20.0",
-      "userOperator": "strimzi/operator:0.20.0"
+      "zookeeper": "strimzi/kafka:latest-kafka-2.5.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.5.0",
+      "topicOperator": "strimzi/operator:latest",
+      "userOperator": "strimzi/operator:latest"
     },
     "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.20.0-kafka-2.6.0",
-      "kafka": "strimzi/kafka:0.20.0-kafka-2.6.0",
-      "topicOperator": "strimzi/operator:0.20.0",
-      "userOperator": "strimzi/operator:0.20.0"
+      "zookeeper": "strimzi/kafka:latest-kafka-2.6.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.6.0",
+      "topicOperator": "strimzi/operator:latest",
+      "userOperator": "strimzi/operator:latest"
     },
     "proceduresBefore": {
       "kafkaVersion": "",
@@ -357,7 +357,7 @@
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.19.0-kafka-2.5.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.20.0-kafka-2.6.0",
+      "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.6.0",
       "continuousClientsMessages": 500
     },
     "environmentInfo": {
