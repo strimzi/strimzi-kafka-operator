@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -17,9 +16,6 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
-import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -182,11 +178,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         if (spec.getTemplate() != null) {
             KafkaBridgeTemplate template = spec.getTemplate();
 
-            if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
-                kafkaBridgeCluster.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                kafkaBridgeCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-            }
-
+            ModelUtils.parseDeploymentTemplate(kafkaBridgeCluster, template.getDeployment());
             ModelUtils.parsePodTemplate(kafkaBridgeCluster, template.getPod());
 
             if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
@@ -308,16 +300,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     }
 
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
-                .withType("RollingUpdate")
-                .withRollingUpdate(new RollingUpdateDeploymentBuilder()
-                        .withMaxSurge(new IntOrString(1))
-                        .withMaxUnavailable(new IntOrString(0))
-                        .build())
-                .build();
-
         return createDeployment(
-                updateStrategy,
+                getDeploymentStrategy(),
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),

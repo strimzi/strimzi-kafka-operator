@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
@@ -234,7 +235,6 @@ public class ModelUtils {
      * @param model AbstractModel class where the values from the PodTemplate should be set
      * @param pod PodTemplate with the values form the CRD
      */
-
     public static void parsePodTemplate(AbstractModel model, PodTemplate pod)   {
         if (pod != null)  {
             if (pod.getMetadata() != null) {
@@ -256,6 +256,27 @@ public class ModelUtils {
             model.templatePodPriorityClassName = pod.getPriorityClassName();
             model.templatePodSchedulerName = pod.getSchedulerName();
             model.templatePodHostAliases = pod.getHostAliases();
+        }
+    }
+
+    /**
+     * Parses the values from the DeploymentTemplate in CRD model into the component model
+     *
+     * @param model AbstractModel class where the values from the DeploymentTemplate should be set
+     * @param template DeploymentTemplate with the values form the CRD
+     */
+    public static void parseDeploymentTemplate(AbstractModel model, DeploymentTemplate template)   {
+        if (template != null) {
+            if (template.getMetadata() != null) {
+                model.templateDeploymentLabels = template.getMetadata().getLabels();
+                model.templateDeploymentAnnotations = template.getMetadata().getAnnotations();
+            }
+
+            if (template.getDeploymentStrategy() != null)   {
+                model.templateDeploymentStrategy = template.getDeploymentStrategy();
+            } else {
+                model.templateDeploymentStrategy = io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
+            }
         }
     }
 

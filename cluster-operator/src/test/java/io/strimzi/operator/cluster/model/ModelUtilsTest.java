@@ -17,10 +17,15 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.template.DeploymentTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -196,6 +201,48 @@ public class ModelUtilsTest {
         assertThat(model.templateImagePullSecrets, is(nullValue()));
         assertThat(model.templateSecurityContext, is(nullValue()));
         assertThat(model.templateTerminationGracePeriodSeconds, is(30));
+    }
+
+    @Test
+    public void testParseDeploymentTemplate()  {
+        KafkaConnect connect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                .withName("my-connect-cluster")
+                .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        DeploymentTemplate template = new DeploymentTemplateBuilder()
+                .withNewMetadata()
+                    .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
+                    .withLabels(Collections.singletonMap("labelKey", "labelValue"))
+                .endMetadata()
+                .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                .build();
+
+        Model model = new Model(connect);
+
+        ModelUtils.parseDeploymentTemplate(model, template);
+        assertThat(model.templateDeploymentLabels, is(Collections.singletonMap("labelKey", "labelValue")));
+        assertThat(model.templateDeploymentAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
+        assertThat(model.templateDeploymentStrategy, is(DeploymentStrategy.RECREATE));
+    }
+
+    @Test
+    public void testParseNullDeploymentTemplate()  {
+        KafkaConnect connect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withName("my-connect-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        Model model = new Model(connect);
+
+        ModelUtils.parseDeploymentTemplate(model, null);
+        assertThat(model.templateDeploymentAnnotations, is(nullValue()));
+        assertThat(model.templateDeploymentLabels, is(nullValue()));
+        assertThat(model.templateDeploymentStrategy, is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
     private class Model extends AbstractModel   {

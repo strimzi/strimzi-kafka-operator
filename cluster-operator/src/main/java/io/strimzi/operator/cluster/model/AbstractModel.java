@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.HostAlias;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -39,6 +40,8 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
+import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
+import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
@@ -82,7 +85,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
@@ -234,6 +236,7 @@ public abstract class AbstractModel {
     protected Map<String, String> templateStatefulSetAnnotations;
     protected Map<String, String> templateDeploymentLabels;
     protected Map<String, String> templateDeploymentAnnotations;
+    protected io.strimzi.api.kafka.model.template.DeploymentStrategy templateDeploymentStrategy = io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
     protected Map<String, String> templatePodLabels;
     protected Map<String, String> templatePodAnnotations;
     protected Map<String, String> templateServiceLabels;
@@ -1364,5 +1367,21 @@ public abstract class AbstractModel {
      */
     public List<Condition> getWarningConditions() {
         return warningConditions;
+    }
+
+    public DeploymentStrategy getDeploymentStrategy()   {
+        if (templateDeploymentStrategy == io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE) {
+            return new DeploymentStrategyBuilder()
+                    .withType("RollingUpdate")
+                    .withRollingUpdate(new RollingUpdateDeploymentBuilder()
+                            .withMaxSurge(new IntOrString(1))
+                            .withMaxUnavailable(new IntOrString(0))
+                            .build())
+                    .build();
+        } else {
+            return new DeploymentStrategyBuilder()
+                    .withType("Recreate")
+                    .build();
+        }
     }
 }

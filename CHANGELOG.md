@@ -9,6 +9,7 @@
 * Updated the CPU usage metric in the Kafka, ZooKeeper and Cruise Control dashboards to include the CPU kernel time (other than the current user time)
 * Allow disabling ownerReference on CA secrets
 * Move from Docker Hub to Quay.io as our container registry
+* Add possibility to configure DeploymentStrategy for Kafka Connect, Kafka Mirror Maker (1 and 2), and Kafka Bridge
 
 ## 0.20.0
 

@@ -30,7 +30,7 @@ import java.util.Map;
 public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate deployment;
+    private DeploymentTemplate deployment;
     private PodTemplate pod;
     private ResourceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
@@ -39,11 +39,11 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
 
     @Description("Template for Kafka Bridge `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getDeployment() {
+    public DeploymentTemplate getDeployment() {
         return deployment;
     }
 
-    public void setDeployment(ResourceTemplate deployment) {
+    public void setDeployment(DeploymentTemplate deployment) {
         this.deployment = deployment;
     }
 

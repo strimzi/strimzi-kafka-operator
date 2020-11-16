@@ -30,7 +30,7 @@ import java.util.Map;
 public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate deployment;
+    private DeploymentTemplate deployment;
     private PodTemplate pod;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate mirrorMakerContainer;
@@ -38,11 +38,11 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
 
     @Description("Template for Kafka MirrorMaker `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getDeployment() {
+    public DeploymentTemplate getDeployment() {
         return deployment;
     }
 
-    public void setDeployment(ResourceTemplate deployment) {
+    public void setDeployment(DeploymentTemplate deployment) {
         this.deployment = deployment;
     }
 

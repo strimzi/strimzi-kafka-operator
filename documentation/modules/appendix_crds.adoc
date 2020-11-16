@@ -1176,7 +1176,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
+Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 
 include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[leveloffset=+1]
 
@@ -1240,7 +1240,7 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -2103,7 +2103,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |====
 |Property                    |Description
 |deployment           1.2+<.<|Template for Kafka Connect `Deployment`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |pod                  1.2+<.<|Template for Kafka Connect `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<|Template for Kafka Connect API `Service`.
@@ -2114,6 +2114,21 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |podDisruptionBudget  1.2+<.<|Template for Kafka Connect `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|====
+
+[id='type-DeploymentTemplate-{context}']
+### `DeploymentTemplate` schema reference
+
+Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|metadata            1.2+<.<|Metadata applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|deploymentStrategy  1.2+<.<|DeploymentStrategy which will be used for this Deployment. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
+|string (one of [RollingUpdate, Recreate])
 |====
 
 [id='type-ExternalConfiguration-{context}']
@@ -2769,7 +2784,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |====
 |Property                     |Description
 |deployment            1.2+<.<|Template for Kafka MirrorMaker `Deployment`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |pod                   1.2+<.<|Template for Kafka MirrorMaker `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |mirrorMakerContainer  1.2+<.<|Template for Kafka MirrorMaker container.
@@ -2954,7 +2969,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |====
 |Property                    |Description
 |deployment           1.2+<.<|Template for Kafka Bridge `Deployment`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |pod                  1.2+<.<|Template for Kafka Bridge `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<|Template for Kafka Bridge API `Service`.
