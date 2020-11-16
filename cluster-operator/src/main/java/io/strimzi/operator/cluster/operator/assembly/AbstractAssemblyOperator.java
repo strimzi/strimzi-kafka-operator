@@ -45,9 +45,8 @@ import java.util.List;
  * can proceed at once.</p>
  */
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends CustomResource & HasSpecAndStatus<P, S>,
-        L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>, P extends Spec, S extends Status>
+        L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>, P extends Spec, S extends Status>
     extends AbstractOperator<T, P, S, AbstractWatchableStatusedResourceOperator<C, T, L, D, R>> {
-
     protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;

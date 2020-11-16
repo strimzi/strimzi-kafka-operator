@@ -24,7 +24,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, StorageClass, StorageClassList, DoneableStorageClass, Resource<StorageClass, DoneableStorageClass>> operator() {
-        return new StorageClassOperator(vertx, client, 10_000);
+        return new StorageClassOperator(vertx, client);
     }
 
     @Override

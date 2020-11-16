@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
  */
 public abstract class AbstractScalableResourceOperator<C extends KubernetesClient,
             T extends HasMetadata,
-            L extends KubernetesResourceList/*<T>*/,
+            L extends KubernetesResourceList<T>,
             D extends Doneable<T>,
             R extends ScalableResource<T, D>>
         extends AbstractReadyResourceOperator<C, T, L, D, R> {

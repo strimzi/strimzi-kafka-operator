@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList, D extends Doneable<T>, R extends Resource<T, D>> extends AbstractResourceOperatorTest<C, T, L, D, R> {
+        L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>> extends AbstractResourceOperatorTest<C, T, L, D, R> {
 
     @Override
     protected abstract AbstractReadyResourceOperator<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);

@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -37,9 +38,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public abstract class AbstractNonNamespacedResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList, D, R extends Resource<T, D>> {
-
+public abstract class AbstractNonNamespacedResourceOperatorTest<C extends KubernetesClient,
+        T extends HasMetadata,
+        L extends KubernetesResourceList<T>,
+        D extends Doneable<T>,
+        R extends Resource<T, D>> {
     public static final String RESOURCE_NAME = "my-resource";
     protected static Vertx vertx;
 

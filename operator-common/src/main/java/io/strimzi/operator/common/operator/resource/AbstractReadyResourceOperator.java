@@ -24,7 +24,7 @@ import io.vertx.core.Vertx;
  */
 public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
             T extends HasMetadata,
-            L extends KubernetesResourceList/*<T>*/,
+            L extends KubernetesResourceList<T>,
             D extends Doneable<T>,
             R extends Resource<T, D>>
         extends AbstractResourceOperator<C, T, L, D, R> {

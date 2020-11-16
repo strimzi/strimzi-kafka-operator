@@ -17,12 +17,13 @@ rules:
     # has specified they want their cluster role bindings generated
   - clusterrolebindings
   verbs:
-    - get
-    - create
-    - delete
-    - patch
-    - update
-    - watch
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
 - apiGroups:
   - storage.k8s.io
   resources:

@@ -5,9 +5,12 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -20,7 +23,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,7 +39,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList, D, R extends Resource<T, D>> {
+        L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>> {
 
     public static final String RESOURCE_NAME = "my-resource";
     public static final String NAMESPACE = "test";
@@ -221,13 +226,23 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     @Test
     public void testReconcileDeleteWhenResourceExistsStillDeletes(VertxTestContext context) {
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
+        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
         EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
+        when(mockDeletableGrace.delete()).thenReturn(Boolean.TRUE);
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
         when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        AtomicBoolean watchClosed = new AtomicBoolean(false);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, resource);
+            return (Watch) () -> {
+                watchClosed.set(true);
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -251,13 +266,23 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     @Test
     public void testReconcileDeletionSuccessfullyDeletes(VertxTestContext context) {
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
+        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
         EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
+        when(mockDeletableGrace.delete()).thenReturn(Boolean.TRUE);
 
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
         when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        AtomicBoolean watchClosed = new AtomicBoolean(false);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, resource);
+            return (Watch) () -> {
+                watchClosed.set(true);
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -293,6 +318,14 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         when(mockResource.get()).thenReturn(resource);
         when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        AtomicBoolean watchClosed = new AtomicBoolean(false);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, resource);
+            return (Watch) () -> {
+                watchClosed.set(true);
+            };
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -311,5 +344,46 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
                 assertThat(e, is(ex));
                 async.flag();
             })));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testReconcileDeleteThrowsWhenDeletionReturnsFalse(VertxTestContext context) {
+        EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
+        when(mockDeletable.delete()).thenReturn(Boolean.FALSE);
+        EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
+        when(mockDeletableGrace.delete()).thenReturn(Boolean.FALSE);
+
+        T resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
+        when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        AtomicBoolean watchClosed = new AtomicBoolean(false);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            Watcher watcher = invocation.getArgument(0);
+            watcher.eventReceived(Watcher.Action.DELETED, resource);
+            return (Watch) () -> {
+                watchClosed.set(true);
+            };
+        });
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertThat(e.getMessage(), endsWith("could not be deleted (returned false)"));
+                    async.flag();
+                })));
     }
 }
