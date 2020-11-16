@@ -40,6 +40,7 @@ public class CertificateAuthority implements UnknownPropertyPreserving, Serializ
 
     @Description("The number of days generated certificates should be valid for. The default is 365.")
     @Minimum(1)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getValidityDays() {
         return validityDays;
     }
@@ -76,6 +77,7 @@ public class CertificateAuthority implements UnknownPropertyPreserving, Serializ
             "When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. " +
             "Default is 30.")
     @Minimum(1)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getRenewalDays() {
         return renewalDays;
     }
