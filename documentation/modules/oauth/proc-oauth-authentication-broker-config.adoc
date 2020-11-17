@@ -121,18 +121,18 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
     fallbackUserNamePrefix: client-account- <3>
     validTokenType: bearer <4>
     userInfoEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/userinfo__ <5>
-    enablePlain: true <6>
-    tokenEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/token__ <7>
-    enableOAuthBearer: false <8>
+    enableOAuthBearer: false <6>
+    enablePlain: true <7>
+    tokenEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/token__ <8>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> An authorization server may not provide a single attribute to identify both regular users and clients. When a client authenticates in its own name, the server might provide a _client ID_. When a user authenticates using a username and password, to obtain a refresh token or an access token, the server might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available.
 <3> In situations where `fallbackUserNameClaim` is applicable, it may also be necessary to prevent name collisions between the values of the username claim, and those of the fallback username claim. Consider a situation where a client called `producer` exists, but also a regular user called `producer` exists. In order to differentiate between the two, you can use this property to add a prefix to the user ID of the client.
 <4> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the introspection endpoint may or may not return the _token type_ attribute, or it may contain different values. You can specify a valid token type value that the response from the introspection endpoint has to contain.
 <5> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an Introspection Endpoint response. In order to obtain the user ID, you can configure the URI of the `userinfo` endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of `userinfo` endpoint.
-<6> Set this to `true` in order to enable the SASL_PLAIN mechanism on the listener, which is supported by all clients on all platforms. The Kafka client has to enable the SASL_PLAIN mechanism and set the `username` and the `password`. This mechanism can be used to authenticate either by using the OAuth access token, or by using the OAuth clientId and secret (client credentials). If the client sets `username` to `access-token` then the password is interpreted as access token on the server, otherwise the user is interpreted as the clientId, and password as the client secret. Default is `false`.
-<7> This has to be set to support the client credentials authentication when `enablePlain` is set to true, as described in previous point.
-<8> Set this to `false` in order to disable the SASL_OAUTHBEARER mechanism on the listener. At least one of SASL_PLAIN or SASL_OAUTHBEARER has to be enabled. Default is `true`.
+<6> Set this to `false` in order to disable the SASL_OAUTHBEARER mechanism on the listener. At least one of SASL_PLAIN or SASL_OAUTHBEARER has to be enabled. Default is `true`.
+<7> Set this to `true` in order to enable the SASL_PLAIN mechanism on the listener, which is supported by all clients on all platforms. The Kafka client has to enable the SASL_PLAIN mechanism and set the `username` and the `password`. This mechanism can be used to authenticate either by using the OAuth access token, or by using the OAuth clientId and secret (client credentials). If the client sets `username` to `access-token` then the password is interpreted as access token on the server, otherwise the user is interpreted as the clientId, and password as the client secret. Default is `false`.
+<8> This has to be set to support the client credentials authentication when `enablePlain` is set to true, as described in previous point.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 
