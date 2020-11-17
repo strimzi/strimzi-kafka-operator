@@ -121,7 +121,7 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
     fallbackUserNamePrefix: client-account- <3>
     validTokenType: bearer <4>
     userInfoEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/userinfo__ <5>
-    enableOAuthBearer: false <6>
+    enableOauthBearer: false <6>
     enablePlain: true <7>
     tokenEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/token__ <8>
 ----
