@@ -27,10 +27,6 @@ spec:
       description: The name of the Kafka cluster this resource rebalances
       JSONPath: .metadata.labels.strimzi\.io/cluster
       type: string
-    - name: Ready
-      description: The state of the custom resource
-      JSONPath: .status.conditions[?(@.type=="Ready")].status
-      type: string
   subresources:
     status: {}
   conversion:
