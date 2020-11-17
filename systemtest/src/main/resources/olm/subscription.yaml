@@ -11,7 +11,7 @@ spec:
   sourceNamespace: ${OLM_SOURCE_NAMESPACE}
   startingCSV: ${OLM_APP_BUNDLE_PREFIX}.${OLM_OPERATOR_VERSION}
   channel: stable
-  installPlanApproval: Automatic
+  installPlanApproval: ${OLM_INSTALL_PLAN_APPROVAL}
   config:
     env:
       - name: STRIMZI_LOG_LEVEL
