@@ -28,6 +28,10 @@ spec:
       JSONPath: .spec.bootstrapServers
       type: string
       priority: 1
+    - name: Ready
+      description: The state of the custom resource
+      JSONPath: .status.conditions[?(@.type=="Ready")].status
+      type: string
   subresources:
     status: {}
     scale:

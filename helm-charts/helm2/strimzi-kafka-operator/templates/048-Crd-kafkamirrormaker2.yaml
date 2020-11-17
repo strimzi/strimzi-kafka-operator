@@ -27,6 +27,10 @@ spec:
       description: The desired number of Kafka MirrorMaker 2.0 replicas
       JSONPath: .spec.replicas
       type: integer
+    - name: Ready
+      description: The state of the custom resource
+      JSONPath: .status.conditions[?(@.type=="Ready")].status
+      type: string
   subresources:
     status: {}
     scale:

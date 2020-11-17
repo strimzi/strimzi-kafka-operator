@@ -60,6 +60,18 @@ import static java.util.Collections.unmodifiableList;
                                 description = "The desired number of ZooKeeper replicas in the cluster",
                                 jsonPath = ".spec.zookeeper.replicas",
                                 type = "integer"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Ready",
+                                description = "The state of the custom resource",
+                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Warnings",
+                                description = "Warnings related to the custom resource",
+                                jsonPath = ".status.conditions[?(@.type==\"Warning\")].status",
+                                type = "string"
                         )
                 }
         )

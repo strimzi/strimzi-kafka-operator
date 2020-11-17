@@ -74,6 +74,12 @@ import static java.util.Collections.unmodifiableList;
                                 description = "The desired number of replicas of each partition",
                                 jsonPath = ".spec.replicas",
                                 type = "integer"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Ready",
+                                description = "The state of the custom resource",
+                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                                type = "string"
                         )
                 }
         )

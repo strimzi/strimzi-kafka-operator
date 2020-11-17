@@ -31,6 +31,10 @@ spec:
       description: The desired number of replicas of each partition
       JSONPath: .spec.replicas
       type: integer
+    - name: Ready
+      description: The state of the custom resource
+      JSONPath: .status.conditions[?(@.type=="Ready")].status
+      type: string
   subresources:
     status: {}
   conversion:
