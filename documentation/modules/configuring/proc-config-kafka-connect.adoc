@@ -106,17 +106,17 @@ spec:
     initialDelaySeconds: 15
     timeoutSeconds: 5
   metrics: <12>
-      lowercaseOutputName: true
-      lowercaseOutputLabelNames: true
-      rules:
-        - pattern: kafka.connect<type=connect-worker-metrics><>([a-z-]+)
-          name: kafka_connect_worker_$1
-          help: "Kafka Connect JMX metric worker"
-          type: GAUGE
-        - pattern: kafka.connect<type=connect-worker-rebalance-metrics><>([a-z-]+)
-          name: kafka_connect_worker_rebalance_$1
-          help: "Kafka Connect JMX metric rebalance information"
-          type: GAUGE
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    rules:
+      - pattern: kafka.connect<type=connect-worker-metrics><>([a-z-]+)
+        name: kafka_connect_worker_$1
+        help: "Kafka Connect JMX metric worker"
+        type: GAUGE
+      - pattern: kafka.connect<type=connect-worker-rebalance-metrics><>([a-z-]+)
+        name: kafka_connect_worker_rebalance_$1
+        help: "Kafka Connect JMX metric rebalance information"
+        type: GAUGE
   jvmOptions: <13>
     "-Xmx": "1g"
     "-Xms": "1g"
