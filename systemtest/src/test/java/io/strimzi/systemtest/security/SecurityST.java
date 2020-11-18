@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -90,6 +91,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -1436,6 +1439,68 @@ class SecurityST extends AbstractST {
 
         KafkaConnectResource.deleteKafkaConnectWithoutWait(CLUSTER_NAME);
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(CLUSTER_NAME));
+    }
+
+    @Test
+    void testOwnerReferenceOfCASecrets() {
+        /* Different name for Kafka cluster to make the test quicker -> KafkaRoller is waiting for pods of "my-cluster" to become ready
+         for 5 minutes -> this will prevent the waiting. */
+        String secondClusterName = "my-second-cluster";
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+            .editOrNewSpec()
+                .withNewClusterCa()
+                    .withGenerateSecretOwnerReference(false)
+                .endClusterCa()
+                .withNewClientsCa()
+                    .withGenerateSecretOwnerReference(false)
+                .endClientsCa()
+            .endSpec()
+            .done();
+
+        LOGGER.info("Listing all cluster CAs for {}", CLUSTER_NAME);
+        List<Secret> caSecrets = kubeClient().listSecrets().stream()
+            .filter(secret -> secret.getMetadata().getName().contains(CLUSTER_NAME + "-cluster-ca") || secret.getMetadata().getName().contains(CLUSTER_NAME + "-clients-ca")).collect(Collectors.toList());
+
+        LOGGER.info("Deleting Kafka:{}", CLUSTER_NAME);
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(CLUSTER_NAME);
+
+        LOGGER.info("Checking actual secrets after Kafka deletion");
+        caSecrets.forEach(caSecret -> {
+            String secretName = caSecret.getMetadata().getName();
+            LOGGER.info("Checking that {} secret is still present", secretName);
+            assertNotNull(kubeClient().getSecret(secretName));
+
+            LOGGER.info("Deleting secret: {}", secretName);
+            kubeClient().deleteSecret(secretName);
+        });
+
+        LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
+        KafkaResource.kafkaEphemeral(secondClusterName, 3)
+            .editOrNewSpec()
+                .editOrNewClusterCa()
+                    .withGenerateSecretOwnerReference(true)
+                .endClusterCa()
+                .editOrNewClientsCa()
+                    .withGenerateSecretOwnerReference(true)
+                .endClientsCa()
+            .endSpec()
+            .done();
+
+        caSecrets = kubeClient().listSecrets().stream()
+            .filter(secret -> secret.getMetadata().getName().contains(secondClusterName + "-cluster-ca") || secret.getMetadata().getName().contains(secondClusterName + "-clients-ca")).collect(Collectors.toList());
+
+        LOGGER.info("Deleting Kafka:{}", secondClusterName);
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(secondClusterName);
+
+        LOGGER.info("Checking actual secrets after Kafka deletion");
+        caSecrets.forEach(caSecret -> {
+            String secretName = caSecret.getMetadata().getName();
+            LOGGER.info("Checking that {} secret is deleted", secretName);
+            assertNull(kubeClient().getSecret(secretName));
+        });
     }
 
     @BeforeAll

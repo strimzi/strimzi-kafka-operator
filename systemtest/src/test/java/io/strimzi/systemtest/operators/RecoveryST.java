@@ -7,6 +7,7 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
@@ -262,7 +263,7 @@ class RecoveryST extends AbstractST {
             .withRequests(requests)
             .build();
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 3, 3)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withResources(resourceReq)
@@ -278,14 +279,13 @@ class RecoveryST extends AbstractST {
         requests.put("memory", new Quantity("512Mi"));
         resourceReq.setRequests(requests);
 
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
-            kafka.getSpec().getKafka().setResources(resourceReq);
-        });
+        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, 3);
         KafkaUtils.waitForKafkaReady(clusterName);
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).delete(kafka);
     }
 
     @BeforeEach
