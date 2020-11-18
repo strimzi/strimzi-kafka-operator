@@ -368,7 +368,7 @@ public class KafkaUtils {
                     kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {
-                    KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                    cmdKubeClient().deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
                     return false;
                 }
             },
