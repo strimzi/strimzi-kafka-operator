@@ -12,6 +12,7 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A Java client for the Kafka Connect REST API.
@@ -38,7 +39,7 @@ public interface KafkaConnectApi {
      */
     Future<Map<String, String>> getConnectorConfig(String host, int port, String connectorName);
 
-    public Future<Map<String, String>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName);
+    Future<Map<String, String>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}}.
@@ -68,6 +69,17 @@ public interface KafkaConnectApi {
      * this returns the connector's status.
      */
     Future<Map<String, Object>> status(String host, int port, String connectorName);
+
+    /**
+     * Make a {@code GET} request to {@code /connectors/${connectorName}/status}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector to get the status of.
+     * @param okStatusCodes List of HTTP codes considered as success
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns the connector's status.
+     */
+    Future<Map<String, Object>> status(String host, int port, String connectorName, Set<Integer> okStatusCodes);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/status}, retrying according to {@code backoff}.

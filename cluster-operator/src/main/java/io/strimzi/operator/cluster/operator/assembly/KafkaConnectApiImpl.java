@@ -125,7 +125,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 TREE_TYPE);
     }
 
-    @SuppressWarnings("unchecked")
     private <T> Future<T> doGet(String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
         log.debug("Making GET request to {}", path);
         return withHttpClient((httpClient, result) ->
@@ -178,7 +177,16 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             httpClient.delete(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 204) {
-                    result.complete();
+                    log.debug("Connector was deleted. Waiting for status deletion!");
+                    withBackoff(new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
+                        () -> status(host, port, connectorName, Collections.singleton(404)), "status")
+                        .onComplete(res -> {
+                            if (res.succeeded()) {
+                                result.complete();
+                            } else {
+                                result.fail(res.cause());
+                            }
+                        });
                 } else {
                     // TODO Handle 409 (Conflict) indicating a rebalance in progress
                     response.bodyHandler(buffer -> {
@@ -255,8 +263,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @Override
     public Future<Map<String, Object>> status(String host, int port, String connectorName) {
+        return status(host, port, connectorName, Collections.singleton(200));
+    }
+
+    @Override
+    public Future<Map<String, Object>> status(String host, int port, String connectorName, Set<Integer> okStatusCodes) {
         String path = "/connectors/" + connectorName + "/status";
-        return doGet(host, port, path, Collections.singleton(200), TREE_TYPE);
+        return doGet(host, port, path, okStatusCodes, TREE_TYPE);
     }
 
     @Override
