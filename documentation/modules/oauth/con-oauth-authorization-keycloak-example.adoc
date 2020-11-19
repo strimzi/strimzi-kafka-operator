@@ -5,8 +5,6 @@
 [id='con-oauth-authorization-keycloak-example_{context}']
 = Keycloak Authorization Services Example
 
-NOTE: TODO: Rename cluster2 to my-cluster, fix the realm file
-
 ## Token Based Authorization with Keycloak Authorization Services
 
 Once the Kafka Broker has obtained an access token by using Strimzi Kafka OAuth for authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
@@ -110,7 +108,7 @@ If `kafka-cluster:XXX` segment is not present, the specifier targets any cluster
 
 - `Group:x_*` ... targets all consumer groups on any cluster with names starting with 'x_'
 
-The possible resource types mirror the xref:con-oauth-authorization-keycloak-authorization-services_str#kafka_authorization_model[Kafka authorization model] (`Topic`, `Group`, `Cluster`, ...).
+The possible resource types mirror the xref:kafka_authorization_model[Kafka authorization model] (`Topic`, `Group`, `Cluster`, ...).
 
 Under `Authorization Scopes` we can see a list of all the possible actions (Kafka permissions) that can be granted on resources of different types.
 It requires some understanding of link:https://kafka.apache.org/documentation/#resources_in_kafka[Kafka's permissions model] to know which of these make sense with which resource type.
@@ -343,33 +341,28 @@ We now need a power user that can create a topic with all the proper settings - 
 
 Let's create a configuration for user `bob` who has full ability to manage everything on Kafka cluster `my-cluster`.
 
-First, `bob` will authenticate to Keycloak server with his username and password and get a refresh token.
+We'll need some helper scripts so we can authenticate to the `keycloak` instance.
 
-NOTE: TODO: oauth.sh script is not part of the image we're using. Refer to alternative image or provide instructions for how to copy the script into the container manually, or how to run it outside the container.
+Download the following `oauth.sh` and `jwt.sh` tools to `/tmp` dir and make them executable:
 
-```
-export TOKEN_ENDPOINT=http://keycloak:8080/auth/realms/kafka-authz/protocol/openid-connect/token
-REFRESH_TOKEN=$(./oauth.sh -q bob)
-```
+   curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
+   chmod +x /tmp/oauth.sh
+
+   curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
+   chmod +x /tmp/jwt.sh
+
+Now, `bob` will authenticate to Keycloak server with his username and password and get a refresh token.
+
+   export TOKEN_ENDPOINT=http://keycloak:8080/auth/realms/kafka-authz/protocol/openid-connect/token
+   REFRESH_TOKEN=$(/tmp/oauth.sh -q bob)
 
 This will prompt you for a password. Type 'bob-password'.
 
 We can inspect the refresh token:
 
-    ./jwt.sh $REFRESH_TOKEN
+   /tmp/jwt.sh $REFRESH_TOKEN
 
 By default this is a long-lived refresh token that does not expire.
-
-Are `oauth.sh` or `jwt.sh` scripts missing in your image?
-
-You can download them:
-
-    curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
-    chmod +x /tmp/oauth.sh
-
-    curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
-    chmod +x /tmp/jwt.sh
-
 
 Now we will create the configuration file for `bob`:
 
