@@ -58,21 +58,7 @@ public class KafkaImpl implements Kafka {
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 singleton(topicName.toString())).values().get(topicName.toString());
         mapFuture(future).compose(ig ->
-                Util.waitFor(vertx, "deleted sync " + topicName, "deleted", 1000, 120_000, () -> {
-                    try {
-                        return adminClient.describeTopics(singleton(topicName.toString())).all().get().get(topicName.toString()) == null;
-                    } catch (ExecutionException e) {
-                        if (e.getCause() instanceof UnknownTopicOrPartitionException) {
-                            return true;
-                        } else if (e.getCause() instanceof RuntimeException) {
-                            throw (RuntimeException) e.getCause();
-                        } else {
-                            throw new RuntimeException(e);
-                        }
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }, error -> true)
+                awaitNotExists(topicName)
         ).onComplete(ar -> {
             // Complete the result future on the context thread.
             vertx.runOnContext(ignored -> {
@@ -80,6 +66,24 @@ public class KafkaImpl implements Kafka {
             });
         });
         return handler.future();
+    }
+
+    public Future<Void> awaitNotExists(TopicName topicName) {
+        return Util.waitFor(vertx, "deleted sync " + topicName, "deleted", 1000, 300_000, () -> {
+            try {
+                return adminClient.describeTopics(singleton(topicName.toString())).all().get().get(topicName.toString()) == null;
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                    return true;
+                } else if (e.getCause() instanceof RuntimeException) {
+                    throw (RuntimeException) e.getCause();
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }, error -> true);
     }
 
     @SuppressWarnings("deprecation")

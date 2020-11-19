@@ -771,13 +771,17 @@ class TopicOperator {
 
     /** Called when a topic znode is deleted in ZK */
     Future<Void> onTopicDeleted(LogContext logContext, TopicName topicName) {
-        return executeWithTopicLockHeld(logContext, topicName,
-            new Reconciliation("onTopicDeleted", true) {
-                @Override
-                public Future<Void> execute() {
-                    return reconcileOnTopicChange(logContext, topicName, null, this);
-                }
-            });
+        return kafka.awaitNotExists(topicName).compose(
+            ignored ->
+                executeWithTopicLockHeld(logContext, topicName,
+                    new Reconciliation("onTopicDeleted", true) {
+                        @Override
+                        public Future<Void> execute() {
+                            return reconcileOnTopicChange(logContext, topicName, null, this);
+                        }
+                    }),
+            error ->
+                Future.failedFuture("Ignored spurious-seeming topic deletion"));
     }
 
     private Map<String, Long> statusUpdateGeneration = new HashMap<>();

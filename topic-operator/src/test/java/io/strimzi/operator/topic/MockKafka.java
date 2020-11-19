@@ -153,6 +153,11 @@ public class MockKafka implements Kafka {
         return event;
     }
 
+    @Override
+    public Future<Void> awaitNotExists(TopicName topicName) {
+        return Future.succeededFuture();
+    }
+
     public MockKafka setUpdateTopicResponse(Function<TopicName, Future<Void>> updateTopicResponse) {
         this.updateTopicResponse = updateTopicResponse;
         return this;
