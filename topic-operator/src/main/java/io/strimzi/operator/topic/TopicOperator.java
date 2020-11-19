@@ -96,7 +96,7 @@ class TopicOperator {
         @Override
         public void handle(Void v) {
             EventBuilder evtb = new EventBuilder();
-            final String eventTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd'T'HH:mm:ss'Z'"));
+            final String eventTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
             
             if (involvedObject != null) {
                 evtb.withNewInvolvedObject()

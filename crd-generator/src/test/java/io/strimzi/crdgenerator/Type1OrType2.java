@@ -31,13 +31,13 @@ public class Type1OrType2 {
     private Type2 type2Value;
 
     public Type1OrType2(Type1 type1Value)   {
-        type1Value = type1Value;
+        this.type1Value = type1Value;
         type2Value = null;
     }
 
     public Type1OrType2(Type2 type2Value)   {
         type1Value = null;
-        type2Value = type2Value;
+        this.type2Value = type2Value;
     }
 
     @Alternative

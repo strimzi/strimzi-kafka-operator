@@ -293,6 +293,6 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     }
 
     public void setTypedAlternatives(Type1OrType2 alternatives) {
-        this.typedAlternatives = typedAlternatives;
+        this.typedAlternatives = alternatives;
     }
 }
