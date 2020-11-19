@@ -74,9 +74,8 @@ This client needs to have `Authorization Enabled` option activated.
 
 All the permissions exist within the scope of this OAuth client, which means that if you have different Kafka clusters configured with different OAuth client ids they would each have a separate set of permissions even though they are part of the same realm.
 
-When the Kafka client authenticates using `SASL_OAUTHEARER` or `SASL_PLAIN` configured as 'OAuth over PLAIN' the `KeycloakRBACAuthorizer` retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
+When the Kafka client authenticates using `SASL_OAUTHBEARER` the `KeycloakRBACAuthorizer` retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
 This list of grants is the result of evaluating the Keycloak Authorization Services policies and permissions.
-
 
 .Authorization scopes
 
@@ -141,10 +140,10 @@ Scope permissions should be used to grant fine-grained permissions to users.
 
 Each policy should be descriptively named in order to make it very clear what permissions it grants to which users.
 
-See link:examples/README-authz.md[the authorization tutorial] to get a hands-on understanding of how to configure the permissions through Keycloak Authorization Services.
+See xref:con-oauth-authorization-keycloak-example_str[the authorization example] to get a hands-on understanding of how to configure the permissions through Keycloak Authorization Services.
 
 
-== Required Permissions
+== Permissions required by operations
 
 .Creating the topic
 
@@ -195,6 +194,12 @@ Using `kafka-configs.sh` to get the broker configuration requires `Describe` per
 
 .Listing the partitions for the topic
 
+TODO
+
 .Changing the partitions for the topic
 
+TODO
+
 .Changing the logger level at runtime
+
+TODO

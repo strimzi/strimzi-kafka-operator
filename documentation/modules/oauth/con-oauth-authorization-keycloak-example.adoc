@@ -110,7 +110,7 @@ If `kafka-cluster:XXX` segment is not present, the specifier targets any cluster
 
 - `Group:x_*` ... targets all consumer groups on any cluster with names starting with 'x_'
 
-The possible resource types mirror the link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] (`Topic`, `Group`, `Cluster`, ...).
+The possible resource types mirror the xref:con-oauth-authorization-keycloak-authorization-services_str#kafka_authorization_model[Kafka authorization model] (`Topic`, `Group`, `Cluster`, ...).
 
 Under `Authorization Scopes` we can see a list of all the possible actions (Kafka permissions) that can be granted on resources of different types.
 It requires some understanding of link:https://kafka.apache.org/documentation/#resources_in_kafka[Kafka's permissions model] to know which of these make sense with which resource type.
@@ -160,23 +160,27 @@ In this case the access token represents the specific user, rather than the clie
 
 ## Authorization in Action Using CLI Clients
 
-A note of caution if you try to use an older version of Keycloak. Due to link:https://issues.redhat.com/browse/KEYCLOAK-12640[a little bug in Keycloak] the realm might be misconfigured after import, and we may have to fix the configuration manually.
-Under `Clients` / `kafka` / `Authorization` / `Settings` make sure the `Decision Strategy` is set to `Affirmative`, and NOT to `Unanimous`. Click `Save` after fixing it.
+A note of caution - this example uses the latest version of Keycloak, and relies on bugfixes of issues in some older versions.
+Let's make sure the Authorization rules have been properly imported when the Keycloak was started.
+
+Under `Clients` / `kafka` / `Authorization` / `Settings` make sure the `Decision Strategy` is set to `Affirmative`, and NOT to `Unanimous`.
+Click on other tabs and make sure there are some resources, authorization claims, policies and permissions defined.
 
 With configuration now in place, let's create some topics, use a producer, a consumer, and try to perform some management operations using different user and service accounts.
 
-First, we'll spin up a new pod container based on a Kafka image previously built by `docker-compose` which we'll use to connect to the already running Kafka Broker.
+First, we run a new interactive pod container using a Strimzi Kafka image which we use to connect to the already running Kafka broker.
 
     kubectl run -ti --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-2.6.0 kafka-cli -- /bin/sh
 
-The first time you run this, the `kubectl` might timeout waiting on the image to be downloaded, but your subsequent attempts will result in AlreadyExists error.
+The first time you run this, the `kubectl` might timeout waiting on the image to be downloaded, but your subsequent attempts may result in AlreadyExists error.
 
 You can attach to the existing pod by running:
 
     kubectl attach -ti kafka-cli
 
 Let's try to produce some messages as client `team-a-client`.
-First, we prepare a Kafka consumer configuration file with authentication parameters.
+
+First, we prepare a Kafka client configuration file with authentication parameters.
 
 ```
 cat > /tmp/team-a-client.properties << EOF
@@ -199,7 +203,7 @@ We can now use this configuration with Kafka's CLI tools.
 
 ### Producing the Messages
 
-Let's try produce some messages to topic 'my-topic':
+Let's try to produce some messages to topic 'my-topic':
 
 ```
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic my-topic \
