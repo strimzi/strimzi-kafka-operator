@@ -199,7 +199,7 @@ For example, where _my-cluster-kafka-0_ is the name of the broker pod:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl exec _my-cluster-kafka-0_ bin/zookeeper-shell.sh localhost:2181
+kubectl exec _my-cluster-zookeeper-0_ bin/zookeeper-shell.sh localhost:12181
 ----
 . Delete the whole `/strimzi` path to remove the Topic Operator storage:
 +
