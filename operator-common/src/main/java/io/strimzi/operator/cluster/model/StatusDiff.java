@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.status.Status;
@@ -17,7 +18,11 @@ import java.util.regex.Pattern;
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StatusDiff extends AbstractResourceDiff {
+
     private static final Logger log = LogManager.getLogger(StatusDiff.class.getName());
+
+    // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
+    public static final ObjectMapper PATCH_MAPPER = patchMapper().copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/conditions/[0-9]+/lastTransitionTime)$");
@@ -25,9 +30,8 @@ public class StatusDiff extends AbstractResourceDiff {
     private final boolean isEmpty;
 
     public StatusDiff(Status current, Status desired) {
-        // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
-        JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(current == null ? "{}" : current);
-        JsonNode target = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(desired == null ? "{}" : desired);
+        JsonNode source = PATCH_MAPPER.valueToTree(current == null ? "{}" : current);
+        JsonNode target = PATCH_MAPPER.valueToTree(desired == null ? "{}" : desired);
         JsonNode diff = JsonDiff.asJson(source, target);
 
         int num = 0;
