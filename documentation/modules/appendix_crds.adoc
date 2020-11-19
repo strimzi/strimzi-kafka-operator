@@ -1086,7 +1086,7 @@ Used in: xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporter
 [options="header"]
 |====
 |Property                |Description
-|configMapKeyRef  1.2+<.<|Reference to a key in a ConfigMap. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[core/v1 configmapkeyselector].
+|configMapKeyRef  1.2+<.<|Reference to the key in the ConfigMap containing the metrics configuration. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[core/v1 configmapkeyselector].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[ConfigMapKeySelector]

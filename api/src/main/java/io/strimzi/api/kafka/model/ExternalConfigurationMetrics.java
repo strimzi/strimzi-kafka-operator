@@ -31,7 +31,7 @@ public class ExternalConfigurationMetrics implements Serializable, UnknownProper
     private ConfigMapKeySelector configMapKeyRef;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Reference to a key in a ConfigMap.")
+    @Description("Reference to the key in the ConfigMap containing the metrics configuration.")
     @KubeLink(group = "core", version = "v1", kind = "configmapkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public ConfigMapKeySelector getConfigMapKeyRef() {

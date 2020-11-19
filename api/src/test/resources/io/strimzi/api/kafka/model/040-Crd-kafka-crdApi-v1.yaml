@@ -902,7 +902,8 @@ spec:
                                 type: string
                               optional:
                                 type: boolean
-                            description: Reference to a key in a ConfigMap.
+                            description: Reference to the key in the ConfigMap containing
+                              the metrics configuration.
                         description: ConfigMap where Prometheus JMX Exporter configuration
                           is stored. See https://github.com/prometheus/jmx_exporter
                           for details of the structure of this configuration.
@@ -1959,7 +1960,8 @@ spec:
                                 type: string
                               optional:
                                 type: boolean
-                            description: Reference to a key in a ConfigMap.
+                            description: Reference to the key in the ConfigMap containing
+                              the metrics configuration.
                         description: ConfigMap where Prometheus JMX Exporter configuration
                           is stored. See https://github.com/prometheus/jmx_exporter
                           for details of the structure of this configuration.
@@ -4665,7 +4667,8 @@ spec:
                                 type: string
                               optional:
                                 type: boolean
-                            description: Reference to a key in a ConfigMap.
+                            description: Reference to the key in the ConfigMap containing
+                              the metrics configuration.
                         description: ConfigMap where Prometheus JMX Exporter configuration
                           is stored. See https://github.com/prometheus/jmx_exporter
                           for details of the structure of this configuration.

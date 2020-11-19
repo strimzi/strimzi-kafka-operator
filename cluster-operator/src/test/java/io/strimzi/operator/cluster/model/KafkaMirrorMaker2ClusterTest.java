@@ -84,8 +84,8 @@ public class KafkaMirrorMaker2ClusterTest {
     private final int healthTimeout = 10;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
-    private final ConfigMap metricsCM = AbstractModelTest.getJmxMetricsCm(metricsCmJson, metricsCMName);
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String targetClusterAlias = "target";
@@ -111,7 +111,6 @@ public class KafkaMirrorMaker2ClusterTest {
 
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
-            //.withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .withMetricsConfig(jmxMetricsConfig)
             .withImage(image)
             .withReplicas(replicas)
@@ -122,6 +121,33 @@ public class KafkaMirrorMaker2ClusterTest {
             .endSpec()
             .build();
     private final KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+    {
+        // we were setting metricsEnabled in fromCrd, which was just checking it for non-null. With metrics in CM, we have to check
+        // its content, what is done in generateMetricsAndLogConfigMap
+        kmm2.generateMetricsAndLogConfigMap(null, metricsCM);
+    }
+
+    @Deprecated
+    @Test
+    public void testMetricsConfigMapDeprecatedMetrics() {
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
+                .withNewSpec()
+                .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+                .withMetricsConfig(null)
+                .withImage(image)
+                .withReplicas(replicas)
+                .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                .withConnectCluster(targetClusterAlias)
+                .withClusters(targetCluster)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+
+        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null, null);
+        checkMetricsConfigMap(metricsCm);
+    }
 
     @Test
     public void testMetricsConfigMap() {
@@ -193,7 +219,7 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @Test
-    public void testEnvVars()   {
+    public void testEnvVars() {
         assertThat(kmm2.getEnvVars(), is(getExpectedEnvVars()));
     }
 
@@ -1453,6 +1479,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+        kc.generateMetricsAndLogConfigMap(null, metricsCM);
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", null);
 

@@ -92,8 +92,8 @@ public class KafkaConnectClusterTest {
     private final int healthTimeout = 10;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
-    private final ConfigMap metricsCM = AbstractModelTest.getJmxMetricsCm(metricsCmJson, metricsCMName);
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
 
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
@@ -121,6 +121,26 @@ public class KafkaConnectClusterTest {
             .endSpec()
             .build();
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+    @Deprecated
+    @Test
+    public void testMetricsConfigMapDeprecatedMetrics() {
+        KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, cluster))
+                .withNewSpec()
+                .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+                .withMetricsConfig(null)
+                .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
+                .withImage(image)
+                .withReplicas(replicas)
+                .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                .withBootstrapServers(bootstrapServers)
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, null);
+        checkMetricsConfigMap(metricsCm);
+    }
 
     @Test
     public void testMetricsConfigMap() {

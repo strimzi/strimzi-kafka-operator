@@ -44,4 +44,9 @@ metadata:
   labels:
     app: strimzi
 data:
-  metrics-config.yml: '{"lowercaseOutputName":true,"rules":[{"name":"kafka_cruisecontrol_$1_$2","pattern":"kafka.cruisecontrol<name=(.+)><>(\\w+)","type":"GAUGE"}]}'
+  metrics-config.yml: |
+    lowercaseOutputName: true
+    rules:
+    - pattern: kafka.cruisecontrol<name=(.+)><>(\w+)
+      name: kafka_cruisecontrol_$1_$2
+      type: GAUGE

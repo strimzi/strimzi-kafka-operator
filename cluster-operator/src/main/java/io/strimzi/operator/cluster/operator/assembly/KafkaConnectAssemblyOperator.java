@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -107,22 +106,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                 null;
 
-        ConfigMap metricsCm = null;
-        if (connect.isMetricsConfigured()) {
-            if (connect.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                metricsCm = configMapOperations.get(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
-            } else {
-                log.warn("Unknown metrics type {}", connect.getMetricsConfigInCm().getType());
-            }
-        }
-
-        ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
-
         Map<String, String> annotations = new HashMap<>(1);
-        annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
-                Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
-
-        String desiredLogging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation);
 
@@ -135,6 +119,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
 
+        final String[] desiredLogging = new String[1];
         connectS2ICheck
                 .compose(otherConnect -> {
                     if (otherConnect != null
@@ -151,13 +136,20 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
-                .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap))
+                .compose(i -> connectMetricsConfigMap(namespace, connect))
+                .compose(metricsCm -> {
+                    ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
+                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                            Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
+                    desiredLogging[0] = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                    return configMapOperations.reconcile(namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
+                })
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                 .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging, connect.getDefaultLogConfig()))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging[0], connect.getDefaultLogConfig()))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
 

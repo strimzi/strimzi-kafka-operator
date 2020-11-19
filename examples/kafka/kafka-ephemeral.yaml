@@ -22,9 +22,6 @@ spec:
       log.message.format.version: "2.6"
     storage:
       type: ephemeral
-    logging:
-      type: external
-      name: my-external-config-map  
   zookeeper:
     replicas: 3
     storage:

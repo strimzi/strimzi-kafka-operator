@@ -179,20 +179,20 @@ public class ResourceUtils {
 
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
-                                    Map<String, Object> metricsCm,
+                                    Map<String, Object> metricsMap,
                                     MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfigurationJson,
                                     Map<String, Object> zooConfigurationJson) {
         return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editKafka()
-                        .withMetrics(metricsCm)
+                        .withMetrics(metricsMap)
                         .withConfig(kafkaConfigurationJson)
                         .withMetricsConfig(metricsConfig)
                     .endKafka()
                     .editZookeeper()
                         .withConfig(zooConfigurationJson)
-                        .withMetrics(metricsCm)
+                        .withMetrics(metricsMap)
                         .withMetricsConfig(metricsConfig)
                     .endZookeeper()
                 .endSpec()
@@ -435,7 +435,7 @@ public class ResourceUtils {
      * Create a Kafka Connect S2I custom resource
      */
     public static KafkaConnectS2I createKafkaConnectS2I(String namespace, String name, int replicas,
-                                                        String image, int healthDelay, int healthTimeout, MetricsConfig metrics,
+                                                        String image, int healthDelay, int healthTimeout, MetricsConfig metrics, String metricsCmJson,
                                                         String connectConfig, boolean insecureSourceRepo, String bootstrapServers,
                                                         ResourceRequirements builResourceRequirements) {
 
@@ -447,6 +447,7 @@ public class ResourceUtils {
                     .withBootstrapServers(bootstrapServers)
                     .withLivenessProbe(new Probe(healthDelay, healthTimeout))
                     .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                    .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
                     .withMetricsConfig(metrics)
                     .withConfig((Map<String, Object>) TestUtils.fromJson(connectConfig, Map.class))
                     .withInsecureSourceRepository(insecureSourceRepo)

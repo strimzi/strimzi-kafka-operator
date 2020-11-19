@@ -107,7 +107,7 @@ public class KafkaResource {
 
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(kafkaMetricsCm);
-        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "zookeeper-metrics");
+        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(zkMetricsCm);
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
@@ -126,7 +126,7 @@ public class KafkaResource {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG);
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(kafkaMetricsCm);
-        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "zookeeper-metrics");
+        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(zkMetricsCm);
         ConfigMap ccMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG, "cruise-control-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(ccMetricsCm);
@@ -137,7 +137,7 @@ public class KafkaResource {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(kafkaMetricsCm);
-        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "zookeeper-metrics");
+        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(zkMetricsCm);
 
         ConfigMap ccCm = new ConfigMapBuilder()
@@ -147,7 +147,11 @@ public class KafkaResource {
                     .withLabels(Collections.singletonMap("app", "strimzi"))
                 .endMetadata()
                 .withData(Collections.singletonMap("metrics-config.yml",
-                        "{\"lowercaseOutputName\":true,\"rules\":[{\"name\":\"kafka_cruisecontrol_$1_$2\",\"pattern\":\"kafka.cruisecontrol<name=(.+)><>(\\\\w+)\",\"type\":\"GAUGE\"}]}"))
+                        "lowercaseOutputName: true\n" +
+                        "rules:\n" +
+                        "- pattern: kafka.cruisecontrol<name=(.+)><>(\\w+)\n" +
+                        "  name: kafka_cruisecontrol_$1_$2\n" +
+                        "  type: GAUGE"))
                 .build();
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(ccCm);
 

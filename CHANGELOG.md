@@ -12,6 +12,9 @@
 * Add possibility to configure DeploymentStrategy for Kafka Connect, Kafka Mirror Maker (1 and 2), and Kafka Bridge
 * Support passing metrics configuration as an external ConfigMap
 
+### Deprecations and removals
+* Metrics were moved from the model CR to the external ConfigMap
+
 ## 0.20.0
 
 **Note: This is the last version of Strimzi that will support Kubernetes 1.11 and higher. Future versions will drop support for Kubernetes 1.11-1.15 and support only Kubernetes 1.16 and higher.**

@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
@@ -83,16 +82,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
                 null;
 
-        ConfigMap metricsCm = null;
-        if (bridge.isMetricsConfigured()) {
-            if (bridge.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                metricsCm = configMapOperations.get(namespace, ((JmxPrometheusExporterMetrics) bridge.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
-            } else {
-                log.warn("Unknown metrics type {}", bridge.getMetricsConfigInCm().getType());
-            }
-        }
-
-        ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
+        ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(loggingCm, null);
 
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 

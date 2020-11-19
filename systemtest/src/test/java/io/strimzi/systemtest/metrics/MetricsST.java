@@ -28,14 +28,14 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
@@ -48,9 +48,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -397,30 +395,47 @@ public class MetricsST extends AbstractST {
         }
     }
 
+    /**
+     * 1. Update metrics form whatever it is to @metricsConfigJson in spec.kafka.metrics
+     * 2. Check, whether the metrics ConfigMap is changed
+     * 3. Updates ConfigMap linked as metrics on
+     * 4. Check, whether the metrics ConfigMap is changed
+     */
+    @Deprecated
+    @Test
+    void testKafkaMetricsSettingsDeprecatedMetrics() {
+        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
+        // update metrics
+        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            k.getSpec().getKafka().setMetricsConfig(null);
+            k.getSpec().getKafka().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson, Map.class));
+        });
+
+        PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
+        ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+
+        // update metrics
+        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            k.getSpec().getKafka().setMetricsConfig(null);
+            k.getSpec().getKafka().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
+        });
+        PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
+        actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+    }
+
+    /**
+     * 1. Update metrics form whatever it is to @metricsConfigYaml in spec.kafka.metricsConfig
+     * 2. Check, whether the metrics ConfigMap is changed
+     * 3. Updates ConfigMap linked as metrics on
+     * 4. Check, whether the metrics ConfigMap is changed
+     */
     @Test
     void testKafkaMetricsSettings() {
-        String expectedMetricsConfig = "{\"lowercaseOutputName\":true,\"rules\":[{\"labels\":{\"clientId\":\"$3\",\"partition\":\"$5\",\"topic\":\"$4\"},\"name\":\"kafka_server_$1_$2\",\"pattern\":\"kafka.server<type=(.+),\n" +
-                        "name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"broker\":\"$4:$5\",\"clientId\":\"$3\"},\"name\":\"kafka_server_$1_$2\",\"pattern\":\"kafka.server<type=(.+),\n" +
-                        "name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"cipher\":\"$5\",\"listener\":\"$2\",\"networkProcessor\":\"$3\",\"protocol\":\"$4\"},\"name\":\"kafka_server_$1_connections_tls_info\",\"pattern\":\"kafka.server<type=(.+),\n" +
-                        "cipher=(.+), protocol=(.+), listener=(.+), networkProcessor=(.+)><>connections\",\"type\":\"GAUGE\"},{\"labels\":{\"clientSoftwareName\":\"$2\",\"clientSoftwareVersion\":\"$3\",\"listener\":\"$4\",\"networkProcessor\":\"$5\"},\"name\":\"kafka_server_$1_connections_software\",\"pattern\":\"kafka.server<type=(.+),\n" +
-                        "clientSoftwareName=(.+), clientSoftwareVersion=(.+), listener=(.+), networkProcessor=(.+)><>connections\",\"type\":\"GAUGE\"},{\"labels\":{\"listener\":\"$2\",\"networkProcessor\":\"$3\"},\"name\":\"kafka_server_$1_$4\",\"pattern\":\"kafka.server<type=(.+),\n" +
-                        "listener=(.+), networkProcessor=(.+)><>(.+):\",\"type\":\"GAUGE\"},{\"labels\":{\"listener\":\"$2\",\"networkProcessor\":\"$3\"},\"name\":\"kafka_server_$1_$4\",\"pattern\":\"kafka.server<type=(.+),\n" +
-                        "listener=(.+), networkProcessor=(.+)><>(.+)\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3_percent\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)Percent\\\\w*><>MeanRate\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3_percent\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)Percent\\\\w*><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3_percent\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)Percent\\\\w*, (.+)=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\"},\"name\":\"kafka_$1_$2_$3_total\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)PerSec\\\\w*, (.+)=(.+), (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3_total\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)PerSec\\\\w*, (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"name\":\"kafka_$1_$2_$3_total\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)PerSec\\\\w*><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+), (.+)=(.+), (.+)=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+), (.+)=(.+)><>Value\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)><>Value\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\"},\"name\":\"kafka_$1_$2_$3_count\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+), (.+)=(.+), (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\",\"$6\":\"$7\",\"quantile\":\"0.$8\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+), (.+)=(.*), (.+)=(.+)><>(\\\\d+)thPercentile\",\"type\":\"GAUGE\"},{\"labels\":{\"$4\":\"$5\"},\"name\":\"kafka_$1_$2_$3_count\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+), (.+)=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"$4\":\"$5\",\"quantile\":\"0.$6\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+), (.+)=(.*)><>(\\\\d+)thPercentile\",\"type\":\"GAUGE\"},{\"name\":\"kafka_$1_$2_$3_count\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)><>Count\",\"type\":\"COUNTER\"},{\"labels\":{\"quantile\":\"0.$4\"},\"name\":\"kafka_$1_$2_$3\",\"pattern\":\"kafka.(\\\\w+)<type=(.+),\n" +
-                        "name=(.+)><>(\\\\d+)thPercentile\",\"type\":\"GAUGE\"}]}";
+        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        String metricsConfigYaml = "lowercaseOutputName: true";
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(
@@ -428,12 +443,8 @@ public class MetricsST extends AbstractST {
                 true
         );
 
-        ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig.replace("\n", " ")));
-
         ConfigMap externalMetricsCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap("metrics-config.yml", expectedMetricsConfig))
+                .withData(Collections.singletonMap("metrics-config.yml", metricsConfigYaml))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(NAMESPACE)
@@ -459,12 +470,12 @@ public class MetricsST extends AbstractST {
         });
 
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
-        actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig));
+        ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
 
         // update metrics
         ConfigMap externalMetricsUpdatedCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap("metrics-config.yml", expectedMetricsConfig.replace("true", "false")))
+                .withData(Collections.singletonMap("metrics-config.yml", metricsConfigYaml.replace("true", "false")))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(NAMESPACE)
@@ -474,78 +485,7 @@ public class MetricsST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(expectedMetricsConfig.replace("true", "false")));
-    }
-
-    @Test
-    void testMetricsConfigMapErrors() {
-        // specified ConfigMap does exist - disabled metrics
-        ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
-                .withName("external-metrics-cm-error")
-                .withKey("metrics-config-error.yml")
-                .build();
-        JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
-                .withNewValueFrom()
-                .withConfigMapKeyRef(cmks)
-                .endValueFrom()
-                .build();
-        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
-            k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
-            k.getSpec().getKafka().setMetrics(null);
-        });
-
-        // Changing metrics on -> off triggers RU (envar was changed)
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(SECOND_CLUSTER), 1);
-
-        assertThat(StUtils.checkEnvVarInPod(KafkaResources.kafkaPodName(SECOND_CLUSTER, 0), "KAFKA_METRICS_ENABLED"), is("false"));
-
-        ConfigMap externalMetricsCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap("metrics-config.yml", ""))
-                .withNewMetadata()
-                .withName("external-metrics-cm")
-                .withNamespace(NAMESPACE)
-                .endMetadata()
-                .build();
-
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsCm);
-
-        // specified ConfigMap does exist but does not contain specified key - metrics disabled
-        cmks = new ConfigMapKeySelectorBuilder()
-                .withName("external-metrics-cm")
-                .withKey("metrics-config-error.yml")
-                .build();
-        JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics2 = new JmxPrometheusExporterMetricsBuilder()
-                .withNewValueFrom()
-                .withConfigMapKeyRef(cmks)
-                .endValueFrom()
-                .build();
-
-        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
-            k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics2);
-            k.getSpec().getKafka().setMetrics(null);
-        });
-
-        PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
-        assertThat(StUtils.checkEnvVarInPod(KafkaResources.kafkaPodName(SECOND_CLUSTER, 0), "KAFKA_METRICS_ENABLED"), is("false"));
-
-        // specified ConfigMap does exist and does contain specified key - data are empty -> metrics enabled
-        cmks = new ConfigMapKeySelectorBuilder()
-                .withName("external-metrics-cm")
-                .withKey("metrics-config.yml")
-                .build();
-        JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics3 = new JmxPrometheusExporterMetricsBuilder()
-                .withNewValueFrom()
-                .withConfigMapKeyRef(cmks)
-                .endValueFrom()
-                .build();
-
-        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
-            k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics3);
-            k.getSpec().getKafka().setMetrics(null);
-        });
-
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(SECOND_CLUSTER), 1);
-        assertThat(StUtils.checkEnvVarInPod(KafkaResources.kafkaPodName(SECOND_CLUSTER, 0), "KAFKA_METRICS_ENABLED"), is("true"));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {

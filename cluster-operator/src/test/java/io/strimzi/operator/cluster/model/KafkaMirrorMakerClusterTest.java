@@ -67,8 +67,8 @@ public class KafkaMirrorMakerClusterTest {
     private final String image = "my-image:latest";
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
-    private final ConfigMap metricsCM = AbstractModelTest.getJmxMetricsCm(metricsCmJson, metricsCMName);
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
 
     private final String producerConfigurationJson = "{\"foo\":\"bar\"}";
     private final String consumerConfigurationJson = "{\"foo\":\"buz\"}";
@@ -110,8 +110,27 @@ public class KafkaMirrorMakerClusterTest {
             .endSpec()
             .build();
 
-    private final KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource,
-            VERSIONS);
+    private final KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+    @Deprecated
+    @Test
+    public void testMetricsConfigMapDeprecatedMetrics() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
+                .withNewSpec()
+                .withImage(image)
+                .withReplicas(replicas)
+                .withProducer(producer)
+                .withConsumer(consumer)
+                .withWhitelist(whitelist)
+                .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+                .withMetricsConfig(null)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null, null);
+        checkMetricsConfigMap(metricsCm);
+    }
 
     @Test
     public void testMetricsConfigMap() {

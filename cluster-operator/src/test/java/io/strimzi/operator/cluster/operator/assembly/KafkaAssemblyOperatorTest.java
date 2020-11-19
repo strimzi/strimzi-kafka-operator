@@ -52,7 +52,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.AbstractModelTest;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
@@ -155,7 +154,7 @@ public class KafkaAssemblyOperatorTest {
     private final String metricsCmJson = "{\"foo\":\"bar\"}";
     private final String metricsCMName = "metrics-cm";
     private final String differentMetricsCMName = "metrics-cm-2";
-    private final ConfigMap metricsCM = AbstractModelTest.getJmxMetricsCm(metricsCmJson, metricsCMName);
+    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName);
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
 
@@ -771,7 +770,7 @@ public class KafkaAssemblyOperatorTest {
         Map<String, Object> metricsCmJson = metrics ? METRICS_CONFIG : null;
         KafkaExporterSpec exporter = metrics ? new KafkaExporterSpec() : null;
         String metricsCMName = "metrics-cm";
-        JmxPrometheusExporterMetrics jmxMetricsConfig = metrics ? null : AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+        JmxPrometheusExporterMetrics jmxMetricsConfig = metrics ? null : io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
 
         Kafka resource = ResourceUtils.createKafka(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, jmxMetricsConfig, kafkaConfig, zooConfig, kafkaStorage, zkStorage, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG, exporter, null);
 
@@ -853,7 +852,7 @@ public class KafkaAssemblyOperatorTest {
     public void testUpdateClusterMetricsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
-        JmxPrometheusExporterMetrics jmxMetricsConfig = AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, differentMetricsCMName);
+        JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, differentMetricsCMName);
         kafkaAssembly.getSpec().getKafka().setMetricsConfig(jmxMetricsConfig);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
@@ -883,7 +882,7 @@ public class KafkaAssemblyOperatorTest {
     @MethodSource("data")
     public void testUpdateZkClusterMetricsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        JmxPrometheusExporterMetrics jmxMetricsConfig = AbstractModelTest.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, differentMetricsCMName);
+        JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, differentMetricsCMName);
         kafkaAssembly.getSpec().getKafka().setMetricsConfig(jmxMetricsConfig);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
@@ -985,9 +984,15 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);
         when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(Future.succeededFuture(updatedAssembly));
         when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
-        ConfigMap metricsCm = originalKafkaCluster.generateAncillaryConfigMap(null, null, emptySet(), emptySet());
-        when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsCm);
-        when(mockCmOps.getAsync(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(Future.succeededFuture(metricsCm));
+        ConfigMap metricsCm = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withName("metrics-cm")
+                .endMetadata()
+                .withData(singletonMap("metrics-config.yml", ""))
+                .build();
+        ConfigMap metricsAndLoggingCm = originalKafkaCluster.generateAncillaryConfigMap(null, metricsCm, emptySet(), emptySet());
+        when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsAndLoggingCm);
+        when(mockCmOps.getAsync(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(Future.succeededFuture(metricsAndLoggingCm));
 
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
