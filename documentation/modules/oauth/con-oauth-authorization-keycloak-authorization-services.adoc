@@ -1,0 +1,200 @@
+// Module included in the following module:
+//
+// proc-oauth-authorization-broker-config.adoc
+
+[id='con-oauth-authorization-keycloak-authorization-services_{context}']
+= Manage policies and permissions in Keycloak Authorization Services
+
+== Kafka Authorization Model
+
+The link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] defines resource types, and permissions available for each type.
+Whenever some action is performed by the Kafka client, one or more permissions are checked by the broker (depending on the action performed) using the configured authorizer.
+
+There are five resource types: `Topic`, `Group`, `Cluster`, `TransactionalId`, `DelegationToken`.
+
+And these are the different permissions for each resource type:
+
+Topic:
+
+* Create
+* Write
+* Read
+* Delete
+* Describe
+* DescribeConfigs
+* Alter
+* AlterConfigs
+
+Group:
+
+* Read
+* Describe
+* Delete
+
+Cluster:
+
+*  Create
+*  Describe
+*  Alter
+*  DescribeConfigs
+*  AlterConfigs
+*  IdempotentWrite
+*  ClusterAction
+
+TransactionalId:
+
+*  Describe
+*  Write
+
+DelegationToken:
+
+* Describe
+
+
+== Keycloak Authorization Services Model
+
+There are four concepts used in Keycloak Authorization Services to grant permissions: 'resources`, `authorization scopes`, `policies`, and `permissions`.
+
+`Resources` are a set of resource definitions that are used to match permitted actions.
+For example, a resource can be an individual topic, or it can be a set of all topics with names that start with some prefix.
+The resource definition has a set of available `authorization scopes` associated with it. These represent a set of all actions that can be permitted.
+Often, only a subset of these actions is actually permitted.
+
+`Authorization scopes` is simply a set of all available actions on all the different resource types. When defining a new `resource` the `scopes` added there are taken from this set of all scopes.
+
+`Policies` are rules that can use various criteria to match a list of accounts. They can match service accounts based on clientId, they can match user accounts based on username, or group, or roles.
+
+Finally, `Permissions` are used to grant a subset of `authorization scopes` on the specific `resource` definition to a set of users.
+
+== Mapping Keycloak Authorization Services to Kafka Model
+
+In order to grant Kafka permissions to users or service accounts you have to use the Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker - typically this client has `kafka` as its clientId.
+
+This client needs to have `Enable Authorization` option activated.
+
+All the permissions exist within the scope of this client, which means that if you have different Kafka clusters configured with different OAuth clientIds they would each have a separate set of permissions even though they are part of the same realm.
+
+When the Kafka client authenticates using `SASL_OAUTHEARER` or `SASL_PLAIN` configured as 'OAuth over PLAIN' the `KeycloakRBACAuthorizer` retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
+This list of grants is the result of evaluating the Keycloak Authorization Services policies and permissions.
+
+
+.Authorization scopes
+
+Typically the initial configuration involves uploading the authorization scopes which creates a list of all the possible actions that can be performed on all the Kafka resource types.
+This step is performed only once, before defining any permissions. Alternatively, the authorization scopes can be added manually, but make sure to not introduce typos.
+
+The `authorization scopes` should simply contain all the possible Kafka permissions regardless of the resource type:
+
+* Create
+* Write
+* Read
+* Delete
+* Describe
+* Alter
+* DescribeConfig
+* AlterConfig
+* ClusterAction
+* IdempotentWrite
+
+.Resources
+
+The `resources` use pattern names to be used with pattern matching against the targeted resources when performing the permission check.
+
+The general pattern is as follows: `RESOURCE_TYPE:NAME_PATTERN`
+
+The resource types mirror the Kafka authorization model.
+The pattern allows for the two matching options: exact matching (when the pattern does not end with `\*`), and prefix matching (when the pattern ends with `*`).
+
+A few examples:
+
+    Topic:my-topic
+    Topic:orders-*
+    Group:orders-*
+    Cluster:*
+
+In addition, the general pattern can be prefixed by another one of the format `kafka-cluster:CLUSTER_NAME`, followed by comma, where the cluster name refers to the `metadata.name` in the Kafka CR.
+
+For example:
+
+    kafka-cluster:my-cluster,Topic:*
+    kafka-cluster:*,Group:b_*
+
+When the `kafka-cluster` prefix is not present it is assumed to be `kafka-cluster:*`.
+
+When the resource is defined, a list of possible authorization scopes relevant to the resource should be added to the list of scopes.
+Set whatever actions make sense for the targeted resource type.
+
+While you may add any `authorization scope` to any `resource`, only the scopes supported by the resource type will ever matter.
+
+.Policies
+
+The `policies` are used to target permissions to one or more accounts.
+The targeting can refer to specific user or service accounts, it can refer to the realm roles or client roles, it can refer to user groups, and it can even use a JS rule and match client's IP address for example.
+
+Each policy can be given a name, and can be reused to target multiple permissions to multiple resources.
+
+.Permissions
+
+The `permissions` are the final step where you pull together the `policies`, `resources`, and `authorization scopes` to grant access to one or more users.
+
+Scope permissions should be used to grant fine-grained permissions to users.
+
+Each policy should be descriptively named in order to make it very clear what permissions it grants to which users.
+
+See link:examples/README-authz.md[the authorization tutorial] to get a hands-on understanding of how to configure the permissions through Keycloak Authorization Services.
+
+
+== Required Permissions
+
+.Creating the topic
+
+In order to create the topic the `Create` permission is required for the specific topic or on `Cluster:kafka-cluster`.
+To display the details of the created topic the `Describe` permission is required for the specific topic.
+
+.Producing to the topic
+
+In order to produce to the topic the user needs `Describe` and `Write` permissions on the topic.
+If topic has not yet been created, and autocreation is enabled, the permissions to create the topic are required.
+
+.Consuming from the topic
+
+In order to consume from the topic the user needs `Describe` and `Read` permissions on the topic.
+Consuming from the topic normally relies on storing the consumer offsets in a consumer group.
+That requires additional `Describe` and `Read` permissions on the consumer group.
+
+Two `resources` would be needed for matching, e.g.:
+
+    Topic:my-topic
+    Group:my-group-*
+
+.Producing to the topic using an idempotent producer
+
+Besides needing the permissions for ordinary producing to the topic, an additional `IdempotentWrite` permission is required on the `Cluster` resource.
+
+Two `resources` would be needed for matching, e.g.:
+
+    Topic:my-topic
+    Cluster:kafka-cluster
+
+.Listing the topics
+
+When listing the topics only the topics on which the user has `Describe` permission are returned.
+
+.Displaying topic details
+
+The `DescribeConfigs` permission is required on the topic in order to get information like partitions, replicas, leaders ...
+
+.Listing the consumer groups
+
+When listing the consumer groups only the groups on which the user has `Describe` permissions are returned.
+Alternatively, if the user has `Describe` permission on the `Cluster:kafka-cluster` all the consumer groups are returned.
+
+.Getting the Kafka broker configuration
+
+Using `kafka-configs.sh` to get the broker configuration requires `Describe` permission on the `Cluster:kafka-cluster`.
+
+.Listing the partitions for the topic
+
+.Changing the partitions for the topic
+
+.Changing the logger level at runtime
