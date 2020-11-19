@@ -35,7 +35,6 @@ class CustomResourceMockBuilder<T extends CustomResource, L extends KubernetesRe
             S status = getStatus.apply(copyResource(resource));
             LOGGER.debug("Updating status on {} to {}", resourceTypeClass.getSimpleName(), status);
             T t = incrementResourceVersion(copyResource(db.get(name)));
-            getStatus.apply(t);
             mockedCrd.setStatus().accept(t, status);
             db.put(name, t);
             fireWatchers(name, t, Watcher.Action.MODIFIED, "updateStatus");

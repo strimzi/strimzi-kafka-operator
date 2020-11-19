@@ -157,7 +157,7 @@ public class SecretUtils {
         kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
 
         LOGGER.info("Waiting for Secret: {} to be deleted", secretName);
-        TestUtils.waitFor(String.format("Deletion of secret: {}", secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+        TestUtils.waitFor(String.format("Deletion of secret: %s", secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> kubeClient().getSecret(secretName) == null);
 
         LOGGER.info("Secret: {} successfully deleted", secretName);

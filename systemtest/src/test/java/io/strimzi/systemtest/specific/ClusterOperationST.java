@@ -67,7 +67,7 @@ public class ClusterOperationST extends AbstractST {
                 .withProducerName(producerNames.get(i))
                 .withConsumerName(consumerNames.get(i))
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-                .withTopicName(topicNames.get(producerNames.indexOf(i)))
+                .withTopicName(topicNames.get(i))
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)
                 .withConsumerGroup(continuousConsumerGroups.get(i))
