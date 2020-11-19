@@ -426,8 +426,9 @@ spec:
                                 to the specified CIDR ranges. This field is applicable
                                 only for loadbalancer type services and is ignored
                                 if the cloud provider does not support the feature.
-                                For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/This
-                                field can be used only with `loadbalancer` type listener.
+                                For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                                This field can be used only with `loadbalancer` type
+                                listener.
                             bootstrap:
                               type: object
                               properties:
@@ -1320,14 +1321,14 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: A list of CIDR ranges (for example `10.0.0.0/8`
+                            description: 'A list of CIDR ranges (for example `10.0.0.0/8`
                               or `130.211.204.1/32`) from which clients can connect
                               to load balancer type listeners. If supported by the
                               platform, traffic through the loadbalancer is restricted
                               to the specified CIDR ranges. This field is applicable
                               only for loadbalancer type services and is ignored if
                               the cloud provider does not support the feature. For
-                              more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                              more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. '
                         description: Template for Kafka external bootstrap `Service`.
                       perPodService:
                         type: object
@@ -1363,14 +1364,14 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: A list of CIDR ranges (for example `10.0.0.0/8`
+                            description: 'A list of CIDR ranges (for example `10.0.0.0/8`
                               or `130.211.204.1/32`) from which clients can connect
                               to load balancer type listeners. If supported by the
                               platform, traffic through the loadbalancer is restricted
                               to the specified CIDR ranges. This field is applicable
                               only for loadbalancer type services and is ignored if
                               the cloud provider does not support the feature. For
-                              more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                              more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. '
                         description: Template for Kafka per-pod `Services` used for
                           access from outside of Kubernetes.
                       externalBootstrapRoute:
@@ -5897,9 +5898,9 @@ spec:
                                   restricted to the specified CIDR ranges. This field
                                   is applicable only for loadbalancer type services
                                   and is ignored if the cloud provider does not support
-                                  the feature. For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/This
-                                  field can be used only with `loadbalancer` type
-                                  listener.
+                                  the feature. For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                                  This field can be used only with `loadbalancer`
+                                  type listener.
                               bootstrap:
                                 type: object
                                 properties:
@@ -7960,14 +7961,14 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: A list of CIDR ranges (for example `10.0.0.0/8`
+                            description: 'A list of CIDR ranges (for example `10.0.0.0/8`
                               or `130.211.204.1/32`) from which clients can connect
                               to load balancer type listeners. If supported by the
                               platform, traffic through the loadbalancer is restricted
                               to the specified CIDR ranges. This field is applicable
                               only for loadbalancer type services and is ignored if
                               the cloud provider does not support the feature. For
-                              more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                              more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. '
                         description: Template for Kafka external bootstrap `Service`.
                       perPodService:
                         type: object
@@ -8003,14 +8004,14 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: A list of CIDR ranges (for example `10.0.0.0/8`
+                            description: 'A list of CIDR ranges (for example `10.0.0.0/8`
                               or `130.211.204.1/32`) from which clients can connect
                               to load balancer type listeners. If supported by the
                               platform, traffic through the loadbalancer is restricted
                               to the specified CIDR ranges. This field is applicable
                               only for loadbalancer type services and is ignored if
                               the cloud provider does not support the feature. For
-                              more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                              more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. '
                         description: Template for Kafka per-pod `Services` used for
                           access from outside of Kubernetes.
                       externalBootstrapRoute:
@@ -13405,9 +13406,9 @@ spec:
                                   restricted to the specified CIDR ranges. This field
                                   is applicable only for loadbalancer type services
                                   and is ignored if the cloud provider does not support
-                                  the feature. For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/This
-                                  field can be used only with `loadbalancer` type
-                                  listener.
+                                  the feature. For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                                  This field can be used only with `loadbalancer`
+                                  type listener.
                               bootstrap:
                                 type: object
                                 properties:
@@ -15468,14 +15469,14 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: A list of CIDR ranges (for example `10.0.0.0/8`
+                            description: 'A list of CIDR ranges (for example `10.0.0.0/8`
                               or `130.211.204.1/32`) from which clients can connect
                               to load balancer type listeners. If supported by the
                               platform, traffic through the loadbalancer is restricted
                               to the specified CIDR ranges. This field is applicable
                               only for loadbalancer type services and is ignored if
                               the cloud provider does not support the feature. For
-                              more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                              more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. '
                         description: Template for Kafka external bootstrap `Service`.
                       perPodService:
                         type: object
@@ -15511,14 +15512,14 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: A list of CIDR ranges (for example `10.0.0.0/8`
+                            description: 'A list of CIDR ranges (for example `10.0.0.0/8`
                               or `130.211.204.1/32`) from which clients can connect
                               to load balancer type listeners. If supported by the
                               platform, traffic through the loadbalancer is restricted
                               to the specified CIDR ranges. This field is applicable
                               only for loadbalancer type services and is ignored if
                               the cloud provider does not support the feature. For
-                              more information, see https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/.
+                              more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. '
                         description: Template for Kafka per-pod `Services` used for
                           access from outside of Kubernetes.
                       externalBootstrapRoute:
