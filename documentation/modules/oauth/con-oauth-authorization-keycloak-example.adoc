@@ -37,7 +37,7 @@ NOTE: TODO: Change the url to: https://raw.githubusercontent.com/strimzi/strimzi
     kubectl apply -f $ROOT/examples/kubernetes/keycloak-realms-configmap.yaml
     kubectl apply -f $ROOT/examples/kubernetes/keycloak-postgres.yaml
 
-If your default namespace is not `myproject` but something else (e.g.`default`), then use the following to deploy Keycloak:
+If your default namespace is not `myproject` but something else (for example, `default`), then use the following to deploy Keycloak:
 
     curl -s $ROOT/examples/kubernetes/keycloak-postgres.yaml | sed -e "s#myproject#default#" | kubectl apply -f -
 
@@ -64,7 +64,7 @@ Selecting it will open the `Realm Settings` for the `kafka-authz` realm.
 Next to the `Realm Settings` there are other sections we are interested in - `Groups`, `Roles`, `Clients` and `Users`.
 
 Under `Groups` we can see several groups that can be used to mark users as having some permissions.
-Groups are sets of users with name assigned. Typically they are used to geographically or organisationally compartmentalize users into organisations, organisational units, departments etc.
+Groups are sets of users with name assigned. Typically they are used to geographically or organisationally compartmentalize users into organisations, organisational units, departments, and so on.
 
 In Keycloak the groups can be stored in an LDAP identity provider.
 That makes it possible to make some user a member of some group - through a custom LDAP server admin UI for example, which grants them some permissions on Kafka resources.
@@ -74,7 +74,7 @@ In Keycloak the users can be stored in an LDAP identity provider.
 
 Under `Roles` we can see several realm roles which can be used to mark users or clients as having some permissions.
 Roles are a concept analogous to groups. They are usually used to 'tag' users as playing organisational roles and having permissions that pertain to it.
-In Keycloak the roles can not be stored in an LDAP identity provider - if that is your requirement then you should use groups instead.
+In Keycloak the roles cannot be stored in an LDAP identity provider - if that is your requirement then you should use groups instead.
 
 Under `Clients` we can see some additional clients configured - `kafka`, `kafka-cli`, `team-a-client`, `team-b-client`.
 The client with client id `kafka` is used by Kafka Brokers to perform the necessary OAuth2 communication for access token validation,
@@ -116,13 +116,13 @@ Under `Authorization Scopes` we can see a list of all the possible actions (Kafk
 It requires some understanding of link:https://kafka.apache.org/documentation/#resources_in_kafka[Kafka's permissions model] to know which of these make sense with which resource type.
 This list mirrors Kafka permissions and should be the same for any deployment.
 
-There is an link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/oauth-keycloak-authorizer/etc/authorization-scopes.json[authorization-scopes.json] file containing the authorization scopes that can be imported, so that they don't have to be manually entered for every new `Authorization Services` enabled client.
+There is an link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/oauth-keycloak-authorizer/etc/authorization-scopes.json[authorization-scopes.json] file containing the authorization scopes that can be imported, so that they do not have to be manually entered for every new `Authorization Services` enabled client.
 In order to import `authorization-scopes.json` into a new client, first make sure the new client is `Authorization Enabled` and saved. Then, click on the `Authorization` tab and use the `Import` to import the file. Afterwards, if you select the `Authorization Scopes` you will see the loaded scopes.
 For this example the authorization scopes have already been imported as part of the realm import.
 
 Under the `Policies` sub-tab there are filters that match sets of users.
 Users can be explicitly listed, or they can be matched based on the Roles, or Groups they are assigned.
-Policies can even be programmatically defined using JavaScript where logic can take into account the context of the client session - e.g. client ip (that is client ip of the Kafka client).
+Policies can even be programmatically defined using JavaScript where logic can take into account the context of the client session - for example, client ip (that is client ip of the Kafka client).
 
 Then, finally, there is the `Permissions` sub-tab, which defines 'role bindings' where `resources`, `authorization scopes` and `policies` are tied together to apply a set of permissions on specific resources for certain users.
 
@@ -149,8 +149,8 @@ The `Dev Team B ...` permissions grant users `Describe` and `Read` on `Topic:x_*
 In Keycloak, confidential clients with 'service accounts' enabled can authenticate to the server in their own name using a clientId and a secret.
 This is convenient for microservices which typically act in their own name, and not as agents of a particular user (like a web site would, for example).
 Service accounts can have roles assigned like regular users.
-They can not, however, have groups assigned.
-As a consequence, if you want to target permissions to microservices using service accounts, you can't use Group policies, and should instead use Role policies.
+They cannot, however, have groups assigned.
+As a consequence, if you want to target permissions to microservices using service accounts, you cannot use Group policies, and should instead use Role policies.
 Or, thinking about it another way, if you want to limit certain permissions only to regular user accounts where authentication with username and password is required, you can achieve that as a side effect of using the Group policies, rather than the Role policies.
 That's what we see used in `permissions` that start with 'ClusterManager'.
 Performing cluster management is usually done interactively - in person - using CLI tools.
@@ -402,7 +402,7 @@ If we try the same as `team-a-client` or `team-b-client` we will get different r
     bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
     bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-b-client.properties --list
 
-Roles `Dev Team A`, and `Dev Team B` both have `Describe` permission on topics that start with 'x_', but they can't see the other team's topics as they don't have `Describe` permissions on them.
+Roles `Dev Team A`, and `Dev Team B` both have `Describe` permission on topics that start with 'x_', but they cannot see the other team's topics as they do not have `Describe` permissions on them.
 
 We can now again try to produce to the topic as `team-a-client`.
 

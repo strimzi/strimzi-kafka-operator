@@ -53,7 +53,7 @@ DelegationToken:
 
 == Keycloak Authorization Services Model
 
-There are four concepts used in Keycloak Authorization Services to grant permissions: 'resources`, `authorization scopes`, `policies`, and `permissions`.
+There are four concepts used in Keycloak Authorization Services to grant permissions: `resources`, `authorization scopes`, `policies`, and `permissions`.
 
 `Resources` are a set of resource definitions that are used to match permitted actions.
 For example, a resource can be an individual topic, or it can be a set of all topics with names that start with some prefix.
@@ -70,9 +70,9 @@ Finally, `Permissions` are used to grant a subset of `authorization scopes` on t
 
 In order to grant Kafka permissions to users or service accounts you have to use the Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker - typically this client has `kafka` as its clientId.
 
-This client needs to have `Enable Authorization` option activated.
+This client needs to have `Authorization Enabled` option activated.
 
-All the permissions exist within the scope of this client, which means that if you have different Kafka clusters configured with different OAuth clientIds they would each have a separate set of permissions even though they are part of the same realm.
+All the permissions exist within the scope of this OAuth client, which means that if you have different Kafka clusters configured with different OAuth client ids they would each have a separate set of permissions even though they are part of the same realm.
 
 When the Kafka client authenticates using `SASL_OAUTHEARER` or `SASL_PLAIN` configured as 'OAuth over PLAIN' the `KeycloakRBACAuthorizer` retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
 This list of grants is the result of evaluating the Keycloak Authorization Services policies and permissions.
@@ -162,7 +162,7 @@ In order to consume from the topic the user needs `Describe` and `Read` permissi
 Consuming from the topic normally relies on storing the consumer offsets in a consumer group.
 That requires additional `Describe` and `Read` permissions on the consumer group.
 
-Two `resources` would be needed for matching, e.g.:
+Two `resources` would be needed for matching, for example:
 
     Topic:my-topic
     Group:my-group-*
@@ -171,7 +171,7 @@ Two `resources` would be needed for matching, e.g.:
 
 Besides needing the permissions for ordinary producing to the topic, an additional `IdempotentWrite` permission is required on the `Cluster` resource.
 
-Two `resources` would be needed for matching, e.g.:
+Two `resources` would be needed for matching, for example:
 
     Topic:my-topic
     Cluster:kafka-cluster
