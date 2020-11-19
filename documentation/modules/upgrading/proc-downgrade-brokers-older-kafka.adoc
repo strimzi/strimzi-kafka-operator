@@ -8,30 +8,11 @@
 
 This procedure describes how you can downgrade a Strimzi Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
 
-[IMPORTANT]
-====
-Downgrading is _not possible_ if the new version has ever used a `log.message.format.version` that is not supported by the previous version, including when the default value for `log.message.format.version` is used. For example, this resource can be downgraded to Kafka version {KafkaVersionLower} because the `log.message.format.version` has not been changed:
-
-[source,yaml,subs=attributes+]
-----
-apiVersion: v1alpha1
-kind: Kafka
-spec:
-  # ...
-  kafka:
-    version: {KafkaVersionHigher}
-    config:
-      log.message.format.version: "{LogMsgVersLower}"
-      # ...
-----
-
-The downgrade would not be possible if the `log.message.format.version` was set at `"{LogMsgVersHigher}"` or a value was absent (so that the parameter took the default value for a {KafkaVersionHigher} broker of {LogMsgVersHigher}).
-====
-
 .Prerequisites
 
 For the `Kafka` resource to be downgraded, check:
 
+* [IMPORTANT] xref:com-target-downgrade-version-{context}[Compatibility of Kafka versions].
 * The Cluster Operator, which supports both versions of Kafka, is up and running.
 * The `Kafka.spec.kafka.config` does not contain options that are not supported in the version of Kafka you are downgrading to.
 * The `Kafka.spec.kafka.config` has a `log.message.format.version` that is supported by the version being downgraded to.
@@ -69,6 +50,11 @@ NOTE: You must format the value of `log.message.format.version` as a string to p
 .. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
 +
 See xref:con-versions-and-images-str[]
+
+.. If you changed the Kafka listener configuration to use the array format of the `GenericKafkaListener` schema,
+revert the `Kafka.spec.kafka.listeners` to use the old format.
++
+See xref:con-upgrade-listeners-str[]
 
 . Save and exit the editor, then wait for rolling updates to complete.
 +

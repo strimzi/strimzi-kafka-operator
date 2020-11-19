@@ -1,20 +1,13 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-upgrade.adoc
+// assembly-downgrade.adoc
 
-
-[id='assembly-downgrading-kafka-versions-{context}']
-
+[id='assembly-downgrade-kafka-versions-{context}']
 = Downgrading Kafka
 
 Kafka version downgrades are performed using the Cluster Operator.
 
-Whether and how the Cluster Operator performs a downgrade depends on the differences between versions of:
-
-* Interbroker protocol
-* Log message format
-* ZooKeeper
-
+//Version constraints on the downgrade
 include::modules/con-downgrade-target-version.adoc[leveloffset=+1]
-
+//procedure to downgrade Kafka
 include::modules/proc-downgrade-brokers-older-kafka.adoc[leveloffset=+1]

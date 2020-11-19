@@ -4,15 +4,40 @@
 
 [id='com-target-downgrade-version-{context}']
 
-= Target downgrade version
+= Kafka version compatibility for downgrades
 
-How the Cluster Operator handles a downgrade operation depends on the `log.message.format.version`.
+Kafka downgrades are dependent on compatible current and target xref:ref-kafka-versions-{context}[Kafka versions],
+and the state at which messages have been logged.
 
-* If the target downgrade version of Kafka has the same `log.message.format.version` as the current version, the Cluster Operator downgrades by performing a single rolling restart of the brokers.
-* If the target downgrade version of Kafka has a different `log.message.format.version`, downgrading is only possible if the running cluster has _always_ had `log.message.format.version` set to the version used by the downgraded version.
-+
+You cannot revert to the previous Kafka version if the `inter.broker.protocol.version` differs, or messages have been added
+to message logs that use a newer `log.message.format.version`.
+
+The `inter.broker.protocol.version` determines the schema used in the messages written to `__consumer_offsets`.
+If you downgrade to a version of Kafka that uses an earlier `inter.broker.protocol.version`, the broker will not understand the messages.
+
+If the target downgrade version of Kafka has:
+
+* The _same_ `log.message.format.version` as the current version, the Cluster Operator downgrades by performing a single rolling restart of the brokers.
+* A _different_ `log.message.format.version`, downgrading is only possible if the running cluster has _always_ had `log.message.format.version` set to the version used by the downgraded version.
 This is typically only the case if the upgrade procedure was aborted before the `log.message.format.version` was changed.
 In this case, the downgrade requires:
-+
+
 ** Two rolling restarts of the brokers if the interbroker protocol of the two versions is different
 ** A single rolling restart if they are the same
+
+Downgrading is _not possible_ if the new version has ever used a `log.message.format.version` that is not supported by the previous version, including when the default value for `log.message.format.version` is used. For example, this resource can be downgraded to Kafka version {KafkaVersionLower} because the `log.message.format.version` has not been changed:
+
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1alpha1
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    version: {KafkaVersionHigher}
+    config:
+      log.message.format.version: "{LogMsgVersLower}"
+      # ...
+----
+
+The downgrade would not be possible if the `log.message.format.version` was set at `"{LogMsgVersHigher}"` or a value was absent (so that the parameter took the default value for a {KafkaVersionHigher} broker of {LogMsgVersHigher}).

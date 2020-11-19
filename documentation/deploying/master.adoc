@@ -20,3 +20,5 @@ include::assemblies/deploying/assembly-deploy-verify.adoc[leveloffset=+1]
 include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 //Upgrading the deployment
 include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]
+//Downgrading the deployment
+include::assemblies/upgrading/assembly-downgrade.adoc[leveloffset=+1]

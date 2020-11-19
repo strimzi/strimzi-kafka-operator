@@ -18,5 +18,3 @@ include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
 include::assembly-upgrade-kafka-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
-
-include::assembly-downgrade-kafka-versions.adoc[leveloffset=+1]

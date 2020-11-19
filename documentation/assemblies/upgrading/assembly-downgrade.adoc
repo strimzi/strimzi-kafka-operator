@@ -1,0 +1,26 @@
+// This assembly is included in the following assemblies:
+//
+// deploying/master.adoc
+
+[id='assembly-downgrade-{context}']
+= Downgrading Strimzi
+
+If you are encountering issues with the latest version of Strimzi,
+you can revert your installation to the previous version.
+
+As with the Strimzi upgrade process, you can perform your downgrade in two stages:
+
+. Revert your Cluster Operator to the previous Strimzi version.
+** xref:proc-downgrade-cluster-operator-{context}[]
+
+. Downgrade all Kafka brokers and client applications to the previous Kafka version.
+** xref:assembly-downgrade-kafka-versions-{context}[]
+
+If the previous version of Strimzi does not support the version of Kafka you are using,
+you can also downgrade Kafka as long as the log message format versions appended to messages match.
+
+//steps to downgrade the operators
+include::modules/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
+
+//steps to downgrade Kafka
+include::assembly-downgrade-kafka-versions.adoc[leveloffset=+1]
