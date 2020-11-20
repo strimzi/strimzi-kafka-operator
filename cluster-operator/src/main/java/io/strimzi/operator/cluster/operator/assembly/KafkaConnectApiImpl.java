@@ -423,7 +423,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         ops.asMap().entrySet().forEach(entry -> {
             // set desired loggers to desired levels
             if (entry.getKey().equals("log4j.rootLogger")) {
-                if (!entry.getValue().equals(fetchedLoggers.get("root"))) {
+                if (fetchedLoggers.get("root") == null || fetchedLoggers.get("root").get("level") == null ||
+                        !entry.getValue().equals(fetchedLoggers.get("root").get("level"))) {
                     updateLoggers.put("root", entry.getValue());
                 }
             } else if (entry.getKey().startsWith("log4j.logger.")) {
