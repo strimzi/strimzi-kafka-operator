@@ -3,7 +3,7 @@ name = TOConfig
 appender.console.type = Console
 appender.console.name = STDOUT
 appender.console.layout.type = PatternLayout
-appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n
+appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
 
 property.topic-operator.root.logger=${env:STRIMZI_LOG_LEVEL:-INFO}
 
