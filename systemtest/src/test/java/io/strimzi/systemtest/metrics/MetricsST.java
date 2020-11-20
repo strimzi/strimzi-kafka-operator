@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -59,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -404,10 +406,12 @@ public class MetricsST extends AbstractST {
     @Deprecated
     @Test
     void testKafkaMetricsSettingsDeprecatedMetrics() {
+        AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
+
         String metricsConfigJson = "{\"lowercaseOutputName\":true}";
-        KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
         // update metrics
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            previousMetrics.set(k.getSpec().getKafka().getMetricsConfig());
             k.getSpec().getKafka().setMetricsConfig(null);
             k.getSpec().getKafka().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson, Map.class));
         });
@@ -424,6 +428,12 @@ public class MetricsST extends AbstractST {
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
         assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+
+        // revert metrics changes
+        KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
+            k.getSpec().getKafka().setMetricsConfig(previousMetrics.get());
+            k.getSpec().getKafka().setMetrics(null);
+        });
     }
 
     /**

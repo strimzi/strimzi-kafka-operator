@@ -105,10 +105,8 @@ public class KafkaResource {
     public static DoneableKafka kafkaWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
 
-        ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(kafkaMetricsCm);
-        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(zkMetricsCm);
+        ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
         return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .withNewKafkaExporter()
