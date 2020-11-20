@@ -5,7 +5,7 @@
 [id='assembly-downgrade-kafka-versions-{context}']
 = Downgrading Kafka
 
-Kafka version downgrades are performed using the Cluster Operator.
+Kafka version downgrades are performed by the Cluster Operator.
 
 //Version constraints on the downgrade
 include::modules/con-downgrade-target-version.adoc[leveloffset=+1]

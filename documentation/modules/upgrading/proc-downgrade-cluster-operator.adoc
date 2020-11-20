@@ -46,6 +46,4 @@ The image tag shows the new Strimzi version followed by the Kafka version. For e
 
 You now have an updated Cluster Operator, but the version of Kafka running in the cluster it manages is unchanged.
 
-.What to do next
-
 Following the Cluster Operator downgrade, you can perform a xref:assembly-downgrade-kafka-versions-{context}[Kafka downgrade].
