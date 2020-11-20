@@ -168,7 +168,7 @@ With configuration now in place, let's create some topics, use a producer, a con
 
 First, we run a new interactive pod container using a Strimzi Kafka image which we use to connect to the already running Kafka broker.
 
-    kubectl run -ti --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-2.6.0 kafka-cli -- /bin/sh
+    kubectl run -ti --rm --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-2.6.0 kafka-cli -- /bin/sh
 
 The first time you run this, the `kubectl` might timeout waiting on the image to be downloaded, but your subsequent attempts may result in AlreadyExists error.
 

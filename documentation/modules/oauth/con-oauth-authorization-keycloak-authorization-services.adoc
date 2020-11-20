@@ -192,14 +192,8 @@ Alternatively, if the user has `Describe` permission on the `Cluster:kafka-clust
 
 Using `kafka-configs.sh` to get the broker configuration requires `Describe` permission on the `Cluster:kafka-cluster`.
 
-.Listing the partitions for the topic
+.Describing the consumer groups
 
-TODO
+Using `kafka-consumer-groups.sh` to get the detailed information about all the consumer groups requires `Describe` permission on the `Cluster:kafka-cluster`.
 
-.Changing the partitions for the topic
-
-TODO
-
-.Changing the logger level at runtime
-
-TODO
+TODO: more cases + add CLI example to each
