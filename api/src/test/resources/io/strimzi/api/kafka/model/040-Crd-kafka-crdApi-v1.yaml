@@ -34,6 +34,14 @@ spec:
       description: The desired number of ZooKeeper replicas in the cluster
       jsonPath: .spec.zookeeper.replicas
       type: integer
+    - name: Ready
+      description: The state of the custom resource
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
+      type: string
+    - name: Warnings
+      description: Warnings related to the custom resource
+      jsonPath: .status.conditions[?(@.type=="Warning")].status
+      type: string
     schema:
       openAPIV3Schema:
         type: object

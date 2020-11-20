@@ -22,6 +22,10 @@ spec:
     description: The desired number of Kafka Connect replicas
     JSONPath: .spec.replicas
     type: integer
+  - name: Ready
+    description: The state of the custom resource
+    JSONPath: .status.conditions[?(@.type=="Ready")].status
+    type: string
   subresources:
     status: {}
     scale:

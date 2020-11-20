@@ -30,6 +30,10 @@ spec:
     description: Maximum number of tasks
     JSONPath: .spec.tasksMax
     type: integer
+  - name: Ready
+    description: The state of the custom resource
+    JSONPath: .status.conditions[?(@.type=="Ready")].status
+    type: string
   subresources:
     status: {}
     scale:

@@ -30,6 +30,10 @@ spec:
     description: How the user is authorised
     JSONPath: .spec.authorization.type
     type: string
+  - name: Ready
+    description: The state of the custom resource
+    JSONPath: .status.conditions[?(@.type=="Ready")].status
+    type: string
   subresources:
     status: {}
   conversion:
