@@ -427,7 +427,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     updateLoggers.put("root", entry.getValue());
                 }
             } else if (entry.getKey().startsWith("log4j.logger.")) {
-                if (!entry.getValue().equals(fetchedLoggers.get(entry.getKey().substring("log4j.logger.".length())))) {
+                Map<String, String> fetchedLogger = fetchedLoggers.get(entry.getKey().substring("log4j.logger.".length()));
+                if (fetchedLogger == null || fetchedLogger.get("level") == null || !entry.getValue().equals(fetchedLogger.get("level"))) {
                     updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
                 }
             }
