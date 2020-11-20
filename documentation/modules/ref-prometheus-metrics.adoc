@@ -14,6 +14,7 @@ Prometheus metrics are enabled by configuring the `metricsConfig` property in fo
 
 When the `metricsConfig` property is not defined in the resource, the Prometheus metrics are disabled.
 To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing empty file under a specified key.
+All metrics without any renaming will be exposed in such a case.
 
 .Enabling metrics without further configuration
 [source,yaml,subs=attributes+]

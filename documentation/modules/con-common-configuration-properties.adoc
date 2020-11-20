@@ -302,6 +302,7 @@ The `metricsConfig` property contains a reference to the ConfigMap containing ad
 Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
 
 To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing empty file under a specified key.
+All metrics without any renaming will be exposed in such a case.
 
 .Example ConfigMap with metrics configuration for Kafka
 
@@ -312,23 +313,18 @@ apiVersion: {KafkaApiVersion}
 metadata:
   name: my-configmap
 data:
-  my-key: '{
-   "lowercaseOutputName":true,
-   "rules":[
-      {
-         "labels":{
-            "clientId":"$3",
-            "partition":"$5",
-            "topic":"$4"
-         },
-         "name":"kafka_server_$1_$2",
-         "pattern":"kafka.server<type=(.+),
-      name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value",
-         "type":"GAUGE"
-      },
-      "_comment": "Another rules configuration..."
-   ]
-}'
+  my-key: |
+    lowercaseOutputName: true
+    rules:
+    # Special cases and very specific rules
+    - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+      labels:
+       clientId: "$3"
+       topic: "$4"
+       partition: "$5"
+    # further configuration
 ----
 
 When metrics are enabled, they are exposed on port 9404.
