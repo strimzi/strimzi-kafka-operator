@@ -41,6 +41,8 @@ public class MockKafka implements Kafka {
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a deleteTopicResponse.");
     private Function<TopicName, Future<Void>> updateTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a updateTopicResponse.");
+    private Function<TopicName, Future<Void>> awaitNotExistsResult =
+        t -> null;
 
     public MockKafka setTopicsListResponse(Future<Set<String>> topicsListResponse) {
         this.topicsListResponse = topicsListResponse;
@@ -121,6 +123,11 @@ public class MockKafka implements Kafka {
         return this;
     }
 
+    public MockKafka setAwaitNotExistsResult(Function<TopicName, Future<Void>> awaitNotExistsResult) {
+        this.awaitNotExistsResult = awaitNotExistsResult;
+        return this;
+    }
+
     @Override
     public Future<Void> createTopic(Topic t) {
         NewTopic newTopic = TopicSerialization.toNewTopic(t, null);
@@ -155,7 +162,12 @@ public class MockKafka implements Kafka {
 
     @Override
     public Future<Void> awaitNotExists(TopicName topicName) {
-        return Future.succeededFuture();
+        Future<Void> event = awaitNotExistsResult.apply(topicName);
+        if (event == null) {
+            return Future.succeededFuture();
+        } else {
+            return event;
+        }
     }
 
     public MockKafka setUpdateTopicResponse(Function<TopicName, Future<Void>> updateTopicResponse) {
