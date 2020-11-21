@@ -90,6 +90,7 @@ release_single_file:
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-cluster-operator-$(RELEASE_VERSION).yaml
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/topic-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-topic-operator-$(RELEASE_VERSION).yaml
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/user-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-user-operator-$(RELEASE_VERSION).yaml
+	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/*-Crd-*.yaml -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-crds-$(RELEASE_VERSION).yaml
 
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory
