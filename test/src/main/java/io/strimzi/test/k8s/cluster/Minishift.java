@@ -11,6 +11,9 @@ import io.strimzi.test.k8s.cmdClient.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class Minishift implements KubeCluster {
 
     private static final String CMD = "minishift";
@@ -24,14 +27,17 @@ public class Minishift implements KubeCluster {
 
     @Override
     public boolean isClusterUp() {
+        List<String> cmd = Arrays.asList(CMD, "status");
+        String output = Exec.exec(cmd).out();
         try {
-            String output = Exec.exec(CMD, "status").out();
             return output.contains("Minishift:  Running")
                     && output.contains("OpenShift:  Running");
         } catch (KubeClusterException e) {
-            LOGGER.debug("Error:", e);
+            LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
+            LOGGER.debug(e);
             return false;
         }
+
     }
 
     @Override

@@ -148,7 +148,7 @@ public abstract class TopicOperatorBaseIT {
     @BeforeEach
     public void setup() throws Exception {
         LOGGER.info("Setting up test");
-        cluster.before();
+        cluster.cluster();
         int counts = 3;
         do {
             try {
