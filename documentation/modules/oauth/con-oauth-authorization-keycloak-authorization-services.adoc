@@ -145,10 +145,15 @@ For more information on how to configure permissions through Keycloak Authorizat
 
 == Permissions required by operations
 
+Here are a few examples which permissions are required when performing some operations on Kafka.
+
 .Creating a topic
 
 To create a topic the `Create` permission is required for the specific topic or `Cluster:kafka-cluster`.
-To display the details of the created topic the `Describe` permission is required for the specific topic.
+
+.Displaying the topic info
+
+To display the info on the topic the `Describe` permission is required for the specific topic.
 
 .Producing to the topic
 
