@@ -72,17 +72,17 @@ Use Keycloak Authorization Services rules on the OAuth client that represents th
 
 The OAuth 2.0 client definition must have the _Authorization Enabled_ option activated.
 
-All the permissions exist within the scope of this OAuth client, which means that if you have different Kafka clusters configured with different OAuth client ids they would each have a separate set of permissions even though they are part of the same realm.
+All permissions exist within the scope of this OAuth client, which means that if you have different Kafka clusters configured with different OAuth client IDs they would each have a separate set of permissions even though they are part of the same realm.
 
-When the Kafka client authenticates using `SASL_OAUTHBEARER` the `KeycloakRBACAuthorizer` retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
+When the Kafka client use the _SASL OAUTHBEARER_ mechanism, the Keycloak authorizer (`KeycloakRBACAuthorizer`) retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
 This list of grants is the result of evaluating the Keycloak Authorization Services policies and permissions.
 
-.Authorization scopes
+.Introducing authorization scopes
 
-Typically the initial configuration involves uploading the authorization scopes which creates a list of all the possible actions that can be performed on all the Kafka resource types.
-This step is performed only once, before defining any permissions. Alternatively, the authorization scopes can be added manually, but make sure to not introduce typos.
+Typically, an initial configuration involves uploading the authorization scopes to create a list of all the possible actions that can be performed on all the Kafka resource types.
+This step is performed only once, before defining any permissions. Alternatively, you can add authorization scopes manually.
 
-The `authorization scopes` should simply contain all the possible Kafka permissions regardless of the resource type:
+The authorization scopes should contain all the possible Kafka permissions regardless of the resource type:
 
 * Create
 * Write
@@ -95,73 +95,74 @@ The `authorization scopes` should simply contain all the possible Kafka permissi
 * ClusterAction
 * IdempotentWrite
 
-.Resources
+.Defining resource patterns for permission checks
 
-The `resources` use pattern names to be used with pattern matching against the targeted resources when performing the permission check.
+The resources use pattern names for pattern matching against the targeted resources when performing permission checks.
 
 The general pattern is as follows: `RESOURCE_TYPE:NAME_PATTERN`
 
 The resource types mirror the Kafka authorization model.
 The pattern allows for the two matching options: exact matching (when the pattern does not end with `\*`), and prefix matching (when the pattern ends with `*`).
 
-A few examples:
-
+.Example patterns for resources
     Topic:my-topic
     Topic:orders-*
     Group:orders-*
     Cluster:*
 
-In addition, the general pattern can be prefixed by another one of the format `kafka-cluster:CLUSTER_NAME`, followed by comma, where the cluster name refers to the `metadata.name` in the Kafka CR.
+In addition, the general pattern can be prefixed by `kafka-cluster:CLUSTER_NAME` followed by a comma, where the cluster name refers to the `metadata.name` in the Kafka custom resource.
 
-For example:
-
+.Example patterns for resources with cluster prefix
     kafka-cluster:my-cluster,Topic:*
     kafka-cluster:*,Group:b_*
 
 When the `kafka-cluster` prefix is not present it is assumed to be `kafka-cluster:*`.
 
-When the resource is defined, a list of possible authorization scopes relevant to the resource should be added to the list of scopes.
+When defining a resource, you can associate a list of possible authorization scopes relevant to the resource.
 Set whatever actions make sense for the targeted resource type.
 
-While you may add any `authorization scope` to any `resource`, only the scopes supported by the resource type will ever matter.
+While you may add any authorization scope to any resource, only the scopes supported by the resource type are considered for access control.
 
 .Policies
 
-The `policies` are used to target permissions to one or more accounts.
-The targeting can refer to specific user or service accounts, it can refer to the realm roles or client roles, it can refer to user groups, and it can even use a JS rule and match client's IP address for example.
+Policies are used to target permissions to one or more accounts.
+Targeting can refer to:
+* Specific user or service accounts
+* Realm roles or client roles
+* User groups
+* JS rule to match a client IP address
 
-Each policy can be given a name, and can be reused to target multiple permissions to multiple resources.
+A policy is given a unique name, and can be reused to target multiple permissions to multiple resources.
 
-.Permissions
+.Defining permissions based on scopes, resources and policies 
 
-The `permissions` are the final step where you pull together the `policies`, `resources`, and `authorization scopes` to grant access to one or more users.
+Use fine-grained permissions to pull together the policies, resources, and authorization scopes that grant access to users.
 
-Scope permissions should be used to grant fine-grained permissions to users.
 
-Each policy should be descriptively named in order to make it very clear what permissions it grants to which users.
+The name of the each permission should should clearly define what permissions it grants to which users.
 
-See xref:con-oauth-authorization-keycloak-example_str[the authorization example] to get a hands-on understanding of how to configure the permissions through Keycloak Authorization Services.
+For more information on how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[the authorization example].
 
 
 == Permissions required by operations
 
-.Creating the topic
+.Creating a topic
 
-In order to create the topic the `Create` permission is required for the specific topic or on `Cluster:kafka-cluster`.
+To create a topic the `Create` permission is required for the specific topic or `Cluster:kafka-cluster`.
 To display the details of the created topic the `Describe` permission is required for the specific topic.
 
 .Producing to the topic
 
-In order to produce to the topic the user needs `Describe` and `Write` permissions on the topic.
+To produce to the topic the user needs `Describe` and `Write` permissions on the topic.
 If topic has not yet been created, and autocreation is enabled, the permissions to create the topic are required.
 
 .Consuming from the topic
 
-In order to consume from the topic the user needs `Describe` and `Read` permissions on the topic.
+To consume from the topic the user needs `Describe` and `Read` permissions on the topic.
 Consuming from the topic normally relies on storing the consumer offsets in a consumer group.
 That requires additional `Describe` and `Read` permissions on the consumer group.
 
-Two `resources` would be needed for matching, for example:
+Two `resources` are needed for matching. For example:
 
     Topic:my-topic
     Group:my-group-*
@@ -170,30 +171,30 @@ Two `resources` would be needed for matching, for example:
 
 Besides needing the permissions for ordinary producing to the topic, an additional `IdempotentWrite` permission is required on the `Cluster` resource.
 
-Two `resources` would be needed for matching, for example:
+Two `resources` are needed for matching. For example:
 
     Topic:my-topic
     Cluster:kafka-cluster
 
-.Listing the topics
+.Listing topics
 
-When listing the topics only the topics on which the user has `Describe` permission are returned.
+When listing topics, only the topics on which a user has `Describe` permission are returned.
 
 .Displaying topic details
 
-The `DescribeConfigs` permission is required on the topic in order to get information like partitions, replicas, leaders ...
+The `DescribeConfigs` permission is required on the topic to be able to retrieve information on partitions, replicas, and so on.
 
-.Listing the consumer groups
+.Listing consumer groups
 
-When listing the consumer groups only the groups on which the user has `Describe` permissions are returned.
-Alternatively, if the user has `Describe` permission on the `Cluster:kafka-cluster` all the consumer groups are returned.
+When listing consumer groups, only the groups on which the user has `Describe` permissions are returned.
+Alternatively, if the user has `Describe` permission on the `Cluster:kafka-cluster`, all the consumer groups are returned.
 
 .Getting the Kafka broker configuration
 
-Using `kafka-configs.sh` to get the broker configuration requires `Describe` permission on the `Cluster:kafka-cluster`.
+To be able to use `kafka-configs.sh` to get the broker configuration, `Describe` permission is required on the `Cluster:kafka-cluster`.
 
-.Describing the consumer groups
+.Describing consumer groups
 
-Using `kafka-consumer-groups.sh` to get the detailed information about all the consumer groups requires `Describe` permission on the `Cluster:kafka-cluster`.
+To be able to `kafka-consumer-groups.sh` to get detailed information about all consumer groups, `Describe` permission is required on the `Cluster:kafka-cluster`.
 
 TODO: more cases + add CLI example to each
