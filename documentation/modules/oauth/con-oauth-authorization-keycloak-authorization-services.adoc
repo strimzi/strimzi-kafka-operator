@@ -3,16 +3,16 @@
 // proc-oauth-authorization-broker-config.adoc
 
 [id='con-oauth-authorization-keycloak-authorization-services_{context}']
-= Manage policies and permissions in Keycloak Authorization Services
+= Managing policies and permissions in Keycloak Authorization Services
 
-== Kafka Authorization Model
+== Kafka authorization model for resources
 
-The link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] defines resource types, and permissions available for each type.
-Whenever some action is performed by the Kafka client, one or more permissions are checked by the broker (depending on the action performed) using the configured authorizer.
+The link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] defines resource types, and the permissions available for each type.
+When an action is performed by a Kafka client on a broker, the broker uses a configured authorizer to check permissions, depending on the action performed and the resource type.
 
-There are five resource types: `Topic`, `Group`, `Cluster`, `TransactionalId`, `DelegationToken`.
+Kafka has five resource types for controlling access: `Topic`, `Group`, `Cluster`, `TransactionalId`, `DelegationToken`.
 
-And these are the different permissions for each resource type:
+Each resource type has different permissions:
 
 Topic:
 
@@ -51,24 +51,24 @@ DelegationToken:
 * Describe
 
 
-== Keycloak Authorization Services Model
+== Keycloak Authorization Services model for managing permissions
 
-There are four concepts used in Keycloak Authorization Services to grant permissions: `resources`, `authorization scopes`, `policies`, and `permissions`.
+Keycloak Authorization Services use four concepts to define and grant permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
 
-`Resources` are a set of resource definitions that are used to match permitted actions.
-For example, a resource can be an individual topic, or it can be a set of all topics with names that start with some prefix.
+Resources:: Resources are a set of resource definitions that are used to match permitted actions.
+For example, a resource can be an individual topic, or it can be a set of all topics with names that start with the same prefix.
 The resource definition has a set of available `authorization scopes` associated with it. These represent a set of all actions that can be permitted.
 Often, only a subset of these actions is actually permitted.
 
-`Authorization scopes` is simply a set of all available actions on all the different resource types. When defining a new `resource` the `scopes` added there are taken from this set of all scopes.
+Authorization scopes: Authorization scopes is simply a set of all available actions on all the different resource types. When defining a new resource,  scopes are added from the set of all scopes.
 
 `Policies` are rules that can use various criteria to match a list of accounts. They can match service accounts based on clientId, they can match user accounts based on username, or group, or roles.
 
-Finally, `Permissions` are used to grant a subset of `authorization scopes` on the specific `resource` definition to a set of users.
+Permissions:: Permissions grant a subset of authorization scopes on a specific resource definition to a set of users.
 
 == Mapping Keycloak Authorization Services to Kafka Model
 
-In order to grant Kafka permissions to users or service accounts you have to use the Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker - typically this client has `kafka` as its clientId.
+Use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker to grant Kafka permissions to users or service accounts. Typically, the OAuth client has `kafka` as its client id.
 
 This client needs to have `Authorization Enabled` option activated.
 
