@@ -56,12 +56,12 @@ Keycloak Authorization Services use four concepts to define and grant permission
 
 Resources:: Resources are a set of resource definitions that are used to match permitted actions.
 For example, a resource can be an individual topic, or it can be a set of all topics with names that start with the same prefix.
-The resource definition has a set of available `authorization scopes` associated with it. These represent a set of all actions that can be permitted.
+The resource definition has a set of available authorization scopes associated with it, which represent a set of all actions available on the particular resource.
 Often, only a subset of these actions is actually permitted.
 
 Authorization scopes:: Authorization scopes is simply a set of all available actions on all the different resource types. When defining a new resource,  scopes are added from the set of all scopes.
 
-Policies:: Policies are rules that use criteria to match a list of accounts. Policies can match service accounts based on client id, or user accounts based on username, group, or roles.
+Policies:: Policies are rules that use criteria to match a list of accounts. Policies can match service accounts based on client id or roles, or user accounts based on username, groups, or roles.
 
 Permissions:: Permissions grant a subset of authorization scopes on a specific resource definition to a set of users.
 
