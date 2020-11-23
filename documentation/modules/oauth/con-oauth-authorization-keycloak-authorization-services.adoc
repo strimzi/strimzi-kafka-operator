@@ -143,9 +143,9 @@ The name of the each permission should should clearly define what permissions it
 For more information on how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[the authorization example].
 
 
-== Permissions required by operations
+== Example permissions required for operations on Kafka
 
-Here are a few examples which permissions are required when performing some operations on Kafka.
+The following  examples demonstrate the permissions required for performing common operations on Kafka.
 
 .Creating a topic
 
