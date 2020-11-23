@@ -70,7 +70,7 @@ Permissions:: Permissions grant a subset of authorization scopes on a specific r
 
 Use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker to grant Kafka permissions to users or service accounts. Typically, the OAuth client has `kafka` as its client id.
 
-This client needs to have `Authorization Enabled` option activated.
+The OAuth 2.0 client definition must have the _Authorization Enabled_ option activated.
 
 All the permissions exist within the scope of this OAuth client, which means that if you have different Kafka clusters configured with different OAuth client ids they would each have a separate set of permissions even though they are part of the same realm.
 
