@@ -66,6 +66,7 @@ import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -3640,5 +3641,26 @@ public class KafkaClusterTest {
         });
         assertThat(ex.getMessage(), is("Kafka " + namespace + "/" + cluster + " has invalid configuration. " +
                 "Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes."));
+    }
+
+    @Test
+    public void testCruiseControlWithMinISRgtReplicas() {
+        Map<String, Object> config = new HashMap<>();
+        int minInsyncReplicas = 2;
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getName(), 1);
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getName(), minInsyncReplicas);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withConfig(config)
+                .endKafka()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .endSpec()
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () -> KafkaCluster.fromCrd(kafkaAssembly, VERSIONS));
     }
 }

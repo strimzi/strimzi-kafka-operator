@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.specific;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -67,16 +68,16 @@ public class CruiseControlUtils {
     public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {
         TestUtils.waitFor("Verify that kafka configuration " + kafkaProperties.toString() + " has correct cruise control metric reporter properties",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
-            kafkaProperties.getProperty("cruise.control.metrics.topic").equals("strimzi.cruisecontrol.metrics") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm").equals("HTTPS") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.bootstrap.servers").equals("my-cluster-kafka-brokers:9091") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.security.protocol").equals("SSL") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.keystore.type").equals("PKCS12") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.keystore.location").equals("/tmp/kafka/cluster.keystore.p12") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.keystore.password").equals("${CERTS_STORE_PASSWORD}") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.truststore.type").equals("PKCS12") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.truststore.location").equals("/tmp/kafka/cluster.truststore.p12") &&
-            kafkaProperties.getProperty("cruise.control.metrics.reporter.ssl.truststore.password").equals("${CERTS_STORE_PASSWORD}"));
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME.name()).equals("strimzi.cruisecontrol.metrics") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.name()).equals("HTTPS") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS.name()).equals("my-cluster-kafka-brokers:9091") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.name()).equals("SSL") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.name()).equals("PKCS12") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION.name()).equals("/tmp/kafka/cluster.keystore.p12") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD.getName()).equals("${CERTS_STORE_PASSWORD}") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getName()).equals("PKCS12") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION.getName()).equals("/tmp/kafka/cluster.truststore.p12") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD.getName()).equals("${CERTS_STORE_PASSWORD}"));
     }
 
     public static void verifyThatCruiseControlSamplesTopicsArePresent(long timeout) {

@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -43,6 +44,7 @@ import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderT
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -60,7 +62,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @Test
     public void testNoCruiseControl()  {
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withCruiseControl("my-cluster", null, "1", "1")
+                .withCruiseControl("my-cluster", null, "1", "1", "1")
                 .build();
 
         assertThat(configuration, isEquivalent(""));
@@ -71,24 +73,25 @@ public class KafkaBrokerConfigurationBuilderTest {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder().build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withCruiseControl("my-cluster", cruiseControlSpec, "1", "1")
+                .withCruiseControl("my-cluster", cruiseControlSpec, "1", "1", "1")
                 .build();
 
-        assertThat(configuration, isEquivalent(
-                "cruise.control.metrics.topic=strimzi.cruisecontrol.metrics\n" +
-                "cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm=HTTPS\n" +
-                "cruise.control.metrics.reporter.bootstrap.servers=my-cluster-kafka-brokers:9091\n" +
-                "cruise.control.metrics.reporter.security.protocol=SSL\n" +
-                "cruise.control.metrics.reporter.ssl.keystore.type=PKCS12\n" +
-                "cruise.control.metrics.reporter.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12\n" +
-                "cruise.control.metrics.reporter.ssl.keystore.password=${CERTS_STORE_PASSWORD}\n" +
-                "cruise.control.metrics.reporter.ssl.truststore.type=PKCS12\n" +
-                "cruise.control.metrics.reporter.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12\n" +
-                "cruise.control.metrics.reporter.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
-                "cruise.control.metrics.topic.auto.create=true\n" +
-                "cruise.control.metrics.reporter.kubernetes.mode=true\n" +
-                "cruise.control.metrics.topic.num.partitions=1\n" +
-                "cruise.control.metrics.topic.replication.factor=1"));
+        assertThat(configuration, containsString(
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}\n" +
+                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true\n" +
+                CruiseControlConfigurationParameters.METRICS_REPORTER_KUBERNETES_MODE + "=true\n" +
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1\n" +
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1\n" +
+                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
     }
 
     @Test
