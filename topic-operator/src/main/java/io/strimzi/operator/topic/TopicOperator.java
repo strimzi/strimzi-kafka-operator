@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -768,10 +770,11 @@ class TopicOperator {
         vertx.runOnContext(event);
     }
 
-
     /** Called when a topic znode is deleted in ZK */
     Future<Void> onTopicDeleted(LogContext logContext, TopicName topicName) {
-        return kafka.awaitNotExists(topicName).compose(
+        Future<Void> confirmedNonexistence = awaitExistential(logContext, topicName, false);
+        return confirmedNonexistence
+        .compose(
             ignored ->
                 executeWithTopicLockHeld(logContext, topicName,
                     new Reconciliation("onTopicDeleted", true) {
@@ -782,6 +785,27 @@ class TopicOperator {
                     }),
             error ->
                 Future.failedFuture("Ignored spurious-seeming topic deletion"));
+    }
+
+    private Future<Void> awaitExistential(LogContext logContext, TopicName topicName, boolean checkExists) {
+        String logState = "confirmed " + (checkExists ? "" : "non-") + "existence";
+        AtomicReference<Future<Boolean>> ref = new AtomicReference<>(kafka.topicExists(topicName));
+        Future<Void> voidFuture = Util.waitFor(vertx, logContext.toString(), logState, 1_000, 60_000,
+            () -> {
+                Future<Boolean> existsFuture = ref.get();
+                if (existsFuture.isComplete()) {
+                    if ((!checkExists && !existsFuture.result())
+                            || (checkExists && existsFuture.result())) {
+                        return true;
+                    } else {
+                        // It still exists (or still doesn't exist), so ask again, until we timeout
+                        ref.set(kafka.topicExists(topicName));
+                        return false;
+                    }
+                }
+                return false;
+            });
+        return voidFuture;
     }
 
     private Map<String, Long> statusUpdateGeneration = new HashMap<>();
@@ -910,8 +934,10 @@ class TopicOperator {
                         promise.fail(e);
                     }
                 };
-                kafka.topicMetadata(topicName).onComplete(handler);
-                return promise.future();
+                return awaitExistential(logContext, topicName, true).compose(exists ->  {
+                    kafka.topicMetadata(topicName).onComplete(handler);
+                    return promise.future();
+                });
             }
         };
         return executeWithTopicLockHeld(logContext, topicName, action);

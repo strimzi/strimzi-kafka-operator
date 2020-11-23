@@ -42,7 +42,7 @@ public interface Kafka {
      * @param topicName The name of the topic to delete.
      * @return A future which is completed once the topic has been deleted.
      */
-    Future<Void> awaitNotExists(TopicName topicName);
+    Future<Boolean> topicExists(TopicName topicName);
 
     /**
      * Asynchronously update the topic config in Kafka,

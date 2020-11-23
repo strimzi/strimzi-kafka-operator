@@ -9,20 +9,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import io.strimzi.operator.common.Util;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.CreateTopicsOptions;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -57,9 +57,7 @@ public class KafkaImpl implements Kafka {
         LOGGER.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 singleton(topicName.toString())).values().get(topicName.toString());
-        mapFuture(future).compose(ig ->
-                awaitNotExists(topicName)
-        ).onComplete(ar -> {
+        mapFuture(future).onComplete(ar -> {
             // Complete the result future on the context thread.
             vertx.runOnContext(ignored -> {
                 handler.handle(ar);
@@ -68,23 +66,29 @@ public class KafkaImpl implements Kafka {
         return handler.future();
     }
 
-    public Future<Void> awaitNotExists(TopicName topicName) {
-        return Util.waitFor(vertx, "deleted sync " + topicName, "deleted", 1000, 300_000, () -> {
-            try {
-                return adminClient.describeTopics(singleton(topicName.toString())).all().get().get(topicName.toString()) == null;
-            } catch (ExecutionException e) {
-                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
-                    return true;
-                } else if (e.getCause() instanceof RuntimeException) {
-                    throw (RuntimeException) e.getCause();
-                } else {
-                    throw new RuntimeException(e);
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }, error -> true);
+    @Override
+    public Future<Boolean> topicExists(TopicName topicName) {
+        // Test existence by doing a validate-only creation and checking for topic exists exception.
+        // This request goes to the controller, so is less susceptible to races
+        // where we happen to query a broker which hasn't processed an UPDATE_METADATA
+        // request yet
+        return mapFuture(adminClient.createTopics(singleton(
+            new NewTopic(topicName.toString(), 1, (short) 1)),
+            new CreateTopicsOptions().validateOnly(true)).all())
+                .map(ignored -> false)
+                .recover(
+                    e -> {
+                        if (e instanceof ExecutionException) {
+                            e = e.getCause();
+                        }
+                        if (e instanceof TopicExistsException) {
+                            return Future.succeededFuture(true);
+                        } else {
+                            return Future.failedFuture(e);
+                        }
+                    });
     }
+
 
     @SuppressWarnings("deprecation")
     @Override
@@ -103,20 +107,18 @@ public class KafkaImpl implements Kafka {
     public Future<TopicMetadata> topicMetadata(TopicName topicName) {
         LOGGER.debug("Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
-        Future<TopicDescription> topicDescriptionFuture = mapFuture(adminClient.describeTopics(
-                singleton(topicName.toString())).values().get(topicName.toString()));
-        Future<Config> configFuture = mapFuture(adminClient.describeConfigs(
-                singleton(resource)).values().get(resource));
-        return CompositeFuture.all(topicDescriptionFuture, configFuture)
-        .map(compositeFuture ->
-            new TopicMetadata(compositeFuture.resultAt(0), compositeFuture.resultAt(1)))
-            .recover(error -> {
-                if (error instanceof UnknownTopicOrPartitionException) {
-                    return Future.succeededFuture(null);
-                } else {
-                    return Future.failedFuture(error);
-                }
-            });
+        return topicExists(topicName).compose(exists -> {
+            if (exists) {
+                Future<TopicDescription> topicDescriptionFuture = mapFuture(adminClient.describeTopics(
+                        singleton(topicName.toString())).values().get(topicName.toString()));
+                Future<Config> configFuture = mapFuture(adminClient.describeConfigs(
+                        singleton(resource)).values().get(resource));
+                return CompositeFuture.all(topicDescriptionFuture, configFuture)
+                        .map(compositeFuture -> new TopicMetadata(compositeFuture.resultAt(0), compositeFuture.resultAt(1)));
+            } else {
+                return Future.succeededFuture(null);
+            }
+        });
     }
 
     @Override

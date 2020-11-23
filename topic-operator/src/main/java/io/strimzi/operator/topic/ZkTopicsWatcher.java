@@ -113,7 +113,11 @@ class ZkTopicsWatcher {
             Set<String> created;
             synchronized (ZkTopicsWatcher.this) {
                 LOGGER.debug("{}: znode {} now has children {}, previous children {}", watchCount, TOPICS_ZNODE, result, ZkTopicsWatcher.this.children);
-                deleted = new HashSet<>(ZkTopicsWatcher.this.children);
+                List<String> oldChildren = ZkTopicsWatcher.this.children;
+                if (oldChildren == null) {
+                    return;
+                }
+                deleted = new HashSet<>(oldChildren);
                 deleted.removeAll(result);
                 created = new HashSet<>(result);
                 created.removeAll(ZkTopicsWatcher.this.children);

@@ -35,14 +35,14 @@ public class MockKafka implements Kafka {
     private int topicMetadataResposeCall = 0;
     private List<Function<TopicName, Future<TopicMetadata>>> topicMetadataRespose = singletonList(
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicMetadataResponse."));
+    private Function<TopicName, Future<Boolean>> topicExistsResult =
+        t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicExistsResult.");
     private Function<String, Future<Void>> createTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a createTopicResponse.");
     private Function<TopicName, Future<Void>> deleteTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a deleteTopicResponse.");
     private Function<TopicName, Future<Void>> updateTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a updateTopicResponse.");
-    private Function<TopicName, Future<Void>> awaitNotExistsResult =
-        t -> null;
 
     public MockKafka setTopicsListResponse(Future<Set<String>> topicsListResponse) {
         this.topicsListResponse = topicsListResponse;
@@ -123,8 +123,8 @@ public class MockKafka implements Kafka {
         return this;
     }
 
-    public MockKafka setAwaitNotExistsResult(Function<TopicName, Future<Void>> awaitNotExistsResult) {
-        this.awaitNotExistsResult = awaitNotExistsResult;
+    public MockKafka setTopicExistsResult(Function<TopicName, Future<Boolean>> topicExistsResult) {
+        this.topicExistsResult = topicExistsResult;
         return this;
     }
 
@@ -161,10 +161,10 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<Void> awaitNotExists(TopicName topicName) {
-        Future<Void> event = awaitNotExistsResult.apply(topicName);
+    public Future<Boolean> topicExists(TopicName topicName) {
+        Future<Boolean> event = topicExistsResult.apply(topicName);
         if (event == null) {
-            return Future.succeededFuture();
+            throw new IllegalStateException();
         } else {
             return event;
         }

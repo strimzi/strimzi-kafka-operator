@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
-import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -189,6 +188,7 @@ public class TopicOperatorTest {
      */
     private TopicOperator resourceAdded(VertxTestContext context, CountDownLatch latch, Exception createException, Exception storeException) throws InterruptedException {
         mockKafka.setCreateTopicResponse(topicName.toString(), createException);
+        mockKafka.setTopicExistsResult(t -> Future.succeededFuture(false));
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
@@ -323,6 +323,7 @@ public class TopicOperatorTest {
                 new org.apache.kafka.clients.admin.Config(Collections.emptyList()));
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
+        mockKafka.setTopicExistsResult(t -> Future.succeededFuture(true));
         mockKafka.setTopicMetadataResponse(topicName, topicMetadata, null);
         mockK8s.setCreateResponse(resourceName, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString());
@@ -356,6 +357,17 @@ public class TopicOperatorTest {
                 return Future.succeededFuture(topicMetadata);
             } else if (count < 3) {
                 return Future.succeededFuture(null);
+            }
+            context.failNow(new Throwable("This should never happen"));
+            return Future.failedFuture("This should never happen");
+        });
+        AtomicInteger counter2 = new AtomicInteger();
+        mockKafka.setTopicExistsResult(t -> {
+            int count = counter2.getAndIncrement();
+            if (count == 3) {
+                return Future.succeededFuture(false);
+            } else if (count < 3) {
+                return Future.succeededFuture(true);
             }
             context.failNow(new Throwable("This should never happen"));
             return Future.failedFuture("This should never happen");
@@ -401,6 +413,7 @@ public class TopicOperatorTest {
     @Test
     public void testOnTopicCreated_retryTimeout(VertxTestContext context) {
 
+        mockKafka.setTopicExistsResult(t -> Future.succeededFuture(true));
         mockKafka.setTopicMetadataResponse(topicName, null, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString());
         Checkpoint async = context.checkpoint();
@@ -986,10 +999,10 @@ public class TopicOperatorTest {
     }
 
     private void topicDeleted(VertxTestContext context, Exception storeException, Exception k8sException) {
-        topicDeleted(context, storeException, k8sException, null);
+        topicDeleted(context, storeException, k8sException, false);
     }
 
-    private void topicDeleted(VertxTestContext context, Exception storeException, Exception k8sException, Exception awaitTopicNotExistsException) {
+    private void topicDeleted(VertxTestContext context, Exception storeException, Exception k8sException, boolean topicExists) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).withMapName(resourceName).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
@@ -1002,16 +1015,16 @@ public class TopicOperatorTest {
                 .create(privateTopic);
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
-        mockKafka.setAwaitNotExistsResult(t -> awaitTopicNotExistsException == null ? Future.succeededFuture() : Future.failedFuture(awaitTopicNotExistsException));
+        mockKafka.setTopicExistsResult(t -> Future.succeededFuture(topicExists));
 
         LogContext logContext = LogContext.zkWatch("///", topicName.toString());
         Checkpoint async = context.checkpoint();
         topicOperator.onTopicDeleted(logContext, topicName).onComplete(ar -> {
             if (k8sException != null
                     || storeException != null
-                    || awaitTopicNotExistsException != null) {
+                    || topicExists) {
                 assertFailed(context, ar);
-                if (awaitTopicNotExistsException != null) {
+                if (topicExists) {
                     mockK8s.assertExists(context, resourceName);
                 } else if (k8sException == null) {
                     mockK8s.assertNotExists(context, resourceName);
@@ -1039,7 +1052,7 @@ public class TopicOperatorTest {
     public void testOnTopicDeletedSpurious(VertxTestContext context) {
         Exception storeException = null;
         Exception k8sException = null;
-        topicDeleted(context, storeException, k8sException, new TimeoutException());
+        topicDeleted(context, storeException, k8sException, false);
     }
 
     @Test
