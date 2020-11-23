@@ -11,7 +11,6 @@ import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Assumptions;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -58,14 +57,10 @@ public class KubeClusterResource {
 
     public static synchronized KubeClusterResource getInstance() {
         if (kubeClusterResource == null) {
-            try {
-                kubeClusterResource = new KubeClusterResource();
-                initNamespaces();
-                LOGGER.info("Cluster default namespace is {}", kubeClusterResource.getNamespace());
-                LOGGER.info("Cluster command line client default namespace is {}", kubeClusterResource.getTestNamespace());
-            } catch (RuntimeException e) {
-                Assumptions.assumeTrue(false, e.getMessage());
-            }
+            kubeClusterResource = new KubeClusterResource();
+            initNamespaces();
+            LOGGER.info("Cluster default namespace is {}", kubeClusterResource.getNamespace());
+            LOGGER.info("Cluster command line client default namespace is {}", kubeClusterResource.getTestNamespace());
         }
         return kubeClusterResource;
     }
@@ -293,12 +288,7 @@ public class KubeClusterResource {
 
     public KubeCluster cluster() {
         if (kubeCluster == null) {
-            try {
-                kubeCluster = KubeCluster.bootstrap();
-            } catch (Exception e) {
-                LOGGER.error("Test setup failed: {}", e.getMessage());
-                throw e;
-            }
+            kubeCluster = KubeCluster.bootstrap();
         }
         return kubeCluster;
     }
