@@ -25,7 +25,7 @@ function grep_check {
 # Check for latin abbrevs
 grep_check '[^[:alpha:]](e\.g\.|eg)[^[:alpha:]]' "Replace 'e.g'. with 'for example, '"
 grep_check '[^[:alpha:]](i\.e\.|ie)[^[:alpha:]]' "Replace 'i.e'. with 'that is, '"
-grep_check '[^[:alpha:]]etc\.?[^[:alpha:]]' "Replace 'etc.'. with ' and so on.'"
+grep_check '[^[:alpha:]]etc\.[^[:alpha:]]?' "Replace 'etc.'. with ' and so on.'"
 
 # And/or
 grep_check '[^[:alpha:]]and/or[^[:alpha:]]' "Use either 'and' or 'or', but not 'and/or'"
