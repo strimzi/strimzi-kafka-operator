@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -16,7 +17,9 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -58,18 +61,25 @@ import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
+import io.strimzi.api.kafka.model.connect.build.Artifact;
+import io.strimzi.api.kafka.model.connect.build.Build;
+import io.strimzi.api.kafka.model.connect.build.DockerOutput;
+import io.strimzi.api.kafka.model.connect.build.JarArtifact;
+import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class KafkaConnectCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-connect";
 
@@ -123,6 +133,11 @@ public class KafkaConnectCluster extends AbstractModel {
 
     private KafkaConnectTls tls;
     private KafkaClientAuthentication authentication;
+
+    protected Build build;
+    private String builtImage;
+    private String previouslyBuiltImage;
+    private String buildRevision;
 
     /**
      * Constructor
@@ -275,6 +290,9 @@ public class KafkaConnectCluster extends AbstractModel {
         // Kafka Connect needs special treatment for Affinity and Tolerations because of deprecated fields in spec
         kafkaConnect.setUserAffinity(affinity(spec));
         kafkaConnect.setTolerations(tolerations(spec));
+
+        // Configure Connect Build
+        kafkaConnect.build = spec.getBuild();
 
         return kafkaConnect;
     }
@@ -812,5 +830,132 @@ public class KafkaConnectCluster extends AbstractModel {
     @Override
     protected boolean shouldPatchLoggerAppender() {
         return true;
+    }
+
+    public Build getBuild() {
+        return build;
+    }
+
+    public ConfigMap generateBuildConfigMap()   {
+        return createConfigMap(KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", generateDockerfile()));
+    }
+
+    private String generateDockerfile() {
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter writer = new PrintWriter(stringWriter);
+
+        writer.println("FROM " + image);
+        writer.println("USER root:root");
+
+        for (Plugin plugin : build.getPlugins())    {
+            String connectorPath = "/opt/kafka/plugins/" + plugin.getName();
+
+            for (Artifact art : plugin.getArtifacts())  {
+                writer.println("RUN mkdir -p " + connectorPath + " \\");
+
+                if (art instanceof JarArtifact) {
+                    JarArtifact jar = (JarArtifact) art;
+
+                    String artifactDir = connectorPath + "/" + Util.hashStub(jar.getUrl());
+                    String artifactPath = artifactDir + "/" + jar.getUrl().substring(jar.getUrl().lastIndexOf("/") + 1);
+                    String download =  "curl -L --output " + artifactPath + " " + jar.getUrl();
+
+                    writer.println("      && mkdir -p " + artifactDir + " \\");
+
+                    if (jar.getSha512sum() == null) {
+                        // No checksum => we just download the file
+                        writer.println("      && " + download);
+                    } else {
+                        // Checksum exists => we need to check it
+                        String checksum = jar.getSha512sum() + " " + artifactPath;
+
+                        writer.println("      && " + download + " \\");
+                        writer.println("      && echo \"" + checksum + "\" > " + artifactPath + ".sha512 \\");
+                        writer.println("      && sha512sum --check " + artifactPath + ".sha512 \\");
+                        writer.println("      && rm -f " + artifactPath + ".sha512");
+                    }
+                }
+            }
+        }
+
+        writer.println("USER 1001");
+
+        return stringWriter.toString();
+    }
+
+    public Pod generateBuilderPod() {
+        List<Volume> volumes = new ArrayList<>();
+
+        volumes.add(new VolumeBuilder()
+                .withName("workspace")
+                .withNewEmptyDir()
+                .endEmptyDir()
+                .build());
+
+        volumes.add(new VolumeBuilder()
+                .withName("dockerfile")
+                .withNewConfigMap()
+                    .withName(KafkaConnectResources.dockerFileConfigMapName(cluster))
+                    .withItems(new KeyToPathBuilder().withKey("Dockerfile").withNewPath("Dockerfile").build())
+                .endConfigMap()
+                .build());
+
+        if (build.getOutput() instanceof DockerOutput) {
+            DockerOutput output = (DockerOutput) build.getOutput();
+
+            volumes.add(new VolumeBuilder()
+                    .withName("docker-credentials")
+                    .withNewSecret()
+                        .withSecretName(output.getPushSecret())
+                        .withItems(new KeyToPathBuilder().withKey(".dockerconfigjson").withNewPath("config.json").build())
+                    .endSecret()
+                    .build());
+        } else {
+            throw new RuntimeException("Kubernetes build requires output of type `docker`.");
+        }
+
+        List<VolumeMount> volumeMounts = new ArrayList<>();
+
+        volumeMounts.add(new VolumeMountBuilder().withName("workspace").withMountPath("/workspace").build());
+        volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
+        volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/kaniko/.docker").build());
+
+        Container container = new ContainerBuilder()
+                .withName("kaniko")
+                .withImage("gcr.io/kaniko-project/executor:latest")
+                .withArgs("--dockerfile=/dockerfile/Dockerfile",
+                        "--context=dir://workspace",
+                        "--image-name-with-digest-file=/dev/termination-log",
+                        "--destination=" + build.getOutput().getImage())
+                .withVolumeMounts(volumeMounts)
+                .withResources(build.getResources())
+                .withSecurityContext(templateContainerSecurityContext)
+                .build();
+
+        return createPod(KafkaConnectResources.buildPodName(cluster), Collections.emptyMap(), volumes, null, null, Collections.singletonList(container), null, false);
+    }
+
+    public String getBuiltImage() {
+        return builtImage;
+    }
+
+    public void setBuiltImage(String builtImage) {
+        this.builtImage = builtImage;
+    }
+
+    public String getPreviouslyBuiltImage() {
+        return previouslyBuiltImage;
+    }
+
+    public void setPreviouslyBuiltImage(String previouslyBuiltImage) {
+        this.previouslyBuiltImage = previouslyBuiltImage;
+    }
+
+    public String getBuildRevision() {
+        return buildRevision;
+    }
+
+    public void setBuildRevision(String buildRevision) {
+        this.buildRevision = buildRevision;
     }
 }

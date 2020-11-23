@@ -1304,6 +1304,95 @@ spec:
                     Kafka Connect pods as volumes.
               description: Pass data from Secrets or ConfigMaps to the Kafka Connect
                 pods and use them to configure connectors.
+            build:
+              type: object
+              properties:
+                output:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                      description: The name of the image which will be built. Required.
+                    insecure:
+                      type: boolean
+                      description: When true, the target repository will be treated
+                        as insecure.
+                    pushSecret:
+                      type: string
+                      description: Docker Registry Secret with the credentials for
+                        pushing the newly built image. Required.
+                    type:
+                      type: string
+                      enum:
+                      - docker
+                      - imagestream
+                      description: Output type. Must be either 'docker' for pushing
+                        the newly build image to Docker compatible registry or 'imagestream'
+                        for pushing the image to OpenShift ImageStream. Required.
+                  required:
+                  - image
+                  - pushSecret
+                  - type
+                  description: Configures where should the newly build image be stored.
+                    Required.
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                  description: CPU and memory resources to reserve for the build.
+                plugins:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        pattern: ^[a-z][-_a-z0-9]*[a-z]$
+                        description: 'The unique name of the connector plugin. Will
+                          be used to generate the path when the connector artifacts
+                          will be stored. The name has to be unique within the KafkaConnect
+                          resource. The name has to follow the following pattern:
+                          `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
+                      artifacts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sha512sum:
+                              type: string
+                              description: SHA512 checksum of the artifact. Optional.
+                                If specified, the checksum will be verified while
+                                building the new container. If not specified, the
+                                downloaded artifact will not be verified.
+                            type:
+                              type: string
+                              enum:
+                              - jar
+                              description: Storage type, must be either 'ephemeral',
+                                'persistent-claim', or 'jbod'.
+                            url:
+                              type: string
+                              pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                              description: URL of the artifact which will be downloaded.
+                                Required.
+                          required:
+                          - type
+                          - url
+                        description: List of artifacts which belong to this connector
+                          plugin. Required.
+                    required:
+                    - name
+                    - artifacts
+                  description: List of connector plugins which should be added to
+                    the Kafka Connect. Required.
+              required:
+              - output
+              - plugins
+              description: Configures how the Connect container image should be built.
+                Optional.
             clientRackInitImage:
               type: string
               description: The image of the init container used for initializing the

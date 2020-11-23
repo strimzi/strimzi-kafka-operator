@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -457,4 +458,21 @@ public class Util {
         return sb.toString();
     }
 
+    /**
+     * Gets the first 8 characters from a SHA-1 hash of the provided String
+     *
+     * @param   toBeHashed   String for which the hash will be returned
+     * @return              First 8 characters of the SHA-1 hash
+     */
+    public static String hashStub(String toBeHashed)   {
+        try {
+            // This is used to generate unique identifier which is not used for security => using SHA-1 is ok
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            byte[] digest = sha1.digest(toBeHashed.getBytes(StandardCharsets.US_ASCII));
+
+            return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to get artifact URL SHA-1 hash", e);
+        }
+    }
 }

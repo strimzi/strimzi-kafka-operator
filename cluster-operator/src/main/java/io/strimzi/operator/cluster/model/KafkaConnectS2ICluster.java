@@ -58,6 +58,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         KafkaConnectS2ISpec spec = kafkaConnectS2I.getSpec();
         KafkaConnectS2ICluster cluster = fromSpec(spec, versions, new KafkaConnectS2ICluster(kafkaConnectS2I));
 
+        if (cluster.build != null)  {
+            throw new InvalidResourceException(".spec.build can be used only with KafkaConnect and is not supported with KafkaConnectS2I.");
+        }
+
         cluster.setOwnerReference(kafkaConnectS2I);
         cluster.setInsecureSourceRepository(spec.isInsecureSourceRepository());
         cluster.setBuildResourceRequirements(spec.getBuildResources());

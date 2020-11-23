@@ -5,7 +5,10 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ContainerStateTerminated;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -32,6 +35,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
@@ -55,6 +59,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
+    private final PodOperator podOperator;
     private final KafkaVersion.Lookup versions;
     private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2IOperations;
     private final ClusterOperatorConfig.RbacScope rbacScope;
@@ -85,6 +90,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         this.deploymentOperations = supplier.deploymentOperations;
         this.connectS2IOperations = supplier.connectS2IOperator;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.podOperator = supplier.podOperations;
 
         this.versions = config.versions();
         this.rbacScope = config.getRbacScope();
@@ -132,6 +138,17 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> connectServiceAccount(namespace, connect))
                 .compose(i -> connectInitClusterRoleBinding(namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> deploymentOperations.getAsync(namespace, connect.getName()))
+                .compose(deployment -> {
+                    if (deployment != null) {
+                        connect.setPreviouslyBuiltImage(deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+                        connect.setBuildRevision(deployment.getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION));
+                    }
+
+                    return Future.succeededFuture();
+                })
+                .compose(i -> connectKubernetesBuild(namespace, connect))
+                //.compose(i -> connectOpenShiftBuild())
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> connectMetricsAndLoggingConfigMap(namespace, connect))
@@ -143,7 +160,16 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return configMapOperations.reconcile(namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
-                .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+                .compose(i -> {
+                    annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, connect.getBuildRevision());
+                    Deployment dep = connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+
+                    if (connect.getBuiltImage() != null) {
+                        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(connect.getBuiltImage());
+                    }
+
+                    return deploymentOperations.reconcile(namespace, connect.getName(), dep);
+                })
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
@@ -211,5 +237,77 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return super.delete(reconciliation)
                 .compose(i -> withIgnoreRbacError(clusterRoleBindingOperations.reconcile(KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
+
+    /**
+     * Builds a new container image with connectors on Kubernetes
+     *
+     * @param namespace         Namespace of the Connect cluster
+     * @param connect           KafkaConnectCluster object
+     * @return                  Future for tracking the asynchronous result of the Kubernetes image build
+     */
+    Future<Void> connectKubernetesBuild(String namespace, KafkaConnectCluster connect) {
+        if (!pfa.supportsS2I()) {
+            if (connect.getBuild() != null) {
+                // We are on Kubernetes & build exists => let's build
+                ConfigMap dockerFileConfigMap = connect.generateBuildConfigMap();
+                String newBuildRevision = Util.hashStub(dockerFileConfigMap.getData().get("Dockerfile"));
+
+                if (newBuildRevision.equals(connect.getBuildRevision())) {
+                    // The revision is the same => nothing to do
+                    log.info("Build configuration did not changed. Nothing new to build.");
+                    connect.setBuiltImage(connect.getPreviouslyBuiltImage());
+                    return Future.succeededFuture();
+                } else {
+                    return podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connect.getCluster()), null)
+                            .compose(ignore -> configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connect.getCluster()), dockerFileConfigMap))
+                            .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connect.getCluster()), connect.generateBuilderPod()))
+                            .compose(ignore -> {
+                                Future<Void> waitForComplete = podOperator.waitFor(namespace, KafkaConnectResources.buildPodName(connect.getCluster()), "deleted", 1_000, operationTimeoutMs, (ignore1, ignore2) -> {
+                                    Pod buildPod = podOperator.get(namespace, KafkaConnectResources.buildPodName(connect.getCluster()));
+
+                                    if (buildPod.getStatus() != null
+                                            && buildPod.getStatus().getContainerStatuses() != null
+                                            && buildPod.getStatus().getContainerStatuses().size() > 0
+                                            && buildPod.getStatus().getContainerStatuses().get(0) != null
+                                            && buildPod.getStatus().getContainerStatuses().get(0).getState() != null
+                                            && buildPod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null) {
+                                        log.info("Build complete!");
+                                        return true;
+                                    } else {
+                                        log.info("Build not complete yet.");
+                                        return false;
+                                    }
+                                });
+
+                                return waitForComplete;
+                            })
+                            .compose(ignore -> podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connect.getCluster())))
+                            .compose(pod -> {
+                                ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
+                                if (state.getExitCode() == 0) {
+                                    connect.setBuiltImage(state.getMessage().trim());
+                                    connect.setBuildRevision(newBuildRevision);
+                                    log.info("Build completed successfully. New image is {}.", connect.getBuiltImage());
+                                    return Future.succeededFuture();
+                                } else {
+                                    log.info("Build failed with code {}: {}", state.getExitCode(), state.getMessage());
+                                    return Future.failedFuture("The Kafka Connect build failed");
+                                }
+                            })
+                            .compose(i -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connect.getCluster()), null))
+                            .mapEmpty();
+                }
+            } else {
+                // Build is not configured => we should delete resources
+                connect.setBuildRevision(null);
+                return configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connect.getCluster()), null)
+                        .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connect.getCluster()), null))
+                        .mapEmpty();
+            }
+        } else {
+            // We are using OpenShift build => nothing to do
+            return Future.succeededFuture();
+        }
     }
 }

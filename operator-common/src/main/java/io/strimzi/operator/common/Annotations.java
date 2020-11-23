@@ -29,6 +29,7 @@ public class Annotations {
     public static final String ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH = STRIMZI_DOMAIN + "logging-appenders-hash";
 
     public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = STRIMZI_DOMAIN + "use-connector-resources";
+    public static final String STRIMZI_IO_CONNECT_BUILD_REVISION = STRIMZI_DOMAIN + "connect-build-revision";
     public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = STRIMZI_DOMAIN + "manual-rolling-update";
     // This annotation with related possible values (approve, stop, refresh) is set by the user for interacting
     // with the rebalance operator in order to start, stop, or refresh rebalancing proposals and operations.

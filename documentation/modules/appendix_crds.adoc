@@ -1993,6 +1993,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
+|build                  1.2+<.<|Configures how the Connect container image should be built. Optional.
+|xref:type-Build-{context}[`Build`]
 |clientRackInitImage    1.2+<.<|The image of the init container used for initializing the `client.rack`.
 |string
 |metricsConfig          1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
@@ -2272,6 +2274,95 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#secretvolumesource-v1-core[SecretVolumeSource]
 |====
 
+[id='type-Build-{context}']
+### `Build` schema reference
+
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|output     1.2+<.<|Configures where should the newly build image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
+|xref:type-DockerOutput-{context}[`DockerOutput`], xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`]
+|resources  1.2+<.<|CPU and memory resources to reserve for the build. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[core/v1 resourcerequirements].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
+|plugins    1.2+<.<|List of connector plugins which should be added to the Kafka Connect. Required.
+|xref:type-Plugin-{context}[`Plugin`] array
+|====
+
+[id='type-DockerOutput-{context}']
+### `DockerOutput` schema reference
+
+Used in: xref:type-Build-{context}[`Build`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `DockerOutput` from xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`].
+It must have the value `docker` for the type `DockerOutput`.
+[options="header"]
+|====
+|Property           |Description
+|image       1.2+<.<|The name of the image which will be built. Required.
+|string
+|pushSecret  1.2+<.<|Docker Registry Secret with the credentials for pushing the newly built image. Required.
+|string
+|insecure    1.2+<.<|When true, the target repository will be treated as insecure.
+|boolean
+|type        1.2+<.<|Must be `docker`.
+|string
+|====
+
+[id='type-ImageStreamOutput-{context}']
+### `ImageStreamOutput` schema reference
+
+Used in: xref:type-Build-{context}[`Build`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `ImageStreamOutput` from xref:type-DockerOutput-{context}[`DockerOutput`].
+It must have the value `imagestream` for the type `ImageStreamOutput`.
+[options="header"]
+|====
+|Property      |Description
+|image  1.2+<.<|The name of the image which will be built. Required.
+|string
+|type   1.2+<.<|Must be `imagestream`.
+|string
+|====
+
+[id='type-Plugin-{context}']
+### `Plugin` schema reference
+
+Used in: xref:type-Build-{context}[`Build`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|name       1.2+<.<|The unique name of the connector plugin. Will be used to generate the path when the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
+|string
+|artifacts  1.2+<.<|List of artifacts which belong to this connector plugin. Required.
+|xref:type-JarArtifact-{context}[`JarArtifact`] array
+|====
+
+[id='type-JarArtifact-{context}']
+### `JarArtifact` schema reference
+
+Used in: xref:type-Plugin-{context}[`Plugin`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|url        1.2+<.<|URL of the artifact which will be downloaded. Required.
+|string
+|sha512sum  1.2+<.<|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+|string
+|type       1.2+<.<|Must be `jar`.
+|string
+|====
+
 [id='type-KafkaConnectStatus-{context}']
 ### `KafkaConnectStatus` schema reference
 
@@ -2367,6 +2458,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
 |bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
+|build                     1.2+<.<|Configures how the Connect container image should be built. Optional.
+|xref:type-Build-{context}[`Build`]
 |clientRackInitImage       1.2+<.<|The image of the init container used for initializing the `client.rack`.
 |string
 |config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).

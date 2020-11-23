@@ -101,4 +101,22 @@ public class KafkaConnectResources {
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
         return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
     }
+
+    /**
+     * Returns the name of the Kafka Connect {@code ConfigMap} for a {@code KafkaConnect} build which contains the Dockerfile.
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     * @return The name of the corresponding Kafka Connect {@code ConfigMap}.
+     */
+    public static String dockerFileConfigMapName(String clusterName) {
+        return deploymentName(clusterName) + "-dockerfile";
+    }
+
+    /**
+     * Returns the name of the Kafka Connect {@code Pod} for a {@code KafkaConnect} build builds the new image.
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     * @return The name of the corresponding Kafka Connect build {@code Pod}.
+     */
+    public static String buildPodName(String clusterName) {
+        return deploymentName(clusterName) + "-build";
+    }
 }
