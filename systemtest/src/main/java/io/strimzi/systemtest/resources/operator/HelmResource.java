@@ -45,13 +45,20 @@ public class HelmResource {
 
     public static void clusterOperator(long operationTimeout, long reconciliationInterval) {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
+                // image registry config
+                entry("image.registry", Environment.STRIMZI_REGISTRY),
+                entry("topicOperator.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("userOperator.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafkaInit.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("jmxTrans.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafkaBridge.image.registry", Environment.STRIMZI_REGISTRY_DEFAULT),
                 // image repository config
-                entry("image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
-                entry("topicOperator.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
-                entry("userOperator.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
-                entry("kafkaInit.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
-                entry("jmxTrans.image.repository", Environment.STRIMZI_REGISTRY + "/" + Environment.STRIMZI_ORG),
-                entry("kafkaBridge.image.repository", Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_ORG_DEFAULT),
+                entry("image.repository", Environment.STRIMZI_ORG),
+                entry("topicOperator.image.repository", Environment.STRIMZI_ORG),
+                entry("userOperator.image.repository", Environment.STRIMZI_ORG),
+                entry("kafkaInit.image.repository", Environment.STRIMZI_ORG),
+                entry("jmxTrans.image.repository", Environment.STRIMZI_ORG),
+                entry("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT),
                 // image tags config
                 entry("image.tag", Environment.STRIMZI_TAG),
                 entry("topicOperator.image.tag", Environment.STRIMZI_TAG),
