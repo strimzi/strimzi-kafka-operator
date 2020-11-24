@@ -78,6 +78,7 @@ import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
@@ -142,8 +143,6 @@ public class KafkaCluster extends AbstractModel {
     private static final String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
     private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
     private static final String KAFKA_REPLICATION_FACTOR_CONFIG_FIELD = "default.replication.factor";
-    private static final String CC_NUM_PARTITIONS_CONFIG_FIELD = "cruise.control.metrics.topic.num.partitions";
-    private static final String CC_REPLICATION_FACTOR_CONFIG_FIELD = "cruise.control.metrics.topic.replication.factor";
 
     protected static final String KAFKA_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
@@ -196,6 +195,7 @@ public class KafkaCluster extends AbstractModel {
     private CruiseControlSpec cruiseControlSpec;
     private String ccNumPartitions = null;
     private String ccReplicationFactor = null;
+    private String ccMinInSyncReplicas = null;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
     private String brokersConfiguration;
@@ -421,11 +421,24 @@ public class KafkaCluster extends AbstractModel {
 
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
         // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
-        if (configuration.getConfigOption(CC_NUM_PARTITIONS_CONFIG_FIELD) == null) {
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getName()) == null) {
             result.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS);
         }
-        if (configuration.getConfigOption(CC_REPLICATION_FACTOR_CONFIG_FIELD) == null) {
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getName()) == null) {
             result.ccReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_REPLICATION_FACTOR);
+        }
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getName()) == null) {
+            result.ccMinInSyncReplicas = "1";
+        } else {
+            // If the user has set the CC minISR but it is higher than the set number of replicas for the metrics topics then we need to abort and make
+            // sure that the user sets minISR <= replicationFactor
+            if (Integer.parseInt(result.ccMinInSyncReplicas) > Integer.parseInt(result.ccReplicationFactor)) {
+                throw new IllegalArgumentException(
+                               "The Cruise Control metric topic minISR was set to a value (" + result.ccMinInSyncReplicas + ") " +
+                               "which is higher than the number of replicas for that topic (" + result.ccReplicationFactor + "). " +
+                               "Please ensure that the CC metrics topic minISR is <= to the topic's replication factor."
+                );
+            }
         }
         String metricReporters =  configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
         Set<String> metricReporterList = new HashSet<>();
@@ -1865,7 +1878,7 @@ public class KafkaCluster extends AbstractModel {
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization)
-                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor)
+                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                 .withUserConfiguration(configuration)
                 .build().trim();
     }

@@ -21,6 +21,25 @@ public enum CruiseControlConfigurationParameters {
     CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY("num.broker.metrics.windows"),
     CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY("completed.user.task.retention.time.ms"),
 
+    // Metrics reporter configurations
+    METRICS_REPORTER_BOOTSTRAP_SERVERS("cruise.control.metrics.reporter.bootstrap.servers"),
+    METRICS_REPORTER_KUBERNETES_MODE("cruise.control.metrics.reporter.kubernetes.mode"),
+    METRICS_REPORTER_SECURITY_PROTOCOL("cruise.control.metrics.reporter.security.protocol"),
+    METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO("cruise.control.metrics.reporter.ssl.endpoint.identification.algorithm"),
+    METRICS_REPORTER_SSL_KEYSTORE_TYPE("cruise.control.metrics.reporter.ssl.keystore.type"),
+    METRICS_REPORTER_SSL_KEYSTORE_LOCATION("cruise.control.metrics.reporter.ssl.keystore.location"),
+    METRICS_REPORTER_SSL_KEYSTORE_PASSWORD("cruise.control.metrics.reporter.ssl.keystore.password"),
+    METRICS_REPORTER_SSL_TRUSTSTORE_TYPE("cruise.control.metrics.reporter.ssl.truststore.type"),
+    METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION("cruise.control.metrics.reporter.ssl.truststore.location"),
+    METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD("cruise.control.metrics.reporter.ssl.truststore.password"),
+
+    // Metrics topic configurations
+    METRICS_TOPIC_NAME("cruise.control.metrics.topic"),
+    METRICS_TOPIC_AUTO_CREATE("cruise.control.metrics.topic.auto.create"),
+    METRICS_TOPIC_NUM_PARTITIONS("cruise.control.metrics.topic.num.partitions"),
+    METRICS_TOPIC_REPLICATION_FACTOR("cruise.control.metrics.topic.replication.factor"),
+    METRICS_TOPIC_MIN_ISR("cruise.control.metrics.topic.min.insync.replicas"),
+
     // Goals String lists
     CRUISE_CONTROL_GOALS_CONFIG_KEY("goals"),
     CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY("default.goals"),
