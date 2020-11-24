@@ -6,23 +6,23 @@
 = Example authorization rules configuration using Authorization Services
 
 This is an end-to-end example of using Keycloak Authorization Services to configure authorization rules for use with `keycloak` authorization in Strimzi.
-The example starts by deploying the Keycloak server with pre-configured realm, requiring no additional configuration.
+The example starts by deploying the Keycloak server with pre-configured realms, requiring no additional configuration.
 We deploy the Kafka cluster configured to use one of the pre-configured realms.
-We connect to the Keycloak Admin Console and demonstrate the sections of the UI where authorizations rules are configured.
+We connect to the Keycloak Admin Console and demonstrate the sections of the user interface where authorizations rules are configured.
 We use Kafka CLI client tools with different personal and service accounts to demonstrate limited access based on the permissions granted to different accounts.
 
 
-## Token Based Authorization with Keycloak Authorization Services
+== Token Based Authorization with Keycloak Authorization Services
 
 Once the Kafka Broker has obtained an access token by using Strimzi Kafka OAuth for authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
-For this Strimzi Kafka OAuth supports the use of `Keycloak Authorization Services`.
+For this, Strimzi Kafka OAuth supports the use of Keycloak Authorization Services.
 
-A custom authorizer has to be configured on the Kafka Broker to take advantage of Authorization Services REST endpoints available on Keycloak, which provide a list of granted permissions on resources for authenticated users.
-The list of grants (permissions) is first fetched during the first action after authenticated session is established by Kafka client, and then regularly refreshed in the background.
-Grants are cached, and enforced locally on the Kafka Broker for each user session in order to provide fast authorization decisions. Because they are refreshed, any changes at Keycloak side are detected and enforced.
+A custom authorizer has to be configured on the Kafka Broker to take advantage of the Authorization Services REST endpoints available on Keycloak, which provide a list of granted permissions on resources for authenticated users.
+The list of grants (permissions) is fetched as the first action after an authenticated session is established by the Kafka client, and then regularly refreshed in the background.
+Grants are cached and enforced locally on the Kafka Broker for each user session to provide fast authorization decisions. Because they are refreshed, any changes to the grants on the Keycloak server are detected and enforced.
 
 
-## Starting Up the Pods
+== Starting Up the Pods
 
 NOTE: TODO: Change the url to: https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/kubernetes
 
@@ -30,55 +30,73 @@ For this example we're using the kubernetes deployment scripts available at http
 
 NOTE: TODO: Change the url to: https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master
 
-    export ROOT=https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/examples
+[source,yaml]
+----
+export ROOT=https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/examples
+----
 
-.Deploy the Postgres database for the Keycloak
+.Deploy the Postgres database for Keycloak
 
-    kubectl apply -f $ROOT/examples/kubernetes/postgres-pvc.yaml
-    kubectl apply -f $ROOT/examples/kubernetes/postgres.yaml
+[source,yaml]
+----
+kubectl apply -f $ROOT/examples/kubernetes/postgres-pvc.yaml
+kubectl apply -f $ROOT/examples/kubernetes/postgres.yaml
+----
 
 .Deploy the Keycloak server
 
-    kubectl apply -f $ROOT/examples/kubernetes/keycloak-realms-configmap.yaml
-    kubectl apply -f $ROOT/examples/kubernetes/keycloak-postgres.yaml
+[source,yaml]
+----
+kubectl apply -f $ROOT/examples/kubernetes/keycloak-realms-configmap.yaml
+kubectl apply -f $ROOT/examples/kubernetes/keycloak-postgres.yaml
+----
 
-If your default namespace is not `myproject` but something else (for example, `default`), then use the following to deploy Keycloak:
+If your default namespace is not `myproject` (for example, `default`), use the following to deploy Keycloak:
 
-    curl -s $ROOT/examples/kubernetes/keycloak-postgres.yaml | sed -e "s#myproject#default#" | kubectl apply -f -
+[source,yaml]
+----
+curl -s $ROOT/examples/kubernetes/keycloak-postgres.yaml | sed -e "s#myproject#default#" | kubectl apply -f -
+----
 
 .Deploy the minimal Kafka cluster
 
 Here we assume that the Strimzi Cluster Operator has already been installed on your Kubernetes cluster.
 
-    kubectl apply -f $ROOT/examples/kubernetes/kafka-oauth-single-authz.yaml
+[source,yaml]
+----
+kubectl apply -f $ROOT/examples/kubernetes/kafka-oauth-single-authz.yaml
+----
 
 
-## Using the Keycloak Admin Console to Configure Authorization
+== Using the Keycloak Admin Console to configure authorization
 
 You can login to the Keycloak Admin Console by creating a tunnel to the keycloak pod:
 
-    kubectl port-forward keycloak 8080
+[source,yaml]
+----
+kubectl port-forward keycloak 8080
+----
 
-Now use your browser to connect to `http://localhost:8080/auth/admin` and use `admin` as both a username, and a password.
+Use your browser to connect to `http://localhost:8080/auth/admin` and use `admin` as username and password.
 
 In the upper left corner under the Keycloak icon you should see `Master` selected as the current realm.
 Moving the mouse pointer over it should reveal two additional realms - `Demo` and `Kafka-authz`.
 
 For this example we are interested in the `kafka-authz` realm.
 Selecting it will open the `Realm Settings` for the `kafka-authz` realm.
-Next to the `Realm Settings` there are other sections we are interested in - `Groups`, `Roles`, `Clients` and `Users`.
+From the *Realm Settings* you can navigate to  *Groups*, *Roles*, *Clients* and *Users*.
 
-Under `Groups` we can see several groups that can be used to mark users as having some permissions.
-Groups are sets of users with name assigned. Typically they are used to geographically or organisationally compartmentalize users into organisations, organisational units, departments, and so on.
+Under *Groups*, you can view groups to mark users as having some permissions.
+Groups are sets of users with a name assigned. Typically, they are used to compartmentalize users into geographical, organizational or departmental units, and so on.
 
 In Keycloak the groups can be stored in an LDAP identity provider.
-That makes it possible to make some user a member of some group - through a custom LDAP server admin UI for example, which grants them some permissions on Kafka resources.
+That makes it possible to make a user a member of a group through a custom LDAP server admin user interface, for example, to grant them some permissions on Kafka resources.
 
-Under `Users`, click on the `View all users` button and you will see two users defined - `alice` and `bob`. `alice` is a member of the `ClusterManager Group`, and `bob` is a member of `ClusterManager-my-cluster Group`.
+Under *Users*, when viewing all users you will see two users defined: `alice` and `bob`. `alice` is a member of the `ClusterManager Group`, and `bob` is a member of `ClusterManager-my-cluster Group`.
 In Keycloak the users can be stored in an LDAP identity provider.
 
-Under `Roles` we can see several realm roles which can be used to mark users or clients as having some permissions.
-Roles are a concept analogous to groups. They are usually used to 'tag' users as playing organisational roles and having permissions that pertain to it.
+Under *Roles*, you can view the realm roles to mark users or clients as having some permissions.
+Roles are a concept analogous to groups. They are usually used to _tag_ users with organizational roles and have the requisite permissions.
 In Keycloak the roles cannot be stored in an LDAP identity provider - if that is your requirement then you should use groups instead.
 
 Under `Clients` we can see some additional clients configured - `kafka`, `kafka-cli`, `team-a-client`, `team-b-client`.
