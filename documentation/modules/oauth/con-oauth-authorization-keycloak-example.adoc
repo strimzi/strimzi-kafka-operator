@@ -14,10 +14,10 @@ We use Kafka CLI client tools with different personal and service accounts to de
 
 == Token Based Authorization with Keycloak Authorization Services
 
-Once the Kafka Broker has obtained an access token by using [Strimzi Kafka OAuth](https://github.com/strimzi/strimzi-kafka-oauth) for authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
-For this, Strimzi Kafka OAuth supports the use of Keycloak Authorization Services.
+Once the Kafka Broker has obtained an access token by using `oauth` authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
+For this, Strimzi Kafka Operator comes with `keycloak` authorization which uses Keycloak Authorization Services to centrally manage permissions.
 
-A custom authorizer has to be configured on the Kafka Broker to take advantage of the Authorization Services REST endpoints available on Keycloak, which provide a list of granted permissions on resources for authenticated users.
+When using `keycloak` authorization a custom authorizer is configured on the Kafka Broker that uses Authorization Services REST endpoints available on Keycloak, which provide a list of granted permissions on resources for authenticated users.
 The list of grants (permissions) is fetched as the first action after an authenticated session is established by the Kafka client, and then regularly refreshed in the background.
 Grants are cached and enforced locally on the Kafka Broker for each user session to provide fast authorization decisions. Because they are refreshed, any changes to the grants on the Keycloak server are detected and enforced.
 
