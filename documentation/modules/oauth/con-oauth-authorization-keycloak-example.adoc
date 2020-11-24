@@ -5,6 +5,13 @@
 [id='con-oauth-authorization-keycloak-example_{context}']
 = Keycloak Authorization Services Example
 
+This is an end-to-end example of using Keycloak Authorization Services to configure authorization rules for use with `keycloak` authorization in Strimzi.
+The example starts by deploying the Keycloak server with pre-configured realm, requiring no additional configuration.
+We deploy the Kafka cluster configured to use one of the pre-configured realms.
+We connect to the Keycloak Admin Console and demonstrate the sections of the UI where authorizations rules are configured.
+We use Kafka CLI client tools with different personal and service accounts to demonstrate limited access based on the permissions granted to different accounts.
+
+
 ## Token Based Authorization with Keycloak Authorization Services
 
 Once the Kafka Broker has obtained an access token by using Strimzi Kafka OAuth for authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
@@ -449,4 +456,3 @@ User `bob` should have no problem reading from or writing to any topic:
 
     bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
       --from-beginning --consumer.config /tmp/bob.properties
-
