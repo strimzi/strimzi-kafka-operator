@@ -168,8 +168,10 @@ That requires additional `Describe` and `Read` permissions on the consumer group
 
 Two `resources` are needed for matching. For example:
 
-    Topic:my-topic
-    Group:my-group-*
+----
+Topic:my-topic
+Group:my-group-*
+----    
 
 .Producing to the topic using an idempotent producer
 

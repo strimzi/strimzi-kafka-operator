@@ -100,66 +100,71 @@ Roles are a concept analogous to groups. They are usually used to _tag_ users wi
 Roles cannot be stored in an LDAP identity provider. If LDAP is a requirement, you could use groups instead.
 
 Under *Clients*, you can view the additional client configurations: `kafka`, `kafka-cli`, `team-a-client`, `team-b-client`.
-The client with client id `kafka` is used by Kafka Brokers to perform the necessary OAuth2 communication for access token validation,
-and to authenticate to other Kafka Broker instances using OAuth2 client authentication.
-This client also contains Authorization Services resource definitions, policies and authorization scopes used to perform authorization on the Kafka Brokers.
+The client with client id `kafka` is used by Kafka Brokers to perform the necessary OAuth 2.0 communication for access token validation,
+and to authenticate to other Kafka Broker instances using OAuth 2.0 client authentication.
+This client also contains the Authorization Services resource definitions, policies and authorization scopes used to perform authorization on the Kafka Brokers.
 
 The client with client id `kafka-cli` is a public client that can be used by the Kafka command line tools when authenticating with username and password to obtain an access token or a refresh token.
 
 Clients `team-a-client`, and `team-b-client` are confidential clients representing services with partial access to certain Kafka topics.
 
-The authorization configuration is defined in the `kafka` client under `Authorization` tab.
-This tab becomes visible when `Authorization Enabled` is turned on under the `Settings` tab.
+The authorization configuration is defined in the `kafka` client from the *Authorization* tab, which becomes visible when *Authorization Enabled* is switched on from the *Settings* tab.
 
 
-## Authorization Services - Resources, Authorization Scopes, Policies and Permissions
+== Defining Authorization Services for access control
 
-`Keycloak Authorization Services` use several concepts that together take part in defining, and applying access control to resources.
+Keycloak Authorization Services use authorization scopes, policies and permissions to define and apply access control to resources.
 
-`Resources` define _what_ we are protecting from unauthorized access.
-Each resource can contain a list of `authorization scopes` - actions that are available on the resource, so that permission on a resource can be granted for one or more actions only.
-`Policies` define the groups of users we want to target with permissions. Users can be targeted based on group membership, assigned roles, or individually.
-Finally, the `permissions` tie together specific `resources`, `action scopes` and `policies` to define that 'specific users U can perform certain actions A on the resource R'.
+Resources define _what_ we are protecting from unauthorized access.
+Each resource can contain a list of authorization scopes - actions that are available on the resource, so that permission on a resource can be granted for one or more actions only.
+Policies define the groups of users we want to target with permissions. Users can be targeted based on group membership, assigned roles, or individually.
+Finally, permissions tie together the resources, authorization scopes and policies that specify _users U can perform actions A on resource R_.
 
-You can read more about `Keycloak Authorization Services` on link:https://www.keycloak.org/docs/latest/authorization_services/index.html[project's web site], but note that the documentation there is focused primarily on using the Authorization Services to protect web resources, whereas here we're using it to protect access to Kafka.
+For more information about Keycloak Authorization Services, see {keycloak-authorization-services}, but note that the Authorization Services documentation is focused primarily on using the Authorization Services to protect web resources rather than access to Kafka.
 
-If we take a look under the `Resources` sub-tab of `Authorization` tab, we'll see the list of resource definitions.
-These are resource specifiers - patterns in a specific format, that are used to target policies to specific resources.
-The format is quite simple. For example:
+When viewing resources from the Keycloak user interface you will see a list of resource definitions.
+These are resource specifiers, patterns in a specific format that are used to target policies to specific resources.
+For example, this pattern targets only topics in kafka cluster 'cluster-1' with names starting with 'a_':
 
-- `kafka-cluster:cluster-1,Topic:a_*`  ... targets only topics in kafka cluster 'cluster-1' with names starting with 'a_'
+----
+kafka-cluster:cluster-1,Topic:a_*  
+---- 
 
-If `kafka-cluster:XXX` segment is not present, the specifier targets any cluster.
+If a cluster is not specified by name ( `kafka-cluster:cluster-1`), the specifier targets any cluster. For example, this pattern targets any cluster with a name starting  'x_':
+----
+Group:x_* 
+----
 
-- `Group:x_*` ... targets all consumer groups on any cluster with names starting with 'x_'
 
-The possible resource types mirror the xref:kafka_authorization_model[Kafka authorization model] (`Topic`, `Group`, `Cluster`, ...).
+The possible resource types, such as `Topic`, `Group` and `Cluster`, mirror the xref:kafka_authorization_model[Kafka authorization model].
 
-Under `Authorization Scopes` we can see a list of all the possible actions (Kafka permissions) that can be granted on resources of different types.
+*Authorization Scopes* lists of all the possible actions (Kafka permissions) that can be granted on specific resources.
 It requires some understanding of link:https://kafka.apache.org/documentation/#resources_in_kafka[Kafka's permissions model] to know which of these make sense with which resource type.
-This list mirrors Kafka permissions and should be the same for any deployment.
+The list of actions mirrors Kafka permissions and is the same for any deployment.
 
-There is an link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/oauth-keycloak-authorizer/etc/authorization-scopes.json[authorization-scopes.json] file containing the authorization scopes that can be imported, so that they do not have to be manually entered for every new `Authorization Services` enabled client.
-In order to import `authorization-scopes.json` into a new client, first make sure the new client is `Authorization Enabled` and saved. Then, click on the `Authorization` tab and use the `Import` to import the file. Afterwards, if you select the `Authorization Scopes` you will see the loaded scopes.
+Rather than importing authorization scopes manually into every new client, you can use a link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/oauth-keycloak-authorizer/etc/authorization-scopes.json[authorization-scopes.json] file.
+
+You must make sure that the client is enabled in Keycloak for Authorization Services. After which, you can import a JSON file from the *Authorization* tab. You can see the loaded scopes from the *Authorization Scopes* page.
+
 For this example the authorization scopes have already been imported as part of the realm import.
 
-Under the `Policies` sub-tab there are filters that match sets of users.
-Users can be explicitly listed, or they can be matched based on the Roles, or Groups they are assigned.
-Policies can even be programmatically defined using JavaScript where logic can take into account the context of the client session - for example, client ip (that is client ip of the Kafka client).
+The *Policies* tab has filters that match sets of users.
+Users can be explicitly listed, or they can be matched based on the roles, or groups they are assigned.
+Policies can even be defined programmatically using JavaScript so the logic considers the context of the client session, such as the IP of a Kafka client.
 
-Then, finally, there is the `Permissions` sub-tab, which defines 'role bindings' where `resources`, `authorization scopes` and `policies` are tied together to apply a set of permissions on specific resources for certain users.
+The *Permissions* tab defines role bindings that associate resources, authorization scopes and policies for applying a set of permissions on specific resources for certain users.
 
-Each `permission` definition can have a nice descriptive name which can make it very clear what kind of access is granted to which users.
+Use a clear, descriptive name for each permission definition so that it is obvious what kind of access is granted to which users.
 For example:
 
-    Dev Team A can write to topics that start with x_ on any cluster
-
-    Dev Team B can read from topics that start with x_ on any cluster
-    Dev Team B can update consumer group offsets that start with x_ on any cluster
-
-    ClusterManager of my-cluster Group has full access to cluster config on my-cluster
-    ClusterManager of my-cluster Group has full access to consumer groups on my-cluster
-    ClusterManager of my-cluster Group has full access to topics on my-cluster
+----
+Dev Team A can write to topics that start with x_ on any cluster
+Dev Team B can read from topics that start with x_ on any cluster
+Dev Team B can update consumer group offsets that start with x_ on any cluster
+ClusterManager of my-cluster Group has full access to cluster config on my-cluster
+ClusterManager of my-cluster Group has full access to consumer groups on my-cluster
+ClusterManager of my-cluster Group has full access to topics on my-cluster
+----
 
 If we take a closer look at the `Dev Team A can write ...` permission definition, we see that it combines a resource called `Topic:x_*`, scopes `Describe` and `Write`, and `Dev Team A` policy.
 If we click on the `Dev Team A` policy, we see that it matches all users that have a realm role called `Dev Team A`.
@@ -181,7 +186,7 @@ It makes sense to require the user to log-in, before using the resulting access 
 In this case the access token represents the specific user, rather than the client application.
 
 
-## Authorization in Action Using CLI Clients
+== Authorization in Action Using CLI Clients
 
 A note of caution - this example uses the latest version of Keycloak, and relies on bugfixes of issues in some older versions.
 Let's make sure the Authorization rules have been properly imported when the Keycloak was started.
