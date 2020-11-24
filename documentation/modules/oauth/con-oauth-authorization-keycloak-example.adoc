@@ -14,7 +14,7 @@ We use Kafka CLI client tools with different personal and service accounts to de
 
 == Token Based Authorization with Keycloak Authorization Services
 
-Once the Kafka Broker has obtained an access token by using Strimzi Kafka OAuth for authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
+Once the Kafka Broker has obtained an access token by using [Strimzi Kafka OAuth](https://github.com/strimzi/strimzi-kafka-oauth) for authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
 For this, Strimzi Kafka OAuth supports the use of Keycloak Authorization Services.
 
 A custom authorizer has to be configured on the Kafka Broker to take advantage of the Authorization Services REST endpoints available on Keycloak, which provide a list of granted permissions on resources for authenticated users.
@@ -97,9 +97,9 @@ In Keycloak the users can be stored in an LDAP identity provider.
 
 Under *Roles*, you can view the realm roles to mark users or clients as having some permissions.
 Roles are a concept analogous to groups. They are usually used to _tag_ users with organizational roles and have the requisite permissions.
-In Keycloak the roles cannot be stored in an LDAP identity provider - if that is your requirement then you should use groups instead.
+Roles cannot be stored in an LDAP identity provider. If LDAP is a requirement, you could use groups instead.
 
-Under `Clients` we can see some additional clients configured - `kafka`, `kafka-cli`, `team-a-client`, `team-b-client`.
+Under *Clients*, you can view the additional client configurations: `kafka`, `kafka-cli`, `team-a-client`, `team-b-client`.
 The client with client id `kafka` is used by Kafka Brokers to perform the necessary OAuth2 communication for access token validation,
 and to authenticate to other Kafka Broker instances using OAuth2 client authentication.
 This client also contains Authorization Services resource definitions, policies and authorization scopes used to perform authorization on the Kafka Brokers.
