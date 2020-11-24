@@ -3,7 +3,7 @@
 // con-oauth-authorization-keycloak-authorization-services.adoc
 
 [id='con-oauth-authorization-keycloak-example_{context}']
-= Keycloak Authorization Services Example
+= Example authorization rules configuration using Authorization Services
 
 This is an end-to-end example of using Keycloak Authorization Services to configure authorization rules for use with `keycloak` authorization in Strimzi.
 The example starts by deploying the Keycloak server with pre-configured realm, requiring no additional configuration.
