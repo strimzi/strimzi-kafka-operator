@@ -298,6 +298,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         KafkaTopicResource.topic(CLUSTER_NAME, topicAName).done();
 
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
+            .withUserName(TEAM_A_CLIENT)
             .withTopicName(topicXName)
             .withMessageCount(MESSAGE_COUNT)
             .build();
@@ -458,7 +459,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     void setUp()  {
         keycloakInstance.setRealm(TEST_REALM, true);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
