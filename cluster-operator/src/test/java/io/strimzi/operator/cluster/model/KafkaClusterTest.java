@@ -3719,11 +3719,11 @@ public class KafkaClusterTest {
         config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsyncReplicas);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
-                .editKafka()
-                .withConfig(config)
-                .endKafka()
+                    .editKafka()
+                        .withConfig(config)
+                    .endKafka()
                 .withNewCruiseControl()
                 .endCruiseControl()
                 .endSpec()
