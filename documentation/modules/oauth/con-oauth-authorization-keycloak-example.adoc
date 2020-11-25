@@ -405,6 +405,7 @@ User `bob` can list the topic, but `team-a-client` and `team-b-client` cannot.
 bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/bob.properties --list
 bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
 bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-b-client.properties --list
+----
 
 The `Dev Team A`, and `Dev Team B` roles both have `Describe` permission on topics that start with `x_`, but they cannot see the other team's topics as they do not have `Describe` permissions on them.
 
