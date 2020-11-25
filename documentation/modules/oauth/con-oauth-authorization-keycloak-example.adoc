@@ -79,12 +79,10 @@ kubectl port-forward keycloak 8080
 
 Use your browser to connect to `http://localhost:8080/auth/admin` and use `admin` as username and password.
 
-In the upper left corner under the Keycloak icon you should see `Master` selected as the current realm.
-Moving the mouse pointer over it should reveal two additional realms - `Demo` and `Kafka-authz`.
+The default view usually displays the *Master* realm.
+For this example we are interested in the `kafka-authz` realm, which you can select in the upper left corner.
 
-For this example we are interested in the `kafka-authz` realm.
-Selecting it will open the `Realm Settings` for the `kafka-authz` realm.
-From the *Realm Settings* you can navigate to  *Groups*, *Roles*, *Clients* and *Users*.
+Initially the *Realm Settings* section is selected, but you can navigate to  *Groups*, *Roles*, *Clients* and *Users*.
 
 Under *Groups*, you can view groups to mark users as having some permissions.
 Groups are sets of users with a name assigned. Typically, they are used to compartmentalize users into geographical, organizational or departmental units, and so on.
@@ -113,50 +111,9 @@ The authorization configuration is defined in the `kafka` client from the *Autho
 
 == Defining Authorization Services for access control
 
-Keycloak Authorization Services use authorization scopes, policies and permissions to define and apply access control to resources.
+Keycloak Authorization Services use authorization scopes, policies and permissions to define and apply access control to resources as explained in xref:keycloak_authorization_services_model_for_managing_permissions(one of the previous chapters).
 
-Resources define _what_ we are protecting from unauthorized access.
-Each resource can contain a list of authorization scopes - actions that are available on the resource, so that permission on a resource can be granted for one or more actions only.
-Policies define the groups of users we want to target with permissions. Users can be targeted based on group membership, assigned roles, or individually.
-Finally, permissions tie together the resources, authorization scopes and policies that specify _users U can perform actions A on resource R_.
-
-For more information about Keycloak Authorization Services, see {keycloak-authorization-services}, but note that the Authorization Services documentation is focused primarily on using the Authorization Services to protect web resources rather than access to Kafka.
-
-When viewing resources from the Keycloak user interface you will see a list of resource definitions.
-These are resource specifiers, patterns in a specific format that are used to target policies to specific resources.
-For example, this pattern targets only topics in kafka cluster 'cluster-1' with names starting with 'a_':
-
-----
-kafka-cluster:cluster-1,Topic:a_*  
----- 
-
-If a cluster is not specified by name ( `kafka-cluster:cluster-1`), the specifier targets any cluster. For example, this pattern targets any cluster with a name starting  'x_':
-----
-Group:x_* 
-----
-
-
-The possible resource types, such as `Topic`, `Group` and `Cluster`, mirror the xref:kafka_authorization_model[Kafka authorization model].
-
-*Authorization Scopes* lists of all the possible actions (Kafka permissions) that can be granted on specific resources.
-It requires some understanding of link:https://kafka.apache.org/documentation/#resources_in_kafka[Kafka's permissions model] to know which of these make sense with which resource type.
-The list of actions mirrors Kafka permissions and is the same for any deployment.
-
-Rather than importing authorization scopes manually into every new client, you can use a link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/oauth-keycloak-authorizer/etc/authorization-scopes.json[authorization-scopes.json] file.
-
-You must make sure that the client is enabled in Keycloak for Authorization Services. After which, you can import a JSON file from the *Authorization* tab. You can see the loaded scopes from the *Authorization Scopes* page.
-
-For this example the authorization scopes have already been imported as part of the realm import.
-
-The *Policies* tab has filters that match sets of users.
-Users can be explicitly listed, or they can be matched based on the roles, or groups they are assigned.
-Policies can even be defined programmatically using JavaScript so the logic considers the context of the client session, such as the IP of a Kafka client.
-
-The *Permissions* tab defines role bindings that associate resources, authorization scopes and policies for applying a set of permissions on specific resources for certain users.
-
-Use a clear, descriptive name for each permission definition so that it is obvious what kind of access is granted to which users.
-For example:
-
+Under *Authorization* / *Permissions* of `kafka` client you can see already granted permissions that make use of *Resources* and *Policies* defined under the other tabs:
 ----
 Dev Team A can write to topics that start with x_ on any cluster
 Dev Team B can read from topics that start with x_ on any cluster
