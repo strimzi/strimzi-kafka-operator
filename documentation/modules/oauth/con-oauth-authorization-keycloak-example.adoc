@@ -166,24 +166,22 @@ ClusterManager of my-cluster Group has full access to consumer groups on my-clus
 ClusterManager of my-cluster Group has full access to topics on my-cluster
 ----
 
-If we take a closer look at the `Dev Team A can write ...` permission definition, we see that it combines a resource called `Topic:x_*`, scopes `Describe` and `Write`, and `Dev Team A` policy.
-If we click on the `Dev Team A` policy, we see that it matches all users that have a realm role called `Dev Team A`.
+`Dev Team A can write to topics that start with x_ on any cluster` combines a resource called `Topic:x_*`, scopes `Describe` and `Write`, and `Dev Team A` policy. The `Dev Team A` policy matches all users that have a realm role called `Dev Team A`.
 
-Similarly, the `Dev Team B ...` permissions perform matching using the `Dev Team B` policy which also uses realm role to match allowed users - in this case those with realm role `Dev Team B`.
-The `Dev Team B ...` permissions grant users `Describe` and `Read` on `Topic:x_*`, and `Group:x_*` resources, effectively giving matching users and clients the ability to read from topics, and update the consumed offsets for topics and consumer groups that have names starting with 'x_'.
+`Dev Team B can read from topics that start with x_ on any cluster` combines `Topic:x_*`, and `Group:x_*` resources, scopes `Describe` and `Read`, and `Dev Team B` policy. The `Dev Team A` policy matches all users that have a realm role called `Dev Team B`. Matching users and clients have the ability to read from topics, and update the consumed offsets for topics and consumer groups that have names starting with `x_`.
 
-## Targeting Permissions - Clients and Roles vs. Users and Groups
+== Targeting permissions using group or role policies
 
-In Keycloak, confidential clients with 'service accounts' enabled can authenticate to the server in their own name using a clientId and a secret.
+In Keycloak, confidential clients with service accounts enabled can authenticate to the server in their own name using a client ID and a secret.
 This is convenient for microservices which typically act in their own name, and not as agents of a particular user (like a web site would, for example).
 Service accounts can have roles assigned like regular users.
 They cannot, however, have groups assigned.
-As a consequence, if you want to target permissions to microservices using service accounts, you cannot use Group policies, and should instead use Role policies.
-Or, thinking about it another way, if you want to limit certain permissions only to regular user accounts where authentication with username and password is required, you can achieve that as a side effect of using the Group policies, rather than the Role policies.
-That's what we see used in `permissions` that start with 'ClusterManager'.
+As a consequence, if you want to target permissions to microservices using service accounts, you cannot use group policies, and should instead use role policies.
+Conversely, if you want to limit certain permissions only to regular user accounts where authentication with username and password is required, you can achieve that as a side effect of using the group policies, rather than the role policies.
+That is what is used for permissions that start with `ClusterManager`.
 Performing cluster management is usually done interactively - in person - using CLI tools.
-It makes sense to require the user to log-in, before using the resulting access token to authenticate to the Kafka Broker.
-In this case the access token represents the specific user, rather than the client application.
+It makes sense to require the user to log in, before using the resulting access token to authenticate to the Kafka Broker.
+In this case, the access token represents the specific user, rather than the client application.
 
 
 == Authorization in Action Using CLI Clients
@@ -191,26 +189,31 @@ In this case the access token represents the specific user, rather than the clie
 A note of caution - this example uses the latest version of Keycloak, and relies on bugfixes of issues in some older versions.
 Let's make sure the Authorization rules have been properly imported when the Keycloak was started.
 
-Under `Clients` / `kafka` / `Authorization` / `Settings` make sure the `Decision Strategy` is set to `Affirmative`, and NOT to `Unanimous`.
-Click on other tabs and make sure there are some resources, authorization claims, policies and permissions defined.
+From menu:Clients[kafka>Authorization>Settings] make sure that *Decision Strategy* is set to *Affirmative*, and NOT to *Unanimous*.
+Navigate in Keycloak to check that the expected resources, authorization claims, policies and permissions are defined.
 
-With configuration now in place, let's create some topics, use a producer, a consumer, and try to perform some management operations using different user and service accounts.
+With the configuration in place, we can check access to Kafka by using a producer and consumer to create topics using different user and service accounts.
 
-First, we run a new interactive pod container using a Strimzi Kafka image which we use to connect to the already running Kafka broker.
+First, a new interactive pod container is run using a Strimzi Kafka image to connect to a running Kafka broker.
 
-    kubectl run -ti --rm --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-2.6.0 kafka-cli -- /bin/sh
+[source,shell]
+----
+kubectl run -ti --rm --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-2.6.0 kafka-cli -- /bin/sh
+----
 
-The first time you run this, the `kubectl` might timeout waiting on the image to be downloaded, but your subsequent attempts may result in AlreadyExists error.
+NOTE: If `kubectl` times out waiting on the image download, subsequent attempts may result in an _AlreadyExists_ error. 
 
 You can attach to the existing pod by running:
 
-    kubectl attach -ti kafka-cli
+[source,shell]
+----
+kubectl attach -ti kafka-cli
+----
 
-Let's try to produce some messages as client `team-a-client`.
+To produce messages as client `team-a-client`, we prepare a Kafka client configuration file with authentication parameters.
 
-First, we prepare a Kafka client configuration file with authentication parameters.
-
-```
+[source,shell]
+----
 cat > /tmp/team-a-client.properties << EOF
 security.protocol=SASL_PLAINTEXT
 sasl.mechanism=OAUTHBEARER
@@ -220,94 +223,103 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.token.endpoint.uri="http://keycloak:8080/auth/realms/kafka-authz/protocol/openid-connect/token" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 EOF
-```
+----
 
-In the Keycloak Console you can find which roles are assigned to the `team-a-client` service account, by selecting `team-a-client` in the `Clients` section.
-and then opening the `Service Account Roles` tab for the client.
-You should see the `Dev Team A` realm role assigned.
+The roles assigned to a client, such as the `Dev Team A` realm role assigned to the `team-a-client` service account, are presented in Keycloak on the  *Service Account Roles* tab from *Clients*.
 
-We can now use this configuration with Kafka's CLI tools.
+We can use this configuration from the Kafka CLI to produce and consume messages, and perform other administration tasks.
 
 
-### Producing the Messages
+.Producing messages with authorized access
 
-Let's try to produce some messages to topic 'my-topic':
+The `team-a-client` configuration is used to produce messages to topic `my-topic`:
 
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic my-topic \
   --producer.config=/tmp/team-a-client.properties
 First message
-```
+----
 
-When we press `Enter` to push the first message we receive `Not authorized to access topics: [my-topic]` error.
+A `Not authorized to access topics: [my-topic]` error is returned when trying to push the first message.
 
-`team-a-client` has a `Dev Team A` role which gives it permissions to do anything on topics that start with 'a_', and only write to topics that start with 'x_'.
-The topic named `my-topic` matches neither of those.
+`team-a-client` has a `Dev Team A` role that gives it permission to perform any supported actions on topics that start with `a_`, but can only write to topics that start with `x_`.
+The topic named `my-topic` matches neither of those rules.
 
-Use CTRL-C to exit the CLI application, and let's try to write to topic `a_messages`.
+The `team-a-client` configuration is then used to produce messages to topic `a_messages`.
 
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic a_messages \
   --producer.config /tmp/team-a-client.properties
 First message
 Second message
-```
+----
 
-Although we can see some unrelated warnings, looking at the Kafka container log there is DEBUG level output saying 'Authorization GRANTED'.
+The messages are pushed out successfully, and in the Kafka container log there is DEBUG level output saying `Authorization GRANTED`.
 
 Use CTRL-C to exit the CLI application.
 
 You can see the Kafka container log by running:
 
-    kubectl logs my-cluster-kafka-0 -f
+[source,shell]
+kubectl logs my-cluster-kafka-0 -f
 
-### Consuming the Messages
+.Consuming messages with authorized access
 
-Let's now try to consume the messages we have produced.
+The `team-a-client` configuration is used to consume messages from topic `a_messages`:
 
-    bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic a_messages \
-      --from-beginning --consumer.config /tmp/team-a-client.properties
+[source,shell,subs=+quotes]
+----
+bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic a_messages \
+  --from-beginning --consumer.config /tmp/team-a-client.properties
+----
 
-This gives us an error like: `Not authorized to access group: console-consumer-55841`.
+An error is returned as the `Dev Team A` role for `team-a-client` only has access to consumer groups that have names starting with `a_`.
+The `team-a-client` configuration is then used to consume messages when specifying a custom consumer group with a name that starts with `a_`:
 
-The reason is that we have to override the default consumer group name - `Dev Team A` only has access to consumer groups that have names starting with 'a_'.
-Let's set custom consumer group name that starts with 'a_'
+[source,shell,subs=+quotes]
+----
+bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic a_messages \
+  --from-beginning --consumer.config /tmp/team-a-client.properties --group a_consumer_group_1
+----
 
-    bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic a_messages \
-      --from-beginning --consumer.config /tmp/team-a-client.properties --group a_consumer_group_1
-
-We should now receive all the messages for the 'a_messages' topic, after which the client blocks waiting for more messages.
-
-Use CTRL-C to exit.
-
-
-### Using Kafka's CLI Administration Tools
-
-Let's now list the topics:
-
-    bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
-
-We get one topic listed: `a_messages`.
-
-Let's try and list the consumer groups:
-
-    bin/kafka-consumer-groups.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
-
-Similarly to listing topics, we get one consumer group listed: `a_consumer_group_1`.
-
-There are more CLI administrative tools. For example we can try to get the default cluster configuration:
-
-    bin/kafka-configs.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties \
-      --entity-type brokers --describe --entity-default
-
-But that will fail with `Cluster authorization failed.` error, because this operation requires cluster level permissions which `team-a-client` does not have.
+This time the consumer receives all the messages from the `a_messages` topic.
 
 
-### Client with Different Permissions
+.Administering Kafka with authorized access
 
-Let's prepare a configuration for `team-b-client`:
+The `team-a-client` configuration is used in administrative operations.
 
-```
+Listing topics returns the `a_messages` topic.
+
+[source,shell]
+----
+bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
+----    
+
+Listing consumer groups returns the `a_consumer_group_1` consumer group.
+
+[source,shell]
+----
+bin/kafka-consumer-groups.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
+----
+
+Fetching the default cluster configuration fails cluster authorization, because the operation requires cluster level permissions that `team-a-client` does not have.
+
+[source,shell]
+----
+bin/kafka-configs.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties \
+  --entity-type brokers --describe --entity-default
+----
+
+
+. Using clients with different permissions
+
+As with `team-a-client`, we prepare a Kafka client configuration file with authentication parameters for `team-b-client`.
+
+[source,shell]
+----
 cat > /tmp/team-b-client.properties << EOF
 security.protocol=SASL_PLAINTEXT
 sasl.mechanism=OAUTHBEARER
@@ -317,69 +329,72 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.token.endpoint.uri="http://keycloak:8080/auth/realms/kafka-authz/protocol/openid-connect/token" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 EOF
-```
+----
 
-If we look at `team-b-client` client configuration in Keycloak, under `Service Account Roles` we can see that it has `Dev Team B` realm role assigned.
-Looking in Keycloak Console at the `kafka` client's `Authorization` tab where `Permissions` are listed, we can see the permissions that start with 'Dev Team B ...'.
-These match the users and service accounts that have the `Dev Team B` realm role assigned to them.
-The `Dev Team B` users have full access to topics beginning with 'b_' on Kafka cluster `my-cluster` (which is the designated cluster name of the demo cluster we brought up), and read access on topics that start with 'x_'.
+The `team-b-client` client configuration includes a `Dev Team B` realm role and permissions that start with `Dev Team B ...`. These match the users and service accounts that have the `Dev Team B` realm role assigned to them.
+The `Dev Team B` users have full access to topics beginning with `b_` on the Kafka cluster `my-cluster`, the name of the designated cluster, and read access on topics that start with `x_`.
 
-Let's try produce some messages to topic `a_messages` as `team-b-client`:
+The `team-b-client` configuration is used to produce messages to topic `a_messages`:
 
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic a_messages \
   --producer.config /tmp/team-b-client.properties
 Message 1
-```
+----
 
-We get `Not authorized to access topics: [a_messages]` error as we expected. Let's try to produce to topic `b_messages`:
+A `Not authorized to access topics: [a_messages]` error is returned when trying to push the first message, as expected, so we switch to topic `b_messages`:
 
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic b_messages \
   --producer.config /tmp/team-b-client.properties
 Message 1
 Message 2
 Message 3
-```
+----
 
-This should work fine.
+Producing messages to topic `b_messages` is authorized and successful.
 
-What about producing to topic `x_messages`. `team-b-client` is only supposed to be able to read from such a topic.
+We switch again, but this time to topic that `team-b-client` can only read from, topic `x_messages`:
 
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic x_messages \
   --producer.config /tmp/team-b-client.properties
 Message 1
-```
+----
 
-We get a `Not authorized to access topics: [x_messages]` error as we expected.
-Client `team-a-client`, on the other hand, should be able to write to such a topic:
+A `Not authorized to access topics: [x_messages]` error is returned, as expected, so we switch to `team-a-client`:
 
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic x_messages \
   --producer.config /tmp/team-a-client.properties
 Message 1
-```
+----
 
-However, we again receive `Not authorized to access topics: [x_messages]`. What's going on?
-The reason for failure is that while `team-a-client` can write to `x_messages` topic, it does not have a permission to create a topic if it does not yet exist.
+A `Not authorized to access topics: [x_messages]` error is returned again. Though `team-a-client` can write to the `x_messages` topic, it it does not have a permission to create a topic if it does not yet exist. 
 
-We now need a power user that can create a topic with all the proper settings - like the right number of partitions and replicas.
+Before `team-a-client` can write to the `x_messages` topic, a admin _power user_ must create it with the correct configuration, such as the number of partitions and replicas.
 
 
-### Power User Can Do Anything
+.Managing Kafka with an authorized admin
 
-Let's create a configuration for user `bob` who has full ability to manage everything on Kafka cluster `my-cluster`.
+Admin user `bob` is created with full access to manage everything on the Kafka cluster `my-cluster`.
 
-We'll need some helper scripts so we can authenticate to the `keycloak` instance.
+Helper scripts are used to authenticate to the `keycloak` instance.
 
-Download the following `oauth.sh` and `jwt.sh` tools to `/tmp` dir and make them executable:
+The following scripts are downloaded to `/tmp` dir and made executable:
 
-   curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
+[source,shell]
+----
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
    chmod +x /tmp/oauth.sh
 
-   curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
    chmod +x /tmp/jwt.sh
+----
 
 Now, `bob` will authenticate to Keycloak server with his username and password and get a refresh token.
 
