@@ -53,6 +53,7 @@ NOTE: The value of `log.message.format.version` must be a string to prevent it f
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
 +
+--
 [source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
@@ -67,6 +68,10 @@ spec:
 ----
 <1> This is changed to the new version
 <2> This remains at the current version
+--
++
+WARNING: You cannot downgrade Kafka once `spec.kafka.version` has changed.
+
 
 .. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
 +
@@ -118,8 +123,6 @@ NOTE: Clients are still using the old version, so brokers will convert messages 
 . Depending on your chosen strategy for upgrading clients, upgrade all client applications to use the new version of the client binaries.
 +
 See xref:con-strategies-for-upgrading-clients-str[Strategies for upgrading clients]
-+
-WARNING: You cannot downgrade after completing this step. If you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[].
 
 +
 If required, set the version property for Kafka Connect and MirrorMaker as the new version of Kafka:
