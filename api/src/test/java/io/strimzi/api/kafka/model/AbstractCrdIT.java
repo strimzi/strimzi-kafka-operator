@@ -137,6 +137,6 @@ public abstract class AbstractCrdIT {
 
     @BeforeEach
     public void setupTests() {
-        cluster.before();
+        cluster.cluster();
     }
 }

@@ -11,23 +11,28 @@ import io.strimzi.test.k8s.cmdClient.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class OpenShift implements KubeCluster {
 
-    private static final String OC = "oc";
+    private static final String CMD = "oc";
     private static final String OLM_NAMESPACE = "openshift-operators";
     private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
 
     @Override
     public boolean isAvailable() {
-        return Exec.isExecutableOnPath(OC);
+        return Exec.isExecutableOnPath(CMD);
     }
 
     @Override
     public boolean isClusterUp() {
+        List<String> cmd = Arrays.asList(CMD, "status");
         try {
-            return Exec.exec(OC, "status").exitStatus() && Exec.exec(OC, "api-resources").out().contains("openshift.io");
+            return Exec.exec(cmd).exitStatus() && Exec.exec(CMD, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
-            LOGGER.debug("Error:", e);
+            LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
+            LOGGER.debug(e);
             return false;
         }
     }
@@ -38,7 +43,7 @@ public class OpenShift implements KubeCluster {
     }
 
     public String toString() {
-        return OC;
+        return CMD;
     }
 
     @Override

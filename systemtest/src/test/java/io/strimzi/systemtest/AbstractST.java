@@ -71,7 +71,7 @@ public abstract class AbstractST implements TestSeparator {
         Crds.registerCustomKinds();
     }
 
-    protected KubeClusterResource cluster = KubeClusterResource.getInstance();
+    protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
@@ -642,6 +642,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeAll
     void setTestClassName(ExtensionContext testContext) {
+        cluster = KubeClusterResource.getInstance();
         if (testContext.getTestClass().isPresent()) {
             testClass = testContext.getTestClass().get().getName();
         }

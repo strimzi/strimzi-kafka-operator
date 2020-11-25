@@ -9,11 +9,8 @@ import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
-import io.strimzi.test.k8s.exceptions.NoClusterException;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Assumptions;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
@@ -48,10 +43,9 @@ public class KubeClusterResource {
 
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
-    private boolean bootstrap;
     private KubeClient client;
     private HelmClient helmClient;
-    private static KubeClusterResource cluster;
+    private static KubeClusterResource kubeClusterResource;
 
     private String namespace;
     private String testNamespace;
@@ -61,29 +55,21 @@ public class KubeClusterResource {
     private List<String> deploymentResources = new ArrayList<>();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
 
-    private TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
-
     public static synchronized KubeClusterResource getInstance() {
-        if (cluster == null) {
-            try {
-                cluster = new KubeClusterResource();
-                initNamespaces();
-                LOGGER.info("Cluster default namespace is {}", cluster.getNamespace());
-                LOGGER.info("Cluster command line client default namespace is {}", cluster.getTestNamespace());
-            } catch (RuntimeException e) {
-                Assumptions.assumeTrue(false, e.getMessage());
-            }
+        if (kubeClusterResource == null) {
+            kubeClusterResource = new KubeClusterResource();
+            initNamespaces();
+            LOGGER.info("Cluster default namespace is {}", kubeClusterResource.getNamespace());
+            LOGGER.info("Cluster command line client default namespace is {}", kubeClusterResource.getTestNamespace());
         }
-        return cluster;
+        return kubeClusterResource;
     }
 
-    private KubeClusterResource() {
-        this.bootstrap = true;
-    }
+    private KubeClusterResource() { }
 
     private static void initNamespaces() {
-        cluster.setDefaultNamespace(cmdKubeClient().defaultNamespace());
-        cluster.setTestNamespace(cmdKubeClient().defaultNamespace());
+        kubeClusterResource.setDefaultNamespace(cmdKubeClient().defaultNamespace());
+        kubeClusterResource.setTestNamespace(cmdKubeClient().defaultNamespace());
     }
 
     /**
@@ -139,7 +125,7 @@ public class KubeClusterResource {
      * @return CMD client
      */
     public static KubeCmdClient<?> cmdKubeClient() {
-        return cluster.cmdClient().namespace(cluster.getNamespace());
+        return kubeClusterResource.cmdClient().namespace(kubeClusterResource.getNamespace());
     }
 
     /**
@@ -148,7 +134,7 @@ public class KubeClusterResource {
      * @return CMD client with expected namespace in configuration
      */
     public static KubeCmdClient<?> cmdKubeClient(String inNamespace) {
-        return cluster.cmdClient().namespace(inNamespace);
+        return kubeClusterResource.cmdClient().namespace(inNamespace);
     }
 
     /**
@@ -156,7 +142,7 @@ public class KubeClusterResource {
      * @return Kubernetes client
      */
     public static KubeClient kubeClient() {
-        return cluster.client().namespace(cluster.getNamespace());
+        return kubeClusterResource.client().namespace(kubeClusterResource.getNamespace());
     }
 
     /**
@@ -164,7 +150,7 @@ public class KubeClusterResource {
      * @return Helm client
      */
     public static HelmClient helmClusterClient() {
-        return cluster.helmClient().namespace(cluster.getNamespace());
+        return kubeClusterResource.helmClient().namespace(kubeClusterResource.getNamespace());
     }
 
     /**
@@ -173,7 +159,7 @@ public class KubeClusterResource {
      * @return Kubernetes client with expected namespace in configuration
      */
     public static KubeClient kubeClient(String inNamespace) {
-        return cluster.client().namespace(inNamespace);
+        return kubeClusterResource.client().namespace(inNamespace);
     }
 
     /**
@@ -209,7 +195,7 @@ public class KubeClusterResource {
         }
         testNamespace = useNamespace;
         LOGGER.info("Using Namespace {}", useNamespace);
-        cluster.setNamespace(useNamespace);
+        kubeClusterResource.setNamespace(useNamespace);
     }
 
     /**
@@ -302,31 +288,9 @@ public class KubeClusterResource {
 
     public KubeCluster cluster() {
         if (kubeCluster == null) {
-            try {
-                kubeCluster = KubeCluster.bootstrap();
-            } catch (NoClusterException e) {
-                assumeTrue(false, e.getMessage());
-            }
+            kubeCluster = KubeCluster.bootstrap();
         }
         return kubeCluster;
-    }
-
-    public void before() {
-        if (bootstrap) {
-            if (kubeCluster == null) {
-                try {
-                    kubeCluster = KubeCluster.bootstrap();
-                } catch (NoClusterException e) {
-                    assumeTrue(false, e.getMessage());
-                }
-            }
-            if (cmdClient == null) {
-                cmdClient = kubeCluster.defaultCmdClient();
-            }
-            if (client == null) {
-                this.client = kubeCluster.defaultClient();
-            }
-        }
     }
 
     public String getTestNamespace() {
@@ -338,7 +302,7 @@ public class KubeClusterResource {
     }
 
     public boolean isNotKubernetes() {
-        return cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift;
+        return kubeClusterResource.cluster() instanceof Minishift || kubeClusterResource.cluster() instanceof OpenShift;
     }
 
     /** Returns list of currently deployed resources */

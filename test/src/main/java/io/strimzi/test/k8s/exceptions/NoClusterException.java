@@ -4,7 +4,7 @@
  */
 package io.strimzi.test.k8s.exceptions;
 
-public class NoClusterException extends Exception {
+public class NoClusterException extends RuntimeException {
     public NoClusterException(String message) {
         super(message);
     }

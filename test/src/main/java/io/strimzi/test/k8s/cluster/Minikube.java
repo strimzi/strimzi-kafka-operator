@@ -13,6 +13,9 @@ import io.strimzi.test.k8s.cmdClient.Kubectl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * A {@link KubeCluster} implementation for {@code minikube} and {@code minishift}.
  */
@@ -30,10 +33,12 @@ public class Minikube implements KubeCluster {
 
     @Override
     public boolean isClusterUp() {
+        List<String> cmd = Arrays.asList(CMD, "status");
         try {
-            return Exec.exec(CMD, "status").exitStatus();
+            return Exec.exec(cmd).exitStatus();
         } catch (KubeClusterException e) {
-            LOGGER.debug("Error: ", e);
+            LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
+            LOGGER.debug(e);
             return false;
         }
     }

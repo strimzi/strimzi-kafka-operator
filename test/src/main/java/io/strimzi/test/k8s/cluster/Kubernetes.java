@@ -13,6 +13,9 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * A {@link KubeCluster} implementation for any {@code Kubernetes} cluster.
  */
@@ -29,10 +32,12 @@ public class Kubernetes implements KubeCluster {
 
     @Override
     public boolean isClusterUp() {
+        List<String> cmd = Arrays.asList(CMD, "cluster-info");
         try {
-            return Exec.exec(CMD, "cluster-info").exitStatus() && !Exec.exec(CMD, "api-resources").out().contains("openshift.io");
+            return Exec.exec(cmd).exitStatus() && !Exec.exec(CMD, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {
-            LOGGER.debug("Error:", e);
+            LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
+            LOGGER.debug(e);
             return false;
         }
     }
