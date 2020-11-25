@@ -353,12 +353,15 @@ curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/exampl
    chmod +x /tmp/jwt.sh
 ----
 
-Now, `bob` will authenticate to Keycloak server with his username and password and get a refresh token.
+User `bob` authenticates to the Keycloak server with his username and password to get a refresh token.
 
-   export TOKEN_ENDPOINT=http://keycloak:8080/auth/realms/kafka-authz/protocol/openid-connect/token
-   REFRESH_TOKEN=$(/tmp/oauth.sh -q bob)
+[source,shell]
+----
+export TOKEN_ENDPOINT=http://keycloak:8080/auth/realms/kafka-authz/protocol/openid-connect/token
+REFRESH_TOKEN=$(/tmp/oauth.sh -q bob)
+----
 
-This will prompt you for a password. Type 'bob-password'.
+When prompted for a password, 'bob-password' is used.
 
 We can inspect the refresh token:
 
@@ -366,9 +369,10 @@ We can inspect the refresh token:
 
 By default this is a long-lived refresh token that does not expire.
 
-Now we will create the configuration file for `bob`:
+A configuration file is created for `bob`:
 
-```
+[source,shell]
+----
 cat > /tmp/bob.properties << EOF
 security.protocol=SASL_PLAINTEXT
 sasl.mechanism=OAUTHBEARER
@@ -378,76 +382,84 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.token.endpoint.uri="http://keycloak:8080/auth/realms/kafka-authz/protocol/openid-connect/token" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 EOF
-```
+----
 
-Note that we use the `kafka-cli` public client for the `oauth.client.id` in the `sasl.jaas.config`.
-Since that is a public client it does not require any secret.
-We can use this because we authenticate with a token directly (in this case a refresh token is used to request an access token behind the scenes which is then sent to Kafka broker for authentication, and we already did the authentication for the refresh token).
+The `kafka-cli` public client is used for the `oauth.client.id` in the `sasl.jaas.config`.
+Since that is a public client it does not require a Secret.
+We can use this because we authenticate with a token directly. In this case, the refresh token requests an access token behind the scenes, which is then sent to the Kafka broker for authentication. The refresh token has already been authenticated.
 
 
-Let's now try to create the `x_messages` topic:
+User `bob` has permission to create the `x_messages` topic:
 
-    bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/bob.properties \
-      --topic x_messages --create --replication-factor 1 --partitions 1
+[source,shell]
+----
+bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/bob.properties \
+  --topic x_messages --create --replication-factor 1 --partitions 1
+----
 
-The operation should succeed (you can ignore the warning about periods and underscores).
 
-We can list the topics:
+User `bob` can list the topic, but `team-a-client` and `team-b-client` cannot.
 
-    bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/bob.properties --list
+[source,shell]
+----
+bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/bob.properties --list
+bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
+bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-b-client.properties --list
 
-If we try the same as `team-a-client` or `team-b-client` we will get different responses.
+The `Dev Team A`, and `Dev Team B` roles both have `Describe` permission on topics that start with `x_`, but they cannot see the other team's topics as they do not have `Describe` permissions on them.
 
-    bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
-    bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-b-client.properties --list
+The `team-a-client` can now successfully produce to the `x_messages` topic:
 
-Roles `Dev Team A`, and `Dev Team B` both have `Describe` permission on topics that start with 'x_', but they cannot see the other team's topics as they do not have `Describe` permissions on them.
-
-We can now again try to produce to the topic as `team-a-client`.
-
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic x_messages \
   --producer.config /tmp/team-a-client.properties
 Message 1
 Message 2
 Message 3
-```
+----
 
-This works.
+As expected, `team-b-client` still cannot produce to the `x_messages` topic, and the following operation returns an error:
 
-If we try the same as `team-b-client` it should fail.
-
-```
+[source,shell]
+----
 bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic x_messages \
   --producer.config /tmp/team-b-client.properties
 Message 4
 Message 5
-```
+----
 
-We get an error - `Not authorized to access topics: [x_messages]`.
+However, due to its Keycloak settings `team-b-client` can consume messages from the `x_messages` topic:
 
-But `team-b-client` should be able to consume messages from the `x_messages` topic:
+[source,shell]
+----
+bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
+  --from-beginning --consumer.config /tmp/team-b-client.properties --group x_consumer_group_b
+----
+Conversely, even though `team-a-client` can write to topic `x_messages`, the following read request returns a `Not authorized to access group: x_consumer_group_a` error:
 
-    bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
-      --from-beginning --consumer.config /tmp/team-b-client.properties --group x_consumer_group_b
+[source,shell]
+----
+bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
+  --from-beginning --consumer.config /tmp/team-a-client.properties --group x_consumer_group_a
+----
 
-Whereas `team-a-client` does not have permission to read, even though they can write:
+A consumer group that begins with `a_` is used in the next read request:
 
-    bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
-      --from-beginning --consumer.config /tmp/team-a-client.properties --group x_consumer_group_a
+[source,shell]
+----
+bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
+  --from-beginning --consumer.config /tmp/team-a-client.properties --group a_consumer_group_a
+----
 
-We get a `Not authorized to access group: x_consumer_group_a` error.
+An error is still returned, but this time it is `Not authorized to access topics: [x_messages]`.
 
-What if we try to use a consumer group name that starts with 'a_'?
+`Dev Team A` has no `Read` access on topics that start with 'x_'.
 
-    bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
-      --from-beginning --consumer.config /tmp/team-a-client.properties --group a_consumer_group_a
+User `bob` should can read from or write to any topic:
 
-We now get a different error: `Not authorized to access topics: [x_messages]`
-
-It just won't work - `Dev Team A` has no `Read` access on topics that start with 'x_'.
-
-User `bob` should have no problem reading from or writing to any topic:
-
-    bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
-      --from-beginning --consumer.config /tmp/bob.properties
+[source,shell]
+----
+bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic x_messages \
+  --from-beginning --consumer.config /tmp/bob.properties
+----
