@@ -84,6 +84,10 @@ spec:
               value: quay.io/strimzi/kafka-bridge:0.19.0
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: quay.io/strimzi/jmxtrans:latest
+            - name: STRIMZI_OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           livenessProbe:
             httpGet:
               path: /healthy

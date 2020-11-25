@@ -771,6 +771,8 @@ public class ResourceUtils {
                 false,
                 versions,
                 null,
+                null,
+                null,
                 null);
     }
 

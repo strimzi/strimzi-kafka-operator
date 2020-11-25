@@ -73,6 +73,10 @@ spec:
               value: {{ default .Values.kafkaBridge.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: {{ default .Values.jmxTrans.image.registry .Values.imageRegistryOverride }}/{{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             {{- if .Values.image.imagePullSecrets }}
             - name: STRIMZI_IMAGE_PULL_SECRETS
               value: {{ .Values.image.imagePullSecrets }}
@@ -80,6 +84,10 @@ spec:
             {{- if .Values.image.imagePullPolicy }}
             - name: STRIMZI_IMAGE_PULL_POLICY
               value: {{ .Values.image.imagePullPolicy }}
+            {{- end }}
+            {{- if .Values.image.operatorNamespaceLabels }}
+            - name: STRIMZI_OPERATOR_NAMESPACE_LABELS
+              value: {{ .Values.image.operatorNamespaceLabels }}
             {{- end }}
             {{ if ne .Values.kubernetesServiceDnsDomain "cluster.local" }}- name: KUBERNETES_SERVICE_DNS_DOMAIN
               value: {{ .Values.kubernetesServiceDnsDomain | quote }}{{ end }}

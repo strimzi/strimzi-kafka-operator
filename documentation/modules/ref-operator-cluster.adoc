@@ -27,6 +27,23 @@ env:
 The timeout for internal operations, in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
 
+`STRIMZI_OPERATOR_NAMESPACE`:: The name of the namespace where the Strimzi Cluster Operator is running.
+This variable should not be configured manually but should use the Kubernetes Downward API.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_OPERATOR_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
+
+`STRIMZI_OPERATOR_NAMESPACE_LABELS`:: Optional.
+The labels of the namespace where the Strimzi Cluster Operator is running.
+These labels will be used to configure the namespace selector in network policies to allow Strimzi Cluster Operator to access the operands only from namespace with these labels.
+When not set, the namespace selector in network policies will be configured to allow access from Strimzi Cluster Operator from any namespace in the Kubernetes cluster.
+
 `STRIMZI_KAFKA_IMAGES`:: Required.
 This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.

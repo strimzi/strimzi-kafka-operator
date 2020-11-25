@@ -11,6 +11,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NoImageException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,8 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
     public static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
     public static final String STRIMZI_IMAGE_PULL_SECRETS = "STRIMZI_IMAGE_PULL_SECRETS";
+    public static final String STRIMZI_OPERATOR_NAMESPACE = "STRIMZI_OPERATOR_NAMESPACE";
+    public static final String STRIMZI_OPERATOR_NAMESPACE_LABELS = "STRIMZI_OPERATOR_NAMESPACE_LABELS";
 
     // Env vars for configuring images
     public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
@@ -67,6 +70,8 @@ public class ClusterOperatorConfig {
     private final KafkaVersion.Lookup versions;
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
+    private final String operatorNamespace;
+    private final Labels operatorNamespaceLabels;
 
     /**
      * Constructor
@@ -78,8 +83,13 @@ public class ClusterOperatorConfig {
      * @param versions The configured Kafka versions
      * @param imagePullPolicy Image pull policy configured by the user
      * @param imagePullSecrets Set of secrets for pulling container images from secured repositories
+     * @param operatorNamespace Name of the namespace in which the operator is running
+     * @param operatorNamespaceLabels Labels of the namespace in which the operator is running (used for network policies)
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs,
+                                 boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy,
+                                 List<LocalObjectReference> imagePullSecrets, String operatorNamespace,
+                                 Labels operatorNamespaceLabels) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -87,6 +97,8 @@ public class ClusterOperatorConfig {
         this.versions = versions;
         this.imagePullPolicy = imagePullPolicy;
         this.imagePullSecrets = imagePullSecrets;
+        this.operatorNamespace = operatorNamespace;
+        this.operatorNamespaceLabels = operatorNamespaceLabels;
     }
 
     /**
@@ -128,8 +140,11 @@ public class ClusterOperatorConfig {
         boolean createClusterRoles = parseCreateClusterRoles(map.get(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES));
         ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY));
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS));
-        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy, imagePullSecrets);
+        String operatorNamespace = map.get(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE);
+        Labels operatorNamespaceLabels = parseOperatorNamespaceLabels(map.get(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE_LABELS));
 
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles,
+                lookup, imagePullPolicy, imagePullSecrets, operatorNamespace, operatorNamespaceLabels);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -257,6 +272,20 @@ public class ClusterOperatorConfig {
         return imagePullSecrets;
     }
 
+    private static Labels parseOperatorNamespaceLabels(String operatorNamespaceLabelsString) {
+        Labels operatorNamespaceLabels = null;
+
+        if (operatorNamespaceLabelsString != null) {
+            try {
+                operatorNamespaceLabels = Labels.fromString(operatorNamespaceLabelsString);
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("Failed to parse namespace labels from " + ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE_LABELS, e);
+            }
+        }
+
+        return operatorNamespaceLabels;
+    }
+
     /**
      * @return  namespaces in which the operator runs and creates resources
      */
@@ -297,10 +326,24 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return Retuns list of configured ImagePullSecrets. Null if no secrets were configured.
+     * @return Returns list of configured ImagePullSecrets. Null if no secrets were configured.
      */
     public List<LocalObjectReference> getImagePullSecrets() {
         return imagePullSecrets;
+    }
+
+    /**
+     * @return Returns the name of the namespace where the operator runs or null if not configured
+     */
+    public String getOperatorNamespace() {
+        return operatorNamespace;
+    }
+
+    /**
+     * @return Returns the labels of the namespace where the operator runs or null if not configured
+     */
+    public Labels getOperatorNamespaceLabels() {
+        return operatorNamespaceLabels;
     }
 
     @Override
@@ -313,6 +356,8 @@ public class ClusterOperatorConfig {
                 ",versions=" + versions +
                 ",imagePullPolicy=" + imagePullPolicy +
                 ",imagePullSecrets=" + imagePullSecrets +
+                ",operatorNamespace=" + operatorNamespace +
+                ",operatorNamespaceLabels=" + operatorNamespaceLabels +
                 ")";
     }
 }

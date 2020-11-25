@@ -1345,7 +1345,7 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1362,11 +1362,55 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
+    public void testNetworkPolicyWithConnectorOperatorSameNamespace() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, true, namespace, null);
+
+        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.REST_API_PORT));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector(), is(nullValue()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector(), is(nullValue()));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+    }
+
+    @Test
+    public void testNetworkPolicyWithConnectorOperatorWithNamespaceLabels() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+
+        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.REST_API_PORT));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector(), is(nullValue()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+    }
+
+    @Test
     public void testNetworkPolicyWithoutConnectorOperator() {
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
-        assertThat(kc.generateNetworkPolicy(true, false), is(nullValue()));
+        assertThat(kc.generateNetworkPolicy(true, false, null, null), is(nullValue()));
     }
 }

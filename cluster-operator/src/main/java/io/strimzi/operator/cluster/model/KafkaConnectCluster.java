@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -687,11 +688,17 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
+     * Generates the NetworkPolicies relevant for Kafka Connect nodes
+     *
      * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
      * @param connectorOperatorEnabled Whether the ConnectorOperator is enabled or not
+     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, boolean connectorOperatorEnabled) {
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, boolean connectorOperatorEnabled,
+                                               String operatorNamespace, Labels operatorNamespaceLabels) {
         if (connectorOperatorEnabled) {
             List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
@@ -722,9 +729,22 @@ public class KafkaConnectCluster extends AbstractModel {
                         .withNewPodSelector()
                         .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                         .endPodSelector()
-                        .withNewNamespaceSelector()
-                        .endNamespaceSelector()
                         .build();
+
+                if (!namespace.equals(operatorNamespace)) {
+                    // If CO and Connect do not run in the same namespace, we need to handle cross namespace access
+
+                    if (operatorNamespaceLabels != null)    {
+                        // If user specified the namespace labels, we can use them to make the selector as tight as possible
+                        LabelSelector nsLabelSelector = new LabelSelector();
+                        nsLabelSelector.setMatchLabels(operatorNamespaceLabels.toMap());
+                        clusterOperatorPeer.setNamespaceSelector(nsLabelSelector);
+                    } else {
+                        // If no namespace labels were specified, we open the network policy to COs in all namespaces
+                        clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
+                    }
+                }
+
                 peers.add(clusterOperatorPeer);
 
                 restApiRule.setFrom(peers);

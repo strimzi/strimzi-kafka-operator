@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -552,10 +553,15 @@ public class CruiseControl extends AbstractModel {
     }
 
     /**
+     * Generates the NetworkPolicies relevant for Cruise Control
+     *
      * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
+     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, String operatorNamespace, Labels operatorNamespaceLabels) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(1);
 
         // CO can access the REST API
@@ -570,9 +576,22 @@ public class CruiseControl extends AbstractModel {
                     .withNewPodSelector() // cluster operator
                         .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                     .endPodSelector()
-                    .withNewNamespaceSelector()
-                    .endNamespaceSelector()
                     .build();
+
+            if (!namespace.equals(operatorNamespace)) {
+                // If CO and CC do not run in the same namespace, we need to handle cross namespace access
+
+                if (operatorNamespaceLabels != null)    {
+                    // If user specified the namespace labels, we can use them to make the selector as tight as possible
+                    LabelSelector nsLabelSelector = new LabelSelector();
+                    nsLabelSelector.setMatchLabels(operatorNamespaceLabels.toMap());
+                    clusterOperatorPeer.setNamespaceSelector(nsLabelSelector);
+                } else {
+                    // If no namespace labels were specified, we open the network policy to COs in all namespaces
+                    clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
+                }
+            }
+
             restApiRule.setFrom(Collections.singletonList(clusterOperatorPeer));
         }
 
