@@ -363,11 +363,11 @@ REFRESH_TOKEN=$(/tmp/oauth.sh -q bob)
 
 When prompted for a password, 'bob-password' is used.
 
-We can inspect the refresh token:
+The refresh token is a long-lived token that does not expire:
 
-   /tmp/jwt.sh $REFRESH_TOKEN
-
-By default this is a long-lived refresh token that does not expire.
+----
+ /tmp/jwt.sh $REFRESH_TOKEN
+----
 
 A configuration file is created for `bob`:
 
