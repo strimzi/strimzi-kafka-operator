@@ -115,6 +115,4 @@ else
     exit 1
 fi
 
-if [ "$TRAVIS" = false ]; then
-    label_node
-fi
+label_node
