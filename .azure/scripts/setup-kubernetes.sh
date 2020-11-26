@@ -43,19 +43,12 @@ function wait_for_minikube {
 }
 
 function label_node {
-
-    if [ "$TEST_CLUSTER" = "minikube" ]; then
-        echo $(kubectl get nodes)
-        for nodeName in $(kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
-        do
-        	echo ${nodeName};
-        	kubectl label node ${nodeName} rack-key=zone;
-		done
-    elif [ "$TEST_CLUSTER" = "minishift" ]; then
-        oc label node minishift rack-key=zone
-    elif [ "$TEST_CLUSTER" = "oc" ]; then
-        oc label node localhost rack-key=zone
-    fi
+	# It should work for all clusters
+	for nodeName in $(kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
+	do
+		echo ${nodeName};
+		kubectl label node ${nodeName} rack-key=zone;
+	done
 }
 
 if [ "$TEST_CLUSTER" = "minikube" ]; then

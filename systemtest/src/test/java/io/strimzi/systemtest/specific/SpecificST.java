@@ -31,6 +31,7 @@ import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.executor.Exec;
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -131,7 +133,10 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAwareConnectWrongDeployment() throws Exception {
-        installClusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT);
+        // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
+        Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+        BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).done();
+        coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String wrongRackKey = "wrong-key";
         String rackKey = "rack-key";
@@ -184,6 +189,10 @@ public class SpecificST extends AbstractST {
 
         List<String> kcPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, CLUSTER_NAME);
+
+        // Revert changes for CO deployment
+        BundleResource.clusterOperator(NAMESPACE).done();
+        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
     @Test
@@ -191,7 +200,10 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     public void testRackAwareConnectCorrectDeployment() throws Exception {
-        installClusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT);
+        // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
+        Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+        BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).done();
+        coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String rackKey = "rack-key";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -237,6 +249,10 @@ public class SpecificST extends AbstractST {
 
             KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, CLUSTER_NAME);
         }
+
+        // Revert changes for CO deployment
+        BundleResource.clusterOperator(NAMESPACE).done();
+        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
     @Test
