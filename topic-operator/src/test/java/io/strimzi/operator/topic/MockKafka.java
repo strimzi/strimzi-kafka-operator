@@ -35,6 +35,8 @@ public class MockKafka implements Kafka {
     private int topicMetadataResposeCall = 0;
     private List<Function<TopicName, Future<TopicMetadata>>> topicMetadataRespose = singletonList(
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicMetadataResponse."));
+    private Function<TopicName, Future<Boolean>> topicExistsResult =
+        t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicExistsResult.");
     private Function<String, Future<Void>> createTopicResponse =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a createTopicResponse.");
     private Function<TopicName, Future<Void>> deleteTopicResponse =
@@ -121,6 +123,11 @@ public class MockKafka implements Kafka {
         return this;
     }
 
+    public MockKafka setTopicExistsResult(Function<TopicName, Future<Boolean>> topicExistsResult) {
+        this.topicExistsResult = topicExistsResult;
+        return this;
+    }
+
     @Override
     public Future<Void> createTopic(Topic t) {
         NewTopic newTopic = TopicSerialization.toNewTopic(t, null);
@@ -151,6 +158,16 @@ public class MockKafka implements Kafka {
             topics.remove(topicName);
         }
         return event;
+    }
+
+    @Override
+    public Future<Boolean> topicExists(TopicName topicName) {
+        Future<Boolean> event = topicExistsResult.apply(topicName);
+        if (event == null) {
+            throw new IllegalStateException();
+        } else {
+            return event;
+        }
     }
 
     public MockKafka setUpdateTopicResponse(Function<TopicName, Future<Void>> updateTopicResponse) {
