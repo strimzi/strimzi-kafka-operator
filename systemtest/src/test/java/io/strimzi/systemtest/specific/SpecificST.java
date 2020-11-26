@@ -6,19 +6,32 @@ package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodAffinityTerm;
+import io.fabric8.kubernetes.api.model.PodStatus;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -33,7 +46,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SPECIFIC;
@@ -56,8 +72,8 @@ public class SpecificST extends AbstractST {
     public static final String NAMESPACE = "specific-cluster-test";
 
     @Test
-    @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(REGRESSION)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testRackAware() {
         String rackKey = "rack-key";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
@@ -66,14 +82,6 @@ public class SpecificST extends AbstractST {
                     .withNewRack()
                         .withTopologyKey(rackKey)
                     .endRack()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
                 .endKafka()
             .endSpec().done();
 
@@ -100,20 +108,136 @@ public class SpecificST extends AbstractST {
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-            .build();
+        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME).done();
+        final String defaultKafkaClientsPodName =
+                ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+                .withUsingPodName(defaultKafkaClientsPodName)
+                .withTopicName(TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                .build();
 
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
+        internalKafkaClient.verifyProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
         );
     }
 
+    @Test
+    @Tag(CONNECT)
+    @Tag(REGRESSION)
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testRackAwareConnectWrongDeployment() throws Exception {
+        installClusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT);
+
+        String wrongRackKey = "wrong-key";
+        String rackKey = "rack-key";
+
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewRack()
+                            .withTopologyKey(rackKey)
+                        .endRack()
+                        .addToConfig("replica.selector.class", "org.apache.kafka.common.replica.RackAwareReplicaSelector")
+                    .endKafka()
+                .endSpec().done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+
+        LOGGER.info("Deploy KafkaConnect with wrong rack-aware topology key: {}", wrongRackKey);
+        KafkaConnect kc = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+                .editSpec()
+                    .withNewRack()
+                        .withTopologyKey(wrongRackKey)
+                    .endRack()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .endSpec().build());
+        KafkaConnectResource.allowNetworkPolicyForKafkaConnect(kc);
+
+        PodUtils.waitForPendingPod(CLUSTER_NAME + "-connect");
+        List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        String connectWrongPodName = connectWrongPods.get(0);
+        LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrectly set up KafkaConnect");
+        KafkaConnectUtils.waitForPodCondition("TimeoutException", "NotReady", NAMESPACE, CLUSTER_NAME);
+
+        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        PodStatus kcWrongStatus = kubeClient().getPod(connectWrongPodName).getStatus();
+        assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
+        assertThat("PodScheduled", is(kcWrongStatus.getConditions().get(0).getType()));
+
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> {
+            kafkaConnect.getSpec().setRack(new Rack(rackKey));
+        });
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
+        LOGGER.info("KafkaConnect is ready with changed rack key: '{}'.", rackKey);
+        LOGGER.info("Verify KafkaConnect rack key update");
+        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        assertThat(kc.getSpec().getRack().getTopologyKey(), is(rackKey));
+
+        List<String> kcPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, CLUSTER_NAME);
+    }
+
+    @Test
+    @Tag(CONNECT)
+    @Tag(REGRESSION)
+    @Tag(INTERNAL_CLIENTS_USED)
+    public void testRackAwareConnectCorrectDeployment() throws Exception {
+        installClusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT);
+
+        String rackKey = "rack-key";
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewRack()
+                            .withTopologyKey(rackKey)
+                        .endRack()
+                        .addToConfig("replica.selector.class", "org.apache.kafka.common.replica.RackAwareReplicaSelector")
+                    .endKafka()
+                .endSpec().done();
+
+        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+
+        LOGGER.info("Deploy KafkaConnect with correct rack-aware topology key: {}", rackKey);
+        KafkaConnect kc = KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+                .editSpec()
+                    .withNewRack()
+                        .withTopologyKey(rackKey)
+                    .endRack()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .endSpec().done();
+        KafkaConnectResource.allowNetworkPolicyForKafkaConnect(kc);
+
+        String topicName = "topic-test-rack-aware";
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+
+        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        for (String connectPodName : connectPods) {
+            Affinity connectPodSpecAffinity = kubeClient().getDeployment(KafkaConnectResources.deploymentName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getAffinity();
+            NodeSelectorRequirement connectPodNodeSelectorRequirement = connectPodSpecAffinity.getNodeAffinity()
+                    .getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
+            Pod connectPod = kubeClient().getPod(connectPodName);
+            NodeAffinity nodeAffinity = connectPod.getSpec().getAffinity().getNodeAffinity();
+
+            LOGGER.info("PodName: {}\nNodeAffinity: {}", connectPodName, nodeAffinity);
+            assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
+            assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
+
+            KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, CLUSTER_NAME);
+        }
+    }
 
     @Test
     @Tag(LOADBALANCER_SUPPORTED)
