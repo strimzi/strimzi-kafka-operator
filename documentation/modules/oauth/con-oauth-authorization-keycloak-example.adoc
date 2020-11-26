@@ -24,15 +24,11 @@ Grants are cached and enforced locally on the Kafka Broker for each user session
 
 == Starting Up the Pods
 
-NOTE: TODO: Change the url to: https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/kubernetes
-
-For this example we're using the kubernetes deployment scripts available at https://github.com/mstruk/strimzi-kafka-oauth/tree/examples/examples/kubernetes
-
-NOTE: TODO: Change the url to: https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master
+For this example we're using the kubernetes deployment scripts available at https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/kubernetes
 
 [source,yaml]
 ----
-export ROOT=https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/examples
+export ROOT=https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master
 ----
 
 .Deploy the Postgres database for Keycloak
