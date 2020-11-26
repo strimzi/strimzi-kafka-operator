@@ -86,14 +86,14 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
 
     static {
         Map<String, String> config = new HashMap<>(8);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getName(), Integer.toString(300_000));
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getName(), "1");
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getName(), Integer.toString(300_000));
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getName(), "20");
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getName(), Long.toString(TimeUnit.DAYS.toMillis(1)));
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_GOALS);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_GOALS);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY.getName(), CRUISE_CONTROL_HARD_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000));
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(), "1");
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000));
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(), "20");
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getValue(), Long.toString(TimeUnit.DAYS.toMillis(1)));
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_GOALS_CONFIG_KEY.getValue(), CRUISE_CONTROL_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getValue(), CRUISE_CONTROL_GOALS);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY.getValue(), CRUISE_CONTROL_HARD_GOALS);
         CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableMap(config);
 
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);

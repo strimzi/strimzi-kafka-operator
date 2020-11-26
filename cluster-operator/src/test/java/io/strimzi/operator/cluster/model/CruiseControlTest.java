@@ -779,7 +779,7 @@ public class CruiseControlTest {
                 "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal";
 
         Map<String, Object> customGoalConfig = (Map) configuration.asOrderedProperties().asMap();
-        customGoalConfig.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getName(), customGoals);
+        customGoalConfig.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getValue(), customGoals);
 
         CruiseControlSpec ccSpecWithCustomGoals = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
@@ -801,7 +801,7 @@ public class CruiseControlTest {
 
         String anomalyDetectionGoals =  cruiseControlWithCustomGoals
                 .getConfiguration().asOrderedProperties().asMap()
-                .get(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.getName());
+                .get(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.getValue());
 
         assertThat(anomalyDetectionGoals, is(customGoals));
     }

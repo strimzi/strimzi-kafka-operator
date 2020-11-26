@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 public enum CruiseControlConfigurationParameters {
-
     CONCURRENT_PARTITION_MOVEMENTS("num.concurrent.partition.movements.per.broker"),
     CONCURRENT_INTRA_PARTITION_MOVEMENTS("num.concurrent.intra.broker.partition.movements"),
     CONCURRENT_LEADER_MOVEMENTS("num.concurrent.leader.movements"),
@@ -47,18 +46,18 @@ public enum CruiseControlConfigurationParameters {
     CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY("self.healing.goals"),
     CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY("anomaly.detection.goals");
 
-    private final String name;
+    private final String value;
 
-    CruiseControlConfigurationParameters(String name) {
-        this.name = name;
+    CruiseControlConfigurationParameters(String value) {
+        this.value = value;
     }
 
-    public String getName() {
-        return name;
+    public String getValue() {
+        return value;
     }
 
     @Override
     public String toString() {
-        return name;
+        return value;
     }
 }
