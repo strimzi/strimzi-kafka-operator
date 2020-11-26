@@ -35,6 +35,16 @@ public interface Kafka {
     Future<Void> deleteTopic(TopicName topicName);
 
     /**
+     * Wait for the given topic to not existing Kafka ,
+     * completing the returned Future when the topic does not exists.
+     * If the operation fails the returned Future will be failed with the
+     * KafkaException (not an ExecutionException).
+     * @param topicName The name of the topic to delete.
+     * @return A future which is completed once the topic has been deleted.
+     */
+    Future<Boolean> topicExists(TopicName topicName);
+
+    /**
      * Asynchronously update the topic config in Kafka,
      * completing the returned Future when the topic has been updated.
      * If the operation fails the returned Future will be failed with the
