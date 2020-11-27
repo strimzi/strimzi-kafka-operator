@@ -453,7 +453,7 @@ An error is still returned, but this time it is `Not authorized to access topics
 
 `Dev Team A` has no `Read` access on topics that start with 'x_'.
 
-User `bob` should can read from or write to any topic:
+User `bob` can read from or write to any topic:
 
 [source,shell]
 ----
