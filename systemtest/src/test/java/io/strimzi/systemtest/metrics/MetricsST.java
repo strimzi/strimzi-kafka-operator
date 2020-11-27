@@ -30,10 +30,13 @@ import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
@@ -49,9 +52,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -120,7 +120,7 @@ public class MetricsST extends AbstractST {
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPartitions, kafkaMetricsData);
-        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(420.0));
+        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(424.0));
     }
 
     @Test
@@ -317,7 +317,7 @@ public class MetricsST extends AbstractST {
 
         Pattern topicPattern = Pattern.compile("strimzi_resources\\{kind=\"KafkaTopic\",} ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPattern, topicOperatorMetricsData);
-        cmdKubeClient().list("KafkaTopic").stream().forEach(topicName -> {
+        cmdKubeClient().list("KafkaTopic").forEach(topicName -> {
             LOGGER.info("KafkaTopic: {}", topicName);
         });
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) getExpectedTopics().size()));
@@ -713,6 +713,8 @@ public class MetricsST extends AbstractST {
         list.add(CruiseControlUtils.CRUISE_CONTROL_METRICS_TOPIC);
         list.add(CruiseControlUtils.CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
         list.add(CruiseControlUtils.CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
+        list.add("strimzi-store-topic");
+        list.add("strimzi-topic-operator-kstreams-topic-store-changelog");
         return list;
     }
 }

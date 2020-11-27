@@ -48,6 +48,7 @@ public class KafkaStreamsTopicStoreService {
 
         // check if entry topic has the right configuration
         Admin admin = Admin.create(kafkaProperties);
+        log.info("Starting ...");
         return toCS(admin.describeCluster().nodes())
                 .thenApply(nodes -> new Context(nodes.size()))
                 .thenCompose(c -> toCS(admin.listTopics().names()).thenApply(c::setTopics))
@@ -75,6 +76,7 @@ public class KafkaStreamsTopicStoreService {
     }
 
     private TopicStore createKafkaTopicStore(Config config, Properties kafkaProperties, String storeTopic, AsyncBiFunctionService.WithSerdes<String, String, Integer> serviceImpl) {
+        log.info("Creating topic store ...");
         ProducerActions<String, TopicCommand> producer = new AsyncProducer<>(
                 kafkaProperties,
             Serdes.String().serializer(),
@@ -95,6 +97,7 @@ public class KafkaStreamsTopicStoreService {
     }
 
     private CompletableFuture<AsyncBiFunctionService.WithSerdes<String, String, Integer>> createKafkaStreams(Config config, Properties kafkaProperties, String storeTopic, String storeName) {
+        log.info("Creating Kafka Streams, store name: {}", storeName);
         long timeoutMillis = config.get(Config.STALE_RESULT_TIMEOUT_MS);
         ForeachActionDispatcher<String, Integer> dispatcher = new ForeachActionDispatcher<>();
         WaitForResultService serviceImpl = new WaitForResultService(timeoutMillis, dispatcher);
@@ -122,6 +125,7 @@ public class KafkaStreamsTopicStoreService {
     }
 
     private CompletionStage<Void> createNewStoreTopic(String storeTopic, Admin admin, Context c) {
+        log.info("Creating new store topic: {}", storeTopic);
         int rf = Math.min(3, c.clusterSize);
         int minISR = Math.max(rf - 1, 1);
         NewTopic newTopic = new NewTopic(storeTopic, 1, (short) rf)
@@ -130,6 +134,7 @@ public class KafkaStreamsTopicStoreService {
     }
 
     private CompletionStage<Void> validateExistingStoreTopic(String storeTopic, Admin admin, Context c) {
+        log.info("Validating existing store topic: {}", storeTopic);
         ConfigResource storeTopicConfigResource = new ConfigResource(ConfigResource.Type.TOPIC, storeTopic);
         return toCS(admin.describeTopics(Collections.singleton(storeTopic)).values().get(storeTopic))
             .thenApply(td -> c.setRf(td.partitions().stream().map(tp -> tp.replicas().size()).min(Integer::compare).orElseThrow()))

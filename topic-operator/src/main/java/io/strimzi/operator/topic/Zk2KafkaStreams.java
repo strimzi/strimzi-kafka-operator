@@ -7,6 +7,8 @@ package io.strimzi.operator.topic;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.concurrent.CompletionStage;
  * Migration tool to move ZkTopicStore to KafkaStreamsTopicStore.
  */
 public class Zk2KafkaStreams {
+    private static final Logger log = LoggerFactory.getLogger(Zk2KafkaStreams.class);
 
     public static CompletionStage<KafkaStreamsTopicStoreService> upgrade(
             Zk zk,
@@ -26,8 +29,10 @@ public class Zk2KafkaStreams {
             boolean doStop
     ) {
         String topicsPath = config.get(Config.TOPICS_PATH);
-        TopicStore zkTopicStore = new ZkTopicStore(zk, topicsPath);
 
+        log.info("Upgrading topic store: {}", topicsPath);
+
+        TopicStore zkTopicStore = new ZkTopicStore(zk, topicsPath);
         KafkaStreamsTopicStoreService service = new KafkaStreamsTopicStoreService();
         return service.start(config, kafkaProperties)
                 .thenCompose(ksTopicStore -> {

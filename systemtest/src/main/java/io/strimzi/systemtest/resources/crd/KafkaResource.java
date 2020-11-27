@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
@@ -206,11 +207,23 @@ public class KafkaResource {
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
+                        .withReadinessProbe(
+                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
+                        )
+                        .withLivenessProbe(
+                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
+                        )
                     .endUserOperator()
                     .editTopicOperator()
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
+                        .withReadinessProbe(
+                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
+                        )
+                        .withLivenessProbe(
+                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
+                        )
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec();
