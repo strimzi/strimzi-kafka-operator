@@ -5,7 +5,7 @@ ARG KAFKA_VERSION
 ARG THIRD_PARTY_LIBS
 ARG strimzi_version
 
-RUN yum -y install gettext nmap-ncat stunnel net-tools bind-utils && yum clean all -y
+RUN yum -y install gettext nmap-ncat stunnel net-tools && yum clean all -y
 
 # Add kafka user with UID 1001
 # The user is in the group 0 to have access to the mounted volumes and storage

@@ -2,6 +2,18 @@
 export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.cluster.Main
 
+if [ -z "$KUBERNETES_SERVICE_DNS_DOMAIN" ]; then
+  KUBERNETES_SERVICE_DNS_DOMAIN=$(nslookup kubernetes.default | grep "Name:" | sed "s/Name:\skubernetes.default.svc.//")
+  if [ -n "$KUBERNETES_SERVICE_DNS_DOMAIN" ]; then
+    echo "Auto-detected KUBERNETES_SERVICE_DNS_DOMAIN: $KUBERNETES_SERVICE_DNS_DOMAIN"
+    export KUBERNETES_SERVICE_DNS_DOMAIN
+  else
+    echo "Auto-detection of KUBERNETES_SERVICE_DNS_DOMAIN failed. The default value cluster.local will be used."
+  fi
+else
+  echo "KUBERNETES_SERVICE_DNS_DOMAIN is already set. Skipping auto-detection."
+fi
+
 if [ -f /opt/strimzi/custom-config/log4j2.properties ]; then
     # if ConfigMap was not mounted and thus this file was not created, use properties file from the classpath
     export JAVA_OPTS="${JAVA_OPTS} -Dlog4j2.configurationFile=file:/opt/strimzi/custom-config/log4j2.properties"
