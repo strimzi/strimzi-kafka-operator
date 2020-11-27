@@ -8,23 +8,23 @@
 This is an end-to-end example of using Keycloak Authorization Services to configure authorization rules for use with `keycloak` authorization in Strimzi.
 The example starts by deploying the Keycloak server with pre-configured realms, requiring no additional configuration.
 We deploy the Kafka cluster configured to use one of the pre-configured realms.
-We connect to the Keycloak Admin Console and demonstrate the sections of the user interface where authorizations rules are configured.
+We then connect to the Keycloak Admin Console and demonstrate the sections of the user interface where authorizations rules are configured.
 We use Kafka CLI client tools with different personal and service accounts to demonstrate limited access based on the permissions granted to different accounts.
 
 
-== Token Based Authorization with Keycloak Authorization Services
+== Token-based authorization with Keycloak Authorization Services
 
 Once the Kafka Broker has obtained an access token by using `oauth` authentication, it is possible to use centrally managed authorization rules to enforce access restrictions onto Kafka Clients.
 For this, Strimzi Kafka Operator comes with `keycloak` authorization which uses Keycloak Authorization Services to centrally manage permissions.
 
-When using `keycloak` authorization a custom authorizer is configured on the Kafka Broker that uses Authorization Services REST endpoints available on Keycloak, which provide a list of granted permissions on resources for authenticated users.
+When using `keycloak` authorization, a custom authorizer is configured on the Kafka broker that uses Authorization Services REST endpoints available on Keycloak, which provide a list of granted permissions on resources for authenticated users.
 The list of grants (permissions) is fetched as the first action after an authenticated session is established by the Kafka client, and then regularly refreshed in the background.
-Grants are cached and enforced locally on the Kafka Broker for each user session to provide fast authorization decisions. Because they are refreshed, any changes to the grants on the Keycloak server are detected and enforced.
+Grants are cached and enforced locally on the Kafka broker for each user session to provide fast authorization decisions. Because they are refreshed, any changes to the grants on the Keycloak server are detected and enforced.
 
 
-== Starting Up the Pods
+== Starting the pods
 
-For this example we're using the kubernetes deployment scripts available at https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/kubernetes
+For this example, we use the kubernetes deployment scripts available at https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/kubernetes:
 
 [source,yaml]
 ----
@@ -56,7 +56,7 @@ curl -s $ROOT/examples/kubernetes/keycloak-postgres.yaml | sed -e "s#myproject#d
 
 .Deploy the minimal Kafka cluster
 
-Here we assume that the Strimzi Cluster Operator has already been installed on your Kubernetes cluster.
+Here we assume that the Strimzi Cluster Operator has already been installed on the Kubernetes cluster.
 
 [source,yaml]
 ----
@@ -66,34 +66,34 @@ kubectl apply -f $ROOT/examples/kubernetes/kafka-oauth-single-authz.yaml
 
 == Using the Keycloak Admin Console to configure authorization
 
-You can login to the Keycloak Admin Console by creating a tunnel to the keycloak pod:
+We login to the Keycloak Admin Console by creating a tunnel to the keycloak pod:
 
 [source,yaml]
 ----
 kubectl port-forward keycloak 8080
 ----
 
-Use your browser to connect to `http://localhost:8080/auth/admin` and use `admin` as username and password.
+Then we use a browser to connect to `http://localhost:8080/auth/admin` using `admin` as username and password.
 
 The default view usually displays the *Master* realm.
 For this example we are interested in the `kafka-authz` realm, which you can select in the upper left corner.
 
-Initially the *Realm Settings* section is selected, but you can navigate to  *Groups*, *Roles*, *Clients* and *Users*.
+Initially, the *Realm Settings* section is selected, but you can navigate to  *Groups*, *Roles*, *Clients* and *Users*.
 
 Under *Groups*, you can view groups to mark users as having some permissions.
 Groups are sets of users with a name assigned. Typically, they are used to compartmentalize users into geographical, organizational or departmental units, and so on.
 
-In Keycloak the groups can be stored in an LDAP identity provider.
+In Keycloak, groups can be stored in an LDAP identity provider.
 That makes it possible to make a user a member of a group through a custom LDAP server admin user interface, for example, to grant them some permissions on Kafka resources.
 
-Under *Users*, when viewing all users you will see two users defined: `alice` and `bob`. `alice` is a member of the `ClusterManager Group`, and `bob` is a member of `ClusterManager-my-cluster Group`.
-In Keycloak the users can be stored in an LDAP identity provider.
+Under *Users*, you can view all defined users. For this example, `alice` and `bob` are defined. `alice` is a member of the `ClusterManager Group`, and `bob` is a member of `ClusterManager-my-cluster Group`.
+In Keycloak, users can be stored in an LDAP identity provider.
 
 Under *Roles*, you can view the realm roles to mark users or clients as having some permissions.
 Roles are a concept analogous to groups. They are usually used to _tag_ users with organizational roles and have the requisite permissions.
 Roles cannot be stored in an LDAP identity provider. If LDAP is a requirement, you could use groups instead.
 
-Under *Clients*, you can view the additional client configurations: `kafka`, `kafka-cli`, `team-a-client`, `team-b-client`.
+Under *Clients*, you can view the additional client configurations. For this eaxmple,  `kafka`, `kafka-cli`, `team-a-client`, `team-b-client` are configured.
 The client with client id `kafka` is used by Kafka Brokers to perform the necessary OAuth 2.0 communication for access token validation,
 and to authenticate to other Kafka Broker instances using OAuth 2.0 client authentication.
 This client also contains the Authorization Services resource definitions, policies and authorization scopes used to perform authorization on the Kafka Brokers.
@@ -107,9 +107,9 @@ The authorization configuration is defined in the `kafka` client from the *Autho
 
 == Defining Authorization Services for access control
 
-Keycloak Authorization Services use authorization scopes, policies and permissions to define and apply access control to resources as explained in xref:keycloak_authorization_services_model_for_managing_permissions(one of the previous chapters).
+Keycloak Authorization Services use authorization scopes, policies and permissions to define and apply access control to resources, as explained in xref:keycloak_authorization_services_model_for_managing_permissions[Keycloak Authorization Services model for managing permissions].
 
-Under *Authorization* / *Permissions* of `kafka` client you can see already granted permissions that make use of *Resources* and *Policies* defined under the other tabs:
+From *Authorization* / *Permissions* you can see the granted permissions that use resources and policies defined from other *Resources* and *Policies* tabs. For example, the `kafka` client has the following permissions:
 ----
 Dev Team A can write to topics that start with x_ on any cluster
 Dev Team B can read from topics that start with x_ on any cluster
@@ -137,7 +137,7 @@ It makes sense to require the user to log in, before using the resulting access 
 In this case, the access token represents the specific user, rather than the client application.
 
 
-== Authorization in Action Using CLI Clients
+== Authorization in action using CLI clients
 
 A note of caution - this example uses the latest version of Keycloak, and relies on bugfixes of issues in some older versions.
 Let's make sure the Authorization rules have been properly imported when the Keycloak was started.
@@ -163,7 +163,7 @@ You can attach to the existing pod by running:
 kubectl attach -ti kafka-cli
 ----
 
-To produce messages as client `team-a-client`, we prepare a Kafka client configuration file with authentication parameters.
+To produce messages as client `team-a-client`, we prepare a Kafka client configuration file with authentication parameters:
 
 [source,shell]
 ----
@@ -199,7 +199,7 @@ A `Not authorized to access topics: [my-topic]` error is returned when trying to
 `team-a-client` has a `Dev Team A` role that gives it permission to perform any supported actions on topics that start with `a_`, but can only write to topics that start with `x_`.
 The topic named `my-topic` matches neither of those rules.
 
-The `team-a-client` configuration is then used to produce messages to topic `a_messages`.
+The `team-a-client` configuration is then used to produce messages to topic `a_messages`:
 
 [source,shell]
 ----
@@ -244,21 +244,21 @@ This time the consumer receives all the messages from the `a_messages` topic.
 
 The `team-a-client` configuration is used in administrative operations.
 
-Listing topics returns the `a_messages` topic.
+Listing topics returns the `a_messages` topic:
 
 [source,shell]
 ----
 bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
 ----    
 
-Listing consumer groups returns the `a_consumer_group_1` consumer group.
+Listing consumer groups returns the `a_consumer_group_1` consumer group:
 
 [source,shell]
 ----
 bin/kafka-consumer-groups.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/team-a-client.properties --list
 ----
 
-Fetching the default cluster configuration fails cluster authorization, because the operation requires cluster level permissions that `team-a-client` does not have.
+Fetching the default cluster configuration fails cluster authorization, because the operation requires cluster level permissions that `team-a-client` does not have:
 
 [source,shell]
 ----
@@ -267,9 +267,9 @@ bin/kafka-configs.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --comman
 ----
 
 
-. Using clients with different permissions
+.Using clients with different permissions
 
-As with `team-a-client`, we prepare a Kafka client configuration file with authentication parameters for `team-b-client`.
+As with `team-a-client`, we prepare a Kafka client configuration file with authentication parameters for `team-b-client`:
 
 [source,shell]
 ----
@@ -309,7 +309,7 @@ Message 3
 
 Producing messages to topic `b_messages` is authorized and successful.
 
-We switch again, but this time to topic that `team-b-client` can only read from, topic `x_messages`:
+We switch again, but this time to a topic that `team-b-client` can only read from, topic `x_messages`:
 
 [source,shell]
 ----
@@ -349,7 +349,7 @@ curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/exampl
    chmod +x /tmp/jwt.sh
 ----
 
-User `bob` authenticates to the Keycloak server with his username and password to get a refresh token.
+User `bob` authenticates to the Keycloak server with his username and password to get a refresh token:
 
 [source,shell]
 ----
@@ -394,7 +394,7 @@ bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --command
 ----
 
 
-User `bob` can list the topic, but `team-a-client` and `team-b-client` cannot.
+User `bob` can list the topic, but `team-a-client` and `team-b-client` cannot:
 
 [source,shell]
 ----

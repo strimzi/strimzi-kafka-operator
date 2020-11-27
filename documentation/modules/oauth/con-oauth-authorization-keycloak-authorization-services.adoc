@@ -65,7 +65,7 @@ Policies:: Policies are rules that use criteria to match a list of accounts. Pol
 
 Permissions:: Permissions grant a subset of authorization scopes on a specific resource definition to a set of users.
 
-== Mapping Keycloak Authorization Services to Kafka Model
+== Mapping Keycloak Authorization Services to the Kafka authorization model
 
 Use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker to grant Kafka permissions to users or service accounts. Typically, the OAuth client has `kafka` as its client id.
 
@@ -268,7 +268,7 @@ bin/kafka-configs --entity-type brokers --entity-name 0 --alter --add-config log
   --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
 ----
 
-.Deleting the topic
+.Deleting a topic
 
 To delete the topic the `Describe`, and `Delete` permissions are required on the topic.
 
@@ -278,7 +278,7 @@ bin/kafka-topics.sh --delete --topic my-topic \
   --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
 ----
 
-.Selecting the leader
+.Selecting a leader partition
 
 To run leader selection for topic partitions you need `Alter` permission on the `Cluster:kafka-cluster`.
 
@@ -314,4 +314,3 @@ and on each of the topics involved.
 bin/kafka-reassign-partitions.sh --reassignment-json-file /tmp/partition-reassignment.json --verify \
   --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/config.properties
 ----
-
