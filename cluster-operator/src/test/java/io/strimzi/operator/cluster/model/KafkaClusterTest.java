@@ -3647,8 +3647,8 @@ public class KafkaClusterTest {
     public void testCruiseControlWithMinISRgtReplicas() {
         Map<String, Object> config = new HashMap<>();
         int minInsyncReplicas = 2;
-        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getName(), 1);
-        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getName(), minInsyncReplicas);
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue(), 1);
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsyncReplicas);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
