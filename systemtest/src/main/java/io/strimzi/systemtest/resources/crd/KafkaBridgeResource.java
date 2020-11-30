@@ -98,7 +98,7 @@ public class KafkaBridgeResource {
     }
 
     private static DoneableKafkaBridge deployKafkaBridge(KafkaBridge kafkaBridge) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
             KubernetesResource.allowNetworkPolicySettingsForResource(kafkaBridge, KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName()));
         }
         return new DoneableKafkaBridge(kafkaBridge, kB -> {

@@ -83,7 +83,7 @@ public class KafkaConnectResource {
     }
 
     private static DoneableKafkaConnect deployKafkaConnect(KafkaConnect kafkaConnect) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
             KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
         }
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
@@ -112,7 +112,7 @@ public class KafkaConnectResource {
 
 
     public static void allowNetworkPolicyForKafkaConnect(KafkaConnect kafkaConnect) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES.equals(Boolean.TRUE.toString())) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
             KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
         }
     }
