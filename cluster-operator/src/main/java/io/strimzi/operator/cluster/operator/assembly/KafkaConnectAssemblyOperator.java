@@ -192,7 +192,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         Future<ReconcileResult<ClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
                 KafkaConnectResources.initContainerClusterRoleBindingName(name, namespace), desired);
 
-        Promise replacementPromise = Promise.promise();
+        Promise<ReconcileResult<ClusterRoleBinding>> replacementPromise = Promise.promise();
 
         fut.onComplete(res -> {
             if (res.failed()) {
@@ -204,7 +204,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     replacementPromise.fail(res.cause());
                 }
             } else {
-                replacementPromise.complete();
+                replacementPromise.complete(res.result());
             }
         });
 
