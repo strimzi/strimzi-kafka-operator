@@ -373,7 +373,7 @@ For example following can be used to build Strimzi images for Linux on Arm64 / A
 ```
 export DOCKER_BUILDX=buildx
 export DOCKER_BUILD_ARGS="--platform linux/amd64 --load"
-export DOCKER_BUILD_ARGS="--platform linux/arm64 --load"
+make all
 ```
 
-_Note: Strimzi currently does nto officially support any other platforms then Linux on `amd64`._
+_Note: Strimzi currently does not officially support any other platforms then Linux on `amd64`._
