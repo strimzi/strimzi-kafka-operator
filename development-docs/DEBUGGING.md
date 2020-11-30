@@ -36,7 +36,7 @@ We can enable remote debugging by adding the `JAVA_OPTS` environment variable to
           env:
             ...
             - name: JAVA_OPTS
-              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
 
 
 Let's also increase the livenessProbe timeout (to avoid Kubernetes restarting the pod if we're slow in attaching the debugger):
@@ -55,7 +55,7 @@ We also need to open the port for localhost access:
 
 Start tailing the operator pod (to make sure it's waiting for the debugger to attach, and to see the logging output once you attach with the debugger):
 
-    oc logs $(oc get pod | grep strimzi-cluster-operator | awk '{printf $1}') -f 
+    kubectl logs $(oc get pod | grep strimzi-cluster-operator | awk '{printf $1}') -f 
 
 You can now start the remote debug session from your IDE.
 

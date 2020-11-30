@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListenersValidatorTest {
@@ -647,7 +648,7 @@ public class ListenersValidatorTest {
         Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
         assertThat(exception.getMessage(), allOf(
                 containsString("listener listener1: Introspection endpoint URI or JWKS endpoint URI has to be specified"),
-                containsString("listener listener1: Valid Issuer URI has to be specified or 'checkIssuer' set to false")));
+                containsString("listener listener1: Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'")));
     }
 
     @Test
@@ -747,7 +748,7 @@ public class ListenersValidatorTest {
 
         Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
         assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: At least one of 'enablePlain', 'enableOauthBearer' has to be set to true")));
+                containsString("listener listener1: At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'")));
 
         // enable plain
         authBuilder.withEnablePlain(true);
@@ -757,6 +758,38 @@ public class ListenersValidatorTest {
 
         exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
         assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: When `enablePlain` is `true` the `tokenEndpointUri` has to be specified.")));
+                containsString("listener listener1: When 'enablePlain' is 'true' the 'tokenEndpointUri' has to be specified.")));
+    }
+
+    @Test
+    public void testValidateAudienceOauth() {
+        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
+                .withCheckAudience(true);
+
+        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withAuth(authBuilder.build());
+
+        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener);
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'")));
+
+        // set clientId
+        authBuilder.withClientId("kafka");
+
+        listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+        List<GenericKafkaListener> listeners2 = asList(listener);
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
+        assertThat(exception.getMessage(), allOf(
+                not(containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'"))));
     }
 }

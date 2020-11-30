@@ -275,6 +275,8 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |boolean
 |checkAccessTokenType               1.2+<.<|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
 |boolean
+|checkAudience                      1.2+<.<|Enable or disable audience checking. If audience checking is enabled the `clientId` also has to be configured. Default value is `false`.
+|boolean
 |checkIssuer                        1.2+<.<|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
 |boolean
 |clientId                           1.2+<.<|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.

@@ -38,6 +38,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private GenericSecretSource clientSecret;
     private String validIssuerUri;
     private boolean checkIssuer = true;
+    private boolean checkAudience = false;
     private String jwksEndpointUri;
     private Integer jwksRefreshSeconds;
     private Integer jwksMinRefreshPauseSeconds;
@@ -103,6 +104,17 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setCheckIssuer(boolean checkIssuer) {
         this.checkIssuer = checkIssuer;
+    }
+
+    @Description("Enable or disable audience checking. If audience checking is enabled the `clientId` also has to be configured. " +
+            "Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isCheckAudience() {
+        return checkAudience;
+    }
+
+    public void setCheckAudience(boolean checkAudience) {
+        this.checkAudience = checkAudience;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")

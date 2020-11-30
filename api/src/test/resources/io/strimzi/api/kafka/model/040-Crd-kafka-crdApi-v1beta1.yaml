@@ -237,6 +237,11 @@ spec:
                                 check is performed or not. This should be set to `false`
                                 if the authorization server does not include 'typ'
                                 claim in JWT token. Defaults to `true`.
+                            checkAudience:
+                              type: boolean
+                              description: Enable or disable audience checking. If
+                                audience checking is enabled the `clientId` also has
+                                to be configured. Default value is `false`.
                             checkIssuer:
                               type: boolean
                               description: Enable or disable issuer checking. By default
@@ -6299,6 +6304,11 @@ spec:
                                   check is performed or not. This should be set to
                                   `false` if the authorization server does not include
                                   'typ' claim in JWT token. Defaults to `true`.
+                              checkAudience:
+                                type: boolean
+                                description: Enable or disable audience checking.
+                                  If audience checking is enabled the `clientId` also
+                                  has to be configured. Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By
@@ -6725,6 +6735,11 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    If audience checking is enabled the `clientId`
+                                    also has to be configured. Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -6970,6 +6985,11 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    If audience checking is enabled the `clientId`
+                                    also has to be configured. Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -7238,6 +7258,11 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    If audience checking is enabled the `clientId`
+                                    also has to be configured. Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -14580,6 +14605,11 @@ spec:
                                   check is performed or not. This should be set to
                                   `false` if the authorization server does not include
                                   'typ' claim in JWT token. Defaults to `true`.
+                              checkAudience:
+                                type: boolean
+                                description: Enable or disable audience checking.
+                                  If audience checking is enabled the `clientId` also
+                                  has to be configured. Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By
@@ -15006,6 +15036,11 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    If audience checking is enabled the `clientId`
+                                    also has to be configured. Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -15251,6 +15286,11 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    If audience checking is enabled the `clientId`
+                                    also has to be configured. Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -15519,6 +15559,11 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    If audience checking is enabled the `clientId`
+                                    also has to be configured. Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
