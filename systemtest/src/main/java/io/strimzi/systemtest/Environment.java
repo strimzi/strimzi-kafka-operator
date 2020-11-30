@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -121,7 +122,7 @@ public class Environment {
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "v0.19.0";
     public static final String OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT = "6.6.6";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
-    private static final String CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = "bundle";
+    private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
 
     private static String config;
     public static final String SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET = getOrDefault(STRIMZI_IMAGE_PULL_SECRET_ENV, "");
@@ -152,7 +153,7 @@ public class Environment {
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // ClusterOperator installation type variable
-    public static final String CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
+    public static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, value -> ClusterOperatorInstallType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
 
     private Environment() { }
 
@@ -164,11 +165,11 @@ public class Environment {
     }
 
     public static boolean isOlmInstall() {
-        return Environment.CLUSTER_OPERATOR_INSTALL_TYPE.toUpperCase(Locale.ENGLISH).equals("OLM");
+        return CLUSTER_OPERATOR_INSTALL_TYPE.equals(ClusterOperatorInstallType.OLM);
     }
 
     public static boolean isHelmInstall() {
-        return Environment.CLUSTER_OPERATOR_INSTALL_TYPE.toUpperCase(Locale.ENGLISH).equals("HELM");
+        return CLUSTER_OPERATOR_INSTALL_TYPE.equals(ClusterOperatorInstallType.HELM);
     }
 
     public static boolean useLatestReleasedBridge() {
