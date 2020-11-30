@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
@@ -33,6 +34,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -66,6 +68,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -947,5 +950,102 @@ public class KafkaConnectAssemblyOperatorTest {
         assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:12Z", conflictingConnectS2I), is(true));
         assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:13Z", conflictingConnectS2I), is(true));
         assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:14Z", conflictingConnectS2I), is(false));
+    }
+
+    @Test
+    public void testCreateOrUpdateFailsWhenClusterRoleBindingRightsAreMissingButRequired(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+
+        String kcName = "foo";
+        String kcNamespace = "test";
+
+        KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
+        kc.getSpec().setRack(new RackBuilder().withNewTopologyKey("some-node-label").build());
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(kc, VERSIONS);
+
+        when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectS2IOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture(null));
+        when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
+        when(mockDcOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        when(mockCrbOps.reconcile(any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
+        when(mockServiceOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), any(), anyInt())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), any(), anyInt())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint async = context.checkpoint();
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName), kc)
+                .onComplete(context.failing(v -> {
+                    assertThat(v.getMessage(), containsString("Message: Forbidden!"));
+                    async.flag();
+                }));
+    }
+
+    @Test
+    public void testCreateOrUpdatePassesWhenClusterRoleBindingRightsAreMissingAndNotRequired(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+
+        String kcName = "foo";
+        String kcNamespace = "test";
+
+        KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(kc, VERSIONS);
+
+        when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectS2IOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture(null));
+        when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
+        when(mockDcOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        when(mockCrbOps.reconcile(any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
+        when(mockServiceOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), any(), anyInt())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), any(), anyInt())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint async = context.checkpoint();
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName), kc)
+                .onComplete(context.succeeding(v -> {
+                    async.flag();
+                }));
     }
 }
