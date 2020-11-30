@@ -13,6 +13,7 @@ This document gives a detailed breakdown of the various build processes and opti
 - [Running system tests](#running-system-tests)
 - [DCO Signoff](#cdo-signoff)
 - [IDE build problems](#ide-build-problems)
+- [Building container images for other platforms with Docker `buildx`](#building-container-images-for-other-platforms-with-docker-buildx)
 
 <!-- /TOC -->
 
@@ -362,3 +363,17 @@ You can also run the Checkstyle plugin for every commit you make by adding a pre
 ## IDE build problems
 
 The build also uses a Java annotation processor. Some IDEs (such as IntelliJ's IDEA) by default don't run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as part of the `maven` build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor directly.
+
+## Building container images for other platforms with Docker `buildx`
+
+Docker supports building images for different platforms using the `docker buildx` command.
+If you want to use it to build Strimzi images, you can just set the environment variable `DOCKER_BUILDX` to `buildx`, set the environment variable `DOCKER_BUILD_ARGS` to pass additional build options such as the platform and run the build.
+For example following can be used to build Strimzi images for Linux on Arm64 / AArch64:
+
+```
+export DOCKER_BUILDX=buildx
+export DOCKER_BUILD_ARGS="--platform linux/amd64 --load"
+export DOCKER_BUILD_ARGS="--platform linux/arm64 --load"
+```
+
+_Note: Strimzi currently does nto officially support any other platforms then Linux on `amd64`._
