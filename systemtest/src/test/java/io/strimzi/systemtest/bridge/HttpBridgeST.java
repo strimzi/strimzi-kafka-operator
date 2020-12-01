@@ -288,9 +288,9 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @Test
     void testConfigureDeploymentStrategy() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        String bridgeName = "example-bridge";
 
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
@@ -300,33 +300,32 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .endSpec()
             .done();
 
-        String bridgeDepName = KafkaBridgeResources.deploymentName(CLUSTER_NAME);
+        String bridgeDepName = KafkaBridgeResources.deploymentName(bridgeName);
 
         LOGGER.info("Adding label to KafkaBridge resource, the CR should be recreated");
-        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME,
+        KafkaBridgeResource.replaceBridgeResource(bridgeName,
             kb -> kb.getMetadata().setLabels(Collections.singletonMap("some", "label")));
         DeploymentUtils.waitForDeploymentAndPodsReady(bridgeDepName, 1);
 
-        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get();
 
         LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
-        // by default when the KafkaBridge is deployed, the observed generation is 2
-        assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(2L));
+        assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(1L));
         assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("some=label"));
         assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
         LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME,
+        KafkaBridgeResource.replaceBridgeResource(bridgeName,
             kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
-        KafkaBridgeUtils.waitForKafkaBridgeReady(CLUSTER_NAME);
+        KafkaBridgeUtils.waitForKafkaBridgeReady(bridgeName);
 
         LOGGER.info("Adding another label to KafkaBridge resource, pods should be rolled");
-        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, kb -> kb.getMetadata().getLabels().put("another", "label"));
+        KafkaBridgeResource.replaceBridgeResource(bridgeName, kb -> kb.getMetadata().getLabels().put("another", "label"));
         DeploymentUtils.waitForDeploymentAndPodsReady(bridgeDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
-        assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(3L));
+        kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get();
+        assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(2L));
         assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("another=label"));
         assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
