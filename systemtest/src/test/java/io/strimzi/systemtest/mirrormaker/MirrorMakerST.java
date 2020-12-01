@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -29,6 +30,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.ResourceManager;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -776,6 +779,53 @@ public class MirrorMakerST extends AbstractST {
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(mmPodName, "cat", "/etc/hosts").out();
         assertThat(output, Matchers.containsString(etcHostsData));
+    }
+
+    @Test
+    void testConfigureDeploymentStrategy() {
+        // Deploy source kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        // Deploy target kafka
+        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+
+        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, ClientUtils.generateRandomConsumerGroup(), 1, false)
+            .editSpec()
+                .editOrNewTemplate()
+                    .editOrNewDeployment()
+                        .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                    .endDeployment()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String mmDepName = KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME);
+
+        LOGGER.info("Adding label to MirrorMaker resource, the CR should be recreated");
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME,
+            mm -> mm.getMetadata().setLabels(Collections.singletonMap("some", "label")));
+        DeploymentUtils.waitForDeploymentAndPodsReady(mmDepName, 1);
+
+        KafkaMirrorMaker kmm = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+
+        LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
+        assertThat(kmm.getStatus().getObservedGeneration(), is(1L));
+        assertThat(kmm.getMetadata().getLabels().toString(), Matchers.containsString("some=label"));
+        assertThat(kmm.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
+
+        LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME,
+            mm -> mm.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
+
+        LOGGER.info("Adding another label to MirrorMaker resource, pods should be rolled");
+        KafkaMirrorMakerResource.replaceMirrorMakerResource(CLUSTER_NAME, mm -> mm.getMetadata().getLabels().put("another", "label"));
+        DeploymentUtils.waitForDeploymentAndPodsReady(mmDepName, 1);
+
+        LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
+        kmm = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        assertThat(kmm.getStatus().getObservedGeneration(), is(2L));
+        assertThat(kmm.getMetadata().getLabels().toString(), Matchers.containsString("another=label"));
+        assertThat(kmm.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
     
     @BeforeAll

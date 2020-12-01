@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -58,12 +59,12 @@ import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -591,7 +592,7 @@ class ConnectST extends AbstractST {
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
                 StUtils.checkEnvVarInPod(kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
-                CoreMatchers.is(CoreMatchers.not("test.value"))
+                is(not("test.value"))
         );
 
         LOGGER.info("Updating values in MirrorMaker container");
@@ -1211,6 +1212,50 @@ class ConnectST extends AbstractST {
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(connectPodName, "cat", "/etc/hosts").out();
         assertThat(output, containsString(etcHostsData));
+    }
+
+    @Test
+    void testConfigureDeploymentStrategy() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+            .editSpec()
+                .editOrNewTemplate()
+                    .editOrNewDeployment()
+                        .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                    .endDeployment()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String connectDepName = KafkaConnectResources.deploymentName(CLUSTER_NAME);
+
+        LOGGER.info("Adding label to Connect resource, the CR should be recreated");
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME,
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap("some", "label")));
+        DeploymentUtils.waitForDeploymentAndPodsReady(connectDepName, 1);
+
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+
+        LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
+        assertThat(kafkaConnect.getStatus().getObservedGeneration(), is(1L));
+        assertThat(kafkaConnect.getMetadata().getLabels().toString(), containsString("some=label"));
+        assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
+
+        LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME,
+            kc -> kc.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
+        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
+
+        LOGGER.info("Adding another label to Connect resource, pods should be rolled");
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kc -> kc.getMetadata().getLabels().put("another", "label"));
+        DeploymentUtils.waitForDeploymentAndPodsReady(connectDepName, 1);
+
+        LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
+        kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        assertThat(kafkaConnect.getStatus().getObservedGeneration(), is(2L));
+        assertThat(kafkaConnect.getMetadata().getLabels().toString(), containsString("another=label"));
+        assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
     @BeforeAll

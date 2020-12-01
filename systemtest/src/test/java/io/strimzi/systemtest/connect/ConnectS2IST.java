@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -898,6 +899,50 @@ class ConnectS2IST extends AbstractST {
             cmdKubeClient().execInPod(connectS2IPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretName + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
         );
+    }
+
+    @Test
+    void testConfigureDeploymentStrategy() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaConnectS2IResource.kafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1)
+            .editSpec()
+                .editOrNewTemplate()
+                    .editOrNewDeployment()
+                        .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                    .endDeployment()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String connectS2IDepName = KafkaConnectS2IResources.deploymentName(CLUSTER_NAME);
+
+        LOGGER.info("Adding label to ConnectS2I resource, the CR should be recreated");
+        KafkaConnectS2IResource.replaceConnectS2IResource(CLUSTER_NAME,
+            kcs2i -> kcs2i.getMetadata().setLabels(Collections.singletonMap("some", "label")));
+        DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(connectS2IDepName, 1);
+
+        KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+
+        LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
+        assertThat(kafkaConnectS2I.getStatus().getObservedGeneration(), is(1L));
+        assertThat(kafkaConnectS2I.getMetadata().getLabels().toString(), containsString("some=label"));
+        assertThat(kafkaConnectS2I.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
+
+        LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        KafkaConnectS2IResource.replaceConnectS2IResource(CLUSTER_NAME,
+            kcs2i -> kcs2i.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
+        KafkaConnectS2IUtils.waitForConnectS2IReady(CLUSTER_NAME);
+
+        LOGGER.info("Adding another label to ConnectS2I resource, pods should be rolled");
+        KafkaConnectS2IResource.replaceConnectS2IResource(CLUSTER_NAME, kcs2i -> kcs2i.getMetadata().getLabels().put("another", "label"));
+        DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(connectS2IDepName, 1);
+
+        LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
+        kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        assertThat(kafkaConnectS2I.getStatus().getObservedGeneration(), is(2L));
+        assertThat(kafkaConnectS2I.getMetadata().getLabels().toString(), containsString("another=label"));
+        assertThat(kafkaConnectS2I.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
     private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
