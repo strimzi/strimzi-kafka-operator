@@ -11,10 +11,14 @@ import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
@@ -27,10 +31,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -282,6 +284,51 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(bridgePodName, "cat", "/etc/hosts").out();
         assertThat(output, containsString(etcHostsData));
+    }
+
+    @Test
+    void testConfigureDeploymentStrategy() {
+        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+            .editSpec()
+                .editOrNewTemplate()
+                    .editOrNewDeployment()
+                        .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                    .endDeployment()
+                .endTemplate()
+            .endSpec()
+            .done();
+
+        String bridgeDepName = KafkaBridgeResources.deploymentName(CLUSTER_NAME);
+
+        LOGGER.info("Adding label to KafkaBridge resource, the CR should be recreated");
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME,
+            kb -> kb.getMetadata().setLabels(Collections.singletonMap("some", "label")));
+        DeploymentUtils.waitForDeploymentAndPodsReady(bridgeDepName, 1);
+
+        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+
+        LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
+        // by default when the KafkaBridge is deployed, the observed generation is 2
+        assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(2L));
+        assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("some=label"));
+        assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
+
+        LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME,
+            kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
+        KafkaBridgeUtils.waitForKafkaBridgeReady(CLUSTER_NAME);
+
+        LOGGER.info("Adding another label to KafkaBridge resource, pods should be rolled");
+        KafkaBridgeResource.replaceBridgeResource(CLUSTER_NAME, kb -> kb.getMetadata().getLabels().put("another", "label"));
+        DeploymentUtils.waitForDeploymentAndPodsReady(bridgeDepName, 1);
+
+        LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
+        kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(3L));
+        assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("another=label"));
+        assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
     @BeforeAll
