@@ -485,7 +485,7 @@ public class ModelUtils {
     /**
      * Decides whether the Cluster Operator needs namespaceSelector to be configured in the network policies in order
      * to talk with the operands. This follows the following rules:
-     *     - If it runs in the same namespace s the operand, do not set namespace selector
+     *     - If it runs in the same namespace as the operand, do not set namespace selector
      *     - If it runs in a different namespace, but user provided selector labels, use the labels
      *     - If it runs in a different namespace, and user didn't provided selector labels, open it to COs in all namespaces
      *
