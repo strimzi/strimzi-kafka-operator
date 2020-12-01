@@ -13,7 +13,7 @@
 * Support passing metrics configuration as an external ConfigMap
 
 ### Deprecations and removals
-* Metrics were moved from the model CR to the external ConfigMap
+* The `metrics` field in the Strimzi custom resources has been deprecated and will be removed in the future. For configuring metrics, use the new `metricsConfig` field and pass the configuration via ConfigMap.
 
 ## 0.20.0
 

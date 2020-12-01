@@ -43,6 +43,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -119,7 +120,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
 
-        final String[] desiredLogging = new String[1];
+        final AtomicReference<String> desiredLogging = new AtomicReference<>();
         connectS2ICheck
                 .compose(otherConnect -> {
                     if (otherConnect != null
@@ -141,7 +142,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                             Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
-                    desiredLogging[0] = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                    desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
                     return configMapOperations.reconcile(namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
@@ -149,7 +150,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging[0], connect.getDefaultLogConfig()))
+                .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging.get(), connect.getDefaultLogConfig()))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
 

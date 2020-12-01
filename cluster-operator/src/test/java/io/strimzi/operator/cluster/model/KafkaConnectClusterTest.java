@@ -127,14 +127,14 @@ public class KafkaConnectClusterTest {
     public void testMetricsConfigMapDeprecatedMetrics() {
         KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, cluster))
                 .withNewSpec()
-                .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-                .withMetricsConfig(null)
-                .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
-                .withImage(image)
-                .withReplicas(replicas)
-                .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-                .withBootstrapServers(bootstrapServers)
+                    .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+                    .withMetricsConfig(null)
+                    .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
+                    .withImage(image)
+                    .withReplicas(replicas)
+                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                    .withBootstrapServers(bootstrapServers)
                 .endSpec()
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);

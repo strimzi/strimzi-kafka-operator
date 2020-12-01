@@ -5,7 +5,7 @@
 [options="header"]
 |====
 |Property                       |Description
-|affinity                1.2+<.<| See external documentation of {KubeApiReferenceBase}#affinity-v1-core[core/v1 affinity].
+|affinity                1.2+<.<| For more information, see the {KubeApiReferenceBase}#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
@@ -112,7 +112,7 @@ Example of complex type.
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 
-The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicLeft` from xref:type-PolymorphicRight-{context}[`PolymorphicRight`].
+The `discrim` property is a discriminator that distinguishes use of the `PolymorphicLeft` type from xref:type-PolymorphicRight-{context}[`PolymorphicRight`].
 It must have the value `left` for the type `PolymorphicLeft`.
 [options="header"]
 |====
@@ -131,7 +131,7 @@ It must have the value `left` for the type `PolymorphicLeft`.
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 
-The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicRight` from xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`].
+The `discrim` property is a discriminator that distinguishes use of the `PolymorphicRight` type from xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`].
 It must have the value `right` for the type `PolymorphicRight`.
 [options="header"]
 |====

@@ -135,15 +135,14 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     }
 
     private Future<ConfigMap> mirrorMetricsConfigMap(String namespace, KafkaMirrorMakerCluster mirror) {
-        Future<ConfigMap> metricsCm = Future.succeededFuture(null);
         if (mirror.isMetricsConfigured()) {
             if (mirror.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                metricsCm = configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) mirror.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+                return configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) mirror.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
             } else {
                 log.warn("Unknown metrics type {}", mirror.getMetricsConfigInCm().getType());
                 throw new InvalidResourceException("Unknown metrics type " + mirror.getMetricsConfigInCm().getType());
             }
         }
-        return metricsCm;
+        return Future.succeededFuture(null);
     }
 }

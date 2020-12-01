@@ -111,13 +111,13 @@ public class KafkaMirrorMaker2ClusterTest {
 
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
-            .withMetricsConfig(jmxMetricsConfig)
-            .withImage(image)
-            .withReplicas(replicas)
-            .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-            .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-            .withConnectCluster(targetClusterAlias)
-            .withClusters(targetCluster)
+                .withMetricsConfig(jmxMetricsConfig)
+                .withImage(image)
+                .withReplicas(replicas)
+                .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                .withConnectCluster(targetClusterAlias)
+                .withClusters(targetCluster)
             .endSpec()
             .build();
     private final KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
@@ -132,14 +132,14 @@ public class KafkaMirrorMaker2ClusterTest {
     public void testMetricsConfigMapDeprecatedMetrics() {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
                 .withNewSpec()
-                .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-                .withMetricsConfig(null)
-                .withImage(image)
-                .withReplicas(replicas)
-                .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-                .withConnectCluster(targetClusterAlias)
-                .withClusters(targetCluster)
+                    .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+                    .withMetricsConfig(null)
+                    .withImage(image)
+                    .withReplicas(replicas)
+                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                    .withConnectCluster(targetClusterAlias)
+                    .withClusters(targetCluster)
                 .endSpec()
                 .build();
 

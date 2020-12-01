@@ -48,6 +48,7 @@ metadata:
     app: strimzi
 data:
   metrics-config.yml: |
+    # See https://strimzi.io/docs/operators/master/deploying.html#proc-metrics-kafka-deploy-options-str for more info about deploying metrics into Strimzi
     lowercaseOutputName: true
     lowercaseOutputLabelNames: true
     rules:

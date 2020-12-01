@@ -74,9 +74,6 @@ public class EntityUserOperatorTest {
     private final String metricsCMName = "metrics-cm";
     private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName);
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
-
-
-
     private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
             add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
             add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());

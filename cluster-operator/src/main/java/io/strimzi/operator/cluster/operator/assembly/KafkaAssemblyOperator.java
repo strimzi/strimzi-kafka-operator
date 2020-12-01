@@ -2419,7 +2419,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ConfigMap> getKafkaAncillaryCm()    {
-            Future<ConfigMap> metricsCm = Future.succeededFuture(null);
+            final Future<ConfigMap> metricsCm;
 
             if (kafkaCluster.isMetricsConfigured()) {
                 if (kafkaCluster.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
@@ -2428,6 +2428,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.warn("Unknown metrics type {}", kafkaCluster.getMetricsConfigInCm().getType());
                     throw new InvalidResourceException("Unknown metrics type " + kafkaCluster.getMetricsConfigInCm().getType());
                 }
+            } else {
+                metricsCm = Future.succeededFuture(null);
             }
 
             return metricsCm.compose(metricsCmRes -> {
@@ -3012,14 +3014,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
                 EntityUserOperator userOperator = entityOperator.getUserOperator();
 
-                Future<ConfigMap> futToLogConfigMap;
+                final Future<ConfigMap> futToLogConfigMap;
                 if (topicOperator != null && topicOperator.getLogging() instanceof ExternalLogging)  {
                     futToLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName());
                 } else {
                     futToLogConfigMap = Future.succeededFuture(null);
                 }
 
-                Future<ConfigMap> futUoLogConfigMap;
+                final Future<ConfigMap> futUoLogConfigMap;
                 if (userOperator != null && userOperator.getLogging() instanceof ExternalLogging)  {
                     futUoLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName());
                 } else {
@@ -3183,7 +3185,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) cruiseControl.getLogging()).getName()) :
                         null;
 
-                Future<ConfigMap> metricsCm = Future.succeededFuture(null);
+                final Future<ConfigMap> metricsCm;
                 if (cruiseControl.isMetricsConfigured()) {
                     if (cruiseControl.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
                         metricsCm = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxPrometheusExporterMetrics) cruiseControl.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
@@ -3191,6 +3193,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         log.warn("Unknown metrics type {}", cruiseControl.getMetricsConfigInCm().getType());
                         throw new InvalidResourceException("Unknown metrics type " + cruiseControl.getMetricsConfigInCm().getType());
                     }
+                } else {
+                    metricsCm = Future.succeededFuture(null);
                 }
 
                 metricsCm.compose(cmRes -> {

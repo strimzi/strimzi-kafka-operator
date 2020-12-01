@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -64,7 +63,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkKafkaStorage() {
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
-            emptyMap(), null, Collections.emptyMap(), Collections.emptyMap(),
+            emptyMap(), null, emptyMap(), emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
                     .editZookeeper()
@@ -84,7 +83,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkKafkaJbodStorage() {
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
-            emptyMap(), null, Collections.emptyMap(), Collections.emptyMap(),
+            emptyMap(), null, emptyMap(), emptyMap(),
             new JbodStorageBuilder().withVolumes(new EphemeralStorageBuilder().withId(1).build(),
                                                  new EphemeralStorageBuilder().withId(2).build()).build(),
             new EphemeralStorage(), null, null, null, null))
@@ -106,7 +105,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkZookeeperStorage() {
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
-            emptyMap(), null, Collections.emptyMap(), Collections.emptyMap(),
+            emptyMap(), null, emptyMap(), emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
                     .editZookeeper()
@@ -152,7 +151,7 @@ public class KafkaSpecCheckerTest {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
-            emptyMap(), null, kafkaOptions, Collections.emptyMap(),
+            emptyMap(), null, kafkaOptions, emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
                     .editKafka()
@@ -172,7 +171,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkMultipleWarnings() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
-                emptyMap(), null, Collections.emptyMap(), Collections.emptyMap(),
+                emptyMap(), null, emptyMap(), emptyMap(),
                 new EphemeralStorage(), new EphemeralStorage(), null, null, null, null);
         KafkaSpecChecker checker = generateChecker(kafka);
         List<Condition> warnings = checker.run();

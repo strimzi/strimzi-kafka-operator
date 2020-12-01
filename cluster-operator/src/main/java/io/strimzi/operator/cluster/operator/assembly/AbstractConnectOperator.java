@@ -699,15 +699,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     protected Future<ConfigMap> connectMetricsConfigMap(String namespace, KafkaConnectCluster connect) {
-        Future<ConfigMap> metricsCmFut = Future.succeededFuture(null);
         if (connect.isMetricsConfigured()) {
             if (connect.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                metricsCmFut = configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+                return configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
             } else {
                 log.warn("Unknown metrics type {}", connect.getMetricsConfigInCm().getType());
                 throw new InvalidResourceException("Unknown metrics type " + connect.getMetricsConfigInCm().getType());
             }
         }
-        return metricsCmFut;
+        return Future.succeededFuture(null);
     }
 }

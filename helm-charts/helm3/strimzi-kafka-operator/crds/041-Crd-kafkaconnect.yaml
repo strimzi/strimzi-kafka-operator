@@ -1179,7 +1179,7 @@ spec:
                         optional:
                           type: boolean
                       description: Reference to the key in the ConfigMap containing the metrics configuration.
-                  description: ConfigMap where Prometheus JMX Exporter configuration is stored. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+                  description: ConfigMap where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}.
               required:
                 - type
                 - valueFrom

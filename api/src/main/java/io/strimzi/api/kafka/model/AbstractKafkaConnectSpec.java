@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
@@ -144,6 +145,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
     }
 
     @DeprecatedProperty(movedToPath = "spec.metricsConfig")
+    @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
