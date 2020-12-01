@@ -207,12 +207,6 @@ public class KafkaResource {
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
-                        .withReadinessProbe(
-                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
-                        )
-                        .withLivenessProbe(
-                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
-                        )
                     .endUserOperator()
                     .editTopicOperator()
                         .withNewInlineLogging()
