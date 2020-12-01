@@ -421,20 +421,7 @@ public class ZookeeperCluster extends AbstractModel {
             expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
             labelSelector4.setMatchLabels(expressions4);
             clusterOperatorPeer.setPodSelector(labelSelector4);
-
-            if (!namespace.equals(operatorNamespace)) {
-                // If CO and Zoo do not run in the same namespace, we need to handle cross namespace access
-
-                if (operatorNamespaceLabels != null)    {
-                    // If user specified the namespace labels, we can use them to make the selector as tight as possible
-                    LabelSelector nsLabelSelector = new LabelSelector();
-                    nsLabelSelector.setMatchLabels(operatorNamespaceLabels.toMap());
-                    clusterOperatorPeer.setNamespaceSelector(nsLabelSelector);
-                } else {
-                    // If no namespace labels were specified, we open the network policy to COs in all namespaces
-                    clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
-                }
-            }
+            ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
             NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
             LabelSelector labelSelector5 = new LabelSelector();

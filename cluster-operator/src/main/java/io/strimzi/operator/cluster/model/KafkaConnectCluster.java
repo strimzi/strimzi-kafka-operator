@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -730,20 +729,7 @@ public class KafkaConnectCluster extends AbstractModel {
                         .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                         .endPodSelector()
                         .build();
-
-                if (!namespace.equals(operatorNamespace)) {
-                    // If CO and Connect do not run in the same namespace, we need to handle cross namespace access
-
-                    if (operatorNamespaceLabels != null)    {
-                        // If user specified the namespace labels, we can use them to make the selector as tight as possible
-                        LabelSelector nsLabelSelector = new LabelSelector();
-                        nsLabelSelector.setMatchLabels(operatorNamespaceLabels.toMap());
-                        clusterOperatorPeer.setNamespaceSelector(nsLabelSelector);
-                    } else {
-                        // If no namespace labels were specified, we open the network policy to COs in all namespaces
-                        clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
-                    }
-                }
+                ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
                 peers.add(clusterOperatorPeer);
 
