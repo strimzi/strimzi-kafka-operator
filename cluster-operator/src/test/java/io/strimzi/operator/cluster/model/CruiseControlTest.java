@@ -761,7 +761,7 @@ public class CruiseControlTest {
                 .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(true);
+        NetworkPolicy np = cc.generateNetworkPolicy(true, "operator-namespace", null);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -771,6 +771,44 @@ public class CruiseControlTest {
         assertThat(rules.contains(clusterOperatorPeer), is(true));
     }
 
+    @Test
+    public void testRestApiPortNetworkPolicyInTheSameNamespace() {
+        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
+                .endPodSelector()
+                .build();
+
+        NetworkPolicy np = cc.generateNetworkPolicy(true, namespace, null);
+
+        assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
+
+        List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
+
+        assertThat(rules.size(), is(1));
+        assertThat(rules.contains(clusterOperatorPeer), is(true));
+    }
+
+    @Test
+    public void testRestApiPortNetworkPolicyWithNamespaceLabels() {
+        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
+                .endPodSelector()
+                .withNewNamespaceSelector()
+                    .withMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"))
+                .endNamespaceSelector()
+                .build();
+
+        NetworkPolicy np = cc.generateNetworkPolicy(true, null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+
+        assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
+
+        List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
+
+        assertThat(rules.size(), is(1));
+        assertThat(rules.contains(clusterOperatorPeer), is(true));
+    }
 
     @Test
     public void testGoalsCheck() {

@@ -104,6 +104,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     protected final List<LocalObjectReference> imagePullSecrets;
     protected final long operationTimeoutMs;
+    protected final String operatorNamespace;
+    protected final Labels operatorNamespaceLabels;
     protected final PlatformFeaturesAvailability pfa;
     protected final ServiceAccountOperator serviceAccountOperations;
     private final int port;
@@ -130,6 +132,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.operatorNamespace = config.getOperatorNamespace();
+        this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.pfa = pfa;
         this.port = port;
 

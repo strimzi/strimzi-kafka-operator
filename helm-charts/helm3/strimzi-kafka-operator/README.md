@@ -89,6 +89,7 @@ the documentation for more details.
 | `image.imagePullSecrets`             | Docker registry pull secret               | `nil`                                                |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
+| `operatorNamespaceLabels`            | Labels of the namespace where the operator runs | `nil`                                          |
 | `zookeeper.image.registry  `         | ZooKeeper image registry                  | `quay.io`                                            |
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
 | `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |

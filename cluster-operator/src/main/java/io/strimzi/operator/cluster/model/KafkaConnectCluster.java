@@ -687,11 +687,17 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
+     * Generates the NetworkPolicies relevant for Kafka Connect nodes
+     *
      * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
      * @param connectorOperatorEnabled Whether the ConnectorOperator is enabled or not
+     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, boolean connectorOperatorEnabled) {
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, boolean connectorOperatorEnabled,
+                                               String operatorNamespace, Labels operatorNamespaceLabels) {
         if (connectorOperatorEnabled) {
             List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
@@ -722,9 +728,9 @@ public class KafkaConnectCluster extends AbstractModel {
                         .withNewPodSelector()
                         .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                         .endPodSelector()
-                        .withNewNamespaceSelector()
-                        .endNamespaceSelector()
                         .build();
+                ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
+
                 peers.add(clusterOperatorPeer);
 
                 restApiRule.setFrom(peers);

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -40,11 +41,11 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE, "operator-namespace");
     }
 
     @Test
     public void testDefaultConfig() {
-
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.remove(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
         envVars.remove(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
@@ -54,12 +55,13 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(ClusterOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
         assertThat(config.getOperationTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS));
+        assertThat(config.getOperatorNamespace(), is("operator-namespace"));
+        assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
     }
 
     @Test
     public void testReconciliationInterval() {
-
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()), null, null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()), null, null, null, null);
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
@@ -68,17 +70,16 @@ public class ClusterOperatorConfigTest {
 
     @Test
     public void testEnvVars() {
-
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(30_000L));
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
+        assertThat(config.getOperatorNamespace(), is("operator-namespace"));
     }
 
     @Test
     public void testEnvVarsDefault() {
-
         Map<String, String> envVars = envWithImages();
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
 
@@ -87,6 +88,8 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(ClusterOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
         assertThat(config.getOperationTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS));
+        assertThat(config.getOperatorNamespace(), is(nullValue()));
+        assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
     }
 
     private Map<String, String> envWithImages() {
@@ -261,5 +264,27 @@ public class ClusterOperatorConfigTest {
             InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(editedEnvVars));
             assertThat(e.getMessage(), containsString(envVar.getKey()));
         }
+    }
+
+    @Test
+    public void testOperatorNamespaceLabels() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE_LABELS, "nsLabelKey1=nsLabelValue1,nsLabelKey2=nsLabelValue2");
+
+        Map<String, String> expectedLabels = new HashMap<>(2);
+        expectedLabels.put("nsLabelKey1", "nsLabelValue1");
+        expectedLabels.put("nsLabelKey2", "nsLabelValue2");
+
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getOperatorNamespaceLabels(), is(Labels.fromMap(expectedLabels)));
+    }
+
+    @Test
+    public void testInvalidOperatorNamespaceLabels() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE_LABELS, "nsLabelKey1,nsLabelKey2");
+
+        assertThrows(InvalidConfigurationException.class, () -> {
+            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
+        });
     }
 }

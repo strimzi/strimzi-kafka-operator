@@ -358,7 +358,16 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
+    /**
+     * Generates the NetworkPolicies relevant for ZooKeeper nodes
+     *
+     * @param namespaceAndPodSelectorNetworkPolicySupported Whether the kube cluster supports namespace selectors
+     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     *
+     * @return The network policy.
+     */
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, String operatorNamespace, Labels operatorNamespaceLabels) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
         NetworkPolicyPort clientsPort = new NetworkPolicyPort();
@@ -412,7 +421,7 @@ public class ZookeeperCluster extends AbstractModel {
             expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
             labelSelector4.setMatchLabels(expressions4);
             clusterOperatorPeer.setPodSelector(labelSelector4);
-            clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
+            ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
             NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
             LabelSelector labelSelector5 = new LabelSelector();

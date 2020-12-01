@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -31,6 +32,7 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -38,7 +40,9 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -391,5 +395,30 @@ public class ModelUtilsTest {
 
         assertThat(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt1),
                 is(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt2)));
+    }
+
+    @Test
+    public void testCONetworkPolicyPeerNamespaceSelectorSameNS()  {
+        NetworkPolicyPeer peer = new NetworkPolicyPeer();
+        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-ns", null);
+        assertThat(peer.getNamespaceSelector(), is(nullValue()));
+    }
+
+    @Test
+    public void testCONetworkPolicyPeerNamespaceSelectorDifferentNSNoLabels()  {
+        NetworkPolicyPeer peer = new NetworkPolicyPeer();
+        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", null);
+        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nullValue()));
+
+        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", Labels.fromMap(emptyMap()));
+        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nullValue()));
+    }
+
+    @Test
+    public void testCONetworkPolicyPeerNamespaceSelectorDifferentNSWithLabels()  {
+        NetworkPolicyPeer peer = new NetworkPolicyPeer();
+        Labels nsLabels = Labels.fromMap(singletonMap("labelKey", "labelValue"));
+        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", nsLabels);
+        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nsLabels.toMap()));
     }
 }

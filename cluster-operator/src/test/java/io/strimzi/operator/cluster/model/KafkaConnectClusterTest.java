@@ -1395,7 +1395,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1412,12 +1412,56 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
+    public void testNetworkPolicyWithConnectorOperatorSameNamespace() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, true, namespace, null);
+
+        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.REST_API_PORT));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector(), is(nullValue()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector(), is(nullValue()));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+    }
+
+    @Test
+    public void testNetworkPolicyWithConnectorOperatorWithNamespaceLabels() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+
+        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.REST_API_PORT));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(0).getNamespaceSelector(), is(nullValue()));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
+        assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+    }
+
+    @Test
     public void testNetworkPolicyWithoutConnectorOperator() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
-        assertThat(kc.generateNetworkPolicy(true, false), is(nullValue()));
+        assertThat(kc.generateNetworkPolicy(true, false, null, null), is(nullValue()));
     }
 
     @Test

@@ -552,10 +552,15 @@ public class CruiseControl extends AbstractModel {
     }
 
     /**
+     * Generates the NetworkPolicies relevant for Cruise Control
+     *
      * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
+     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, String operatorNamespace, Labels operatorNamespaceLabels) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(1);
 
         // CO can access the REST API
@@ -570,9 +575,9 @@ public class CruiseControl extends AbstractModel {
                     .withNewPodSelector() // cluster operator
                         .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                     .endPodSelector()
-                    .withNewNamespaceSelector()
-                    .endNamespaceSelector()
                     .build();
+            ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
+
             restApiRule.setFrom(Collections.singletonList(clusterOperatorPeer));
         }
 
