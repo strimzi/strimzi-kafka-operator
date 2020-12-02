@@ -5,10 +5,10 @@
 [id='assembly-downgrade-{context}']
 = Downgrading Strimzi
 
-If you are encountering issues with the latest version of Strimzi,
+If you are encountering issues with the version of Strimzi you upgraded to,
 you can revert your installation to the previous version.
 
-As with the Strimzi upgrade process, you can perform your downgrade in two stages:
+You can perform a downgrade to:
 
 . Revert your Cluster Operator to the previous Strimzi version.
 ** xref:proc-downgrade-cluster-operator-{context}[]
