@@ -876,11 +876,6 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
-                  metrics:
-                    x-kubernetes-preserve-unknown-fields: true
-                    type: object
-                    description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
-                      for details of the structure of this configuration.
                   metricsConfig:
                     type: object
                     properties:
@@ -1934,11 +1929,6 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
-                  metrics:
-                    x-kubernetes-preserve-unknown-fields: true
-                    type: object
-                    description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
-                      for details of the structure of this configuration.
                   metricsConfig:
                     type: object
                     properties:
@@ -4641,11 +4631,6 @@ spec:
                       metric.reporter.topic, partition.metric.sample.store.topic,
                       broker.metric.sample.store.topic,capacity.config.file, self.healing.,
                       anomaly.detection., ssl.'
-                  metrics:
-                    x-kubernetes-preserve-unknown-fields: true
-                    type: object
-                    description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
-                      for details of the structure of this configuration.
                   metricsConfig:
                     type: object
                     properties:

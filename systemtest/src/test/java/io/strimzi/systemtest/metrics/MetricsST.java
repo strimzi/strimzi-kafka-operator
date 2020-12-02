@@ -17,11 +17,13 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.MetricsConfig;
@@ -433,6 +435,72 @@ public class MetricsST extends AbstractST {
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             k.getSpec().getKafka().setMetricsConfig(previousMetrics.get());
             k.getSpec().getKafka().setMetrics(null);
+        });
+    }
+
+    @Deprecated
+    @Test
+    void testKafkaConnectMetricsSettingsDeprecatedMetrics() {
+        AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
+
+        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        // update metrics
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, k -> {
+            previousMetrics.set(k.getSpec().getMetricsConfig());
+            k.getSpec().setMetricsConfig(null);
+            k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson, Map.class));
+        });
+
+        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
+        ConfigMap actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+
+        // update metrics
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, k -> {
+            k.getSpec().setMetricsConfig(null);
+            k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
+        });
+        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
+        actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+
+        // revert metrics changes
+        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, k -> {
+            k.getSpec().setMetricsConfig(previousMetrics.get());
+            k.getSpec().setMetrics(null);
+        });
+    }
+
+    @Deprecated
+    @Test
+    void testKafkaMM2MetricsSettingsDeprecatedMetrics() {
+        AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
+
+        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        // update metrics
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
+            previousMetrics.set(k.getSpec().getMetricsConfig());
+            k.getSpec().setMetricsConfig(null);
+            k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson, Map.class));
+        });
+
+        PodUtils.verifyThatRunningPodsAreStable(MIRROR_MAKER_CLUSTER);
+        ConfigMap actualCm = kubeClient().getConfigMap(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MIRROR_MAKER_CLUSTER));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+
+        // update metrics
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
+            k.getSpec().setMetricsConfig(null);
+            k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
+        });
+        PodUtils.verifyThatRunningPodsAreStable(MIRROR_MAKER_CLUSTER);
+        actualCm = kubeClient().getConfigMap(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MIRROR_MAKER_CLUSTER));
+        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+
+        // revert metrics changes
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
+            k.getSpec().setMetricsConfig(previousMetrics.get());
+            k.getSpec().setMetrics(null);
         });
     }
 

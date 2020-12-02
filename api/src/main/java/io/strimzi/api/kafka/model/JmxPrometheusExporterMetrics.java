@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JMX Prometheus metrics config
+ * JMX Prometheus Exporter metrics config
  */
 @Buildable(
         editableEnabled = false,

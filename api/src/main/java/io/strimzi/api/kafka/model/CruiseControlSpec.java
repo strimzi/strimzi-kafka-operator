@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -99,6 +100,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @DeprecatedProperty(movedToPath = "spec.cruiseControl.metricsConfig")
+    @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +

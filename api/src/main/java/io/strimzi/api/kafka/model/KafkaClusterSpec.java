@@ -236,6 +236,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     }
 
     @DeprecatedProperty(movedToPath = "spec.kafka.metricsConfig")
+    @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +

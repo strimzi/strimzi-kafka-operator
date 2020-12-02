@@ -45,6 +45,7 @@ metadata:
     app: strimzi
 data:
   metrics-config.yml: |
+    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
     lowercaseOutputName: true
     rules:
     - pattern: kafka.cruisecontrol<name=(.+)><>(\w+)

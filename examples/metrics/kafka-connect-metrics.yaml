@@ -26,7 +26,7 @@ data:
   metrics-config.yml: |
     # Inspired by kafka-connect rules
     # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-connect.yml
-    # See https://strimzi.io/docs/operators/master/deploying.html#proc-metrics-kafka-deploy-options-str for more info about deploying metrics into Strimzi
+    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
     lowercaseOutputName: true
     lowercaseOutputLabelNames: true
     rules:
