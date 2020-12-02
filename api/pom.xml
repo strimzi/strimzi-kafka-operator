@@ -91,7 +91,6 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>crd-generator</artifactId>
-            <version>${project.version}</version>
             <!-- use provided scope because this is not needed at runtime -->
             <scope>provided</scope>
         </dependency>

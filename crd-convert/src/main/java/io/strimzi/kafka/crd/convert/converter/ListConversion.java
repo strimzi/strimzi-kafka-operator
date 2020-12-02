@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
@@ -22,6 +23,13 @@ class ListConversion<T extends HasMetadata, C extends Conversion<T>> implements 
     }
 
     @Override
+    public void convert(JsonNode node) {
+        for (C conv : conversions) {
+            conv.convert(node);
+        }
+    }
+
+    @Override
     public void convert(T instance) {
         for (C conv : conversions) {
             conv.convert(instance);
@@ -29,7 +37,7 @@ class ListConversion<T extends HasMetadata, C extends Conversion<T>> implements 
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public ListConversion<T, C> reverse() {
         List inverted = reversed();
         return new ListConversion<T, C>(inverted);

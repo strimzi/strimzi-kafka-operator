@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -32,6 +33,11 @@ public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
     private String connectCluster;
     private List<KafkaMirrorMaker2MirrorSpec> mirrors;
+
+    @JsonIgnore
+    public String getTypeName() {
+        return "kafka-mirror-maker2";
+    }
 
     @Description("Kafka clusters for mirroring.")
     public List<KafkaMirrorMaker2ClusterSpec> getClusters() {

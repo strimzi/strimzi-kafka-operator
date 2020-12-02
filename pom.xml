@@ -99,6 +99,12 @@
         <fasterxml.jackson-dataformat.version>2.10.5</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.10.5</fasterxml.jackson-annotations.version>
         <kafka.version>2.7.0</kafka.version>
+        <!-- keep in-sync with dataformat-yaml -->
+        <snakeyaml.version>1.26</snakeyaml.version>
+        <picocli.version>4.5.2</picocli.version>
+        <jline.version>2.14.6</jline.version>
+        <json-path.version>4.1.1</json-path.version>
+        <kafka.version>2.7.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.12</scala-library.version>
         <zookeeper.version>3.5.8</zookeeper.version>
@@ -177,6 +183,11 @@
                 <artifactId>crd-annotations</artifactId>
                 <version>${project.version}</version>
                 <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>crd-generator</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
@@ -440,6 +451,28 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_2.12</artifactId>
                 <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <!-- used in crd-convert -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+            <!-- Picocli -->
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli-shell-jline2</artifactId>
+                <version>${picocli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>

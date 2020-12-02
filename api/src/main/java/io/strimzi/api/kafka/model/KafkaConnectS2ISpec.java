@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -30,6 +31,11 @@ public class KafkaConnectS2ISpec extends KafkaConnectSpec {
     private ResourceRequirements buildResources;
 
     private boolean insecureSourceRepository = false;
+
+    @JsonIgnore
+    public String getTypeName() {
+        return "kafka-connect-s2i";
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")

@@ -6,7 +6,7 @@ source $(dirname $(realpath $0))/../tools/multi-platform-support.sh
 
 # Image directories
 base_images="base"
-java_images="operator jmxtrans crd-convert"
+java_images="operator jmxtrans"
 kafka_image="kafka"
 kafka_images="kafka test-client"
 other_images="kaniko-executor"
