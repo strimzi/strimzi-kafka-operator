@@ -212,11 +212,14 @@ public class KafkaResource {
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
-                        .withReadinessProbe(
-                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
-                        )
+                        // try every 10sec, for 2min ... currently KSTS takes ~1min to start ... dunno why so long
                         .withLivenessProbe(
-                                new ProbeBuilder().withFailureThreshold(5).withInitialDelaySeconds(120).build()
+                                new ProbeBuilder()
+                                        .withPeriodSeconds(10)
+                                        .withFailureThreshold(12)
+                                        .withTimeoutSeconds(1)
+                                        .withInitialDelaySeconds(30)
+                                        .build()
                         )
                     .endTopicOperator()
                 .endEntityOperator()
