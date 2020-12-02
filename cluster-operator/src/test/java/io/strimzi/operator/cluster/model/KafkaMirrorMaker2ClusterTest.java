@@ -1503,6 +1503,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+        kc.generateMetricsAndLogConfigMap(null, metricsCM);
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, true, namespace, null);
 
@@ -1525,6 +1526,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+        kc.generateMetricsAndLogConfigMap(null, metricsCM);
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
