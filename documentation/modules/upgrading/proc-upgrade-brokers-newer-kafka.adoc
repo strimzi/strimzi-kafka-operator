@@ -70,8 +70,7 @@ spec:
 <2> This remains at the current version
 --
 +
-WARNING: You cannot downgrade Kafka once `spec.kafka.version` has changed.
-
+WARNING: You cannot downgrade Kafka once `spec.kafka.version` has changed, as the `inter.broker.protocol.version` for the new Kafka version will differ. The protocol version determines the schemas used for persistent metadata stored by the broker, including messages written to `__consumer_offsets`. The cluster will not understand the messages.
 
 .. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
 +

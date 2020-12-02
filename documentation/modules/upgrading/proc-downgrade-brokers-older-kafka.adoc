@@ -51,11 +51,6 @@ NOTE: You must format the value of `log.message.format.version` as a string to p
 +
 See xref:con-versions-and-images-str[]
 
-.. If you changed the Kafka listener configuration to use the array format of the `GenericKafkaListener` schema,
-revert the `Kafka.spec.kafka.listeners` to use the old format.
-+
-See xref:con-upgrade-listeners-str[]
-
 . Save and exit the editor, then wait for rolling updates to complete.
 +
 Check the update in the logs or by watching the pod state transitions:
