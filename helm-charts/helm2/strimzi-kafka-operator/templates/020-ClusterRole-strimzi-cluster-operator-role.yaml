@@ -24,6 +24,20 @@ rules:
   - patch
   - update
 - apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+  # The cluster operator needs to access and manage roles to grant the entity operator permissions
+  # This is only needed if the STRIMZI_RBAC_SCOPE is set to 'namespace', otherwise ClusterRoles are used
+  - roles
+  # The cluster operator needs to access and manage rolebindings to grant Strimzi components cluster permissions
+  - rolebindings
+  verbs:
+  - get
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
   - ""
   resources:
     # The cluster operator needs to access and delete pods, this is to allow it to monitor pod health and coordinate rolling updates

@@ -4,11 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -17,10 +19,12 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.vertx.core.Future;
@@ -54,7 +58,9 @@ public class KafkaAssemblyOperatorRbacScopeTest {
     private final MockCertManager certManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
     private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-    private final ClusterOperatorConfig configRolesOnly = ResourceUtils.dummyClusterOperatorConfigRolesOnly(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+    private final ClusterOperatorConfig configNamespaceRbacScope = ResourceUtils.dummyClusterOperatorConfigRolesOnly(
+            VERSIONS,
+            ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test-ns";
     private final String clusterName = "test-instance";
@@ -74,7 +80,14 @@ public class KafkaAssemblyOperatorRbacScopeTest {
      * Override KafkaAssemblyOperator to only run reconciliation steps that concern the STRIMZI_RBAC_SCOPE feature
      */
     class KafkaAssemblyOperatorRolesSubset extends KafkaAssemblyOperator {
-        public KafkaAssemblyOperatorRolesSubset(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+        public KafkaAssemblyOperatorRolesSubset(
+                Vertx vertx,
+                PlatformFeaturesAvailability pfa,
+                CertManager certManager,
+                PasswordGenerator passwordGenerator,
+                ResourceOperatorSupplier supplier,
+                ClusterOperatorConfig config
+        ) {
             super(vertx, pfa, certManager, passwordGenerator, supplier, config);
         }
 
@@ -93,7 +106,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
     }
 
     /**
-     * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'namespace', the cluster operator only
+     * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'NAMESPACE', the cluster operator only
      * deploys and binds to Roles
      */
     @Test
@@ -141,7 +154,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                configRolesOnly);
+                configNamespaceRbacScope);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
@@ -178,7 +191,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
     }
 
     /**
-     * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'cluster', the cluster operator
+     * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'CLUSTER', the cluster operator
      * binds to ClusterRoles
      */
     @Test
@@ -263,7 +276,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
     }
 
     /**
-     * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'namespace', the cluster operator
+     * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'NAMESPACE', the cluster operator
      * binds to ClusterRoles when it can't use Roles due to cross namespace permissions
      */
     @Test
@@ -301,7 +314,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
 
         // Mock the operations for RoleBindings
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
-        // Capture the names of reconciled rolebindings and their patched state
+        // Capture the names of reconciled RoleBindings and their patched state
         ArgumentCaptor<String> roleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
         when(mockRoleBindingOps.reconcile(anyString(), roleBindingNameCaptor.capture(), roleBindingCaptor.capture()))
@@ -313,7 +326,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                configRolesOnly);
+                configNamespaceRbacScope);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
@@ -363,6 +376,110 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                             .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
                             .build()));
                     assertThat(roleBindings.get(5).getMetadata().getNamespace(), is("test-ns"));
+
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Override KafkaAssemblyOperator to only run reconciliation steps that concern the STRIMZI_RBAC_SCOPE feature
+     */
+    class KafkaAssemblyOperatorClusterRoleBindingSubset extends KafkaAssemblyOperator {
+        public KafkaAssemblyOperatorClusterRoleBindingSubset(
+                Vertx vertx,
+                PlatformFeaturesAvailability pfa,
+                CertManager certManager,
+                PasswordGenerator passwordGenerator,
+                ResourceOperatorSupplier supplier,
+                ClusterOperatorConfig config
+        ) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        }
+
+        @Override
+        Future<Void> reconcile(ReconciliationState reconcileState)  {
+            return reconcileState.getKafkaClusterDescription()
+                    .compose(state -> state.kafkaInitClusterRoleBinding())
+                    .map((Void) null);
+        }
+
+    }
+
+    /**
+     * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'NAMESPACE', the cluster operator only
+     * deploys and binds to Roles
+     */
+    @Test
+    public void testClusterRoleBindingNotDeployedWhenNamespaceRbacScope(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName(clusterName)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("listener")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                            .endGenericKafkaListener()
+                        .endListeners()
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                    .endZookeeper()
+                    .withNewEntityOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the CRD Operator for Kafka resources
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
+        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+
+        // Mock the operations for RoleBindings
+        ClusterRoleBindingOperator mockClusterRoleBindingOps = supplier.clusterRoleBindingOperator;
+        // Capture the names of reconciled ClusterRoleBindings and their patched state
+        ArgumentCaptor<String> clusterRoleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<ClusterRoleBinding> clusterRoleBindingCaptor = ArgumentCaptor.forClass(ClusterRoleBinding.class);
+        when(mockClusterRoleBindingOps.reconcile(clusterRoleBindingNameCaptor.capture(), clusterRoleBindingCaptor.capture()))
+                .thenReturn(Future.succeededFuture());
+
+        // Mock the operations for KafkaSetOperations
+        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        when(mockKafkaSetOps.getAsync(anyString(), anyString()))
+                .thenReturn(Future.succeededFuture(null));
+
+        KafkaAssemblyOperatorClusterRoleBindingSubset kao = new KafkaAssemblyOperatorClusterRoleBindingSubset(
+                vertx,
+                new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                passwordGenerator,
+                supplier,
+                configNamespaceRbacScope);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    List<String> clusterRoleBindingNames = clusterRoleBindingNameCaptor.getAllValues();
+                    List<ClusterRoleBinding> clusterRoleBindings = clusterRoleBindingCaptor.getAllValues();
+
+                    assertThat(clusterRoleBindingNames, hasSize(1));
+                    assertThat(clusterRoleBindings, hasSize(1));
+
+                    // Check all ClusterRoleBindings, easier to index by order applied
+                    assertThat(clusterRoleBindingNames.get(0), is("strimzi-test-ns-test-instance-kafka-init"));
+                    assertThat(clusterRoleBindings.get(0), is(nullValue()));
 
                     async.flag();
                 })));

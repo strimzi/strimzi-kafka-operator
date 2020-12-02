@@ -32,11 +32,11 @@ rules:
     # The cluster operator needs to access and manage rolebindings to grant Strimzi components cluster permissions
   - rolebindings
   verbs:
-    - get
-    - create
-    - delete
-    - patch
-    - update
+  - get
+  - create
+  - delete
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:

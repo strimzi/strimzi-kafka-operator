@@ -297,4 +297,10 @@ public class ClusterOperatorConfigTest {
             ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         });
     }
+
+    @Test
+    public void testRbacScopeValueOf() {
+        assertThat(ClusterOperatorConfig.RbacScope.valueOf("NAMESPACE"), is(ClusterOperatorConfig.RbacScope.NAMESPACE));
+        assertThat(ClusterOperatorConfig.RbacScope.valueOf("CLUSTER"), is(ClusterOperatorConfig.RbacScope.CLUSTER));
+    }
 }

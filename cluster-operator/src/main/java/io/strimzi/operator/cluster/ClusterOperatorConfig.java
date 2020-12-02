@@ -228,18 +228,8 @@ public class ClusterOperatorConfig {
      * NAMESPACE allows for the use of Roles where possible instead of ClusterRoles
      */
     public enum RbacScope {
-        CLUSTER("cluster"),
-        NAMESPACE("namespace");
-
-        private String mode;
-
-        RbacScope(String mode) {
-            this.mode = mode;
-        }
-
-        public boolean canUseClusterRoles() {
-            return this.equals(RbacScope.CLUSTER);
-        }
+        CLUSTER(),
+        NAMESPACE();
 
         public boolean canUseRoles() {
             return this.equals(RbacScope.NAMESPACE);

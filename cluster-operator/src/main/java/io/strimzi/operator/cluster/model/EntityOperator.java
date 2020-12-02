@@ -24,7 +24,6 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.Role;
-import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.JvmOptions;
@@ -376,15 +375,6 @@ public class EntityOperator extends AbstractModel {
 
     protected static String getRoleName(String cluster) {
         return entityOperatorRoleName(cluster);
-    }
-
-    private Role convert(ClusterRole cr) {
-        return new RoleBuilder()
-                .withNewMetadata()
-                    .withName(cr.getMetadata().getName())
-                .endMetadata()
-                .withRules(cr.getRules())
-                .build();
     }
 
     /**
