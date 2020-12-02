@@ -50,9 +50,12 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRole;
 import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
@@ -117,6 +120,8 @@ public class MockKube {
     private final Map<String, PodDisruptionBudget> pdbDb = db(emptySet(), PodDisruptionBudget.class, DoneablePodDisruptionBudget.class);
     private final Map<String, RoleBinding> pdbRb = db(emptySet(), RoleBinding.class,
             DoneableRoleBinding.class);
+    private final Map<String, Role> roleDb = db(emptySet(), Role.class,
+            DoneableRole.class);
     private final Map<String, ClusterRoleBinding> pdbCrb = db(emptySet(), ClusterRoleBinding.class,
             DoneableClusterRoleBinding.class);
     private final Map<String, Ingress> ingressDb = db(emptySet(), Ingress.class,
@@ -130,6 +135,7 @@ public class MockKube {
     private MockBuilder<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> serviceAccountMockBuilder;
     private MockBuilder<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> routeMockBuilder;
     private MockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> podDisruptionBudgedMockBuilder;
+    private MockBuilder<Role, RoleList, DoneableRole, Resource<Role, DoneableRole>> roleMockBuilder;
     private MockBuilder<RoleBinding, RoleBindingList, DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> roleBindingMockBuilder;
     private MockBuilder<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> clusterRoleBindingMockBuilder;
     private MockBuilder<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> networkPolicyMockBuilder;
@@ -274,6 +280,7 @@ public class MockKube {
         routeMockBuilder = addMockBuilder("routes", new MockBuilder<>(Route.class, RouteList.class, DoneableRoute.class, MockBuilder.castClass(Resource.class), routeDb));
         podDisruptionBudgedMockBuilder = addMockBuilder("poddisruptionbudgets", new MockBuilder<>(PodDisruptionBudget.class, PodDisruptionBudgetList.class, DoneablePodDisruptionBudget.class, MockBuilder.castClass(Resource.class), pdbDb));
         roleBindingMockBuilder = addMockBuilder("rolebindings", new MockBuilder<>(RoleBinding.class, RoleBindingList.class, DoneableRoleBinding.class, MockBuilder.castClass(Resource.class), pdbRb));
+        roleMockBuilder = addMockBuilder("roles", new MockBuilder<>(Role.class, RoleList.class, DoneableRole.class, MockBuilder.castClass(Resource.class), roleDb));
         clusterRoleBindingMockBuilder = addMockBuilder("clusterrolebindings", new MockBuilder<>(ClusterRoleBinding.class, ClusterRoleBindingList.class, DoneableClusterRoleBinding.class, MockBuilder.castClass(Resource.class), pdbCrb));
         networkPolicyMockBuilder = addMockBuilder("networkpolicies", new MockBuilder<>(NetworkPolicy.class, NetworkPolicyList.class, DoneableNetworkPolicy.class, MockBuilder.castClass(Resource.class), policyDb));
         ingressMockBuilder = addMockBuilder("ingresses",  new MockBuilder<>(Ingress.class, IngressList.class, DoneableIngress.class, MockBuilder.castClass(Resource.class), ingressDb));
@@ -347,6 +354,7 @@ public class MockKube {
         RbacAPIGroupDSL rbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(rbac);
         roleBindingMockBuilder.build2(mockClient.rbac()::roleBindings);
+        roleMockBuilder.build2(mockClient.rbac()::roles);
         clusterRoleBindingMockBuilder.build2(mockClient.rbac()::clusterRoleBindings);
 
         // Openshift group

@@ -85,6 +85,7 @@ import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RoleOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
@@ -732,17 +733,41 @@ public class ResourceUtils {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
 
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                mock(ServiceOperator.class), routeOps, mock(ZookeeperSetOperator.class),
-                mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
-                mock(PvcOperator.class), mock(DeploymentOperator.class),
-                mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
-                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(PodOperator.class),
-                mock(IngressOperator.class), mock(ImageStreamOperator.class), mock(BuildConfigOperator.class),
-                mock(DeploymentConfigOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
-                mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
-                mock(StorageClassOperator.class), mock(NodeOperator.class), zookeeperScalerProvider(), metricsProvider(), adminClientProvider());
+                mock(ServiceOperator.class),
+                routeOps,
+                mock(ZookeeperSetOperator.class),
+                mock(KafkaSetOperator.class),
+                mock(ConfigMapOperator.class),
+                mock(SecretOperator.class),
+                mock(PvcOperator.class),
+                mock(DeploymentOperator.class),
+                mock(ServiceAccountOperator.class),
+                mock(RoleBindingOperator.class),
+                mock(RoleOperator.class),
+                mock(ClusterRoleBindingOperator.class),
+                mock(NetworkPolicyOperator.class),
+                mock(PodDisruptionBudgetOperator.class),
+                mock(PodOperator.class),
+                mock(IngressOperator.class),
+                mock(ImageStreamOperator.class),
+                mock(BuildConfigOperator.class),
+                mock(DeploymentConfigOperator.class),
+                mock(CrdOperator.class),
+                mock(CrdOperator.class),
+                mock(CrdOperator.class),
+                mock(CrdOperator.class),
+                mock(CrdOperator.class),
+                mock(CrdOperator.class),
+                mock(CrdOperator.class),
+                mock(CrdOperator.class),
+                mock(StorageClassOperator.class),
+                mock(NodeOperator.class),
+                zookeeperScalerProvider(),
+                metricsProvider(),
+                adminClientProvider());
         when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
 
         if (openShift) {
@@ -786,7 +811,22 @@ public class ResourceUtils {
                 null,
                 null,
                 null,
-                null);
+                null,
+                ClusterOperatorConfig.RbacScope.CLUSTER);
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfigRolesOnly(KafkaVersion.Lookup versions, long operationTimeoutMs) {
+        return new ClusterOperatorConfig(
+                singleton("dummy"),
+                60_000,
+                operationTimeoutMs,
+                false,
+                versions,
+                null,
+                null,
+                null,
+                null,
+                ClusterOperatorConfig.RbacScope.NAMESPACE);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {

@@ -88,10 +88,13 @@ public class KubernetesResource {
     public static DoneableRoleBinding roleBinding(String yamlPath, String namespace, String clientNamespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
-        return roleBinding(new RoleBindingBuilder(roleBinding)
-            .editFirstSubject()
-                .withNamespace(namespace)
-            .endSubject().build(), clientNamespace);
+        return roleBinding(
+                new RoleBindingBuilder(roleBinding)
+                    .editFirstSubject()
+                        .withNamespace(namespace)
+                    .endSubject()
+                    .build(),
+                clientNamespace);
     }
 
     private static DoneableRoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
@@ -100,16 +103,18 @@ public class KubernetesResource {
         return new DoneableRoleBinding(roleBinding);
     }
 
-    public static DoneableClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+    public static DoneableClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
         ClusterRoleBinding clusterRoleBinding = getClusterRoleBindingFromYaml(yamlPath);
-        return clusterRoleBinding(new ClusterRoleBindingBuilder(clusterRoleBinding)
-            .editFirstSubject()
-                .withNamespace(namespace)
-            .endSubject().build(), clientNamespace);
+        return clusterRoleBinding(
+                new ClusterRoleBindingBuilder(clusterRoleBinding)
+                    .editFirstSubject()
+                        .withNamespace(namespace)
+                    .endSubject()
+                    .build());
     }
 
-    public static DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding, String clientNamespace) {
+    public static DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
         ResourceManager.kubeClient().createOrReplaceClusterRoleBinding(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
         return new DoneableClusterRoleBinding(clusterRoleBinding);

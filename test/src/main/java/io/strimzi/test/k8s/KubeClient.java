@@ -27,7 +27,9 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobList;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -573,6 +575,18 @@ public class KubeClient {
         return listEvents().stream()
                 .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
                 .collect(Collectors.toList());
+    }
+
+    // ===========================
+    // ---------> ROLES <---------
+    // ===========================
+
+    public List<Role> listRoles() {
+        return client.rbac().roles().list().getItems();
+    }
+
+    public List<ClusterRole> listClusterRoles() {
+        return client.rbac().clusterRoles().list().getItems();
     }
 
     // ==================================

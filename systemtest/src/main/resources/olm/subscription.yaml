@@ -20,4 +20,5 @@ spec:
         value: "${STRIMZI_FULL_RECONCILIATION_INTERVAL_MS}"
       - name: STRIMZI_OPERATION_TIMEOUT_MS
         value: "${STRIMZI_OPERATION_TIMEOUT_MS}"
-
+      - name: STRIMZI_RBAC_SCOPE
+        value: "${STRIMZI_RBAC_SCOPE}"

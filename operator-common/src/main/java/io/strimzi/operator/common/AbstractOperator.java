@@ -527,24 +527,17 @@ public abstract class AbstractOperator<
      * @return                  A future which completes when the resource was reconciled.
      */
     public Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
-        Promise<ReconcileResult<ClusterRoleBinding>> replacementPromise = Promise.promise();
-
-        reconcileFuture.onComplete(res -> {
-            if (res.failed()) {
-                if (desired == null
-                        && res.cause() != null
-                        && res.cause().getMessage() != null
-                        && res.cause().getMessage().contains("Message: Forbidden!")) {
-                    log.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
-                    replacementPromise.complete(ReconcileResult.noop(null));
-                } else {
-                    replacementPromise.fail(res.cause());
+        return reconcileFuture.compose(
+                rr -> Future.succeededFuture(),
+                e -> {
+                    if (desired == null
+                            && e.getMessage() != null
+                            && e.getMessage().contains("Message: Forbidden!")) {
+                        log.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
+                        return Future.succeededFuture();
+                    }
+                    return Future.failedFuture(e.getMessage());
                 }
-            } else {
-                replacementPromise.complete(res.result());
-            }
-        });
-
-        return replacementPromise.future();
+        );
     }
 }

@@ -14,6 +14,10 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
@@ -866,5 +870,39 @@ public class EntityOperatorTest {
                         hasProperty("name", equalTo(EntityOperator.TLS_SIDECAR_NAME)),
                         hasProperty("securityContext", equalTo(securityContext))
                 )));
+    }
+
+    @Test
+    public void testRole() {
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editOrNewEntityOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+        Role role = eo.generateRole();
+
+        assertThat(role.getMetadata().getName(), is("foo-entity-operator"));
+
+        List<PolicyRule> rules = new ArrayList<>();
+        rules.add(new PolicyRuleBuilder()
+                .addToResources("kafkatopics", "kafkatopics/status", "kafkausers", "kafkausers/status")
+                .addToVerbs("get", "list", "watch", "create", "patch", "update", "delete")
+                .addToApiGroups(Constants.RESOURCE_GROUP_NAME)
+                .build());
+        rules.add(new PolicyRuleBuilder()
+                .addToResources("events")
+                .addToVerbs("create")
+                .addToApiGroups("")
+                .build());
+        rules.add(new PolicyRuleBuilder()
+                .addToResources("secrets")
+                .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
+                .addToApiGroups("")
+                .build());
+        assertThat(role.getRules(), is(rules));
     }
 }

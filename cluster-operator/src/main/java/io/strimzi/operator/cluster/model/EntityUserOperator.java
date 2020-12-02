@@ -186,11 +186,21 @@ public class EntityUserOperator extends AbstractModel {
 
     /**
      * Get the name of the UO role binding given the name of the {@code cluster}.
+     * This binding binds to a ClusterRole, retains old naming convention for backwards compatibility.
      * @param cluster The cluster name.
      * @return The name of the role binding.
      */
-    public static String roleBindingName(String cluster) {
+    public static String roleBindingForClusterRoleName(String cluster) {
         return "strimzi-" + cluster + "-entity-user-operator";
+    }
+
+    /**
+     * Get the name of the UO role binding given the name of the {@code cluster}.
+     * @param cluster The cluster name.
+     * @return The name of the role binding.
+     */
+    public static String roleBindingForRoleName(String cluster) {
+        return cluster + "-entity-user-operator-role";
     }
 
     @Override
@@ -314,7 +324,7 @@ public class EntityUserOperator extends AbstractModel {
                 VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
-    public RoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
+    public RoleBinding generateRoleBindingForClusterRole(String namespace, String watchedNamespace) {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
@@ -329,7 +339,40 @@ public class EntityUserOperator extends AbstractModel {
 
         RoleBinding rb = new RoleBindingBuilder()
                 .withNewMetadata()
-                    .withName(roleBindingName(cluster))
+                    .withName(roleBindingForClusterRoleName(cluster))
+                    .withNamespace(watchedNamespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(singletonList(ks))
+                .build();
+
+        return rb;
+    }
+
+    @Override
+    protected String getRoleName() {
+        return EntityOperator.getRoleName(cluster);
+    }
+
+    public RoleBinding generateRoleBindingForRole(String namespace, String watchedNamespace) {
+        Subject ks = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(getRoleName())
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("Role")
+                .build();
+
+
+        RoleBinding rb = new RoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(roleBindingForRoleName(cluster))
                     .withNamespace(watchedNamespace)
                     .withLabels(labels.toMap())
                 .endMetadata()

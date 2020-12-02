@@ -177,7 +177,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void prepareEnvironmentForRecovery(String topicName, int messageCount) {
         // Setup Test environment with Kafka and store some messages
         prepareEnvForOperator(NAMESPACE);
-        applyRoleBindings(NAMESPACE);
+        applyBindings(NAMESPACE);
         // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
@@ -230,8 +230,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     private void recreateClusterOperator() {
         // Recreate CO
-        cluster.applyClusterOperatorInstallFiles();
-        applyRoleBindings(NAMESPACE);
+        applyClusterOperatorInstallFiles(NAMESPACE);
+        applyBindings(NAMESPACE);
         // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
     }

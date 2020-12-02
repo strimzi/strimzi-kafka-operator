@@ -199,12 +199,12 @@ class AllNamespaceST extends AbstractNamespaceST {
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
 
         // Apply role bindings in CO namespace
-        applyRoleBindings(CO_NAMESPACE);
+        applyBindings(CO_NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
         List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-                KubernetesResource.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
+                KubernetesResource.clusterRoleBinding(clusterRoleBinding));
         // 060-Deployment
         BundleResource.clusterOperator("*").done();
 

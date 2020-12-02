@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.k8s;
 
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
@@ -12,15 +11,9 @@ import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.stream.Collectors;
 
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
@@ -39,8 +32,6 @@ public class KubeClusterResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClusterResource.class);
 
-    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../install/cluster-operator";
-
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
     private KubeClient client;
@@ -53,7 +44,6 @@ public class KubeClusterResource {
     protected List<String> bindingsNamespaces = new ArrayList<>();
     private List<String> deploymentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
-    private Stack<String> clusterOperatorConfigs = new Stack<>();
 
     public static synchronized KubeClusterResource getInstance() {
         if (kubeClusterResource == null) {
@@ -70,22 +60,6 @@ public class KubeClusterResource {
     private static void initNamespaces() {
         kubeClusterResource.setDefaultNamespace(cmdKubeClient().defaultNamespace());
         kubeClusterResource.setTestNamespace(cmdKubeClient().defaultNamespace());
-    }
-
-    /**
-     * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
-     * Configuration files are loaded from install/cluster-operator directory.
-     */
-    public void applyClusterOperatorInstallFiles() {
-        clusterOperatorConfigs.clear();
-        Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
-                !file.getName().matches(".*(Binding|Deployment)-.*")
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
-            LOGGER.info("Applying configuration file: {}", entry.getKey());
-            clusterOperatorConfigs.push(entry.getKey().getPath());
-            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).apply(entry.getKey().getPath());
-        }
     }
 
     public void setTestNamespace(String testNamespace) {
@@ -160,17 +134,6 @@ public class KubeClusterResource {
      */
     public static KubeClient kubeClient(String inNamespace) {
         return kubeClusterResource.client().namespace(inNamespace);
-    }
-
-    /**
-     * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
-     */
-    public void deleteClusterOperatorInstallFiles() {
-        while (!clusterOperatorConfigs.empty()) {
-            String clusterOperatorConfig = clusterOperatorConfigs.pop();
-            LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
-            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).delete(clusterOperatorConfig);
-        }
     }
 
     /**
