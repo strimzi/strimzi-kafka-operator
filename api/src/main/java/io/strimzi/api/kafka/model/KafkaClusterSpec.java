@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -233,6 +234,11 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
 
     public void setJmxOptions(KafkaJmxOptions jmxOptions) {
         this.jmxOptions = jmxOptions;
+    }
+
+    @JsonIgnore
+    public String getTypeName() {
+        return "kafka";
     }
 
     @DeprecatedProperty(movedToPath = "spec.kafka.metricsConfig", removalVersion = "v1beta2")

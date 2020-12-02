@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -178,6 +179,11 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, UnknownProp
 
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
+    }
+
+    @JsonIgnore
+    public String getTypeName() {
+        return "zookeeper";
     }
 
     @DeprecatedProperty(movedToPath = "spec.zookeeper.metricsConfig", removalVersion = "v1beta2")

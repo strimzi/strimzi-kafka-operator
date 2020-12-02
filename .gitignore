@@ -38,8 +38,6 @@ docker-images/operator/.*.tmp
 docker-images/operator/tmp/**
 docker-images/test-client/.*.tmp
 docker-images/test-client/tmp/**
-docker-images/crd-convert/*.*.tmp
-docker-images/crd-convert/tmp/**
 
 
 # Connect plugin (tests)

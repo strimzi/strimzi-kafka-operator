@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -85,6 +86,11 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
 
     public void setBrokerCapacity(BrokerCapacity brokerCapacity) {
         this.brokerCapacity = brokerCapacity;
+    }
+
+    @JsonIgnore
+    public String getTypeName() {
+        return "cruise-control";
     }
 
     @Description("The Cruise Control configuration. For a full list of configuration options refer to" +

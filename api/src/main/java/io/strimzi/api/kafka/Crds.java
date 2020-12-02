@@ -15,16 +15,16 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.model.Constants;
-import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaRebalance;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaConnector;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -254,24 +254,28 @@ public class Crds {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(kafka()), Kafka.class, KafkaList.class);
     }
 
+    public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, version)), Kafka.class, KafkaList.class);
+    }
+
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Alpha1Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1ALPHA1)), Kafka.class, KafkaList.class);
+        return kafkaOperation(client, Constants.V1ALPHA1);
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Beta1Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1BETA1)), Kafka.class, KafkaList.class);
+        return kafkaOperation(client, Constants.V1BETA1);
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Beta2Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1BETA2)), Kafka.class, KafkaList.class);
-    }
-
-    public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1)), Kafka.class, KafkaList.class);
+        return kafkaOperation(client, Constants.V1BETA2);
     }
 
     public static CustomResourceDefinition kafkaConnect() {
         return crd(KafkaConnect.class);
+    }
+
+    public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaConnect.class, version)), KafkaConnect.class, KafkaConnectList.class);
     }
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectOperation(KubernetesClient client) {
@@ -286,6 +290,10 @@ public class Crds {
         return crd(KafkaConnector.class);
     }
 
+    public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaConnector.class, version)), KafkaConnector.class, KafkaConnectorList.class);
+    }
+
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorOperation(KubernetesClient client) {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaConnector()), KafkaConnector.class, KafkaConnectorList.class);
     }
@@ -298,8 +306,12 @@ public class Crds {
         return crd(KafkaConnectS2I.class);
     }
 
+    public static <T extends CustomResource> MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2iOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaConnectS2I.class, version)), KafkaConnectS2I.class, KafkaConnectS2IList.class);
+    }
+
     public static <T extends CustomResource> MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2iOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaConnectS2I()), KafkaConnectS2I.class, KafkaConnectS2IList.class);
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaConnectS2I()), KafkaConnectS2I.class, KafkaConnectS2IList.class);
     }
 
     public static <T extends CustomResource> MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2iV1Beta2Operation(KubernetesClient client) {
@@ -318,6 +330,10 @@ public class Crds {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaTopic.class, Constants.V1BETA2)), KafkaTopic.class, KafkaTopicList.class);
     }
 
+    public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> topicOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaTopic.class, version)), KafkaTopic.class, KafkaTopicList.class);
+    }
+
     public static CustomResourceDefinition kafkaUser() {
         return crd(KafkaUser.class);
     }
@@ -330,8 +346,16 @@ public class Crds {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaUser.class, Constants.V1BETA2)), KafkaUser.class, KafkaUserList.class);
     }
 
+    public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaUser.class, version)), KafkaUser.class, KafkaUserList.class);
+    }
+
     public static CustomResourceDefinition kafkaMirrorMaker() {
         return crd(KafkaMirrorMaker.class);
+    }
+
+    public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaMirrorMaker.class, version)), KafkaMirrorMaker.class, KafkaMirrorMakerList.class);
     }
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client) {
@@ -354,8 +378,16 @@ public class Crds {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaBridge.class, Constants.V1BETA2)), KafkaBridge.class, KafkaBridgeList.class);
     }
 
+    public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaBridge.class, version)), KafkaBridge.class, KafkaBridgeList.class);
+    }
+
     public static CustomResourceDefinition kafkaMirrorMaker2() {
         return crd(KafkaMirrorMaker2.class);
+    }
+
+    public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Operation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaMirrorMaker2.class, version)), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class);
     }
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Operation(KubernetesClient client) {
@@ -376,6 +408,10 @@ public class Crds {
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceV1Beta2Operation(KubernetesClient client) {
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaRebalance.class, Constants.V1BETA2)), KafkaRebalance.class, KafkaRebalanceList.class);
+    }
+
+    public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceOperation(KubernetesClient client, String version) {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(KafkaRebalance.class, version)), KafkaRebalance.class, KafkaRebalanceList.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>> MixedOperation<T, L, Resource<T>>
