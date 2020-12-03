@@ -21,11 +21,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.2.1",
-      "logMessageVersion": "2.2"
+      "logMessageVersion": "2.2",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.1.0",
@@ -62,11 +64,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.3.0",
-      "logMessageVersion": "2.3"
+      "logMessageVersion": "2.3",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.12.1-kafka-2.2.1",
@@ -103,11 +107,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.13.0-kafka-2.3.0",
@@ -144,11 +150,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.3.1",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.14.0-kafka-2.3.0",
@@ -185,11 +193,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.4.0",
-      "logMessageVersion": "2.4"
+      "logMessageVersion": "2.4",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.15.0-kafka-2.3.1",
@@ -226,11 +236,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.16.2-kafka-2.4.0",
@@ -267,11 +279,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.5.0",
-      "logMessageVersion": "2.5"
+      "logMessageVersion": "2.5",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.17.0-kafka-2.4.0",
@@ -308,11 +322,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.18.0-kafka-2.5.0",
@@ -349,11 +365,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.6.0",
-      "logMessageVersion": "2.6"
+      "logMessageVersion": "2.6",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.19.0-kafka-2.5.0",
@@ -390,11 +408,13 @@
     },
     "proceduresBefore": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "",
-      "logMessageVersion": ""
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
     },
     "client": {
       "beforeKafkaUpdate": "strimzi/test-client:0.20.0-kafka-2.6.0",

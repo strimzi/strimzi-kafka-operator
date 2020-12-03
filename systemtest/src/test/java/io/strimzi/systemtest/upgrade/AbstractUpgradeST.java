@@ -89,9 +89,20 @@ public class AbstractUpgradeST extends AbstractST {
             }
 
             String logMessageVersion = procedures.getString("logMessageVersion");
-            if (!logMessageVersion.isEmpty()) {
-                LOGGER.info("Going to set log message format version to " + logMessageVersion);
-                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion));
+            String interBrokerProtocolVersion = procedures.getString("interBrokerProtocolVersion");
+            if (!logMessageVersion.isEmpty() || !interBrokerProtocolVersion.isEmpty()) {
+                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+                    if (!logMessageVersion.isEmpty()) {
+                        LOGGER.info("Going to set log message format version to " + logMessageVersion);
+                        k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion);
+                    }
+
+                    if (!interBrokerProtocolVersion.isEmpty()) {
+                        LOGGER.info("Going to set inter-broker protocol version to " + interBrokerProtocolVersion);
+                        k.getSpec().getKafka().getConfig().put("inter.broker.protocol.version", interBrokerProtocolVersion);
+                    }
+                });
+
                 LOGGER.info("Wait until kafka rolling update is finished");
                 StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
                 makeSnapshots();
