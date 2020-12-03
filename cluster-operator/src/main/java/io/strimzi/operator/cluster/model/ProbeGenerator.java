@@ -26,12 +26,18 @@ public class ProbeGenerator {
             throw new IllegalArgumentException();
         }
 
-        return new ProbeBuilder()
-                .withInitialDelaySeconds(probeConfig.getInitialDelaySeconds())
+
+        ProbeBuilder pb =  new ProbeBuilder()
                 .withTimeoutSeconds(probeConfig.getTimeoutSeconds())
                 .withPeriodSeconds(probeConfig.getPeriodSeconds())
                 .withSuccessThreshold(probeConfig.getSuccessThreshold())
                 .withFailureThreshold(probeConfig.getFailureThreshold());
+
+        if (probeConfig.getInitialDelaySeconds() > 0)   {
+            pb = pb.withInitialDelaySeconds(probeConfig.getInitialDelaySeconds());
+        }
+
+        return pb;
     }
 
     public static io.fabric8.kubernetes.api.model.Probe httpProbe(Probe probeConfig, String path, String port) {

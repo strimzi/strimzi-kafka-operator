@@ -1354,42 +1354,48 @@ spec:
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod liveness checking.
                 readinessProbe:
                   type: object
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod readiness checking.
                 jvmOptions:
                   type: object
@@ -1502,21 +1508,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -1535,21 +1544,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -2598,42 +2610,48 @@ spec:
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod liveness checking.
                 readinessProbe:
                   type: object
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod readiness checking.
                 jvmOptions:
                   type: object
@@ -3282,21 +3300,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -3315,21 +3336,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -3593,21 +3617,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -3626,21 +3653,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -3704,42 +3734,48 @@ spec:
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod liveness checking.
                 readinessProbe:
                   type: object
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod readiness checking.
               description: Configuration of the Topic Operator.
             entityOperator:
@@ -3767,42 +3803,48 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     readinessProbe:
                       type: object
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -3890,42 +3932,48 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     readinessProbe:
                       type: object
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -4220,21 +4268,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -4253,21 +4304,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -4901,21 +4955,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -4934,21 +4991,24 @@ spec:
                       properties:
                         failureThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                         initialDelaySeconds:
                           type: integer
                           minimum: 0
-                          description: The initial delay before first the health is first checked.
+                          description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                         periodSeconds:
                           type: integer
+                          minimum: 1
                           description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                         successThreshold:
                           type: integer
+                          minimum: 1
                           description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                         timeoutSeconds:
                           type: integer
-                          minimum: 0
-                          description: The timeout for each attempted health check.
+                          minimum: 1
+                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -4972,42 +5032,48 @@ spec:
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod liveness checking for the Cruise Control container.
                 readinessProbe:
                   type: object
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod readiness checking for the Cruise Control container.
                 jvmOptions:
                   type: object
@@ -6572,42 +6638,48 @@ spec:
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod liveness check.
                 readinessProbe:
                   type: object
                   properties:
                     failureThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                     initialDelaySeconds:
                       type: integer
                       minimum: 0
-                      description: The initial delay before first the health is first checked.
+                      description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                     periodSeconds:
                       type: integer
+                      minimum: 1
                       description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                     successThreshold:
                       type: integer
+                      minimum: 1
                       description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                     timeoutSeconds:
                       type: integer
-                      minimum: 0
-                      description: The timeout for each attempted health check.
+                      minimum: 1
+                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
                   description: Pod readiness check.
               description: Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
             maintenanceTimeWindows:

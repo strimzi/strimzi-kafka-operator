@@ -43,7 +43,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
         this.timeoutSeconds = timeoutSeconds;
     }
 
-    @Description("The initial delay before first the health is first checked.")
+    @Description("The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.")
     @Minimum(0)
     @DefaultValue("15")
     public int getInitialDelaySeconds() {
@@ -54,8 +54,8 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
         this.initialDelaySeconds = initialDelaySeconds;
     }
 
-    @Description("The timeout for each attempted health check.")
-    @Minimum(0)
+    @Description("The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.")
+    @Minimum(1)
     @DefaultValue("5")
     public int getTimeoutSeconds() {
         return timeoutSeconds;
@@ -66,6 +66,8 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.")
+    @Minimum(1)
+    @DefaultValue("10")
     public Integer getPeriodSeconds() {
         return periodSeconds;
     }
@@ -75,6 +77,8 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.")
+    @Minimum(1)
+    @DefaultValue("1")
     public Integer getSuccessThreshold() {
         return successThreshold;
     }
@@ -84,6 +88,8 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.")
+    @Minimum(1)
+    @DefaultValue("3")
     public Integer getFailureThreshold() {
         return failureThreshold;
     }
