@@ -329,7 +329,7 @@ data:
 
 When metrics are enabled, they are exposed on port 9404.
 
-When the `metricsConfig` property is not defined in the resource, the Prometheus metrics are disabled.
+When the `metricsConfig` (or deprecated `metrics`) property is not defined in the resource, the Prometheus metrics are disabled.
 
 For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
 
