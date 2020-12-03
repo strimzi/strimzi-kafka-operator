@@ -171,7 +171,7 @@ public class SpecificST extends AbstractST {
         List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         String connectWrongPodName = connectWrongPods.get(0);
         LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrectly set up KafkaConnect");
-        KafkaConnectUtils.waitForPodCondition("TimeoutException", "NotReady", NAMESPACE, CLUSTER_NAME);
+        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", NAMESPACE, CLUSTER_NAME);
 
         kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
         PodStatus kcWrongStatus = kubeClient().getPod(connectWrongPodName).getStatus();

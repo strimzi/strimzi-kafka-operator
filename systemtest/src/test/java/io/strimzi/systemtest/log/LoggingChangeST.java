@@ -580,7 +580,7 @@ class LoggingChangeST extends AbstractST {
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
                 .editSpec()
                 .withInlineLogging(ilOff)
                 .endSpec()
