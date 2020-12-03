@@ -142,7 +142,7 @@ spec:
 <20> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
 <21> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
 <22> Kafka xref:con-common-configuration-prometheus-reference[metrics configuration for use with Prometheus].
-<23> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing empty file under a specified key.
+<23> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 <24> xref:assembly-zookeeper-node-configuration-{context}[ZooKeeper-specific configuration], which contains properties similar to the Kafka configuration.
 <25> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
 <26> Kafka Exporter configuration, which is used xref:assembly-kafka-exporter-configuration-{context}[to expose data as Prometheus metrics].

@@ -301,7 +301,7 @@ Use the `metricsConfig` property to enable and configure Prometheus metrics.
 The `metricsConfig` property contains a reference to the ConfigMap containing additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
 Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
 
-To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing empty file under a specified key.
+To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 All metrics without any renaming will be exposed in such a case.
 
 .Example ConfigMap with metrics configuration for Kafka
