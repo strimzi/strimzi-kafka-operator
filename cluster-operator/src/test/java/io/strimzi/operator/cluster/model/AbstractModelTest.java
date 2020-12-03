@@ -214,4 +214,5 @@ public class AbstractModelTest {
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest-kafka-2.6.0"), is(ImagePullPolicy.ALWAYS.toString()));
     }
+
 }

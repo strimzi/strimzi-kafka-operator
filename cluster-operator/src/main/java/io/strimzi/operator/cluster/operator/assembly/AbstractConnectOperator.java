@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
@@ -28,6 +29,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.HasSpecAndStatus;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -47,6 +49,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -693,5 +696,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
 
         return updateStatusPromise.future();
+    }
+
+    protected Future<ConfigMap> connectMetricsConfigMap(String namespace, KafkaConnectCluster connect) {
+        if (connect.isMetricsConfigured()) {
+            if (connect.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                return configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+            } else {
+                log.warn("Unknown metrics type {}", connect.getMetricsConfigInCm().getType());
+                throw new InvalidResourceException("Unknown metrics type " + connect.getMetricsConfigInCm().getType());
+            }
+        }
+        return Future.succeededFuture(null);
     }
 }

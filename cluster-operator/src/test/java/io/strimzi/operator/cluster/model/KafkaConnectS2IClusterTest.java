@@ -36,6 +36,7 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -86,6 +87,9 @@ public class KafkaConnectS2IClusterTest {
     private final int healthDelay = 100;
     private final int healthTimeout = 10;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
+    private final String metricsCMName = "metrics-cm";
+    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
@@ -105,15 +109,24 @@ public class KafkaConnectS2IClusterTest {
             .withRequests(Collections.singletonMap("mem", new Quantity("4Gi")))
             .build();
 
-
     private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
+            healthDelay, healthTimeout, jmxMetricsConfig, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
 
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
     @Test
+    @Deprecated
+    public void testMetricsConfigMapDeprecatedMetrics() {
+        KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, null, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, null);
+        checkMetricsConfigMap(metricsCm);
+    }
+
+    @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null);
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, metricsCM);
         checkMetricsConfigMap(metricsCm);
     }
 
@@ -311,7 +324,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testInsecureSourceRepo() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
+                healthDelay, healthTimeout, jmxMetricsConfig, metricsCmJson, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
 
         assertThat(kc.isInsecureSourceRepository(), is(true));
 

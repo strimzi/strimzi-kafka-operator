@@ -876,11 +876,36 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
-                  metrics:
-                    x-kubernetes-preserve-unknown-fields: true
+                  metricsConfig:
                     type: object
-                    description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
-                      for details of the structure of this configuration.
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxPrometheusExporter
+                        description: Metrics type. Only 'jmxPrometheusExporter' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to the key in the ConfigMap containing
+                              the metrics configuration.
+                        description: ConfigMap where the Prometheus JMX Exporter configuration
+                          is stored. For details of the structure of this configuration,
+                          see the {JMXExporter}.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -1904,11 +1929,36 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
                     description: CPU and memory resources to reserve.
-                  metrics:
-                    x-kubernetes-preserve-unknown-fields: true
+                  metricsConfig:
                     type: object
-                    description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
-                      for details of the structure of this configuration.
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxPrometheusExporter
+                        description: Metrics type. Only 'jmxPrometheusExporter' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to the key in the ConfigMap containing
+                              the metrics configuration.
+                        description: ConfigMap where the Prometheus JMX Exporter configuration
+                          is stored. For details of the structure of this configuration,
+                          see the {JMXExporter}.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                   logging:
                     type: object
                     properties:
@@ -4581,11 +4631,36 @@ spec:
                       metric.reporter.topic, partition.metric.sample.store.topic,
                       broker.metric.sample.store.topic,capacity.config.file, self.healing.,
                       anomaly.detection., ssl.'
-                  metrics:
-                    x-kubernetes-preserve-unknown-fields: true
+                  metricsConfig:
                     type: object
-                    description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
-                      for details of the structure of this configuration.
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - jmxPrometheusExporter
+                        description: Metrics type. Only 'jmxPrometheusExporter' supported
+                          currently.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to the key in the ConfigMap containing
+                              the metrics configuration.
+                        description: ConfigMap where the Prometheus JMX Exporter configuration
+                          is stored. For details of the structure of this configuration,
+                          see the {JMXExporter}.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Metrics configuration.
                 description: Configuration for Cruise Control deployment. Deploys
                   a Cruise Control instance when specified.
               jmxTrans:

@@ -17,6 +17,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -33,7 +34,7 @@ import java.util.Map;
         "replicas", "image", "whitelist",
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
-        "logging", "metrics", "tracing", "template"})
+        "logging", "metrics", "metricsConfig", "tracing", "template"})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec extends Spec {
     private static final long serialVersionUID = 1L;
@@ -55,6 +56,7 @@ public class KafkaMirrorMakerSpec extends Spec {
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics;
+    private MetricsConfig metricsConfig;
     private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
 
@@ -121,6 +123,9 @@ public class KafkaMirrorMakerSpec extends Spec {
         this.producer = producer;
     }
 
+    @DeprecatedProperty(movedToPath = "spec.metricsConfig")
+    @PresentInVersions("v1alpha1-v1beta1")
+    @Deprecated
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See {JMXExporter} for details of the structure of this configuration.")
@@ -130,6 +135,16 @@ public class KafkaMirrorMakerSpec extends Spec {
 
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
+    }
+
+    @Description("Metrics configuration.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

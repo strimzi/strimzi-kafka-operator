@@ -7,10 +7,12 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -28,7 +30,7 @@ import lombok.EqualsAndHashCode;
         "livenessProbe", "readinessProbe",
         "jvmOptions", "logging",
         "template", "brokerCapacity",
-        "config", "metrics"})
+        "config", "metrics", "metricsConfig"})
 @EqualsAndHashCode
 public class CruiseControlSpec implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
@@ -52,6 +54,7 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> metrics;
+    private MetricsConfig metricsConfig;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The docker image for the pods.")
@@ -96,6 +99,9 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
         this.config = config;
     }
 
+    @DeprecatedProperty(movedToPath = "spec.cruiseControl.metricsConfig")
+    @PresentInVersions("v1alpha1-v1beta1")
+    @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
@@ -105,6 +111,16 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
 
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
+    }
+
+    @Description("Metrics configuration.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
     }
 
     @Description("Logging configuration (log4j1) for Cruise Control.")

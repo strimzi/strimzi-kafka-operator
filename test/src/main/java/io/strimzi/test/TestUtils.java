@@ -6,6 +6,7 @@ package io.strimzi.test;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,6 +17,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.vertx.core.VertxException;
@@ -43,6 +46,7 @@ import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -284,6 +288,27 @@ public final class TestUtils {
 
     public static <T> T configFromYaml(String yamlPath, Class<T> c) {
         return configFromYaml(new File(yamlPath), c);
+    }
+
+    public static ConfigMap configMapFromYaml(String yamlPath, String name) {
+        try {
+            YAMLFactory yaml = new YAMLFactory();
+            ObjectMapper mapper = new ObjectMapper(yaml);
+            YAMLParser yamlParser = yaml.createParser(new File(yamlPath));
+            List<ConfigMap> list = mapper.readValues(yamlParser, new TypeReference<ConfigMap>() { }).readAll();
+            Optional<ConfigMap> cmOpt = list.stream().filter(cm -> "ConfigMap".equals(cm.getKind()) && name.equals(cm.getMetadata().getName())).findFirst();
+            if (cmOpt.isPresent()) {
+                return cmOpt.get();
+            } else {
+                LOGGER.warn("ConfigMap {} not found in file {}", name, yamlPath);
+                return null;
+            }
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static <T> T configFromYaml(File yamlFile, Class<T> c) {

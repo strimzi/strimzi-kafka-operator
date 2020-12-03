@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -54,9 +57,11 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -207,6 +212,7 @@ public abstract class AbstractModel {
     protected static final int METRICS_PORT = 9404;
     protected static final String METRICS_PATH = "/metrics";
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
+    protected MetricsConfig metricsConfigInCm;
     protected String ancillaryConfigMapName;
     protected String logAndMetricsConfigMountPath;
     protected String logAndMetricsConfigVolumeName;
@@ -516,21 +522,63 @@ public abstract class AbstractModel {
     /**
      * Generates a metrics and logging ConfigMap according to configured defaults.
      *
-     * @param externalConfigMap The ConfigMap used if Logging is an instance of ExternalLogging
+     * @param externalLoggingConfigMap The ConfigMap used if Logging is an instance of ExternalLogging
+     * @param externalMetricsConfigMap The ConfigMap used if Metrics is an instance of ExternalMetrics
      * @return The generated ConfigMap.
      */
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalConfigMap) {
+    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalLoggingConfigMap, ConfigMap externalMetricsConfigMap) {
         Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalConfigMap));
-        if (isMetricsEnabled() && getMetricsConfig() != null) {
+        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalLoggingConfigMap));
+        if (getMetricsConfigInCm() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
+            String parseResult = parseMetrics(externalMetricsConfigMap);
+            if (parseResult != null) {
+                this.setMetricsEnabled(true);
+                data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
+            }
+        }
+        return createConfigMap(ancillaryConfigMapName, data);
+    }
+
+    protected String parseMetrics(ConfigMap externalCm) {
+        if (getMetricsConfigInCm() != null) {
+            if (getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                if (externalCm == null) {
+                    log.warn("ConfigMap {} does not exist. Metrics disabled.",
+                            ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+                    throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName() + " does not exist.");
+                } else {
+                    String data = externalCm.getData().get(((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
+                    if (data == null) {
+                        log.warn("ConfigMap {} does not contain specified key {}. Metrics disabled.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
+                                ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
+                        throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName()
+                                + " does not contain specified key " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey() + ".");
+                    } else {
+                        if (data.isEmpty()) {
+                            return "{}";
+                        }
+                        try {
+                            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+                            Object yaml = yamlReader.readValue(data, Object.class);
+                            ObjectMapper jsonWriter = new ObjectMapper();
+                            return jsonWriter.writeValueAsString(yaml);
+                        } catch (JsonProcessingException e) {
+                            throw new InvalidResourceException("Parsing metrics configuration failed. ", e);
+                        }
+                    }
+                }
+            } else {
+                log.warn("Unknown type of metrics {}.", getMetricsConfigInCm().getClass());
+                throw new InvalidResourceException("Unknown type of metrics " + getMetricsConfigInCm().getClass() + ".");
+            }
+        } else if (isMetricsEnabled() && getMetricsConfig() != null) {
             HashMap<String, Object> m = new HashMap<>();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
                 m.put(entry.getKey(), entry.getValue());
             }
-            data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
+            return new JsonObject(m).toString();
         }
-
-        return createConfigMap(ancillaryConfigMapName, data);
+        return null;
     }
 
     protected Iterable<Map.Entry<String, Object>> getMetricsConfig() {
@@ -539,6 +587,18 @@ public abstract class AbstractModel {
 
     protected void setMetricsConfig(Iterable<Map.Entry<String, Object>> metricsConfig) {
         this.metricsConfig = metricsConfig;
+    }
+
+    protected void setMetricsConfigInCm(MetricsConfig metricsConfigInCm) {
+        this.metricsConfigInCm = metricsConfigInCm;
+    }
+
+    public MetricsConfig getMetricsConfigInCm() {
+        return metricsConfigInCm;
+    }
+
+    public boolean isMetricsConfigured() {
+        return this.metricsConfigInCm != null;
     }
 
     /**

@@ -33,9 +33,22 @@ spec:
           checkpoints.topic.replication.factor: 1
       topicsPattern: ".*"
       groupsPattern: ".*"
-  metrics:
-    # Inspired by kafka-connect rules
-    # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-connect.yml
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        name: mirror-maker-2-metrics
+        key: metrics-config.yml
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mirror-maker-2-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: |
+    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
     lowercaseOutputName: true
     lowercaseOutputLabelNames: true
     rules:

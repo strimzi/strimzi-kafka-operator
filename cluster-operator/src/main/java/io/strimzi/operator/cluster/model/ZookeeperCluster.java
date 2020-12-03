@@ -196,7 +196,7 @@ public class ZookeeperCluster extends AbstractModel {
         return fromCrd(kafkaAssembly, versions, null, 0);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "deprecation"})
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
@@ -242,6 +242,7 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setMetricsEnabled(true);
             zk.setMetricsConfig(metrics.entrySet());
         }
+        zk.setMetricsConfigInCm(zookeeperClusterSpec.getMetricsConfig());
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();
@@ -682,12 +683,13 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Generates a configuration ConfigMap with metrics and logging configurations and node count.
      *
-     * @param cm    The ConfigMap with original logging configuration
+     * @param loggingCm    The ConfigMap with original logging configuration
+     * @param metricsCm    The ConfigMap with original metrics configuration
      *
      * @return      The generated configuration ConfigMap.
      */
-    public ConfigMap generateConfigurationConfigMap(ConfigMap cm) {
-        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(cm);
+    public ConfigMap generateConfigurationConfigMap(ConfigMap loggingCm, ConfigMap metricsCm) {
+        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
         zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
         return zkConfigMap;
     }

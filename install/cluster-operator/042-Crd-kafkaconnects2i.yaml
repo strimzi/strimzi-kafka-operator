@@ -1222,6 +1222,36 @@ spec:
               description: When true this configures the source repository with the
                 'Local' reference policy and an import policy that accepts insecure
                 source tags.
+            metricsConfig:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - jmxPrometheusExporter
+                  description: Metrics type. Only 'jmxPrometheusExporter' supported
+                    currently.
+                valueFrom:
+                  type: object
+                  properties:
+                    configMapKeyRef:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        name:
+                          type: string
+                        optional:
+                          type: boolean
+                      description: Reference to the key in the ConfigMap containing
+                        the metrics configuration.
+                  description: ConfigMap where the Prometheus JMX Exporter configuration
+                    is stored. For details of the structure of this configuration,
+                    see the {JMXExporter}.
+              required:
+              - type
+              - valueFrom
+              description: Metrics configuration.
             rack:
               type: object
               properties:

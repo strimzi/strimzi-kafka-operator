@@ -104,23 +104,12 @@ spec:
         - CN=kyle
         - CN=sergey
         - CN=andryi
-    metrics: {
-        "lowercaseOutputName": true,
-        "rules": [
-            {
-              "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
-              "name": "kafka_server_$1_$2_total"
-            },
-            {
-              "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
-              "name": "kafka_server_$1_$2_total",
-              "labels":
-              {
-                "topic": "$3"
-              }
-            }
-        ]
-      }
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: my-config-map
+          key: my-key
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"
@@ -147,7 +136,6 @@ spec:
       -Xms: "512Mi"
     storage:
       type: ephemeral
-    metrics: {}
   topicOperator:
     watchedNamespace: my-ns
   clusterCa:

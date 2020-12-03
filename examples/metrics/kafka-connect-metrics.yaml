@@ -8,9 +8,25 @@ spec:
   version: 2.6.0
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9092
-  metrics:
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        name: connect-metrics
+        key: metrics-config.yml
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: connect-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: |
     # Inspired by kafka-connect rules
     # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-connect.yml
+    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
     lowercaseOutputName: true
     lowercaseOutputLabelNames: true
     rules:

@@ -78,9 +78,11 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
 
-        ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(bridge.getLogging() instanceof ExternalLogging ?
+        ConfigMap loggingCm = bridge.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
-                null);
+                null;
+
+        ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(loggingCm, null);
 
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 

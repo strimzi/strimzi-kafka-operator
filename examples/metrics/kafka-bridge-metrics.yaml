@@ -8,5 +8,3 @@ spec:
   http:
     port: 8080
   enableMetrics: true
- 
-

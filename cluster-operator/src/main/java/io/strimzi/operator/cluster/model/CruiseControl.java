@@ -166,6 +166,7 @@ public class CruiseControl extends AbstractModel {
         return KafkaCluster.serviceName(cluster) + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
+    @SuppressWarnings("deprecation")
     public static CruiseControl fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         CruiseControl cruiseControl = null;
         CruiseControlSpec spec  = kafkaAssembly.getSpec().getCruiseControl();
@@ -214,6 +215,7 @@ public class CruiseControl extends AbstractModel {
                 cruiseControl.setMetricsEnabled(true);
                 cruiseControl.setMetricsConfig(metrics.entrySet());
             }
+            cruiseControl.setMetricsConfigInCm(spec.getMetricsConfig());
 
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());

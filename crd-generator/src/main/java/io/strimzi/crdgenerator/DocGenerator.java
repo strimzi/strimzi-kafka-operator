@@ -262,8 +262,8 @@ public class DocGenerator {
      */
     private void addExternalUrl(Property property, KubeLink kubeLink, String externalUrl) throws IOException {
         if (externalUrl != null) {
-            out.append(" See external documentation of ").append(externalUrl)
-                    .append("[").append(kubeLink.group()).append("/").append(kubeLink.version()).append(" ").append(kubeLink.kind()).append("].").append(NL).append(NL);
+            out.append(" For more information, see the ").append(externalUrl)
+                    .append("[").append("external documentation for ").append(kubeLink.group()).append("/").append(kubeLink.version()).append(" ").append(kubeLink.kind()).append("].").append(NL).append(NL);
         } else if (isPolymorphic(property.getType().getType())) {
             out.append(" The type depends on the value of the `").append(property.getName()).append(".").append(discriminator(property.getType().getType()))
                     .append("` property within the given object, which must be one of ")
@@ -457,8 +457,8 @@ public class DocGenerator {
                 }
             }).collect(Collectors.joining(", "));
             out.append("The `").append(discriminator)
-                    .append("` property is a discriminator that distinguishes the use of the type `")
-                    .append(cls.getSimpleName()).append("` from ");
+                    .append("` property is a discriminator that distinguishes use of the `")
+                    .append(cls.getSimpleName()).append("` type from ");
             if (subtypeLinks.trim().isEmpty()) {
                 out.append("other subtypes which may be added in the future.");
             } else {

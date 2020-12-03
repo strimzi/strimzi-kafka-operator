@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
@@ -18,6 +19,7 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -80,12 +82,11 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
             return Future.failedFuture(new ReconciliationException(kafkaMirrorMakerStatus, e));
         }
 
-        ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(mirror.getLogging() instanceof ExternalLogging ?
+        ConfigMap loggingCm = mirror.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
-                null);
+                null;
 
         Map<String, String> annotations = new HashMap<>(1);
-        annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         Promise<KafkaMirrorMakerStatus> createOrUpdatePromise = Promise.promise();
 
@@ -94,7 +95,12 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation);
         mirrorMakerServiceAccount(namespace, mirror)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
-                .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap))
+                .compose(i -> mirrorMetricsConfigMap(namespace, mirror))
+                .compose(metricsCm -> {
+                    ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
+                    annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
+                    return configMapOperations.reconcile(namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
+                })
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
                 .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()))
@@ -126,5 +132,17 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return serviceAccountOperations.reconcile(namespace,
                 KafkaMirrorMakerResources.serviceAccountName(mirror.getCluster()),
                 mirror.generateServiceAccount());
+    }
+
+    private Future<ConfigMap> mirrorMetricsConfigMap(String namespace, KafkaMirrorMakerCluster mirror) {
+        if (mirror.isMetricsConfigured()) {
+            if (mirror.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
+                return configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) mirror.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+            } else {
+                log.warn("Unknown metrics type {}", mirror.getMetricsConfigInCm().getType());
+                throw new InvalidResourceException("Unknown metrics type " + mirror.getMetricsConfigInCm().getType());
+            }
+        }
+        return Future.succeededFuture(null);
     }
 }

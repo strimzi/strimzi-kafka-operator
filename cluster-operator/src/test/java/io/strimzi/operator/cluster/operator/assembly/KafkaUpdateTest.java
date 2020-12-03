@@ -183,7 +183,7 @@ public class KafkaUpdateTest {
         });
 
         ConfigMapOperator cmo = supplier.configMapOperations;
-        when(cmo.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaCluster.generateAncillaryConfigMap(null, emptySet(), emptySet())));
+        when(cmo.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaCluster.generateAncillaryConfigMap(null, null, emptySet(), emptySet())));
 
         when(cmo.reconcile(anyString(), anyString(), any(ConfigMap.class))).thenAnswer(invocation -> {
             //reconcileExceptions.accept(states.size());

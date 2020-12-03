@@ -50,7 +50,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.test.TestUtils.set;
-import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -120,7 +119,7 @@ public class PartialRollingUpdateTest {
                             .withStorageClass("foo")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
-                        .withMetrics(emptyMap())
+                        .withMetrics(Collections.emptyMap())
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)
@@ -129,7 +128,7 @@ public class PartialRollingUpdateTest {
                             .withStorageClass("foo")
                             .withDeleteClaim(true)
                         .endPersistentClaimStorage()
-                        .withMetrics(emptyMap())
+                        .withMetrics(Collections.emptyMap())
                     .endZookeeper()
                     .withNewTopicOperator()
                     .endTopicOperator()
