@@ -39,7 +39,8 @@ jobs:
     
     # Install yq
     - name: Install yq
-      uses: mikefarah/yq@3.3.4
+      run: |
+          brew install yq
 
     # Setup Java 11
     - name: Setup java
