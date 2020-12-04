@@ -42,7 +42,7 @@ jobs:
       run: |
           brew install yq
 
-    # Setup Java 11
+    # Setup OpenJDK 11
     - name: Setup java
       uses: joschi/setup-jdk@v2
       with:
