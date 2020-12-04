@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Edit the `metrics` property in the `Kafka` resource.
+. Edit the `metricsConfig` property in the `Kafka` resource.
 For example:
 +
 [source,yaml,subs=attributes+]
@@ -26,8 +26,12 @@ spec:
     # ...
   zookeeper:
     # ...
-    metrics:
-      lowercaseOutputName: true
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: my-config-map
+          key: my-key
     # ...
 ----
 +

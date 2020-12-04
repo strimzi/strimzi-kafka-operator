@@ -5,17 +5,18 @@
 [id='ref-metrics-{context}']
 = Metrics configuration
 
-Prometheus metrics are enabled by configuring the `metrics` property in following resources:
+Prometheus metrics are enabled by configuring the `metricsConfig` property in following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 
-When the `metrics` property is not defined in the resource, the Prometheus metrics will be disabled.
-To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
+When the `metricsConfig` (or deprecated `metrics`) property is not defined in the resource, the Prometheus metrics are disabled.
+To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+When referencing an empty file, all metrics are exposed as long as they have not been renamed.
 
-.Example of enabling metrics without any further configuration
+.Enabling metrics without further configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -25,15 +26,20 @@ metadata:
 spec:
   kafka:
     # ...
-    metrics: {}
+    metricsConfig:
+     type: jmxPrometheusExporter
+     valueFrom:
+       configMapKeyRef:
+         name: my-config-map
+         key: my-key
     # ...
   zookeeper:
     # ...
 ----
 
-The `metrics` property might contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+Alternatively, the `metricsConfig` property can reference a ConfigMap that contains additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
 
-.Example of enabling metrics with additional Prometheus JMX Exporter configuration
+.Enabling metrics with additional Prometheus JMX Exporter configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -43,15 +49,12 @@ metadata:
 spec:
   kafka:
     # ...
-    metrics:
-      lowercaseOutputName: true
-      rules:
-        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
-          name: "kafka_server_$1_$2_total"
-        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count"
-          name: "kafka_server_$1_$2_total"
-          labels:
-            topic: "$3"
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: my-config-map
+          key: my-key
     # ...
   zookeeper:
     # ...

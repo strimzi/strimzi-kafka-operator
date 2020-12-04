@@ -294,18 +294,42 @@ livenessProbe:
 For more information about the `livenessProbe` and `readinessProbe` options, see xref:type-Probe-reference[Probe schema reference].
 
 [id='con-common-configuration-prometheus-{context}']
-=== `metrics`
+=== `metricsConfig`
 
-Use the `metrics` property to enable and configure Prometheus metrics.
+Use the `metricsConfig` property to enable and configure Prometheus metrics.
 
-The `metrics` property can also contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+The `metricsConfig` property contains a reference to a ConfigMap containing additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
 Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
 
-To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
+To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+When referencing an empty file, all metrics are exposed as long as they have not been renamed.
+
+.Example ConfigMap with metrics configuration for Kafka
+
+[source,yaml,subs="+attributes"]
+----
+kind: ConfigMap
+apiVersion: {KafkaApiVersion}
+metadata:
+  name: my-configmap
+data:
+  my-key: |
+    lowercaseOutputName: true
+    rules:
+    # Special cases and very specific rules
+    - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+      labels:
+       clientId: "$3"
+       topic: "$4"
+       partition: "$5"
+    # further configuration
+----
 
 When metrics are enabled, they are exposed on port 9404.
 
-When the `metrics` property is not defined in the resource, the Prometheus metrics are disabled.
+When the `metricsConfig` (or deprecated `metrics`) property is not defined in the resource, the Prometheus metrics are disabled.
 
 For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
 
