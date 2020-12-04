@@ -100,7 +100,7 @@ public class ZookeeperUpgradeST extends AbstractST {
             initLogMsgFormat = tmp.toString();
         }
 
-        String interBrokerProtocol = sortedVersions.get(0).messageVersion();
+        String interBrokerProtocol = sortedVersions.get(0).protocolVersion();
 
         if (interBrokerProtocol.charAt(2) + 1 >= sortedVersions.get(sortedVersions.size() - 1).messageVersion().charAt(2)) {
             StringBuilder tmp = new StringBuilder(interBrokerProtocol);
