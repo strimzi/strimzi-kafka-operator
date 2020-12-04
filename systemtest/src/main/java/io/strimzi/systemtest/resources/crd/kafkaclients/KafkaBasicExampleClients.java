@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.crd.kafkaclients;
 import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -180,7 +181,7 @@ public class KafkaBasicExampleClients {
                             .addNewContainer()
                                 .withName(producerName)
                                 .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                                .withImage("strimzi/hello-world-producer:latest")
+                                .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_PRODUCER_NAME + ":latest")
                                 .addNewEnv()
                                     .withName("BOOTSTRAP_SERVERS")
                                     .withValue(bootstrapAddress)
@@ -248,7 +249,7 @@ public class KafkaBasicExampleClients {
                         .addNewContainer()
                             .withName(consumerName)
                             .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                            .withImage("strimzi/hello-world-consumer:latest")
+                            .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_CONSUMER_NAME + ":latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
                                 .withValue(bootstrapAddress)
