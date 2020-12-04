@@ -664,7 +664,7 @@ class RollingUpdateST extends AbstractST {
         JmxPrometheusExporterMetrics zkMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
-                            .withName(metricsCMNameK)
+                            .withName(metricsCMNameZk)
                             .withKey("metrics-config.yml")
                             .withOptional(true)
                             .build())
