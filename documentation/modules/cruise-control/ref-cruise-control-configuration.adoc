@@ -11,8 +11,6 @@ The `config` property in `Kafka.spec.cruiseControl` contains configuration optio
 * Number
 * Boolean
 
-NOTE: Strings that look like JSON or YAML will need to be explicitly quoted.
-
 You can specify and configure all the options listed in the "Configurations" section of the {CruiseControlConfigDocs}, apart from those managed directly by Strimzi.
 Specifically, you *cannot* modify configuration options with keys equal to or starting with one of the keys mentioned xref:type-CruiseControlSpec-reference[here].
 
