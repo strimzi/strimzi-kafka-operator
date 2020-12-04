@@ -13,8 +13,8 @@ Prometheus metrics are enabled by configuring the `metricsConfig` property in fo
 * `KafkaConnectS2I.spec`
 
 When the `metricsConfig` (or deprecated `metrics`) property is not defined in the resource, the Prometheus metrics are disabled.
-To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-All metrics without any renaming will be exposed in such a case.
+To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+When referencing an empty file, all metrics are exposed as long as they have not been renamed.
 
 .Enabling metrics without further configuration
 [source,yaml,subs=attributes+]
