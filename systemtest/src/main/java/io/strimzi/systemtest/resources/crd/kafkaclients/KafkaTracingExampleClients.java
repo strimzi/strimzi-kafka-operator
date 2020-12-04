@@ -6,6 +6,8 @@ package io.strimzi.systemtest.resources.crd.kafkaclients;
 
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -148,7 +150,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                                 .withContainers()
                                 .addNewContainer()
                                     .withName(consumerName)
-                                    .withImage("strimzi/" + consumerName + ":latest")
+                                    .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_CONSUMER_NAME + ":latest")
                                     .addNewEnv()
                                         .withName("BOOTSTRAP_SERVERS")
                                         .withValue(bootstrapAddress)
@@ -221,7 +223,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .withContainers()
                         .addNewContainer()
                             .withName(producerName)
-                            .withImage("strimzi/" + producerName + ":latest")
+                            .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_PRODUCER_NAME + ":latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
                                 .withValue(bootstrapAddress)
@@ -290,7 +292,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .withContainers()
                         .addNewContainer()
                             .withName(kafkaStreamsName)
-                            .withImage("strimzi/" + kafkaStreamsName + ":latest")
+                            .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_STREAMS_NAME + ":latest")
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
                                 .withValue(bootstrapAddress)
