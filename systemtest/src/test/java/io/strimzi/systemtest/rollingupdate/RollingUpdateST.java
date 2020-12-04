@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -631,7 +632,11 @@ class RollingUpdateST extends AbstractST {
 
         JmxPrometheusExporterMetrics kafkaMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
-                .withNewConfigMapKeyRef("metrics-config.yml", metricsCMNameK, true)
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                            .withName(metricsCMNameK)
+                            .withKey("metrics-config.yml")
+                            .withOptional(true)
+                            .build())
                 .endValueFrom()
                 .build();
 
@@ -658,7 +663,11 @@ class RollingUpdateST extends AbstractST {
 
         JmxPrometheusExporterMetrics zkMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
-                .withNewConfigMapKeyRef("metrics-config.yml", metricsCMNameZk, true)
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                            .withName(metricsCMNameZk)
+                            .withKey("metrics-config.yml")
+                            .withOptional(true)
+                            .build())
                 .endValueFrom()
                 .build();
 

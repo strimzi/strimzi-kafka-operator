@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -16,7 +17,11 @@ public class TestUtils {
     public static JmxPrometheusExporterMetrics getJmxPrometheusExporterMetrics(String key, String name) {
         JmxPrometheusExporterMetrics metricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
-                .withNewConfigMapKeyRef(key, name, true)
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                            .withName(name)
+                            .withKey(key)
+                            .withOptional(true)
+                            .build())
                 .endValueFrom()
                 .build();
         return metricsConfig;
