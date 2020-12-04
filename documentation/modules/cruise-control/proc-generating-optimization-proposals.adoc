@@ -64,7 +64,7 @@ spec:
   goals:
     - RackAwareGoal
     - ReplicaCapacityGoal
-skipHardGoalCheck: true
+  skipHardGoalCheck: true
 ----
 
 . Create or update the resource:
