@@ -54,7 +54,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
         this.initialDelaySeconds = initialDelaySeconds;
     }
 
-    @Description("The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.")
+    @Description("The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.")
     @Minimum(1)
     @DefaultValue("5")
     public int getTimeoutSeconds() {

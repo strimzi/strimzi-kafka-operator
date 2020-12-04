@@ -992,7 +992,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 |integer
 |successThreshold     1.2+<.<|Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
 |integer
-|timeoutSeconds       1.2+<.<|The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+|timeoutSeconds       1.2+<.<|The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
 |integer
 |====
 

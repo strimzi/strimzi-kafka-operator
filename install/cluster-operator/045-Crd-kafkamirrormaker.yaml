@@ -1301,7 +1301,7 @@ spec:
                   type: integer
                   minimum: 1
                   description: The timeout for each attempted health check. Default
-                    to 10 seconds. Minimum value is 1.
+                    to 5 seconds. Minimum value is 1.
               description: Pod liveness checking.
             readinessProbe:
               type: object
@@ -1332,7 +1332,7 @@ spec:
                   type: integer
                   minimum: 1
                   description: The timeout for each attempted health check. Default
-                    to 10 seconds. Minimum value is 1.
+                    to 5 seconds. Minimum value is 1.
               description: Pod readiness checking.
             version:
               type: string

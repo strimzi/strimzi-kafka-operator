@@ -1367,7 +1367,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod liveness checking.
                 readinessProbe:
                   type: object
@@ -1391,7 +1391,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness checking.
                 jvmOptions:
                   type: object
@@ -1521,7 +1521,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -1557,7 +1557,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -2623,7 +2623,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod liveness checking.
                 readinessProbe:
                   type: object
@@ -2647,7 +2647,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness checking.
                 jvmOptions:
                   type: object
@@ -3313,7 +3313,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -3349,7 +3349,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -3630,7 +3630,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -3666,7 +3666,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -3747,7 +3747,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod liveness checking.
                 readinessProbe:
                   type: object
@@ -3771,7 +3771,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness checking.
               description: Configuration of the Topic Operator.
             entityOperator:
@@ -3816,7 +3816,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     readinessProbe:
                       type: object
@@ -3840,7 +3840,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -3945,7 +3945,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     readinessProbe:
                       type: object
@@ -3969,7 +3969,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -4281,7 +4281,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -4317,7 +4317,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -4968,7 +4968,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod liveness checking.
                     logLevel:
                       type: string
@@ -5004,7 +5004,7 @@ spec:
                         timeoutSeconds:
                           type: integer
                           minimum: 1
-                          description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                          description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                       description: Pod readiness checking.
                     resources:
                       type: object
@@ -5045,7 +5045,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod liveness checking for the Cruise Control container.
                 readinessProbe:
                   type: object
@@ -5069,7 +5069,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness checking for the Cruise Control container.
                 jvmOptions:
                   type: object
@@ -6651,7 +6651,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod liveness check.
                 readinessProbe:
                   type: object
@@ -6675,7 +6675,7 @@ spec:
                     timeoutSeconds:
                       type: integer
                       minimum: 1
-                      description: The timeout for each attempted health check. Default to 10 seconds. Minimum value is 1.
+                      description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness check.
               description: Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
             maintenanceTimeWindows:
