@@ -15,6 +15,7 @@ import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ProbeGeneratorTest {
@@ -183,5 +184,17 @@ public class ProbeGeneratorTest {
                 .withTimeoutSeconds(5)
                 .build()
         ));
+    }
+
+    @Test
+    public void testZeroInitialDelayIsSetToNull() {
+        io.strimzi.api.kafka.model.Probe probeConfig = new io.strimzi.api.kafka.model.ProbeBuilder()
+                .withInitialDelaySeconds(0)
+                .build();
+
+        Probe probe = ProbeGenerator.defaultBuilder(probeConfig)
+                .build();
+
+        assertThat(probe.getInitialDelaySeconds(), is(nullValue()));
     }
 }
