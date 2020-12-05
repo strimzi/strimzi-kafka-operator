@@ -412,9 +412,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         defaultLogging.asMap().entrySet().forEach(entry -> {
             // set all logger levels to default
             if (entry.getKey().equals("log4j.rootLogger")) {
-                updateLoggers.put("root", entry.getValue());
+                updateLoggers.put("root", Util.expandVar(entry.getValue(), defaultLogging.asMap()));
             } else if (entry.getKey().startsWith("log4j.logger.")) {
-                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
+                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), Util.expandVar(entry.getValue(), defaultLogging.asMap()));
             }
         });
 
@@ -425,12 +425,12 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             if (entry.getKey().equals("log4j.rootLogger")) {
                 if (fetchedLoggers.get("root") == null || fetchedLoggers.get("root").get("level") == null ||
                         !entry.getValue().equals(fetchedLoggers.get("root").get("level"))) {
-                    updateLoggers.put("root", entry.getValue());
+                    updateLoggers.put("root", Util.expandVar(entry.getValue(), ops.asMap()));
                 }
             } else if (entry.getKey().startsWith("log4j.logger.")) {
                 Map<String, String> fetchedLogger = fetchedLoggers.get(entry.getKey().substring("log4j.logger.".length()));
                 if (fetchedLogger == null || fetchedLogger.get("level") == null || !entry.getValue().equals(fetchedLogger.get("level"))) {
-                    updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), entry.getValue());
+                    updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), Util.expandVar(entry.getValue(), ops.asMap()));
                 }
             }
         });
