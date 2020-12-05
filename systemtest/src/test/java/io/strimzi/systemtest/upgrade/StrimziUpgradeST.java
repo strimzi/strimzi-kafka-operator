@@ -181,6 +181,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
                 .editKafka()
                     .withVersion(null)
                     .addToConfig("log.message.format.version", getValueForLastKafkaVersionInFile(previousKafkaVersionsYaml, "format"))
+                    .addToConfig("inter.broker.protocol.version", getValueForLastKafkaVersionInFile(previousKafkaVersionsYaml, "protocol"))
                 .endKafka()
             .endSpec()
             .done();

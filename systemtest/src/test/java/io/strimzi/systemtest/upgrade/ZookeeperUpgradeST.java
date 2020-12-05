@@ -56,7 +56,8 @@ public class ZookeeperUpgradeST extends AbstractST {
 
             // If it is an upgrade test we keep the message format as the lower version number
             String logMsgFormat = initialVersion.messageVersion();
-            runVersionChange(initialVersion, newVersion, logMsgFormat, 3, 3, testContext);
+            String interBrokerProtocol = initialVersion.protocolVersion();
+            runVersionChange(initialVersion, newVersion, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -76,7 +77,8 @@ public class ZookeeperUpgradeST extends AbstractST {
 
             // If it is a downgrade then we make sure to use the lower version number for the message format
             String logMsgFormat = newVersion.messageVersion();
-            runVersionChange(initialVersion, newVersion, logMsgFormat, 3, 3, testContext);
+            String interBrokerProtocol = newVersion.protocolVersion();
+            runVersionChange(initialVersion, newVersion, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -98,11 +100,19 @@ public class ZookeeperUpgradeST extends AbstractST {
             initLogMsgFormat = tmp.toString();
         }
 
+        String interBrokerProtocol = sortedVersions.get(0).protocolVersion();
+
+        if (interBrokerProtocol.charAt(2) + 1 >= sortedVersions.get(sortedVersions.size() - 1).messageVersion().charAt(2)) {
+            StringBuilder tmp = new StringBuilder(interBrokerProtocol);
+            tmp.setCharAt(2, (char) (interBrokerProtocol.charAt(2) - 1));
+            interBrokerProtocol = tmp.toString();
+        }
+
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            runVersionChange(initialVersion, newVersion, initLogMsgFormat, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, initLogMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -112,7 +122,7 @@ public class ZookeeperUpgradeST extends AbstractST {
         // ##############################
     }
 
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, String interBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
         Map<String, String> kafkaPods;
 
         boolean sameMinorVersion = initialVersion.protocolVersion().equals(newVersion.protocolVersion());
@@ -124,6 +134,7 @@ public class ZookeeperUpgradeST extends AbstractST {
                     .editKafka()
                         .withVersion(initialVersion.version())
                         .addToConfig("log.message.format.version", initLogMsgFormat)
+                        .addToConfig("inter.broker.protocol.version", interBrokerProtocol)
                     .endKafka()
                 .endSpec()
                 .done();
