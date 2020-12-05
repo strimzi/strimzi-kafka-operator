@@ -19,9 +19,6 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -262,9 +259,5 @@ public class KafkaSpecCheckerTest {
         KafkaSpecChecker checker = generateChecker(kafka);
         List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(2));
-    }
-
-    private Date dateSupplier() {
-        return Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant());
     }
 }

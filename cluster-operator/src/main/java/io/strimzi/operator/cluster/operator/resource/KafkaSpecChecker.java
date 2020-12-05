@@ -26,11 +26,9 @@ import java.util.regex.Pattern;
  * lead to problems.
  */
 public class KafkaSpecChecker {
-
-    private KafkaSpec spec;
-    private KafkaCluster kafkaCluster;
-    private ZookeeperCluster zkCluster;
-    private String kafkaBrokerVersion;
+    private final KafkaCluster kafkaCluster;
+    private final ZookeeperCluster zkCluster;
+    private final String kafkaBrokerVersion;
 
     private final static Pattern VERSION_REGEX = Pattern.compile("(\\d\\.\\d+).*");
 
@@ -45,7 +43,6 @@ public class KafkaSpecChecker {
      *                     this class to include awareness of what defaults are applied.
      */
     public KafkaSpecChecker(KafkaSpec spec, KafkaVersion.Lookup versions, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
-        this.spec = spec;
         this.kafkaCluster = kafkaCluster;
         this.zkCluster = zkCluster;
 
