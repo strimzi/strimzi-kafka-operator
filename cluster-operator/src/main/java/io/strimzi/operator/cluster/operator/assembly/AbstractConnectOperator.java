@@ -90,6 +90,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_TASK;
 import static java.util.Collections.emptyMap;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
@@ -451,7 +453,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
                 Promise<Void> promise = Promise.promise();
-                maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec())
+                maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec(), connector)
                         .onComplete(result -> {
                             if (result.succeeded()) {
                                 maybeUpdateConnectorStatus(reconciliation, connector, result.result(), null)
@@ -476,18 +478,19 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param apiClient The client instance.
      * @param connectorName The connector name.
      * @param connectorSpec The desired connector spec.
+     * @param resource The resource that defines the connector.
      * @return A Future whose result, when successfully completed, is a map of the current connector state.
      */
     protected Future<Map<String, Object>> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
-                                                                       String connectorName, KafkaConnectorSpec connectorSpec) {
+                                                                       String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, port, connectorName).compose(
             config -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, config)) {
                     log.debug("{}: Connector {} exists and has desired config, {}=={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return apiClient.status(host, port, connectorName)
-                        .compose(status -> {
-                            return pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status);
-                        });
+                        .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
+                        .compose(status -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, status))
+                        .compose(status -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, status));
                 } else {
                     log.debug("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
@@ -563,6 +566,91 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
+    private Future<Map<String, Object>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, Map<String, Object> status) {
+        if (hasRestartAnnotation(resource, connectorName)) {
+            log.debug("{}: Restarting connector {}", reconciliation, connectorName);
+            return apiClient.restart(host, port, connectorName)
+                    .compose(ignored -> removeRestartAnnotation(reconciliation, resource),
+                        throwable -> {
+                            // Ignore restart failures - just try again on the next reconcile
+                            log.warn("{}: Failed to restart connector {}. {}", reconciliation, connectorName, throwable.getMessage());
+                            return Future.succeededFuture();
+                        })
+                    .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
+                        connectorName));
+        } else {
+            return Future.succeededFuture(status);
+        }
+    }
+
+    private Future<Map<String, Object>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, Map<String, Object> status) {
+        int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
+        if (taskID >= 0) {
+            log.debug("{}: Restarting connector task {}:{}", reconciliation, connectorName, taskID);
+            return apiClient.restartTask(host, port, connectorName, taskID)
+                    .compose(ignored -> removeRestartTaskAnnotation(reconciliation, resource),
+                        throwable -> {
+                            // Ignore restart failures - just try again on the next reconcile
+                            log.warn("{}: Failed to restart connector task {}:{}. {}", reconciliation, connectorName, taskID, throwable.getMessage());
+                            return Future.succeededFuture();
+                        })
+                    .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
+                        connectorName));
+        } else {
+            return Future.succeededFuture(status);
+        }
+    }
+
+    /**
+     * Whether the provided resource instance is a KafkaConnector and has the strimzi.io/restart annotation
+     *
+     * @param resource resource instance to check
+     * @param resource connectorName name of the connector to check
+     * @return true if the provided resource instance has the strimzi.io/restart annotation; false otherwise
+     */
+    protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
+        return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_RESTART, false);
+    }
+
+    /**
+     * Return the ID of the connector task to be restarted if the provided KafkaConnector resource instance has the strimzio.io/restart-task annotation
+     *
+     * @param resource resource instance to check
+     * @param connectorName KafkaConnector resource instance to check
+     * @return the ID of the task to be restarted if the provided KafkaConnector resource instance has the strimzio.io/restart-task annotation or -1 otherwise.
+     */
+    protected int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
+        return Annotations.intAnnotation(resource, ANNO_STRIMZI_IO_RESTART_TASK, -1);
+    }
+
+    /**
+     * Patches the KafkaConnector CR to remove the strimzi.io/restart annotation, as
+     * the restart action specified by the user has been completed.
+     */
+    protected Future<? extends CustomResource> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART);
+    }
+
+    /**
+     * Patches the KafkaConnector CR to remove the strimzi.io/restart-task annotation, as
+     * the restart action specified by the user has been completed.
+     */
+    protected Future<? extends CustomResource> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART_TASK);
+    }
+
+    /**
+     * Patches the KafkaConnector CR to remove the supplied annotation.
+     */
+    private Future<? extends CustomResource> removeAnnotation(Reconciliation reconciliation, KafkaConnector resource, String annotationKey) {
+        log.debug("{}: Removing annotation {}", reconciliation, annotationKey);
+        KafkaConnector patchedKafkaConnector = new KafkaConnectorBuilder(resource)
+            .editMetadata()
+            .removeFromAnnotations(annotationKey)
+            .endMetadata()
+            .build();
+        return connectorOperator.patchAsync(patchedKafkaConnector);
+    }
 
     public static void updateStatus(Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?, ?> connectorOperations) {
         KafkaConnectorStatus status = new KafkaConnectorStatus();

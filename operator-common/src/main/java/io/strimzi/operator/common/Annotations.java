@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
@@ -39,6 +40,21 @@ public class Annotations {
     public static final String ANNO_STRIMZI_IO_REBALANCE = STRIMZI_DOMAIN + "rebalance";
     @Deprecated
     public static final String ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE = "operator." + Annotations.STRIMZI_DOMAIN + "manual-rolling-update";
+
+    /**
+     * Annotations for restarting KafkaConnector and KafkaMirrorMaker2 connectors or tasks
+     */
+    public static final String ANNO_STRIMZI_IO_RESTART = STRIMZI_DOMAIN + "restart";
+    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR = STRIMZI_DOMAIN + "restart-connector";
+    public static final String ANNO_STRIMZI_IO_RESTART_TASK = STRIMZI_DOMAIN + "restart-task";
+    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK = STRIMZI_DOMAIN + "restart-connector-task";
+    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR = "connector";
+    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK = "task";
+    public static final Pattern ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN = Pattern.compile("^(?<" +
+        ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR +
+        ">.+):(?<" +
+        ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK +
+        ">\\d+)$");
 
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
 

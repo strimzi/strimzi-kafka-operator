@@ -147,6 +147,25 @@ public interface KafkaConnectApi {
      * this returns the list of connect loggers.
      */
     Future<Map<String, Map<String, String>>> listConnectLoggers(String host, int port);
+
+    /**
+     * Make a {@code POST} request to {@code /connectors/${connectorName}/restart}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector to restart.
+     * @return A Future which completes with the result of the request.
+     */
+    Future<Void> restart(String host, int port, String connectorName);
+
+    /**
+     * Make a {@code POST} request to {@code /connectors/${connectorName}/tasks/${taskID}/restart}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector.
+     * @param taskID The ID of the connector task to restart.
+     * @return A Future which completes with the result of the request.
+     */
+    Future<Void> restartTask(String host, int port, String connectorName, int taskID);
 }
 
 class ConnectRestException extends RuntimeException {

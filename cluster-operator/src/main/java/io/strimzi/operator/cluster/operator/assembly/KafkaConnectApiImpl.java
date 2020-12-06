@@ -491,4 +491,31 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         }
         return sortedLoggers;
     }
+
+    @Override
+    public Future<Void> restart(String host, int port, String connectorName) {
+        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/restart");
+    }
+
+    @Override
+    public Future<Void> restartTask(String host, int port, String connectorName, int taskID) {
+        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/tasks/" + taskID + "/restart");
+    }
+
+    private Future<Void> restartConnectorOrTask(String host, int port, String path) {
+        return withHttpClient((httpClient, result) -> httpClient
+            .post(port, host, path, response -> {
+                response.exceptionHandler(result::tryFail);
+                if (response.statusCode() == 204) {
+                    result.complete();
+                } else {
+                    result.fail("Unexpected status code " + response.statusCode()
+                        + " for POST request to " + host + ":" + port + path);
+                }
+            })
+            .exceptionHandler(result::tryFail)
+            .setFollowRedirects(true)
+            .putHeader("Accept", "application/json")
+            .end());
+    }
 }
