@@ -39,14 +39,19 @@ spec:
 ----
 
 [[cors-configuration]]
+[discrete]
 == Cross-Origin Resource Sharing configuration
 
-By default, Cross-Origin Resource Sharing (CORS) for Cruise Control is disabled and can only be enabled for read-only access.
-This means that applications running in origins different from Strimzi components cannot send POST requests to the Cruise Control API. 
-However, these same applications can still send GET requests to the Cruise Control API when cors is enabled for Cruise Control.
-This prevents third-party applications from manipulating Kafka cluster state through Cruise Control without Strimzi approval but still allows third-party applications to access read-only cluster information from Cruise Control.
+Cross-Origin Resource Sharing (CORS) allows you to specify allowed methods and originating URLs for accessing REST APIs.
 
-.An example of enabling Cruise Control CORS
+By default, CORS is disabled for the Cruise Control REST API.
+When enabled, only `GET` requests for read-only access to the Kafka cluster state are allowed.
+his means that external applications, which are running in different origins than the Strimzi components, cannot make `POST` requests to the Cruise Control API.
+However, those applications can make GET requests to access read-only information about the Kafka cluster, such as the current cluster load or the most recent optimization proposal.
+
+.Enabling CORS for Cruise Control
+
+You enable CORS in `Kafka.spec.cruiseControl.config`.
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -59,8 +64,12 @@ spec:
     # ...
     config:
       webserver.http.cors.enabled: true
+      webserver.http.cors.origin: "*"
+      webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type"
     # ...
 ----
+
+For more information, see {CruiseControlApiDocs}.
 
 [[capacity-configuration]]
 [discrete]
