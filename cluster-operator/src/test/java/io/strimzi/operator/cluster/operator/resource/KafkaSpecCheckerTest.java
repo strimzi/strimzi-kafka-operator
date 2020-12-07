@@ -186,7 +186,21 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkLogMessageFormatWithRightVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION);
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
+
+    @Test
+    public void checkLogMessageFormatWithRightLongVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION + "-IV0");
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             emptyMap(), null, kafkaOptions, emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
@@ -241,6 +255,20 @@ public class KafkaSpecCheckerTest {
     public void checkInterBrokerProtocolWithCorrectVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
+
+    @Test
+    public void checkInterBrokerProtocolWithCorrectLongVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION + "-IV0");
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             emptyMap(), null, kafkaOptions, emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))

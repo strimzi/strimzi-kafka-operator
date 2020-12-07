@@ -30,7 +30,7 @@ public class KafkaSpecChecker {
     private final ZookeeperCluster zkCluster;
     private final String kafkaBrokerVersion;
 
-    private final static Pattern VERSION_REGEX = Pattern.compile("(\\d\\.\\d+).*");
+    private final static Pattern VERSION_REGEX = Pattern.compile("(\\d+\\.\\d+).*");
 
     /**
      * @param spec The spec requested by the user in the CR
@@ -77,7 +77,7 @@ public class KafkaSpecChecker {
 
         if (logMsgFormatVersion != null) {
             Matcher m = VERSION_REGEX.matcher(logMsgFormatVersion);
-            if (m.find() && !kafkaBrokerVersion.startsWith(m.group(0))) {
+            if (m.matches() && !kafkaBrokerVersion.startsWith(m.group(1))) {
                 warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersion",
                         "log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
             }
@@ -98,7 +98,7 @@ public class KafkaSpecChecker {
 
         if (interBrokerProtocolVersion != null) {
             Matcher m = VERSION_REGEX.matcher(interBrokerProtocolVersion);
-            if (m.find() && !kafkaBrokerVersion.startsWith(m.group(0))) {
+            if (m.matches() && !kafkaBrokerVersion.startsWith(m.group(1))) {
                 warnings.add(StatusUtils.buildWarningCondition("KafkaInterBrokerProtocolVersion",
                         "inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
             }
