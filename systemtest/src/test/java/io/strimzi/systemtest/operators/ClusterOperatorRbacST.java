@@ -30,8 +30,8 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
-public class ClusterOperatorST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorST.class);
+public class ClusterOperatorRbacST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorRbacST.class);
     public static final String NAMESPACE = "cluster-operator-test";
 
     @Test
