@@ -29,7 +29,7 @@ Any changes will be *overwritten* by the previous version of the Cluster Operato
 include::snip-cluster-operator-namespace-sed.adoc[]
 +
 .. If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit the
-`install/cluster-operator/060-Deployment-cluster-operator.yaml` file to use those environment variables.
+`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to use those environment variables.
 
 . When you have an updated configuration, deploy it along with the rest of the installation resources:
 +
@@ -49,4 +49,4 @@ kubectl get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 +
 The image tag shows the new Strimzi version followed by the Kafka version. For example, `_NEW-STRIMZI-VERSION_-kafka-_CURRENT-KAFKA-VERSION_`.
 
-You now have an updated Cluster Operator.
+Your Cluster Operator was downgraded to the previous version.
