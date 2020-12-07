@@ -43,6 +43,10 @@ public class FileUtils {
             while (entry != null) {
                 File file = new File(dir, entry.getName());
 
+                if (!file.toPath().normalize().startsWith(dir.toPath())) {
+                    throw new RuntimeException("Invalid zip entry - unpacks outside of the destination path");
+                }
+
                 if (entry.isDirectory()) {
                     if (file.exists()) {
                         if (!file.isDirectory()) {
