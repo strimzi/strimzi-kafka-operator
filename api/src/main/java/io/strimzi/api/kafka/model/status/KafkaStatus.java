@@ -29,6 +29,8 @@ public class KafkaStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private List<ListenerStatus> listeners;
+    
+    private String clusterId;
 
     @Description("Addresses of the internal and external listeners")
     public List<ListenerStatus> getListeners() {
@@ -37,5 +39,14 @@ public class KafkaStatus extends Status {
 
     public void setListeners(List<ListenerStatus> listeners) {
         this.listeners = listeners;
+    }
+    
+    @Description("Kafka cluster Id")
+    public String getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 }

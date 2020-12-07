@@ -999,6 +999,42 @@ public class KafkaStatusTest {
     }
 
     @Test
+    public void testKafkaClusrerIdInStatus(VertxTestContext context) throws ParseException {
+        Kafka kafka = new KafkaBuilder(getKafkaCrd()).build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the CRD Operator for Kafka resources
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        MockClusterIdStatusKafkaAssemblyOperator kao = new MockClusterIdStatusKafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                passwordGenerator,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+            assertThat(res.succeeded(), is(true));
+
+            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
+            KafkaStatus status = kafkaCaptor.getValue().getStatus();
+
+            assertThat(status.getClusterId(), is("CLUSTERID"));
+
+            async.flag();
+        });
+    }
+
+    @Test
     public void testModelWarnings(VertxTestContext context) throws ParseException {
         Kafka kafka = getKafkaCrd();
         Kafka oldKafka = new KafkaBuilder(getKafkaCrd())
@@ -1153,4 +1189,18 @@ public class KafkaStatusTest {
         }
 
     }
+
+    class MockClusterIdStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+        public MockClusterIdStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        }
+
+        @Override
+        Future<Void> reconcile(ReconciliationState reconcileState)  {
+            reconcileState.kafkaStatus.setClusterId("CLUSTERID");
+
+            return Future.succeededFuture();
+        }
+    }
+
 }

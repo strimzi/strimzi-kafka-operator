@@ -108,6 +108,9 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.common.KafkaException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
@@ -133,6 +136,7 @@ import java.util.function.Function;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static io.strimzi.operator.cluster.model.AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
@@ -296,6 +300,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaRoutes())
                 .compose(state -> state.kafkaIngresses())
                 .compose(state -> state.kafkaInternalServicesReady())
+                .compose(state -> state.kafkaGetClusterId())
                 .compose(state -> state.kafkaLoadBalancerServicesReady())
                 .compose(state -> state.kafkaNodePortServicesReady())
                 .compose(state -> state.kafkaRoutesReady())
@@ -1954,6 +1959,32 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(fut);
         }
 
+        /**
+         * Get the cluster Id of the Kafka cluster
+         * 
+         * @return
+         */
+        Future<ReconciliationState> kafkaGetClusterId() {
+            String clusterId = null;
+            log.debug("{}: Attempt to get clusterId", reconciliation);
+            List<String> podNames = IntStream.range(0, kafkaCluster.getReplicas()).boxed().collect(Collectors.toList()).stream().map(podId -> KafkaCluster.kafkaPodName(this.name, podId)).collect(Collectors.toList());
+            try {
+                String bootstrapHostnames = podNames.stream().map(podName -> KafkaCluster.podDnsName(this.namespace, this.name, podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
+                log.debug("{}: Creating AdminClient for clusterId using {}", reconciliation, bootstrapHostnames);
+                Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostnames, this.clusterCa.caCertSecret(), this.oldCoSecret, "cluster-operator");
+                clusterId = kafkaAdmin.describeCluster().clusterId().get();
+            } catch (KafkaException e) {
+                log.debug("{}: Kafka exception getting clusterId {}", reconciliation, e.getMessage());
+            } catch (Exception e) {
+                log.debug("{}: Exception getting clusterId {}", reconciliation, e.getMessage());
+            }
+
+            if (clusterId != null) {
+                kafkaStatus.setClusterId(clusterId);
+            }
+            return Future.succeededFuture(this);
+        }
+        
         Future<ReconciliationState> kafkaInternalServicesReady()   {
             for (GenericKafkaListener listener : ListenersUtils.internalListeners(kafkaCluster.getListeners())) {
                 boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
