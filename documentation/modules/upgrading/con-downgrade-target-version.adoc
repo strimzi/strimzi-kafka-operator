@@ -2,7 +2,7 @@
 //
 // assembly-downgrading-kafka-versions.adoc
 
-[id='com-target-downgrade-version-{context}']
+[id='con-target-downgrade-version-{context}']
 
 = Kafka version compatibility for downgrades
 
