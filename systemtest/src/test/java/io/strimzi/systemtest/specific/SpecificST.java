@@ -21,12 +21,12 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -77,6 +77,8 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAware() {
+        String producerName = "hello-world-producer";
+        String consumerName = "hello-world-consumer";
         String rackKey = "rack-key";
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -110,32 +112,31 @@ public class SpecificST extends AbstractST {
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
-        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME).done();
-        final String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(defaultKafkaClientsPodName)
-                .withTopicName(TOPIC_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                .build();
+        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withDelayMs(0)
+            .build();
 
-        internalKafkaClient.verifyProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesPlain(),
-                internalKafkaClient.receiveMessagesPlain()
-        );
+        kafkaBasicClientJob.producerStrimzi().done();
+        kafkaBasicClientJob.consumerStrimzi().done();
     }
 
     @Test
     @Tag(CONNECT)
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testRackAwareConnectWrongDeployment() throws Exception {
+    void testRackAwareConnectWrongDeployment() {
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+        // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
+        ResourceManager.setClassResources();
         BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).done();
+        // Now we set pointer stack to method again
+        ResourceManager.setMethodResources();
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String wrongRackKey = "wrong-key";
@@ -191,7 +192,9 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, CLUSTER_NAME);
 
         // Revert changes for CO deployment
+        ResourceManager.setClassResources();
         BundleResource.clusterOperator(NAMESPACE).done();
+        ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
@@ -199,10 +202,14 @@ public class SpecificST extends AbstractST {
     @Tag(CONNECT)
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testRackAwareConnectCorrectDeployment() throws Exception {
+    public void testRackAwareConnectCorrectDeployment() {
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+        // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
+        ResourceManager.setClassResources();
         BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).done();
+        // Now we set pointer stack to method again
+        ResourceManager.setMethodResources();
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String rackKey = "rack-key";
@@ -251,7 +258,9 @@ public class SpecificST extends AbstractST {
         }
 
         // Revert changes for CO deployment
+        ResourceManager.setClassResources();
         BundleResource.clusterOperator(NAMESPACE).done();
+        ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 

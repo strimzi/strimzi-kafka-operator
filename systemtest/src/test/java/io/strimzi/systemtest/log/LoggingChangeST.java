@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -54,6 +55,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 class LoggingChangeST extends AbstractST {
@@ -63,6 +65,8 @@ class LoggingChangeST extends AbstractST {
     @Test
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging() {
+        // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
+        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         String loggersConfigKafka = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
             "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
             "kafka.root.logger.level=INFO\n" +
@@ -148,6 +152,8 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
 
+        // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
+        ResourceManager.setClassResources();
         BundleResource.clusterOperator(NAMESPACE)
             .editOrNewSpec()
                 .editOrNewTemplate()
@@ -166,6 +172,8 @@ class LoggingChangeST extends AbstractST {
                 .endTemplate()
             .endSpec()
             .done();
+        // Now we set pointer stack to method again
+        ResourceManager.setMethodResources();
 
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editOrNewSpec()

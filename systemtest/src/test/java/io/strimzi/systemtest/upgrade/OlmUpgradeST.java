@@ -10,7 +10,6 @@ import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -49,7 +48,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private final String consumerName = "consumer";
     private final String topicUpgradeName = "topic-upgrade";
     private final int messageUpgradeCount =  50_000; // 10k ~= 23s, 50k ~= 115s
-    private final KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
+    private final KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
         .withProducerName(producerName)
         .withConsumerName(consumerName)
         .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
