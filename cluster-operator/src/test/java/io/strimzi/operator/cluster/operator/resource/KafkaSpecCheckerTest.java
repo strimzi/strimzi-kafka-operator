@@ -19,9 +19,6 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +47,7 @@ public class KafkaSpecCheckerTest {
                 emptyMap()) { };
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, versions);
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(kafka, versions);
-        return new KafkaSpecChecker(kafka.getSpec(), kafkaCluster, zkCluster);
+        return new KafkaSpecChecker(kafka.getSpec(), versions, kafkaCluster, zkCluster);
     }
 
     @Test
@@ -147,7 +144,7 @@ public class KafkaSpecCheckerTest {
     }
 
     @Test
-    public void checkKafkaVersion() {
+    public void checkLogMessageFormatVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
@@ -169,6 +166,120 @@ public class KafkaSpecCheckerTest {
     }
 
     @Test
+    public void checkLogMessageFormatWithoutVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(1));
+        Condition warning = warnings.get(0);
+        assertThat(warning.getReason(), is("KafkaLogMessageFormatVersion"));
+        assertThat(warning.getStatus(), is("True"));
+        assertThat(warning.getMessage(), is("log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
+    }
+
+    @Test
+    public void checkLogMessageFormatWithRightVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION);
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
+
+    @Test
+    public void checkLogMessageFormatWithRightLongVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION + "-IV0");
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
+
+    @Test
+    public void checkInterBrokerProtocolVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .editSpec()
+                    .editKafka()
+                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
+                    .endKafka()
+                .endSpec()
+            .build();
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(1));
+        Condition warning = warnings.get(0);
+        assertThat(warning.getReason(), is("KafkaInterBrokerProtocolVersion"));
+        assertThat(warning.getStatus(), is("True"));
+        assertThat(warning.getMessage(), is("inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
+    }
+
+    @Test
+    public void checkInterBrokerProtocolWithoutVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(1));
+        Condition warning = warnings.get(0);
+        assertThat(warning.getReason(), is("KafkaInterBrokerProtocolVersion"));
+        assertThat(warning.getStatus(), is("True"));
+        assertThat(warning.getMessage(), is("inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
+    }
+
+    @Test
+    public void checkInterBrokerProtocolWithCorrectVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
+
+    @Test
+    public void checkInterBrokerProtocolWithCorrectLongVersion() {
+        Map<String, Object> kafkaOptions = new HashMap<>();
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION + "-IV0");
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
+            emptyMap(), null, kafkaOptions, emptyMap(),
+            new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
+
+    @Test
     public void checkMultipleWarnings() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
                 emptyMap(), null, emptyMap(), emptyMap(),
@@ -176,9 +287,5 @@ public class KafkaSpecCheckerTest {
         KafkaSpecChecker checker = generateChecker(kafka);
         List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(2));
-    }
-
-    private Date dateSupplier() {
-        return Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant());
     }
 }

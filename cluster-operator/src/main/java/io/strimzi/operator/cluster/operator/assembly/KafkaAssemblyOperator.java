@@ -533,7 +533,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * practice to the status.
          */
         Future<ReconciliationState> checkKafkaSpec() {
-            KafkaSpecChecker checker = new KafkaSpecChecker(kafkaAssembly.getSpec(), kafkaCluster, zkCluster);
+            KafkaSpecChecker checker = new KafkaSpecChecker(kafkaAssembly.getSpec(), versions, kafkaCluster, zkCluster);
             List<Condition> warnings = checker.run();
             kafkaStatus.addConditions(warnings);
             return Future.succeededFuture(this);

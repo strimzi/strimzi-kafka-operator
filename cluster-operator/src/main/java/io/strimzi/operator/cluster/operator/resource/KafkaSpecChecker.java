@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -25,15 +26,16 @@ import java.util.regex.Pattern;
  * lead to problems.
  */
 public class KafkaSpecChecker {
+    private final KafkaCluster kafkaCluster;
+    private final ZookeeperCluster zkCluster;
+    private final String kafkaBrokerVersion;
 
-    private KafkaSpec spec;
-    private KafkaCluster kafkaCluster;
-    private ZookeeperCluster zkCluster;
-
-    private final static Pattern VERSION_REGEX = Pattern.compile("(\\d\\.\\d+).*");
+    // This pattern is used to extract the MAJOR.MINOR version from the protocol or format version fields
+    private final static Pattern MAJOR_MINOR_REGEX = Pattern.compile("(\\d+\\.\\d+).*");
 
     /**
      * @param spec The spec requested by the user in the CR
+     * @param versions List of versions supported by the Operator. Used to detect the default version.
      * @param kafkaCluster The model generated based on the spec. This is requested so that default
      *                     values not included in the spec can be taken into account, without needing
      *                     this class to include awareness of what defaults are applied.
@@ -41,15 +43,21 @@ public class KafkaSpecChecker {
      *                     values not included in the spec can be taken into account, without needing
      *                     this class to include awareness of what defaults are applied.
      */
-    public KafkaSpecChecker(KafkaSpec spec, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
-        this.spec = spec;
+    public KafkaSpecChecker(KafkaSpec spec, KafkaVersion.Lookup versions, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
         this.kafkaCluster = kafkaCluster;
         this.zkCluster = zkCluster;
+
+        if (spec.getKafka().getVersion() != null) {
+            this.kafkaBrokerVersion = spec.getKafka().getVersion();
+        } else {
+            this.kafkaBrokerVersion = versions.defaultVersion().version();
+        }
     }
 
     public List<Condition> run() {
         List<Condition> warnings = new ArrayList<>();
         checkKafkaLogMessageFormatVersion(warnings);
+        checkKafkaInterBrokerProtocolVersion(warnings);
         checkKafkaStorage(warnings);
         checkZooKeeperStorage(warnings);
         checkZooKeeperReplicas(warnings);
@@ -67,12 +75,33 @@ public class KafkaSpecChecker {
      */
     private void checkKafkaLogMessageFormatVersion(List<Condition> warnings) {
         String logMsgFormatVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
-        String kafkaBrokerVersion = spec.getKafka().getVersion();
-        if (logMsgFormatVersion != null && kafkaBrokerVersion != null) {
-            Matcher m = VERSION_REGEX.matcher(logMsgFormatVersion);
-            if (m.find() && !kafkaBrokerVersion.startsWith(m.group(0))) {
+
+        if (logMsgFormatVersion != null) {
+            Matcher m = MAJOR_MINOR_REGEX.matcher(logMsgFormatVersion);
+            if (m.matches() && !kafkaBrokerVersion.startsWith(m.group(1))) {
                 warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersion",
                         "log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
+            }
+        }
+    }
+
+    /**
+     * Checks if the version of the Kafka brokers matches any custom inter.broker.protocol.version config.
+     *
+     * Updating this is the final step in upgrading Kafka version, so if this doesn't match it is possibly an
+     * indication that a user has updated their Kafka cluster and is unaware that they also should update
+     * their format version to match.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkKafkaInterBrokerProtocolVersion(List<Condition> warnings) {
+        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
+
+        if (interBrokerProtocolVersion != null) {
+            Matcher m = MAJOR_MINOR_REGEX.matcher(interBrokerProtocolVersion);
+            if (m.matches() && !kafkaBrokerVersion.startsWith(m.group(1))) {
+                warnings.add(StatusUtils.buildWarningCondition("KafkaInterBrokerProtocolVersion",
+                        "inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
             }
         }
     }
