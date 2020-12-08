@@ -51,7 +51,7 @@ However, those applications can make `GET` requests to access read-only informat
 
 .Enabling CORS for Cruise Control
 
-You enable ad configure CORS in `Kafka.spec.cruiseControl.config`.
+You enable and configure CORS in `Kafka.spec.cruiseControl.config`.
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
