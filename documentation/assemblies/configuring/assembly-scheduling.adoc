@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-scheduling-{context}']
+= Configuring pod scheduling
+
+When two applications are scheduled to the same Kubernetes node, both applications might use the same resources like disk I/O and impact performance.
+That can lead to performance degradation.
+Scheduling Kafka pods in a way that avoids sharing nodes with other critical workloads, using the right nodes or dedicated a set of nodes only for Kafka are the best ways how to avoid such problems.
+
+include::../../modules/configuring/ref-affinity.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-scheduling-based-on-other-pods.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-scheduling-deployment-to-node-using-node-affinity.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-dedicated-nodes.adoc[leveloffset=+1]

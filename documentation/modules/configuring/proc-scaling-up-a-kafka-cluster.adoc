@@ -1,0 +1,22 @@
+// Module included in the following assemblies:
+//
+// ???
+
+[id='proc-scaling-up-a-kafka-cluster-{context}']
+
+= Scaling up a Kafka cluster
+
+This procedure describes how to increase the number of brokers in a Kafka cluster.
+
+.Prerequisites
+
+* An existing Kafka cluster.
+* A _reassignment JSON file_ named `_reassignment.json_` that describes how partitions should be reassigned to brokers in the enlarged cluster.
+
+.Procedure
+
+. Add as many new brokers as you need by increasing the `Kafka.spec.kafka.replicas` configuration option.
+
+. Verify that the new broker pods have started.
+
+include::snip-reassign-partitions.adoc[]

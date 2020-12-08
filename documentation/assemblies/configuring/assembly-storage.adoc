@@ -1,0 +1,44 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-config-kafka.adoc
+
+[id='assembly-storage-{context}']
+= Kafka and ZooKeeper storage types
+
+As stateful applications, Kafka and ZooKeeper need to store data on disk. Strimzi supports three storage types for this data:
+
+* Ephemeral
+* Persistent
+* JBOD storage
+
+NOTE: JBOD storage is supported only for Kafka, not for ZooKeeper.
+
+When configuring a `Kafka` resource, you can specify the type of storage used by the Kafka broker and its corresponding ZooKeeper node. You configure the storage type using the `storage` property in the following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+
+The storage type is configured in the `type` field.
+
+WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
+
+.Additional resources
+
+* For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
+* For more information about persistent storage, see xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
+* For more information about JBOD storage, see xref:type-JbodStorage-reference[JBOD schema reference].
+* For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
+
+include::../../modules/configuring/con-considerations-for-data-storage.adoc[leveloffset=+1]
+
+include::../../modules/configuring/ref-storage-ephemeral.adoc[leveloffset=+1]
+
+include::../../modules/configuring/ref-storage-persistent.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-resizing-persistent-volumes.adoc[leveloffset=+1]
+
+include::../../modules/configuring/ref-storage-jbod.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-adding-volumes-to-jbod-storage.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-removing-volumes-from-jbod-storage.adoc[leveloffset=+1]

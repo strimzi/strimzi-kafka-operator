@@ -1,0 +1,15 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-config-kafka.adoc
+
+[id='assembly-maintenance-time-windows-{context}']
+
+= Maintenance time windows for rolling updates
+
+Maintenance time windows allow you to schedule certain rolling updates of your Kafka and ZooKeeper clusters to start at a convenient time.
+
+include::../../modules/configuring/con-maintenance-time-windows-overview.adoc[leveloffset=+1]
+
+include::../../modules/configuring/con-maintenance-time-window-definition.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-configuring-maintenance-time-windows.adoc[leveloffset=+1]

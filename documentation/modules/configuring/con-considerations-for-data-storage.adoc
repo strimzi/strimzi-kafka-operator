@@ -1,0 +1,40 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+[id='considerations-for-data-storage-{context}']
+
+= Data storage considerations
+
+An efficient data storage infrastructure is essential to the optimal performance of Strimzi.
+
+Block storage is required.
+File storage, such as NFS, does not work with Kafka.
+
+For your block storage, you can choose, for example:
+
+* Cloud-based block storage solutions, such as {aws-ebs}
+* {K8sLocalPersistentVolumes}
+* Storage Area Network (SAN) volumes accessed by a protocol such as _Fibre Channel_ or _iSCSI_
+
+NOTE: Strimzi does not require Kubernetes raw block volumes.
+
+== File systems
+
+It is recommended that you configure your storage system to use the _XFS_ file system.
+Strimzi is also compatible with the _ext4_ file system, but this might require additional configuration for best results.
+
+== Apache Kafka and ZooKeeper storage
+Use separate disks for Apache Kafka and ZooKeeper.
+
+Three types of data storage are supported:
+
+* Ephemeral (Recommended for development only)
+* Persistent
+* JBOD  (Just a Bunch of Disks, suitable for Kafka only)
+
+For more information, see xref:assembly-storage-{context}[Kafka and ZooKeeper storage].
+
+Solid-state drives (SSDs), though not essential, can improve the performance of Kafka in large clusters where data is sent to and received from multiple topics asynchronously. SSDs are particularly effective with ZooKeeper, which requires fast, low latency data access.
+
+NOTE: You do not need to provision replicated storage because Kafka and ZooKeeper both have built-in data replication.
