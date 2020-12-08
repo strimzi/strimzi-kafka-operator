@@ -105,17 +105,12 @@ spec:
       size: 10000Gi <22>
     rack: <23>
       topologyKey: topology.kubernetes.io/zone
-    metrics: <24>
-      lowercaseOutputName: true
-      rules: <25>
-      # Special cases and very specific rules
-      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
-        name: kafka_server_$1_$2
-        type: GAUGE
-        labels:
-          clientId: "$3"
-          topic: "$4"
-          partition: "$5"
+    metricsConfig: <24>
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef: <25>
+          name: my-config-map
+          key: my-key
     jmxOptions: <26>
       authentication:
         type: "password"
@@ -139,7 +134,7 @@ spec:
     storage:
       type: persistent-claim
       size: 1000Gi
-    metrics:
+    metricsConfig:
       # ...
   entityOperator: <30>
     tlsSidecar: <31>
@@ -209,8 +204,8 @@ xref:scaling-clusters-{context}[scale clusters].
 <21> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
 <22> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
 <23> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
-<24> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter). You can enable metrics without further configuration using `metrics: {}`.
-<25> Prometheus rules for exporting metrics to a Grafana dashboard through the Prometheus JMX Exporter. A set of Prometheus rules provided with Strimzi may be copied to your Kafka resource configuration.
+<24> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
+<25> Prometheus rules for exporting metrics to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 <26> xref:property-kafka-jmx-reference[JMX options] to open JMX port 9999 to obtain JMX metrics, which is configured for password protection in this example. You can open the port without protection using `jmxOptions: {}`.
 <27> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
 <28> xref:con-common-configuration-replicas-reference[The number of ZooKeeper nodes]. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.

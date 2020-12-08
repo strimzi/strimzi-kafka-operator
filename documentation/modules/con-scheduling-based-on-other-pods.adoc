@@ -1,9 +1,0 @@
-// Module included in the following assemblies:
-//
-// assembly-scheduling-based-on-other-pods.adoc
-
-[id='con-scheduling-based-on-other-pods-{context}']
-= Avoid critical applications to share the node
-
-Pod anti-affinity can be used to ensure that critical applications are never scheduled on the same disk.
-When running Kafka cluster, it is recommended to use pod anti-affinity to ensure that the Kafka brokers do not share the nodes with other workloads like databases.
