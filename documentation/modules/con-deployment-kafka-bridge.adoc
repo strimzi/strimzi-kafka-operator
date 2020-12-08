@@ -13,7 +13,7 @@ Objects include the _deployment_, _service_, and _pod_, each named after the nam
 
 .Additional resources
 
-* For deployment instructions, see link:{BookURLDeploying}#deploying-kafka-bridge-str[Deploying Kafka Bridge to your Kubernetes cluster^] in the _Deploying Strimzi_ guide.
+* For deployment instructions, see link:{BookURLDeploying}#deploying-kafka-bridge-str[Deploying Kafka Bridge to your Kubernetes cluster^] in the _Deploying and Upgrading Strimzi_ guide.
 * For detailed information on configuring the Kafka Bridge, see xref:assembly-config-kafka-bridge-str[]
 * For information on configuring the host and port for the `KafkaBridge` resource, see xref:proc-config-kafka-bridge-str[].
 * For information on integrating external clients, see xref:con-accessing-kafka-bridge-from-outside-{context}[].

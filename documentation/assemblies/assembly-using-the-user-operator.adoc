@@ -8,7 +8,7 @@
 When you create, modify or delete a user using the `KafkaUser` resource,
 the User Operator ensures those changes are reflected in the Kafka cluster.
 
-The _Deploying Strimzi_ guide provides instructions to deploy the User Operator:
+The _Deploying and Upgrading Strimzi_ guide provides instructions to deploy the User Operator:
 
 * link:{BookURLDeploying}#deploying-the-user-operator-using-the-cluster-operator-{context}[Using the Cluster Operator (recommended)^]
 * link:{BookURLDeploying}#deploying-the-user-operator-standalone-{context}[Standalone to operate with Kafka clusters not managed by Strimzi^]

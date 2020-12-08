@@ -13,7 +13,7 @@ If you want to use the Topic Operator with a Kafka cluster that is not managed b
 you must xref:deploying-the-topic-operator-standalone-{context}[deploy the Topic Operator as a standalone component].
 
 For more information about configuring the `entityOperator` and `topicOperator` properties,
-see link:{BookURLUsing}#assembly-kafka-entity-operator-deployment-configuration-kafka[Entity Operator^] in the _Using Strimzi_ guide.
+see link:{BookURLUsing}#assembly-kafka-entity-operator-str[Configuring the Entity Operator^] in the _Using Strimzi_ guide.
 
 .Prerequisites
 

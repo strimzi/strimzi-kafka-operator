@@ -74,11 +74,11 @@ spec:
 <2> Defines the Cruise Control configuration, including the default optimization goals (in `default.goals`) and any customizations to the master optimization goals (in `goals`) or the hard goals (in `hard.goals`). 
 You can provide any xref:ref-cruise-control-configuration-{context}[standard Cruise Control configuration option] apart from those managed directly by Strimzi. 
 For more information on configuring optimization goals, see xref:con-optimization-goals-{context}[]. 
-<3> CPU and memory resources reserved for Cruise Control. For more information, see xref:assembly-resource-limits-and-requests-deployment-configuration-kafka[].
+<3> CPU and memory resources reserved for Cruise Control. For more information, see xref:con-common-configuration-resources-reference[].
 <4> Defined loggers and log levels added directly (inline) or indirectly (external) through a ConfigMap. A custom ConfigMap must be placed under the log4j.properties key. Cruise Control has a single logger named `cruisecontrol.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information, see xref:logging-configuration[Logging configuration].
 <5> xref:assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
-<6> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck readiness probes].
-<7> xref:assembly-healthchecks-deployment-configuration-kafka[Healthcheck liveness probes].
+<6> xref:con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
+<7> xref:con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
 
 . Create or update the resource:
 +

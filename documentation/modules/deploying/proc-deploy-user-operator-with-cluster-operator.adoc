@@ -12,7 +12,7 @@ You configure the `entityOperator` property of the `Kafka` resource to include t
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
 
-For more information about configuring the `entityOperator` and `userOperator` properties, see link:{BookURLUsing}#assembly-kafka-entity-operator-deployment-configuration-kafka[Entity Operator^] in the _Using Strimzi_ guide.
+For more information about configuring the `entityOperator` and `userOperator` properties, see link:{BookURLUsing}#assembly-kafka-entity-operator-str[Configuring the Entity Operator^] in the _Using Strimzi_ guide.
 
 .Prerequisites
 

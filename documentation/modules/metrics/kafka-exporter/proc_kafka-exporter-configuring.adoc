@@ -7,7 +7,7 @@
 
 This procedure shows how to configure Kafka Exporter in the `Kafka` resource through `KafkaExporter` properties.
 
-For more information about configuring the `Kafka` resource, see the link:{BookURLUsing}#ref-sample-kafka-resource-config-deployment-configuration-kafka[sample Kafka YAML configuration] in the _Using Strimzi_ guide.
+For more information about configuring the `Kafka` resource, see link:{BookURLUsing}#assembly-config-kafka-str[Kafka cluster configuration^] in the _Using Strimzi_ guide.
 
 The properties relevant to the Kafka Exporter configuration are shown in this procedure.
 

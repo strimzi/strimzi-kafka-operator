@@ -16,4 +16,4 @@ The metrics are automatically enabled and contain information about:
 
 Additionally, we provide an example Grafana dashboard.
 
-For more information about Prometheus, see the link:{BookURLDeploying}#assembly-metrics-{context}[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
+For more information about Prometheus, see the link:{BookURLDeploying}#assembly-metrics-{context}[Introducing Metrics to Kafka] in the _Deploying and Upgrading Strimzi_ guide.

@@ -6,7 +6,7 @@
 
 = Replacing private keys
 
-You can replace the private keys used by the cluster CA and clients CA certificates. 
+You can replace the private keys used by the cluster CA and clients CA certificates.
 When a private key is replaced, the Cluster Operator generates a new CA certificate for the new private key.
 
 .Prerequisites
@@ -49,5 +49,4 @@ Client applications must reload the cluster and clients CA certificates that wer
 .Additional resources
 
 * xref:certificates-and-secrets-str[]
-
-* xref:assembly-maintenance-time-windows-deployment-configuration-kafka[]
+* xref:assembly-maintenance-time-windows-str[]

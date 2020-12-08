@@ -79,6 +79,6 @@ Delete the old certificates to remove any potential security risk.
 
 * xref:certificates-and-secrets-str[]
 
-* xref:assembly-maintenance-time-windows-deployment-configuration-kafka[]
+* xref:assembly-maintenance-time-windows-str[]
 
 * xref:type-CertificateAuthority-reference[]

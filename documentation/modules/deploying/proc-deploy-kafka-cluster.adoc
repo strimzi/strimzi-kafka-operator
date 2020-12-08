@@ -38,7 +38,7 @@ metadata:
 # ...
 ----
 
-For more information about configuring the `Kafka` resource, see link:{BookURLUsing}#assembly-deployment-configuration-kafka-str[Kafka cluster configuration^] in the _Using Strimzi_ guide.
+For more information about configuring the `Kafka` resource, see link:{BookURLUsing}#assembly-config-kafka-str[Kafka cluster configuration^] in the _Using Strimzi_ guide.
 
 .Prerequisites
 

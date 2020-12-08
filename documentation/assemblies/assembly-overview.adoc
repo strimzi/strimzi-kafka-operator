@@ -18,7 +18,7 @@ You can configure your deployment using xref:assembly-custom-resources-str[Strim
 The xref:api_reference-str[Custom resource API reference] describes the properties you can use in your configuration.
 
 NOTE: Looking to get started with Strimzi?
-For step-by-step deployment instructions, see the link:{BookURLDeploying}[_Deploying Strimzi_ guide^].
+For step-by-step deployment instructions, see the link:{BookURLDeploying}[_Deploying and Upgrading Strimzi_ guide^].
 
 //description of Kafka features
 include::../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]
