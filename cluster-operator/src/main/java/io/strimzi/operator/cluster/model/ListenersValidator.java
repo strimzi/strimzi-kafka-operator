@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -439,6 +440,15 @@ public class ListenersValidator {
 
             if (oAuth.isCheckAudience() && oAuth.getClientId() == null) {
                 errors.add("listener " + listenerName + ": 'clientId' has to be configured when 'checkAudience' is 'true'");
+            }
+
+            String customCheckQuery = oAuth.getCustomClaimCheck();
+            if (customCheckQuery != null) {
+                try {
+                    JsonPathFilterQuery.parse(customCheckQuery);
+                } catch (Exception e) {
+                    errors.add("listener " + listenerName + ": 'customClaimCheck' value not a valid JsonPath filter query - " + e.getMessage());
+                }
             }
 
             if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {

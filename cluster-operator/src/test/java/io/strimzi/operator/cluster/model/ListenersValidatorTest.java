@@ -798,4 +798,36 @@ public class ListenersValidatorTest {
         assertThat(exception.getMessage(), allOf(
                 not(containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'"))));
     }
+
+    @Test
+    public void testValidateCustomClaimCheckOauth() {
+        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
+                .withCustomClaimCheck("invalid");
+
+        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withAuth(authBuilder.build());
+
+        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener);
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse filter query: \"invalid\"")));
+
+        // set valid JsonPath query
+        authBuilder.withCustomClaimCheck("@.valid == 'value'");
+
+        listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+        List<GenericKafkaListener> listeners2 = asList(listener);
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
+        assertThat(exception.getMessage(), allOf(
+                not(containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse query: \"invalid\" at position: 0"))));
+    }
 }

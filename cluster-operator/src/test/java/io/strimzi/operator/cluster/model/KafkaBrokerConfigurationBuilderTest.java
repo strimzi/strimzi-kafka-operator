@@ -1031,6 +1031,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withNewValidIssuerUri("https://valid-issuer")
                     .withNewIntrospectionEndpointUri("https://intro")
                     .withCheckAudience(true)
+                    .withCustomClaimCheck("'kafka-user' in @.roles.client-roles.kafka")
                     .withNewClientId("my-oauth-client")
                     .withNewClientSecret()
                         .withNewSecretName("my-secret")
@@ -1058,7 +1059,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.check.audience=\"true\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.client.secret=\"${STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET}\";",
+                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.check.audience=\"true\" oauth.custom.claim.check=\"'kafka-user' in @.roles.client-roles.kafka\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.client.secret=\"${STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET}\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
