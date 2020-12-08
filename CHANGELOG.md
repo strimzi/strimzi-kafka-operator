@@ -12,6 +12,7 @@
 * Move from Docker Hub to Quay.io as our container registry
 * Add possibility to configure DeploymentStrategy for Kafka Connect, Kafka Mirror Maker (1 and 2), and Kafka Bridge
 * Support passing metrics configuration as an external ConfigMap
+* Enable CORS configuration for Cruise Control
 
 ### Deprecations and removals
 * The `metrics` field in the Strimzi custom resources has been deprecated and will be removed in the future. For configuring metrics, use the new `metricsConfig` field and pass the configuration via ConfigMap.

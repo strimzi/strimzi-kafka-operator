@@ -11,8 +11,6 @@ The `config` property in `Kafka.spec.cruiseControl` contains configuration optio
 * Number
 * Boolean
 
-NOTE: Strings that look like JSON or YAML will need to be explicitly quoted.
-
 You can specify and configure all the options listed in the "Configurations" section of the {CruiseControlConfigDocs}, apart from those managed directly by Strimzi.
 Specifically, you *cannot* modify configuration options with keys equal to or starting with one of the keys mentioned xref:type-CruiseControlSpec-reference[here].
 
@@ -39,6 +37,39 @@ spec:
       send.buffer.bytes: 131072
     # ...
 ----
+
+[[cors-configuration]]
+[discrete]
+== Cross-Origin Resource Sharing configuration
+
+Cross-Origin Resource Sharing (CORS) allows you to specify allowed methods and originating URLs for accessing REST APIs.
+
+By default, CORS is disabled for the Cruise Control REST API.
+When enabled, only `GET` requests for read-only access to the Kafka cluster state are allowed.
+This means that external applications, which are running in different origins than the Strimzi components, cannot make `POST` requests to the Cruise Control API.
+However, those applications can make `GET` requests to access read-only information about the Kafka cluster, such as the current cluster load or the most recent optimization proposal.
+
+.Enabling CORS for Cruise Control
+
+You enable and configure CORS in `Kafka.spec.cruiseControl.config`.
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    config:
+      webserver.http.cors.enabled: true
+      webserver.http.cors.origin: "*"
+      webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type"
+    # ...
+----
+
+For more information, see {CruiseControlApiDocs}.
 
 [[capacity-configuration]]
 [discrete]
