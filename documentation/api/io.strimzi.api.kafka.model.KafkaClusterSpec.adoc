@@ -27,13 +27,26 @@ spec:
 [id='property-kafka-config-{context}']
 === `config`
 
-Use the `config` properties to configure Kafka brokers as keys with values in one of the following JSON types:
+Use the `config` properties to configure Kafka broker options as keys.
+
+Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
+
+Configuration options that cannot be configured relate to:
+
+* Security (Encryption, Authentication, and Authorization)
+* Listener configuration
+* Broker ID configuration
+* Configuration of log data directories
+* Inter-broker communication
+* ZooKeeper connectivity
+
+The values can be one of the following JSON types:
 
 * String
 * Number
 * Boolean
 
-You can specify and configure all of the options in the "Broker Configs" section of the {ApacheKafkaBrokerConfig} apart from those managed directly by Strimzi.
+You can specify and configure the options listed in the {ApacheKafkaBrokerConfig} with the exception of those options that are managed directly by Strimzi.
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `listeners`
@@ -123,3 +136,134 @@ spec:
 NOTE: Overriding container images is recommended only in special situations, where you need to use a different container registry.
 For example, because your network does not allow access to the container registry used by Strimzi. In this case, you should either copy the Strimzi images or build them from the source.
 If the configured image is not compatible with Strimzi images, it might not work properly.
+
+[id='property-kafka-jmx-{context}']
+=== `jmxOptions`
+
+JMX metrics are obtained from Kafka brokers by opening a JMX port on 9999.
+Use the `jmxOptions` property to configure a password-protected JMX port, to prevent unauthorized pods from accessing the port,
+or an unprotected JMX port.
+
+You can then obtain metrics about each Kafka broker, such as usage data from the `BytesPerSecond` value,
+or the request rate of the network of the broker.
+
+To enable security for the JMX port, set the `type` parameter in the `authentication` field to `password`.
+
+.Example password-protected JMX configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    jmxOptions:
+      authentication:
+        type: "password"
+    # ...
+  zookeeper:
+    # ...
+----
+
+You can then deploy a pod into a cluster and obtain JMX metrics using the headless
+service by specifying which broker you want to address.
+
+For example, to get JMX metrics from broker _0_ you specify:
+
+[source,shell,subs="+quotes,attributes"]
+----
+"_CLUSTER-NAME_-kafka-0-_CLUSTER-NAME_-_HEADLESS-SERVICE-NAME_"
+----
+
+If the JMX port is secured, you can get the username and password by referencing them from the JMX secret in the
+deployment of your pod.
+
+For an unprotected JMX port, use an empty object `{}` to open the JMX Port on the headless service.
+You deploy a pod and obtain metrics in the same way as for the protected port, but in this case any pod can read from the JMX port.
+
+.Example open port JMX configuration
+
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    jmxOptions: {}
+    # ...
+  zookeeper:
+    # ...
+----
+
+[id='property-kafka-logging-{context}']
+=== `logging`
+
+Kafka has its own configurable loggers:
+
+* `log4j.logger.org.I0Itec.zkclient.ZkClient`
+* `log4j.logger.org.apache.zookeeper`
+* `log4j.logger.kafka`
+* `log4j.logger.org.apache.kafka`
+* `log4j.logger.kafka.request.logger`
+* `log4j.logger.kafka.network.Processor`
+* `log4j.logger.kafka.server.KafkaApis`
+* `log4j.logger.kafka.network.RequestChannel$`
+* `log4j.logger.kafka.controller`
+* `log4j.logger.kafka.log.LogCleaner`
+* `log4j.logger.state.change.logger`
+* `log4j.logger.kafka.authorizer.logger`
+
+Kafka uses the Apache `log4j` logger implementation.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+For more information about log levels, see {ApacheLoggers}.
+
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        kafka.root.logger.level: "INFO"
+  # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  # ...
+  logging:
+    type: external
+    name: customConfigMap
+  # ...
+----
+
+Any available loggers that are not configured have their level set to `OFF`.
+
+If Kafka was deployed using the Cluster Operator,
+changes to Kafka logging levels are applied dynamically.
+
+If you use external logging, a rolling update is triggered when logging appenders are changed.
+
+.Garbage collector (GC)
+
+Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].

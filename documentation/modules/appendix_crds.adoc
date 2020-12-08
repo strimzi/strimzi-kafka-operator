@@ -1097,6 +1097,11 @@ It must have the value `external` for the type `ExternalLogging`.
 
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
+include::../api/io.strimzi.api.kafka.model.TlsSidecar.adoc[leveloffset=+1]
+
+[id='type-TlsSidecar-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -1334,6 +1339,11 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
+include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset=+1]
+
+[id='type-ZookeeperClusterSpec-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -1475,6 +1485,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
+include::../api/io.strimzi.api.kafka.model.EntityTopicOperatorSpec.adoc[leveloffset=+1]
+
+[id='type-EntityTopicOperatorSpec-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
@@ -1507,6 +1522,11 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 ### `EntityUserOperatorSpec` schema reference
 
 Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
+
+include::../api/io.strimzi.api.kafka.model.EntityUserOperatorSpec.adoc[leveloffset=+1]
+
+[id='type-EntityUserOperatorSpec-schema-{context}']
+==== Schema reference
 
 
 [options="header"]
