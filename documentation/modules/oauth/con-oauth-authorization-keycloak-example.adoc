@@ -139,8 +139,7 @@ In this case, the access token represents the specific user, rather than the cli
 
 == Authorization in action using CLI clients
 
-A note of caution - this example uses the latest version of Keycloak, and relies on bugfixes of issues in some older versions.
-Let's make sure the Authorization rules have been properly imported when the Keycloak was started.
+Make sure that authorization rules have been properly imported.
 
 From menu:Clients[kafka>Authorization>Settings] make sure that *Decision Strategy* is set to *Affirmative*, and NOT to *Unanimous*.
 Navigate in Keycloak to check that the expected resources, authorization claims, policies and permissions are defined.
