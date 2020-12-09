@@ -753,6 +753,49 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
         }
 
+        /**
+         * Does rolling update of Kafka pods based on the annotation on Pod level
+         *
+         * @param sts   The Kafka StatefulSet definition needed for the rolling update
+         *
+         * @return  Future with the result of the rolling update
+         */
+        @SuppressWarnings("deprecation")
+        Future<Void> kafkaManualPodRollingUpdate(StatefulSet sts) {
+            return podOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                    .compose(pods -> {
+                        List<String> podsToRoll = new ArrayList<>(0);
+
+                        for (Pod pod : pods)    {
+                            if (Annotations.booleanAnnotation(pod, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                                    false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                                podsToRoll.add(pod.getMetadata().getName());
+                            }
+                        }
+
+                        if (!podsToRoll.isEmpty())  {
+                            return maybeRollKafka(sts, pod -> {
+                                if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
+                                    log.debug("{}: Rolling Kafka pod {} due to manual rolling update annotation on a pod", reconciliation, pod.getMetadata().getName());
+                                    return singletonList("manual rolling update annotation on a pod");
+                                } else {
+                                    return null;
+                                }
+                            });
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
+        }
+
+        /**
+         * Does manual rolling update of Kafka pods based on an annotation on the StatefulSet or on the Pods. Annotation
+         * on StatefulSet level triggers rolling update of all pods. Annotation on pods trigeres rolling update only of
+         * the selected pods. If the annotation is present on both StatefulSet and one or more pods, only one rolling
+         * update of all pods occurs.
+         *
+         * @return  Future with the result of the rolling update
+         */
         @SuppressWarnings("deprecation")
         Future<ReconciliationState> kafkaManualRollingUpdate() {
             Future<StatefulSet> futsts = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
@@ -761,22 +804,72 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (sts != null) {
                         if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
                                 false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                            // User trigger rolling update of the whole StatefulSet
                             return maybeRollKafka(sts, pod -> {
                                 if (pod == null) {
                                     throw new ConcurrentDeletionException("Unexpectedly pod no longer exists during roll of StatefulSet.");
                                 }
-                                log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
+                                log.debug("{}: Rolling Kafka pod {} due to manual rolling update annotation",
                                         reconciliation, pod.getMetadata().getName());
                                 return singletonList("manual rolling update");
                             });
+                        } else {
+                            // The STS is not annotated to roll all pods.
+                            // But maybe the individual pods are annotated to restart only some of them.
+                            return kafkaManualPodRollingUpdate(sts);
                         }
+                    } else {
+                        // STS does not exist => nothing to roll
+                        return Future.succeededFuture();
                     }
-                    return Future.succeededFuture();
                 }).map(i -> this);
             }
             return Future.succeededFuture(this);
         }
 
+        /**
+         * Does rolling update of Zoo pods based on the annotation on Pod level
+         *
+         * @param sts   The Zoo StatefulSet definition needed for the rolling update
+         *
+         * @return  Future with the result of the rolling update
+         */
+        @SuppressWarnings("deprecation")
+        Future<Void> zkManualPodRollingUpdate(StatefulSet sts) {
+            return podOperations.listAsync(namespace, zkCluster.getSelectorLabels())
+                    .compose(pods -> {
+                        List<String> podsToRoll = new ArrayList<>(0);
+
+                        for (Pod pod : pods)    {
+                            if (Annotations.booleanAnnotation(pod, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                                    false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                                podsToRoll.add(pod.getMetadata().getName());
+                            }
+                        }
+
+                        if (!podsToRoll.isEmpty())  {
+                            return zkSetOperations.maybeRollingUpdate(sts, pod -> {
+                                if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
+                                    log.debug("{}: Rolling ZooKeeper pod {} due to manual rolling update annotation on a pod", reconciliation, pod.getMetadata().getName());
+                                    return singletonList("manual rolling update annotation on a pod");
+                                } else {
+                                    return null;
+                                }
+                            });
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
+        }
+
+        /**
+         * Does manual rolling update of Zoo pods based on an annotation on the StatefulSet or on the Pods. Annotation
+         * on StatefulSet level triggers rolling update of all pods. Annotation on pods trigeres rolling update only of
+         * the selected pods. If the annotation is present on both StatefulSet and one or more pods, only one rolling
+         * update of all pods occurs.
+         *
+         * @return  Future with the result of the rolling update
+         */
         @SuppressWarnings("deprecation")
         Future<ReconciliationState> zkManualRollingUpdate() {
             Future<StatefulSet> futsts = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
@@ -785,16 +878,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (sts != null) {
                         if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
                                 false, Annotations.ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
-
+                            // User trigger rolling update of the whole StatefulSet
                             return zkSetOperations.maybeRollingUpdate(sts, pod -> {
-
                                 log.debug("{}: Rolling Zookeeper pod {} due to manual rolling update",
                                         reconciliation, pod.getMetadata().getName());
                                 return singletonList("manual rolling update");
                             });
+                        } else {
+                            // The STS is not annotated to roll all pods.
+                            // But maybe the individual pods are annotated to restart only some of them.
+                            return zkManualPodRollingUpdate(sts);
                         }
+                    } else {
+                        // STS does not exist => nothing to roll
+                        return Future.succeededFuture();
                     }
-                    return Future.succeededFuture();
                 }).map(i -> this);
             }
             return Future.succeededFuture(this);
