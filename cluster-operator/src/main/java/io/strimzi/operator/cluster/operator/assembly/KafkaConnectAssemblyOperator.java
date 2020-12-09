@@ -215,4 +215,20 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         return replacementPromise.future();
     }
+
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return super.delete(reconciliation)
+                .compose(i -> clusterRoleBindingOperations.reconcile(KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null))
+                .recover(error -> {
+                    if (error != null
+                            && error.getMessage() != null
+                            && error.getMessage().contains("Message: Forbidden!"))  {
+                        log.debug("Ignoring forbidden access to ClusterRoleBindings when attempting to delete resources.");
+                        return Future.succeededFuture();
+                    } else {
+                        return Future.failedFuture(error);
+                    }
+                })
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
 }

@@ -254,7 +254,7 @@ public abstract class AbstractOperator<
                     if (deleteResult) {
                         log.info("{}: {} {} deleted", reconciliation, kind, name);
                     } else {
-                        log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, name);
+                        log.info("{}: Assembly {} or some parts of it will be deleted by garbage collection", reconciliation, name);
                     }
                     return (Void) null;
                 }).recover(deleteResult -> {

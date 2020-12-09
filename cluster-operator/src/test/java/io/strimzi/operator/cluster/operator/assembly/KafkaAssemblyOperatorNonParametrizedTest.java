@@ -7,9 +7,11 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -19,6 +21,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -31,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -38,10 +42,13 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -296,6 +303,28 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testDeleteClusterRoleBindings(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
+        when(mockCrbOps.reconcile(eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), certManager, passwordGenerator,
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+
+        Checkpoint async = context.checkpoint();
+
+        op.delete(reconciliation)
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    assertThat(desiredCrb.getValue(), is(nullValue()));
+                    Mockito.verify(mockCrbOps, times(1)).reconcile(any(), any());
 
                     async.flag();
                 })));

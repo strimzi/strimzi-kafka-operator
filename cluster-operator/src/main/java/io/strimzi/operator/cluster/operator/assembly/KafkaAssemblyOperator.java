@@ -3711,4 +3711,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     protected KafkaStatus createStatus() {
         return new KafkaStatus();
     }
+
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return clusterRoleBindingOperations.reconcile(KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null)
+                .recover(error -> {
+                    if (error != null
+                            && error.getMessage() != null
+                            && error.getMessage().contains("Message: Forbidden!"))  {
+                        log.debug("Ignoring forbidden access to ClusterRoleBindings when attempting to delete resources.");
+                        return Future.succeededFuture();
+                    } else {
+                        return Future.failedFuture(error);
+                    }
+                })
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
 }
