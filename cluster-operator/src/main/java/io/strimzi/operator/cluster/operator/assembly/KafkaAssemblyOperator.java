@@ -785,23 +785,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         } else {
                             return Future.succeededFuture();
                         }
-
-                        /*Future<Void> podRoll = Future.succeededFuture();
-
-                        for (String podName : podsToRoll)   {
-                            podRoll = podRoll.compose(ignore -> {
-                                return maybeRollKafka(sts, pod -> {
-                                    if (pod != null && podName.equals(pod.getMetadata().getName())) {
-                                        log.debug("{}: Rolling Kafka pod {} due to manual rolling update annotation on a pod", reconciliation, podName);
-                                        return singletonList("manual rolling update annotation on a pod");
-                                    } else {
-                                        return null;
-                                    }
-                                });
-                            });
-                        }
-
-                        return withVoid(podRoll);*/
                     });
         }
 
