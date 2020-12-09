@@ -28,7 +28,7 @@ In this guide, the term _connector_ is used when the meaning is clear from the c
 
 //Procedure to deploy a Kafka Connect cluster
 include::modules/proc-deploy-kafka-connect.adoc[leveloffset=+1]
-//Procedure to deploy a Kafka Connect cluster
+//Running multiple Kafka Connect instances
 include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 //Options to deploy Kafka Connect with new container image
 include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
