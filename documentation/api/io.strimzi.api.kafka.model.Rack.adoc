@@ -62,7 +62,7 @@ The client is assigned a `client.rack` ID.
 so the client can consume from the nearest replica.
 
 .Example showing client consuming from replicas in the same availability zone
-image::rack-config-availability-zones.png[consuming from replicas in the same availability zone]
+image::rack-config-availability-zones.svg[consuming from replicas in the same availability zone]
 
 If there are multiple replicas in the same rack, `RackAwareReplicaSelector` always selects the most up-to-date replica.
 If the rack ID is not specified, or if it cannot find a replica with the same rack ID, it will fall back to the leader replica.
