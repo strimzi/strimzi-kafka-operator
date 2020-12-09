@@ -299,12 +299,16 @@ public class EntityTopicOperator extends AbstractModel {
                 .withNewMetadata()
                     .withName(roleBindingName(cluster))
                     .withNamespace(watchedNamespace)
-                    .withOwnerReferences(createOwnerReference())
                     .withLabels(labels.toMap())
                 .endMetadata()
                 .withRoleRef(roleRef)
                 .withSubjects(singletonList(ks))
                 .build();
+
+        // We set OwnerReference only within the same namespace since it does nto work cross-namespace
+        if (namespace.equals(watchedNamespace)) {
+            rb.getMetadata().setOwnerReferences(singletonList(createOwnerReference()));
+        }
 
         return rb;
     }
