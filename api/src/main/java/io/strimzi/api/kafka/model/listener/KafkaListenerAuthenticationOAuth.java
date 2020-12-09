@@ -283,7 +283,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.maxSecondsWithoutReauthentication = maxSecondsWithoutReauthentication;
     }
 
-    @Description("Enable or disable OAuth authentication over SASL_OAUTHBEARER." +
+    @Description("Enable or disable OAuth authentication over SASL_OAUTHBEARER. " +
             "Default value is `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isEnableOauthBearer() {
@@ -294,7 +294,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.enableOauthBearer = enableOauthBearer;
     }
 
-    @Description("Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used." +
+    @Description("Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. " +
             "Default value is `false`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isEnablePlain() {

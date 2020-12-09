@@ -278,12 +278,12 @@ spec:
                             enableOauthBearer:
                               type: boolean
                               description: Enable or disable OAuth authentication
-                                over SASL_OAUTHBEARER.Default value is `true`.
+                                over SASL_OAUTHBEARER. Default value is `true`.
                             enablePlain:
                               type: boolean
                               description: Enable or disable OAuth authentication
                                 over SASL_PLAIN. There is no re-authentication support
-                                when this mechanism is used.Default value is `false`.
+                                when this mechanism is used. Default value is `false`.
                             fallbackUserNameClaim:
                               type: string
                               description: The fallback username claim to be used

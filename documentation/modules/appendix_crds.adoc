@@ -285,9 +285,9 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |boolean
 |enableECDSA                        1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
 |boolean
-|enableOauthBearer                  1.2+<.<|Enable or disable OAuth authentication over SASL_OAUTHBEARER.Default value is `true`.
+|enableOauthBearer                  1.2+<.<|Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
 |boolean
-|enablePlain                        1.2+<.<|Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used.Default value is `false`.
+|enablePlain                        1.2+<.<|Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
 |boolean
 |fallbackUserNameClaim              1.2+<.<|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string
