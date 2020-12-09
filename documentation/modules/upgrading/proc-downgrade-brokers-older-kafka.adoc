@@ -12,21 +12,19 @@ This procedure describes how you can downgrade a Strimzi Kafka cluster to a lowe
 
 For the `Kafka` resource to be downgraded, check:
 
-* IMPORTANT: xref:com-target-downgrade-version-{context}[Compatibility of Kafka versions].
+* IMPORTANT: xref:con-target-downgrade-version-{context}[Compatibility of Kafka versions].
 * The Cluster Operator, which supports both versions of Kafka, is up and running.
 * The `Kafka.spec.kafka.config` does not contain options that are not supported by the Kafka version being downgraded to.
-* The `Kafka.spec.kafka.config` has a `log.message.format.version` that is supported by the Kafka version being downgraded to.
+* The `Kafka.spec.kafka.config` has a `log.message.format.version` and `inter.broker.protocol.version` that is supported by the Kafka version being downgraded to.
 
 .Procedure
 
-. Update the Kafka cluster configuration in an editor, as required:
-+
-Use `kubectl edit`:
+. Update the Kafka cluster configuration in an editor, as required.
 +
 [source,shell,subs=+quotes]
 kubectl edit kafka _my-cluster_
 
-.. Change the `Kafka.spec.kafka.version` to specify the previous version.
+. Change the `Kafka.spec.kafka.version` to specify the previous version.
 +
 For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
 +
@@ -40,14 +38,16 @@ spec:
     version: {KafkaVersionLower} <1>
     config:
       log.message.format.version: "{LogMsgVersLower}" <2>
+      inter.broker.protocol.version: "{LogMsgVersLower}" <3>
       # ...
 ----
-<1> This is changed to the previous version
-<2> This is unchanged
+<1> Kafka version is changed to the previous version.
+<2> Message format version is unchanged.
+<3> Inter-broker protocol version is unchanged.
 +
-NOTE: You must format the value of `log.message.format.version` as a string to prevent it from being interpreted as a floating point number.
+NOTE: You must format the value of `log.message.format.version` and `inter.broker.protocol.version` as a string to prevent it from being interpreted as a floating point number.
 
-.. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
+. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
 +
 See xref:con-versions-and-images-str[]
 
@@ -57,7 +57,7 @@ Check the update in the logs or by watching the pod state transitions:
 +
 [source,shell,subs=+quotes]
 ----
-kubectl logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
+kubectl logs -f _CLUSTER-OPERATOR-POD-NAME_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
 +
 [source,shell,subs=+quotes]
@@ -65,21 +65,13 @@ kubectl logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade
 kubectl get po -w
 ----
 +
-====
-If the previous and current versions of Kafka have different interbroker protocol versions, check the Cluster Operator logs for an `INFO` level message:
-
-[source,shell,subs=+quotes]
-----
-Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed
-----
-Alternatively, if the previous and current versions of Kafka have the same interbroker protocol version, check for:
-
-[source,shell,subs=+quotes]
-----
-Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed
-----
-====
+Check the Cluster Operator logs for an `INFO` level message:
 +
+[source,shell,subs=+quotes]
+----
+Reconciliation #_NUM_(watch) Kafka(_NAMESPACE_/_NAME_): Kafka version downgrade from _FROM-VERSION_ to _TO-VERSION_, phase 1 of 1 completed
+----
+
 . Downgrade all client applications (consumers) to use the previous version of the client binaries.
 +
 The Kafka cluster and clients are now using the previous Kafka version.
