@@ -1197,7 +1197,7 @@ class ConnectST extends AbstractST {
             .withHostnames(aliasHostname)
             .build();
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewPod()

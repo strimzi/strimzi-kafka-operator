@@ -248,7 +248,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testConnectLogSetting() {
-        KafkaConnectResource.kafkaConnect(CONNECT_NAME, CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(CONNECT_NAME, CLUSTER_NAME, 1, true)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)

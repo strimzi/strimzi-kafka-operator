@@ -86,18 +86,31 @@ public class KafkaConnectUtils {
     }
 
     /**
-     * Wait for designated Kafka Connect pod condition type and reason to happen.
+     * Wait for designated Kafka Connect resource condition type and reason to happen.
      * @param conditionReason String regexp of condition reason
      * @param conditionType String regexp of condition type
      * @param namespace namespace name
      * @param clusterName cluster name
      */
-    public static void waitForPodCondition(String conditionReason, String conditionType, String namespace, String clusterName) {
+    public static void waitForKafkaConnectCondition(String conditionReason, String conditionType, String namespace, String clusterName) {
         TestUtils.waitFor("Wait for KafkaConnect '" + conditionReason + "' condition with type '" + conditionType + "'.",
                 Constants.GLOBAL_POLL_INTERVAL, CO_OPERATION_TIMEOUT_SHORT * 2, () -> {
                 List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     if (condition.getReason().matches(conditionReason) && condition.getType().matches(conditionType)) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+    }
+
+    public static void waitUntilKafkaConnectStatusConditionContainsMessage(String clusterName, String namespace, String message) {
+        TestUtils.waitFor("KafkaConnect Status with message [" + message + "]",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
+                for (Condition condition : conditions) {
+                    if (condition.getMessage().matches(message)) {
                         return true;
                     }
                 }
