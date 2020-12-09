@@ -11,13 +11,19 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Operations for {@code Service}s.
  */
 public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> {
+    private static final String CATTLE_ANNOTATION_SEED = "cattle.io";
 
     private final EndpointOperator endpointOperations;
     /**
@@ -58,6 +64,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                         || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType())))   {
                     patchNodePorts(current, desired);
                     patchHealthCheckPorts(current, desired);
+                    patchCattleAnnotations(current, desired);
                 }
 
                 patchIpFamily(current, desired);
@@ -67,6 +74,31 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
+        }
+    }
+
+    /**
+     * Finds annotations managed by the Rancher cattle agents (if any), and merge them into the desired spec.
+     *
+     * This makes sure there is no infinite loop where Rancher tries to add annotations, while Rancher keeps
+     * removing them during reconciliation.
+     *
+     * @param current   Current Service
+     * @param desired   Desired Service
+     */
+    private void patchCattleAnnotations(Service current, Service desired) {
+        Map<String, String> currentAnnotations = current.getMetadata().getAnnotations();
+        if (currentAnnotations != null) {
+            Map<String, String> cattleAnnotations = currentAnnotations.keySet().stream()
+                    .filter(annotation -> annotation.contains(CATTLE_ANNOTATION_SEED))
+                    .collect(Collectors.toMap(Function.identity(), currentAnnotations::get));
+
+            if (!cattleAnnotations.isEmpty()) {
+                desired.getMetadata().setAnnotations(Util.mergeLabelsOrAnnotations(
+                        desired.getMetadata().getAnnotations(),
+                        cattleAnnotations
+                ));
+            }
         }
     }
 
