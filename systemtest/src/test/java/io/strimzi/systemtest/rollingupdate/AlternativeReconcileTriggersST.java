@@ -20,7 +20,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -88,7 +87,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBridgeExampleClients.Builder()
+        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))

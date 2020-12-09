@@ -12,7 +12,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,7 +62,7 @@ public class ClusterOperationST extends AbstractST {
         KafkaBasicExampleClients kafkaBasicClientResource;
 
         for (int i = 0; i < size; i++) {
-            kafkaBasicClientResource = new KafkaBridgeExampleClients.Builder()
+            kafkaBasicClientResource = new KafkaBasicExampleClients.Builder()
                 .withProducerName(producerNames.get(i))
                 .withConsumerName(consumerNames.get(i))
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
