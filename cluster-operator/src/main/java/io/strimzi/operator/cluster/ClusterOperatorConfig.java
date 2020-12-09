@@ -231,8 +231,8 @@ public class ClusterOperatorConfig {
         CLUSTER(),
         NAMESPACE();
 
-        public boolean canUseRoles() {
-            return this.equals(RbacScope.NAMESPACE);
+        public boolean canUseClusterRoles() {
+            return this.equals(RbacScope.CLUSTER);
         }
     }
 

@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -337,18 +336,12 @@ public class EntityUserOperator extends AbstractModel {
                 .withKind("ClusterRole")
                 .build();
 
-        RoleBinding rb = new RoleBindingBuilder()
-                .withNewMetadata()
-                    .withName(roleBindingForClusterRoleName(cluster))
-                    .withNamespace(watchedNamespace)
-                    .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
-                .endMetadata()
-                .withRoleRef(roleRef)
-                .withSubjects(singletonList(ks))
-                .build();
-
-        return rb;
+        return generateRoleBinding(
+                roleBindingForClusterRoleName(cluster),
+                watchedNamespace,
+                roleRef,
+                singletonList(ks)
+        );
     }
 
     @Override
@@ -369,18 +362,14 @@ public class EntityUserOperator extends AbstractModel {
                 .withKind("Role")
                 .build();
 
+        RoleBinding rb = generateRoleBinding(
+                roleBindingForRoleName(cluster),
+                watchedNamespace,
+                roleRef,
+                singletonList(ks)
+        );
 
-        RoleBinding rb = new RoleBindingBuilder()
-                .withNewMetadata()
-                    .withName(roleBindingForRoleName(cluster))
-                    .withNamespace(watchedNamespace)
-                    .withLabels(labels.toMap())
-                .endMetadata()
-                .withRoleRef(roleRef)
-                .withSubjects(singletonList(ks))
-                .build();
-
-        // We set OwnerReference only within the same namespace since it does nto work cross-namespace
+        // We set OwnerReference only within the same namespace since it does not work cross-namespace
         if (namespace.equals(watchedNamespace)) {
             rb.getMetadata().setOwnerReferences(singletonList(createOwnerReference()));
         }

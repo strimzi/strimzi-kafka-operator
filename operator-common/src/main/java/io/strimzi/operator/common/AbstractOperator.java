@@ -528,16 +528,16 @@ public abstract class AbstractOperator<
      */
     public Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
         return reconcileFuture.compose(
-                rr -> Future.succeededFuture(),
-                e -> {
-                    if (desired == null
-                            && e.getMessage() != null
-                            && e.getMessage().contains("Message: Forbidden!")) {
-                        log.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
-                        return Future.succeededFuture();
-                    }
-                    return Future.failedFuture(e.getMessage());
+            rr -> Future.succeededFuture(),
+            e -> {
+                if (desired == null
+                        && e.getMessage() != null
+                        && e.getMessage().contains("Message: Forbidden!")) {
+                    log.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
+                    return Future.succeededFuture();
                 }
+                return Future.failedFuture(e.getMessage());
+            }
         );
     }
 }

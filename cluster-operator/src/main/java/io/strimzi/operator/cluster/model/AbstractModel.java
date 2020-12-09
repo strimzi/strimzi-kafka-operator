@@ -54,6 +54,8 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -1382,6 +1384,19 @@ public abstract class AbstractModel {
                     .addToLabels(labels.toMap())
                 .endMetadata()
                 .withRules(rules)
+                .build();
+    }
+
+    public RoleBinding generateRoleBinding(String name, String namespace, RoleRef roleRef, List<Subject> subjects) {
+        return new RoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(subjects)
                 .build();
     }
 

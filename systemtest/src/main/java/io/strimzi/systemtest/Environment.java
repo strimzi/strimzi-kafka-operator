@@ -89,7 +89,7 @@ public class Environment {
      * CO Roles only mode.
      */
     private static final String STRIMZI_RBAC_SCOPE_ENV = "STRIMZI_RBAC_SCOPE";
-    private static final String STRIMZI_RBAC_SCOPE_DEFAULT = "cluster";
+    private static final String STRIMZI_RBAC_SCOPE_DEFAULT = "CLUSTER";
     /**
      * OLM env variables
      */
@@ -180,7 +180,7 @@ public class Environment {
     }
 
     public static boolean isNamespaceRbacScope() {
-        return "namespace".equals(STRIMZI_RBAC_SCOPE);
+        return "NAMESPACE".equals(STRIMZI_RBAC_SCOPE);
     }
 
     public static boolean useLatestReleasedBridge() {

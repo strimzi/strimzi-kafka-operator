@@ -50,6 +50,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -185,6 +187,8 @@ public class KafkaAssemblyOperatorRbacScopeTest {
 
                     assertThat(roleBindingNames.get(3), is("strimzi-test-instance-entity-user-operator"));
                     assertThat(roleBindings.get(3), is(nullValue()));
+
+                    verify(supplier.clusterRoleBindingOperator, never()).reconcile(anyString(), any());
 
                     async.flag();
                 })));
@@ -474,12 +478,10 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     List<String> clusterRoleBindingNames = clusterRoleBindingNameCaptor.getAllValues();
                     List<ClusterRoleBinding> clusterRoleBindings = clusterRoleBindingCaptor.getAllValues();
 
-                    assertThat(clusterRoleBindingNames, hasSize(1));
-                    assertThat(clusterRoleBindings, hasSize(1));
+                    assertThat(clusterRoleBindingNames, hasSize(0));
+                    assertThat(clusterRoleBindings, hasSize(0));
 
-                    // Check all ClusterRoleBindings, easier to index by order applied
-                    assertThat(clusterRoleBindingNames.get(0), is("strimzi-test-ns-test-instance-kafka-init"));
-                    assertThat(clusterRoleBindings.get(0), is(nullValue()));
+                    verify(supplier.clusterRoleBindingOperator, never()).reconcile(anyString(), any());
 
                     async.flag();
                 })));

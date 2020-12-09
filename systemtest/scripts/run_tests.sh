@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TESTCASE=${1:-.*ST}
@@ -9,12 +10,23 @@ function run_test() {
     PROFILE=${2:-systemtests}
 
     if [[ -n "${TESTCASE}" ]]; then
-        EXTRA_TEST_ARGS="-Dit.test=${TESTCASE}"
+        # Concatenate user specified EXTRA_TEST_ARGS if supplied
+        EXTRA_TEST_ARGS="-Dit.test=${TESTCASE} ${EXTRA_TEST_ARGS}"
     fi
 
     echo "Extra args for tests: ${EXTRA_TEST_ARGS}"
 
-    pushd "${SCRIPT_DIR}"/../.. && mvn -B verify -pl systemtest -am -P"${PROFILE}" -Djava.net.preferIPv4Stack=true -DfailIfNoTests=false -Djansi.force=true -Dstyle.color=always -DtrimStackTrace=false "${EXTRA_TEST_ARGS}"
+    pushd "${SCRIPT_DIR}"/../.. && \
+    mvn -B verify \
+      -pl systemtest \
+      -am \
+      -P"${PROFILE}" \
+      -Djava.net.preferIPv4Stack=true \
+      -DfailIfNoTests=false \
+      -Djansi.force=true \
+      -Dstyle.color=always \
+      -DtrimStackTrace=false \
+      ${EXTRA_TEST_ARGS}
     popd || exit
 }
 

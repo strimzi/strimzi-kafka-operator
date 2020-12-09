@@ -57,6 +57,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
     private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2IOperations;
+    private final ClusterOperatorConfig.RbacScope rbacScope;
 
     /**
      * @param vertx The Vertx instance
@@ -86,6 +87,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         this.networkPolicyOperator = supplier.networkPolicyOperator;
 
         this.versions = config.versions();
+        this.rbacScope = config.getRbacScope();
     }
 
     @Override
@@ -188,6 +190,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return                  Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
      */
     Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connectCluster) {
+        if (!rbacScope.canUseClusterRoles()) {
+            log.debug("Using STRIMZI_RBAC_SCOPE set to namespace requires user to apply ClusterRole and ClusterRoleBinding manually");
+            return Future.succeededFuture();
+        }
+        
         ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding();
 
         return withIgnoreRbacError(

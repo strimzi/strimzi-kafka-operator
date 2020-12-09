@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -71,10 +72,12 @@ public class MultipleListenersST extends AbstractST {
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
         List<GenericKafkaListener> internalListeners = testCases.get(KafkaListenerType.INTERNAL);
-        List<GenericKafkaListener> nodeportListeners = testCases.get(KafkaListenerType.NODEPORT);
-
         multipleDifferentListeners.addAll(internalListeners);
-        multipleDifferentListeners.addAll(nodeportListeners);
+
+        if (!Environment.isNamespaceRbacScope()) {
+            List<GenericKafkaListener> nodeportListeners = testCases.get(KafkaListenerType.NODEPORT);
+            multipleDifferentListeners.addAll(nodeportListeners);
+        }
 
         // run INTERNAL + NODEPORT listeners
         runListenersTest(multipleDifferentListeners);

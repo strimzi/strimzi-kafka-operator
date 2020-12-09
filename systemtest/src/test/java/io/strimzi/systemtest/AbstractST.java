@@ -174,6 +174,7 @@ public abstract class AbstractST implements TestSeparator {
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
             if (Environment.isNamespaceRbacScope()) {
+                LOGGER.info("as Role");
                 switchClusterRolesToRoles(entry.getValue());
             }
             clusterOperatorConfigs.push(entry.getKey().getPath());
