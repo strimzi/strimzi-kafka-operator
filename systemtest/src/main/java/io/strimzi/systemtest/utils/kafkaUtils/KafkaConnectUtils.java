@@ -110,7 +110,7 @@ public class KafkaConnectUtils {
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
                 List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
-                    if (condition.getMessage().contains(message)) {
+                    if (condition.getMessage().matches(message)) {
                         return true;
                     }
                 }
