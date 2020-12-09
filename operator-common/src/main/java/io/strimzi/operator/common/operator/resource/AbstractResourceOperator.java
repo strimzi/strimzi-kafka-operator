@@ -230,6 +230,9 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return The resource, or null if it doesn't exist.
      */
     public T get(String namespace, String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException(resourceKind + " with an empty name cannot be configured. Please provide a name.");
+        }
         return operation().inNamespace(namespace).withName(name).get();
     }
 

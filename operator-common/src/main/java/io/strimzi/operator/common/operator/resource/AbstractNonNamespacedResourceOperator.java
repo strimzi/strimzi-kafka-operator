@@ -198,6 +198,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return The resource, or null if it doesn't exist.
      */
     public T get(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException(resourceKind + " with an empty name cannot be configured. Please provide a name.");
+        }
         return operation().withName(name).get();
     }
 
@@ -207,6 +210,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return A Future for the result.
      */
     public Future<T> getAsync(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException(resourceKind + " with an empty name cannot be configured. Please provide a name.");
+        }
         return resourceSupport.getAsync(operation().withName(name));
     }
 
