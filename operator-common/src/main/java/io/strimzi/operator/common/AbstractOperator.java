@@ -34,9 +34,9 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -390,7 +390,7 @@ public abstract class AbstractOperator<
      */
     /*test*/ Set<Condition> validate(T resource) {
         if (resource != null) {
-            Set<Condition> warningConditions = new HashSet<>(0);
+            Set<Condition> warningConditions = new LinkedHashSet<>(0);
 
             ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
 
