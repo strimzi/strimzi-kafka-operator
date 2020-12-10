@@ -93,10 +93,8 @@ public class ListenersValidator {
                     }
                 }
 
-                if (listener.getConfiguration().getBrokerCertChainAndKey() != null
-                    && (listener.getConfiguration().getBrokerCertChainAndKey().getSecretName() == null
-                    || listener.getConfiguration().getBrokerCertChainAndKey().getSecretName().isEmpty())) {
-                    errors.add("listener '" + listener.getName() + "' cannot have empty secret name in the brokerCertChainAndKey");
+                if (listener.getConfiguration().getBrokerCertChainAndKey() != null) {
+                    validateBrokerCertChainAndKey(errors, listener);
                 }
             }
 
@@ -107,6 +105,29 @@ public class ListenersValidator {
 
         return errors;
     }
+    /**
+     * Validates that the listener has a BrokerCertChainAndKey with non-empty values
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validateBrokerCertChainAndKey(Set<String> errors, GenericKafkaListener listener) {
+        if (listener.getConfiguration().getBrokerCertChainAndKey().getSecretName() == null
+                || listener.getConfiguration().getBrokerCertChainAndKey().getSecretName().isEmpty()) {
+            errors.add("listener '" + listener.getName() + "' cannot have empty secret name in the brokerCertChainAndKey");
+        }
+
+        if (listener.getConfiguration().getBrokerCertChainAndKey().getKey() == null
+                || listener.getConfiguration().getBrokerCertChainAndKey().getKey().isEmpty()) {
+            errors.add("listener '" + listener.getName() + "' cannot have empty key in the brokerCertChainAndKey");
+        }
+
+        if (listener.getConfiguration().getBrokerCertChainAndKey().getCertificate() == null
+                || listener.getConfiguration().getBrokerCertChainAndKey().getCertificate().isEmpty()) {
+            errors.add("listener '" + listener.getName() + "' cannot have empty certificate in the brokerCertChainAndKey");
+        }
+    }
+
 
     /**
      * Validates that the listener has an allowed port number
