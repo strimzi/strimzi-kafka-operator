@@ -216,6 +216,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return replacementPromise.future();
     }
 
+    @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return super.delete(reconciliation)
                 .compose(i -> clusterRoleBindingOperations.reconcile(KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null))

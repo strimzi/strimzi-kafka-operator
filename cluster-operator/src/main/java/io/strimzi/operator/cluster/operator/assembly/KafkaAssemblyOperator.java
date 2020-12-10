@@ -3712,6 +3712,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return new KafkaStatus();
     }
 
+    @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return clusterRoleBindingOperations.reconcile(KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null)
                 .recover(error -> {
