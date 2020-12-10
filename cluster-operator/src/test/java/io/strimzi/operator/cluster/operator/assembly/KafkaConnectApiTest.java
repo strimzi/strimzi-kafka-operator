@@ -254,7 +254,7 @@ public class KafkaConnectApiTest {
 
     @Test
     public void testChangeLoggers(VertxTestContext context) throws InterruptedException {
-        String desired = "log4j.rootLogger=INFO, CONSOLE\n" +
+        String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
                 "log4j.logger.org.apache.zookeeper=WARN\n" +
                 "log4j.logger.org.I0Itec.zkclient=INFO\n" +
                 "log4j.logger.org.reflections.Reflection=INFO\n" +
@@ -274,8 +274,8 @@ public class KafkaConnectApiTest {
                             assertThat(map.get("org.I0Itec.zkclient").get("level"), is("INFO"));
                             assertThat(map.get("org.reflections").get("level"), is("FATAL"));
                             assertThat(map.get("org.reflections.Reflection").get("level"), is("INFO"));
-                            assertThat(map.get("root").get("level"), is("INFO"));
-                            assertThat(map.get("io.debezium").get("level"), is("INFO"));
+                            assertThat(map.get("root").get("level"), is("TRACE"));
+                            assertThat(map.get("io.debezium").get("level"), is("TRACE"));
                             assertThat(map.get("unknown"), is(nullValue()));
                             async.flag();
                         }))));
