@@ -115,7 +115,7 @@ public abstract class AbstractST implements TestSeparator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      * @param namespace namespace where CO should be installed into
      */
-    protected void installClusterOperator(String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
+    protected void installClusterOperator(String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval, List<EnvVar> customEnvs) {
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
             cluster.setNamespace(namespace);
@@ -131,19 +131,27 @@ public abstract class AbstractST implements TestSeparator {
             prepareEnvForOperator(namespace, bindingsNamespaces);
             applyRoleBindings(namespace, bindingsNamespaces);
             // 060-Deployment
-            BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
+            BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval, customEnvs).done();
         }
     }
 
-    protected void installClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) throws Exception {
-        installClusterOperator(namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
+    protected void installClusterOperator(String namespace, long operationTimeout, long reconciliationInterval, List<EnvVar> customEnvs) {
+        installClusterOperator(namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval, customEnvs);
     }
 
-    protected void installClusterOperator(String namespace, long operationTimeout) throws Exception {
-        installClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    protected void installClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+        installClusterOperator(namespace, operationTimeout, reconciliationInterval, Collections.emptyList());
     }
 
-    protected void installClusterOperator(String namespace) throws Exception {
+    protected void installClusterOperator(String namespace, long operationTimeout, List<EnvVar> customEnvs) {
+        installClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL, customEnvs);
+    }
+
+    protected void installClusterOperator(String namespace, long operationTimeout) {
+        installClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL, Collections.emptyList());
+    }
+
+    protected void installClusterOperator(String namespace) {
         installClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
