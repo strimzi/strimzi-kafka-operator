@@ -78,11 +78,9 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
 
-        ConfigMap loggingCm = bridge.getLogging() instanceof ExternalLogging ?
-                configMapOperations.get(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
-                null;
-
-        ConfigMap logAndMetricsConfigMap = bridge.generateMetricsAndLogConfigMap(loggingCm, null);
+        Future<ConfigMap> loggingCmFut = bridge.getLogging() instanceof ExternalLogging ?
+                configMapOperations.getAsync(namespace, ((ExternalLogging) bridge.getLogging()).getName()) :
+                Future.succeededFuture(null);
 
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
@@ -91,7 +89,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
-            .compose(i -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), logAndMetricsConfigMap))
+            .compose(i -> loggingCmFut)
+            .compose(loggingCm -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(loggingCm, null)))
             .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
             .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(Collections.emptyMap(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
