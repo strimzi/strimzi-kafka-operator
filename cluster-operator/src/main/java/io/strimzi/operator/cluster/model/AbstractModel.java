@@ -1233,7 +1233,7 @@ public abstract class AbstractModel {
     protected void jvmPerformanceOptions(List<EnvVar> envVars) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
 
-        Boolean isServer = jvmOptions != null ? jvmOptions.isServer() : null;
+        Boolean isServer = jvmOptions != null ? jvmOptions.getServer() : null;
         if (isServer != null && isServer) {
             jvmPerformanceOpts.append("-server");
         }

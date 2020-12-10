@@ -360,7 +360,7 @@ public class EntityOperator extends AbstractModel {
             strimziJavaOpts.append(" -Xmx").append(xmx);
         }
 
-        Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
+        Boolean server = jvmOptions != null ? jvmOptions.getServer() : null;
 
         if (server != null && server) {
             strimziJavaOpts.append(' ').append(" -server");

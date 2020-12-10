@@ -1011,6 +1011,8 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 |string
 |-Xmx                  1.2+<.<|-Xmx option to to the JVM.
 |string
+|-server               1.2+<.<|-server option to to the JVM.
+|boolean
 |gcLoggingEnabled      1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is false.
 |boolean
 |javaSystemProperties  1.2+<.<|A map of additional system properties which will be passed using the `-D` option to the JVM.

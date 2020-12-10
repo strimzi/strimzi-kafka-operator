@@ -61,7 +61,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
 
     @JsonProperty("-server")
     @Description("-server option to to the JVM")
-    public Boolean isServer() {
+    public Boolean getServer() {
         return server;
     }
 

@@ -1411,6 +1411,9 @@ spec:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
+                    "-server":
+                      type: boolean
+                      description: -server option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -2667,6 +2670,9 @@ spec:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
+                    "-server":
+                      type: boolean
+                      description: -server option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -3713,6 +3719,9 @@ spec:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
+                    "-server":
+                      type: boolean
+                      description: -server option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -3890,6 +3899,9 @@ spec:
                           type: string
                           pattern: '[0-9]+[mMgG]?'
                           description: -Xmx option to to the JVM.
+                        "-server":
+                          type: boolean
+                          description: -server option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -4015,6 +4027,9 @@ spec:
                           type: string
                           pattern: '[0-9]+[mMgG]?'
                           description: -Xmx option to to the JVM.
+                        "-server":
+                          type: boolean
+                          description: -server option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
                           description: Specifies whether the Garbage Collection logging is enabled. The default is false.
@@ -5089,6 +5104,9 @@ spec:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
                       description: -Xmx option to to the JVM.
+                    "-server":
+                      type: boolean
+                      description: -server option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
                       description: Specifies whether the Garbage Collection logging is enabled. The default is false.
