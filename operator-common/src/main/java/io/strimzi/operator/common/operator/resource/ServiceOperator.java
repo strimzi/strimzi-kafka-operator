@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_WHITELIST;
+
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
@@ -23,7 +25,6 @@ import java.util.stream.Collectors;
  * Operations for {@code Service}s.
  */
 public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> {
-    private static final String CATTLE_ANNOTATION_SEED = "cattle.io";
 
     private final EndpointOperator endpointOperations;
     /**
@@ -64,7 +65,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                         || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType())))   {
                     patchNodePorts(current, desired);
                     patchHealthCheckPorts(current, desired);
-                    patchCattleAnnotations(current, desired);
+                    patchAnnotations(current, desired);
                 }
 
                 patchIpFamily(current, desired);
@@ -86,17 +87,17 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param current   Current Service
      * @param desired   Desired Service
      */
-    private void patchCattleAnnotations(Service current, Service desired) {
+    private void patchAnnotations(Service current, Service desired) {
         Map<String, String> currentAnnotations = current.getMetadata().getAnnotations();
         if (currentAnnotations != null) {
-            Map<String, String> cattleAnnotations = currentAnnotations.keySet().stream()
-                    .filter(annotation -> annotation.contains(CATTLE_ANNOTATION_SEED))
+            Map<String, String> matchedAnnotations = currentAnnotations.keySet().stream()
+                    .filter(annotation -> LOADBALANCER_ANNOTATION_WHITELIST.stream().anyMatch(whitelist -> whitelist.test(annotation)))
                     .collect(Collectors.toMap(Function.identity(), currentAnnotations::get));
 
-            if (!cattleAnnotations.isEmpty()) {
+            if (!matchedAnnotations.isEmpty()) {
                 desired.getMetadata().setAnnotations(Util.mergeLabelsOrAnnotations(
                         desired.getMetadata().getAnnotations(),
-                        cattleAnnotations
+                        matchedAnnotations
                 ));
             }
         }
