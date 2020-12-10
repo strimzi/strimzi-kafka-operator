@@ -16,7 +16,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collections;
 import java.util.List;
 
 public class BundleResource {
@@ -25,30 +24,22 @@ public class BundleResource {
     public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
     public static DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL, Collections.emptyList()).build());
-    }
-
-    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout, List<EnvVar> customEnvs) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL, customEnvs).build());
+        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());
     }
 
     public static DoneableDeployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, reconciliationInterval, Collections.emptyList()).build());
-    }
-
-    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval, List<EnvVar> customEnvs) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, reconciliationInterval, customEnvs).build());
+        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, reconciliationInterval).build());
     }
 
     public static DoneableDeployment clusterOperator(String namespace) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, Collections.emptyList()).build());
+        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
     }
 
     public static DeploymentBuilder defaultClusterOperator(String namespace) {
-        return defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, Collections.emptyList());
+        return defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    private static DeploymentBuilder defaultClusterOperator(String namespace, long operationTimeout, long reconciliationInterval, List<EnvVar> customEnvs) {
+    private static DeploymentBuilder defaultClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
 
         Deployment clusterOperator = KubernetesResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
 
@@ -83,10 +74,6 @@ public class BundleResource {
 
         envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
         envVars.add(new EnvVar("STRIMZI_LOG_LEVEL", Environment.STRIMZI_LOG_LEVEL, null));
-
-        if (envVars.size() != 0) {
-            envVars.addAll(customEnvs);
-        }
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 

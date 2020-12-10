@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -235,7 +234,20 @@ public class NetworkPoliciesST extends AbstractST {
             .withValue(NAMESPACE)
             .build();
 
-        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Collections.singletonList(operatorNamespaceEnv));
+        prepareEnvForOperator(NAMESPACE);
+        applyRoleBindings(NAMESPACE);
+        // 060-Deployment
+        BundleResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .editOrNewSpec()
+                .editOrNewTemplate()
+                    .editOrNewSpec()
+                        .editContainer(0)
+                            .addToEnv(operatorNamespaceEnv)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .done();
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -268,7 +280,17 @@ public class NetworkPoliciesST extends AbstractST {
         clusterRoleBindingList.forEach(clusterRoleBinding ->
             KubernetesResource.clusterRoleBinding(clusterRoleBinding, NAMESPACE));
         // 060-Deployment
-        BundleResource.clusterOperator("*", Constants.CO_OPERATION_TIMEOUT_DEFAULT, Collections.singletonList(operatorLabelsEnv)).done();
+        BundleResource.clusterOperator("*", Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .editOrNewSpec()
+                .editOrNewTemplate()
+                    .editOrNewSpec()
+                        .editContainer(0)
+                            .addToEnv(operatorLabelsEnv)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .done();
 
         kubeClient().getClient().namespaces().withName(NAMESPACE).edit()
             .editMetadata()
