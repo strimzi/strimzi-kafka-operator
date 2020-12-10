@@ -92,6 +92,12 @@ public class ListenersValidator {
                         validateBrokerDnsAnnotations(errors, listener, broker);
                     }
                 }
+
+                if (listener.getConfiguration().getBrokerCertChainAndKey() != null
+                    && listener.getConfiguration().getBrokerCertChainAndKey().getSecretName() == null
+                    || listener.getConfiguration().getBrokerCertChainAndKey().getSecretName().isEmpty()) {
+                    errors.add("listener '" + listener.getName() + "' cannot have empty secret name in the brokerCertChainAndKey");
+                }
             }
 
             if (KafkaListenerType.INGRESS.equals(listener.getType()))    {
