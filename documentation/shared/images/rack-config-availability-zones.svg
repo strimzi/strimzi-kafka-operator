@@ -1,0 +1,407 @@
+<svg id="bdbd798e-878f-4792-bd96-6d7589336155" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="760" height="472.785" viewBox="0 0 760 472.785">
+  <defs>
+    <style>
+      .a33bd741-c013-42b6-99da-44277f19de1c, .a8b9b642-b467-41e3-84c6-c28f8f263d26, .a936556c-9039-4e3d-86a0-189dd5ce489a, .be085ef8-2779-494c-9cc6-178611f2b94b, .e3dcfffc-b728-41d2-a5dc-111e35fa3a19, .e58fb66d-bc02-46b4-bca2-08d160faa729 {
+        fill: none;
+      }
+
+      .a33bd741-c013-42b6-99da-44277f19de1c, .be085ef8-2779-494c-9cc6-178611f2b94b, .e58fb66d-bc02-46b4-bca2-08d160faa729 {
+        stroke: #adadad;
+      }
+
+      .a33bd741-c013-42b6-99da-44277f19de1c, .a936556c-9039-4e3d-86a0-189dd5ce489a, .be085ef8-2779-494c-9cc6-178611f2b94b, .e3dcfffc-b728-41d2-a5dc-111e35fa3a19, .e58fb66d-bc02-46b4-bca2-08d160faa729 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .be085ef8-2779-494c-9cc6-178611f2b94b {
+        stroke-dasharray: 3.019 3.019;
+      }
+
+      .e58fb66d-bc02-46b4-bca2-08d160faa729 {
+        stroke-dasharray: 2.992 2.992;
+      }
+
+      .fdacb085-c204-49d2-8c2a-1aa18c6c2d9f {
+        fill: #e8e8e8;
+      }
+
+      .a2447e2e-a0af-4785-b080-4bf300685c23, .bc2c4bae-2174-4bc2-8d1f-ecf212e48099 {
+        fill: #fff;
+      }
+
+      .b0cdb549-4514-41f8-934c-648cb5f1ece9, .bc2c4bae-2174-4bc2-8d1f-ecf212e48099, .f64b3c63-7324-47db-9bcc-d5ee3d35c102 {
+        font-size: 12px;
+      }
+
+      .b0cdb549-4514-41f8-934c-648cb5f1ece9, .b48b9f2a-e049-460a-bcff-580b033fb8e7, .f64b3c63-7324-47db-9bcc-d5ee3d35c102 {
+        fill: #151515;
+      }
+
+      .b0cdb549-4514-41f8-934c-648cb5f1ece9, .bc2c4bae-2174-4bc2-8d1f-ecf212e48099 {
+        font-family: RedHatText-Medium, Red Hat Text;
+        font-weight: 500;
+      }
+
+      .b634c262-dd65-45a9-94b9-3bdb17ab81b7 {
+        letter-spacing: -0.087em;
+      }
+
+      .a5c65135-2d6c-433b-bafa-36f06221b099 {
+        letter-spacing: 0.004em;
+      }
+
+      .aae405f4-702e-49cd-91c1-8c4b01983a24 {
+        letter-spacing: 0.002em;
+      }
+
+      .eaf1d1f7-2b5c-4c97-a590-6d403c4e510f {
+        fill: #d9e8f7;
+      }
+
+      .aa0f47b7-aa0f-401d-82e4-48233afe27a6 {
+        fill: #06c;
+      }
+
+      .a936556c-9039-4e3d-86a0-189dd5ce489a {
+        stroke: #06c;
+      }
+
+      .f86fa5f6-9ad0-4f23-b8b2-cae462b189cc {
+        letter-spacing: -0.021em;
+      }
+
+      .b1b4d78b-b6fb-4dc1-a90d-751ee28dfea7 {
+        letter-spacing: 0.002em;
+      }
+
+      .a7cf6eea-157b-44db-8986-d53a579a8502 {
+        letter-spacing: 0.006em;
+      }
+
+      .affe880d-ba35-4c99-b49a-ef112127549b {
+        letter-spacing: 0.003em;
+      }
+
+      .a954f312-7f0e-4b5f-921f-e4adc03b531f {
+        letter-spacing: 0.007em;
+      }
+
+      .af62e74a-0a79-4b8c-b114-41cbdab98c4d {
+        letter-spacing: -0.004em;
+      }
+
+      .b4dfec22-5ced-480c-9a00-cb93c71648bc {
+        letter-spacing: 0.028em;
+      }
+
+      .b10ae5b6-b3cb-4db5-b090-361e2bda1df7 {
+        letter-spacing: -0.005em;
+      }
+
+      .b9d7666d-60f9-4729-bc3d-7ca2418c0a51 {
+        letter-spacing: 0.003em;
+      }
+
+      .f64b3c63-7324-47db-9bcc-d5ee3d35c102 {
+        font-family: RedHatText-Bold, Red Hat Text;
+        font-weight: 700;
+      }
+
+      .b8ec20f6-c6d9-4fdd-80bb-20aef4296a77 {
+        letter-spacing: 0.008em;
+      }
+
+      .b2825345-b1ff-4f4e-a80e-93938f6dcbb1 {
+        letter-spacing: -0.001em;
+      }
+
+      .b423093d-cff6-4b16-909c-7c5175e0b878 {
+        letter-spacing: 0.004em;
+      }
+
+      .a65e7b99-77b6-433f-98fb-9d0d3e90d09d {
+        letter-spacing: -0.027em;
+      }
+
+      .aedbe1b1-cd5e-4970-be89-bb7e3550b0ac {
+        letter-spacing: 0.006em;
+      }
+
+      .be528b82-15b5-493d-ab6f-6c53a23fcf58, .eae11e9e-168f-4dd8-a2eb-26178830d59c {
+        font-family: RedHatText-Regular, Red Hat Text;
+      }
+
+      .eae11e9e-168f-4dd8-a2eb-26178830d59c {
+        font-weight: 400;
+      }
+
+      .ac10ae79-1900-40b0-a112-c439eafe5ffb {
+        letter-spacing: -0.012em;
+      }
+
+      .f7a15e38-3455-4fc3-b5e4-d935da852535 {
+        letter-spacing: -0.028em;
+      }
+
+      .b3e80552-5e64-4637-b818-9508cafe495b {
+        letter-spacing: 0.003em;
+      }
+
+      .af1e08ea-8b3e-4757-841f-a32dd2f52963 {
+        letter-spacing: -0.06em;
+      }
+
+      .bddfaab2-c29c-4b01-b0d4-1b6c2ec15899 {
+        letter-spacing: 0.005em;
+      }
+
+      .be8da5ca-91c8-4234-8e70-841b86273460 {
+        letter-spacing: 0.002em;
+      }
+
+      .bca158e2-e4be-4aa8-9b23-13fff24f889f {
+        letter-spacing: -0.003em;
+      }
+
+      .e313f442-5154-4055-ab80-fcf92923eed8 {
+        letter-spacing: -0.024em;
+      }
+
+      .b76bf931-edc0-4afe-950b-7d40e7952792 {
+        letter-spacing: 0.003em;
+      }
+
+      .bf230c57-46b7-4532-9e25-eb1c465eb360 {
+        letter-spacing: 0.001em;
+      }
+
+      .a6714f4c-f1b9-4c53-9839-d54f5a7bbe98 {
+        letter-spacing: -0.001em;
+      }
+
+      .a88ed7b1-c5cd-4dc1-84ef-5e14a7306a3c {
+        letter-spacing: -0.003em;
+      }
+
+      .a1cd5fb8-6979-4cfb-8544-1a1fa1bc8328 {
+        letter-spacing: 0em;
+      }
+
+      .bba2f25a-ee57-42dd-99b2-e8920489f98e {
+        letter-spacing: -0.008em;
+      }
+
+      .a82a2585-dc83-4a0f-8e04-e818109287c1 {
+        letter-spacing: 0.01em;
+      }
+
+      .a26acb63-cd2e-4568-9d2f-669335bec0e4 {
+        letter-spacing: 0.005em;
+      }
+
+      .a501814a-47a1-48bd-8b83-b123bfe2cc87 {
+        letter-spacing: 0.006em;
+      }
+
+      .b83f27a5-64c3-4566-901f-7da19e8456f8 {
+        letter-spacing: 0.004em;
+      }
+
+      .b7767fd9-9474-4991-b89f-60199e5ecf22 {
+        letter-spacing: 0.004em;
+      }
+
+      .ad43cdc6-a1ea-4718-bdb8-d371465ab75d {
+        letter-spacing: -0.002em;
+      }
+
+      .b0d0ed97-2091-44b7-888c-24722c7ee1a8 {
+        letter-spacing: -0.013em;
+      }
+
+      .f02fa551-4530-4374-8f58-7dd18fc360d4 {
+        letter-spacing: 0.01em;
+      }
+
+      .a4ea8d7a-1b00-4853-b992-c928c7f5caf4 {
+        letter-spacing: 0.005em;
+      }
+
+      .b10b71d8-1874-4a83-b774-216453aa0ed5 {
+        letter-spacing: 0.001em;
+      }
+
+      .b6687806-6380-4407-9ae0-262fa278a92c {
+        letter-spacing: -0.023em;
+      }
+
+      .b65d841c-6124-4dc4-9633-61d1f5d4ea0b {
+        letter-spacing: 0.001em;
+      }
+
+      .bbd0d3da-f6f2-426d-b2c5-bd210a3dc2a7 {
+        letter-spacing: -0.021em;
+      }
+
+      .bb214f6a-1fb5-4fde-a4a3-90527779890b {
+        letter-spacing: -0.01em;
+      }
+
+      .e8e8c1a8-23f3-4f1f-843a-2a37207c1c06 {
+        letter-spacing: 0.007em;
+      }
+
+      .e7e04307-f860-4bad-b218-ef90f3e2dfd9 {
+        letter-spacing: 0.019em;
+      }
+
+      .b96e7af8-a5ea-490f-a634-dd945efa295b {
+        letter-spacing: -0.001em;
+      }
+
+      .bf2b768b-106c-46f5-bbaf-013e435aa0dd {
+        letter-spacing: -0.004em;
+      }
+
+      .b1cc34ed-f738-41f8-a730-84105d914bf8 {
+        letter-spacing: 0.005em;
+      }
+
+      .e3dcfffc-b728-41d2-a5dc-111e35fa3a19 {
+        stroke: #151515;
+      }
+
+      .b8c44383-42f6-43c0-afe6-b5b21e039b04 {
+        letter-spacing: -0.01em;
+      }
+
+      .b03da93a-7744-49f1-b06a-b88aa0f7f0d2 {
+        letter-spacing: -0.007em;
+      }
+
+      .f7581a6d-a366-46f4-a8d4-08d24146e177 {
+        letter-spacing: 0.006em;
+      }
+
+      .bd771d17-bb70-4f80-96c9-54a74d1d026b {
+        letter-spacing: -0.01em;
+      }
+
+      .b36bfa6f-67df-4b48-9eb4-a75b0f9a22fb {
+        letter-spacing: 0.004em;
+      }
+
+      .f87e2b7a-e182-448b-9702-5cdbff3772a2 {
+        letter-spacing: -0.008em;
+      }
+
+      .be528b82-15b5-493d-ab6f-6c53a23fcf58 {
+        font-size: 10px;
+        fill: #f3f3f3;
+      }
+    </style>
+  </defs>
+  <g>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="505.25 422.455 505.25 423.955 503.75 423.955"/>
+    <line class="be085ef8-2779-494c-9cc6-178611f2b94b" x1="500.731" y1="423.955" x2="272.76" y2="423.955"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="271.25 423.955 269.75 423.955 269.75 422.455"/>
+    <line class="e58fb66d-bc02-46b4-bca2-08d160faa729" x1="269.75" y1="419.463" x2="269.75" y2="49.951"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="269.75 48.455 269.75 46.955 271.25 46.955"/>
+    <line class="be085ef8-2779-494c-9cc6-178611f2b94b" x1="274.269" y1="46.955" x2="502.24" y2="46.955"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="503.75 46.955 505.25 46.955 505.25 48.455"/>
+    <line class="e58fb66d-bc02-46b4-bca2-08d160faa729" x1="505.25" y1="51.447" x2="505.25" y2="420.959"/>
+  </g>
+  <rect class="fdacb085-c204-49d2-8c2a-1aa18c6c2d9f" x="284.75" y="146.955" width="205" height="167"/>
+  <rect class="a2447e2e-a0af-4785-b080-4bf300685c23" x="299.75" y="205.955" width="175" height="93"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(314.751 229.06)"><tspan class="b634c262-dd65-45a9-94b9-3bdb17ab81b7">T</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="6.623" y="0">o</tspan><tspan class="aae405f4-702e-49cd-91c1-8c4b01983a24" x="13.853" y="0">p</tspan><tspan x="21.212" y="0">ic 1</tspan></text>
+  <rect class="eaf1d1f7-2b5c-4c97-a590-6d403c4e510f" x="314.75" y="243.955" width="45" height="40"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(335.198 267.299)">1</text>
+  <rect class="aa0f47b7-aa0f-401d-82e4-48233afe27a6" x="364.75" y="243.974" width="45" height="40"/>
+  <text class="bc2c4bae-2174-4bc2-8d1f-ecf212e48099" transform="translate(383.83 267.298)">2</text>
+  <rect class="eaf1d1f7-2b5c-4c97-a590-6d403c4e510f" x="414.75" y="243.974" width="45" height="40"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(433.608 267.298)">3</text>
+  <g>
+    <line class="a936556c-9039-4e3d-86a0-189dd5ce489a" x1="387.25" y1="121.955" x2="387.25" y2="234.298"/>
+    <polygon class="aa0f47b7-aa0f-401d-82e4-48233afe27a6" points="382.264 232.839 387.25 241.474 392.236 232.839 382.264 232.839"/>
+  </g>
+  <rect class="fdacb085-c204-49d2-8c2a-1aa18c6c2d9f" x="364.75" y="175.215" width="45" height="17.5"/>
+  <rect class="a2447e2e-a0af-4785-b080-4bf300685c23" x="327.624" y="413.909" width="119.753" height="20.094"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(335.212 427.587)"><tspan class="f86fa5f6-9ad0-4f23-b8b2-cae462b189cc">A</tspan><tspan class="b1b4d78b-b6fb-4dc1-a90d-751ee28dfea7" x="8.115" y="0">v</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="14.638" y="0">a</tspan><tspan class="a7cf6eea-157b-44db-8986-d53a579a8502" x="21.291" y="0">i</tspan><tspan class="affe880d-ba35-4c99-b49a-ef112127549b" x="24.391" y="0">l</tspan><tspan class="a954f312-7f0e-4b5f-921f-e4adc03b531f" x="27.456" y="0">a</tspan><tspan class="aae405f4-702e-49cd-91c1-8c4b01983a24" x="34.134" y="0">b</tspan><tspan class="a7cf6eea-157b-44db-8986-d53a579a8502" x="41.493" y="0">il</tspan><tspan class="af62e74a-0a79-4b8c-b114-41cbdab98c4d" x="47.692" y="0">i</tspan><tspan class="b4dfec22-5ced-480c-9a00-cb93c71648bc" x="50.668" y="0">t</tspan><tspan x="55.966" y="0">y </tspan><tspan class="b10ae5b6-b3cb-4db5-b090-361e2bda1df7" x="65.109" y="0">Z</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="72.403" y="0">o</tspan><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="79.633" y="0">n</tspan><tspan x="86.648" y="0">e B</tspan></text>
+  <g>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="759.5 422.455 759.5 423.955 758 423.955"/>
+    <line class="be085ef8-2779-494c-9cc6-178611f2b94b" x1="754.98" y1="423.955" x2="527.01" y2="423.955"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="525.5 423.955 524 423.955 524 422.455"/>
+    <line class="e58fb66d-bc02-46b4-bca2-08d160faa729" x1="524" y1="419.463" x2="524" y2="49.951"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="524 48.455 524 46.955 525.5 46.955"/>
+    <line class="be085ef8-2779-494c-9cc6-178611f2b94b" x1="528.519" y1="46.955" x2="756.49" y2="46.955"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="758 46.955 759.5 46.955 759.5 48.455"/>
+    <line class="e58fb66d-bc02-46b4-bca2-08d160faa729" x1="759.5" y1="51.447" x2="759.5" y2="420.959"/>
+  </g>
+  <rect class="fdacb085-c204-49d2-8c2a-1aa18c6c2d9f" x="539" y="146.955" width="205" height="167"/>
+  <rect class="a2447e2e-a0af-4785-b080-4bf300685c23" x="554" y="205.955" width="175" height="93"/>
+  <text class="f64b3c63-7324-47db-9bcc-d5ee3d35c102" transform="translate(553.5 172.298)"><tspan class="b8ec20f6-c6d9-4fdd-80bb-20aef4296a77">B</tspan><tspan class="b2825345-b1ff-4f4e-a80e-93938f6dcbb1" x="8.85" y="0">r</tspan><tspan class="b423093d-cff6-4b16-909c-7c5175e0b878" x="14.137" y="0">o</tspan><tspan class="a65e7b99-77b6-433f-98fb-9d0d3e90d09d" x="21.609" y="0">k</tspan><tspan class="aedbe1b1-cd5e-4970-be89-bb7e3550b0ac" x="28.529" y="0">e</tspan><tspan x="35.704" y="0">r 3</tspan><tspan class="eae11e9e-168f-4dd8-a2eb-26178830d59c"><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="0" y="15">b</tspan><tspan class="ac10ae79-1900-40b0-a112-c439eafe5ffb" x="7.028" y="15">r</tspan><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="11.108" y="15">o</tspan><tspan class="f7a15e38-3455-4fc3-b5e4-d935da852535" x="18.112" y="15">k</tspan><tspan class="b3e80552-5e64-4637-b818-9508cafe495b" x="23.643" y="15">e</tspan><tspan class="af1e08ea-8b3e-4757-841f-a32dd2f52963" x="30.356" y="15">r</tspan><tspan class="bddfaab2-c29c-4b01-b0d4-1b6c2ec15899" x="33.855" y="15">.</tspan><tspan class="b1b4d78b-b6fb-4dc1-a90d-751ee28dfea7" x="36.555" y="15">r</tspan><tspan x="40.797" y="15">a</tspan><tspan class="be8da5ca-91c8-4234-8e70-841b86273460" x="47.108" y="15">c</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="53.24" y="15">k</tspan><tspan class="bca158e2-e4be-4aa8-9b23-13fff24f889f" x="59.162" y="15">=</tspan><tspan class="e313f442-5154-4055-ab80-fcf92923eed8" x="65.522" y="15">z</tspan><tspan class="b76bf931-edc0-4afe-950b-7d40e7952792" x="70.748" y="15">o</tspan><tspan class="bf230c57-46b7-4532-9e25-eb1c465eb360" x="77.753" y="15">n</tspan><tspan class="a6714f4c-f1b9-4c53-9839-d54f5a7bbe98" x="84.386" y="15">e</tspan><tspan class="a88ed7b1-c5cd-4dc1-84ef-5e14a7306a3c" x="91.058" y="15">-</tspan><tspan class="a1cd5fb8-6979-4cfb-8544-1a1fa1bc8328" x="96.481" y="15">c</tspan></tspan></text>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(569.001 229.06)"><tspan class="b634c262-dd65-45a9-94b9-3bdb17ab81b7">T</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="6.623" y="0">o</tspan><tspan class="aae405f4-702e-49cd-91c1-8c4b01983a24" x="13.853" y="0">p</tspan><tspan x="21.212" y="0">ic 1</tspan></text>
+  <rect class="eaf1d1f7-2b5c-4c97-a590-6d403c4e510f" x="569" y="243.955" width="45" height="40"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(589.448 267.299)">1</text>
+  <rect class="eaf1d1f7-2b5c-4c97-a590-6d403c4e510f" x="619" y="243.974" width="45" height="40"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(638.08 267.298)">2</text>
+  <rect class="aa0f47b7-aa0f-401d-82e4-48233afe27a6" x="669" y="243.974" width="45" height="40"/>
+  <text class="bc2c4bae-2174-4bc2-8d1f-ecf212e48099" transform="translate(687.858 267.298)">3</text>
+  <rect class="a2447e2e-a0af-4785-b080-4bf300685c23" x="581.874" y="413.909" width="119.753" height="20.094"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(589.3 427.587)"><tspan class="f86fa5f6-9ad0-4f23-b8b2-cae462b189cc">A</tspan><tspan class="b1b4d78b-b6fb-4dc1-a90d-751ee28dfea7" x="8.115" y="0">v</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="14.638" y="0">a</tspan><tspan class="a7cf6eea-157b-44db-8986-d53a579a8502" x="21.291" y="0">i</tspan><tspan class="affe880d-ba35-4c99-b49a-ef112127549b" x="24.391" y="0">l</tspan><tspan class="a954f312-7f0e-4b5f-921f-e4adc03b531f" x="27.456" y="0">a</tspan><tspan class="aae405f4-702e-49cd-91c1-8c4b01983a24" x="34.134" y="0">b</tspan><tspan class="a7cf6eea-157b-44db-8986-d53a579a8502" x="41.493" y="0">il</tspan><tspan class="af62e74a-0a79-4b8c-b114-41cbdab98c4d" x="47.692" y="0">i</tspan><tspan class="b4dfec22-5ced-480c-9a00-cb93c71648bc" x="50.668" y="0">t</tspan><tspan x="55.966" y="0">y </tspan><tspan class="b10ae5b6-b3cb-4db5-b090-361e2bda1df7" x="65.109" y="0">Z</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="72.403" y="0">o</tspan><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="79.633" y="0">n</tspan><tspan x="86.648" y="0">e C</tspan></text>
+  <g>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="251 422.455 251 423.955 249.5 423.955"/>
+    <line class="be085ef8-2779-494c-9cc6-178611f2b94b" x1="246.481" y1="423.955" x2="18.51" y2="423.955"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="17 423.955 15.5 423.955 15.5 422.455"/>
+    <line class="e58fb66d-bc02-46b4-bca2-08d160faa729" x1="15.5" y1="419.463" x2="15.5" y2="49.951"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="15.5 48.455 15.5 46.955 17 46.955"/>
+    <line class="be085ef8-2779-494c-9cc6-178611f2b94b" x1="20.019" y1="46.955" x2="247.99" y2="46.955"/>
+    <polyline class="a33bd741-c013-42b6-99da-44277f19de1c" points="249.5 46.955 251 46.955 251 48.455"/>
+    <line class="e58fb66d-bc02-46b4-bca2-08d160faa729" x1="251" y1="51.447" x2="251" y2="420.959"/>
+  </g>
+  <rect class="fdacb085-c204-49d2-8c2a-1aa18c6c2d9f" x="539" y="338.955" width="205" height="60"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(611.011 364.863)"><tspan class="bba2f25a-ee57-42dd-99b2-e8920489f98e">C</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="8.584" y="0">o</tspan><tspan class="a82a2585-dc83-4a0f-8e04-e818109287c1" x="15.813" y="0">n</tspan><tspan class="a26acb63-cd2e-4568-9d2f-669335bec0e4" x="22.915" y="0">s</tspan><tspan class="a501814a-47a1-48bd-8b83-b123bfe2cc87" x="28.727" y="0">u</tspan><tspan class="b83f27a5-64c3-4566-901f-7da19e8456f8" x="35.786" y="0">me</tspan><tspan x="53.26" y="0">r</tspan><tspan class="eae11e9e-168f-4dd8-a2eb-26178830d59c"><tspan class="be8da5ca-91c8-4234-8e70-841b86273460" x="-20.056" y="15">c</tspan><tspan class="b7767fd9-9474-4991-b89f-60199e5ecf22" x="-13.924" y="15">l</tspan><tspan class="ad43cdc6-a1ea-4718-bdb8-d371465ab75d" x="-11.196" y="15">i</tspan><tspan class="b3e80552-5e64-4637-b818-9508cafe495b" x="-8.541" y="15">e</tspan><tspan class="b0d0ed97-2091-44b7-888c-24722c7ee1a8" x="-1.827" y="15">n</tspan><tspan class="f02fa551-4530-4374-8f58-7dd18fc360d4" x="4.646" y="15">t</tspan><tspan class="a4ea8d7a-1b00-4853-b992-c928c7f5caf4" x="9.297" y="15">.</tspan><tspan class="b10b71d8-1874-4a83-b774-216453aa0ed5" x="11.997" y="15">r</tspan><tspan class="a1cd5fb8-6979-4cfb-8544-1a1fa1bc8328" x="16.238" y="15">a</tspan><tspan class="be8da5ca-91c8-4234-8e70-841b86273460" x="22.551" y="15">c</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="28.683" y="15">k</tspan><tspan class="a88ed7b1-c5cd-4dc1-84ef-5e14a7306a3c" x="34.604" y="15">=</tspan><tspan class="b6687806-6380-4407-9ae0-262fa278a92c" x="40.964" y="15">z</tspan><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="46.19" y="15">o</tspan><tspan class="b65d841c-6124-4dc4-9633-61d1f5d4ea0b" x="53.194" y="15">n</tspan><tspan class="a6714f4c-f1b9-4c53-9839-d54f5a7bbe98" x="59.828" y="15">e</tspan><tspan class="a88ed7b1-c5cd-4dc1-84ef-5e14a7306a3c" x="66.5" y="15">-</tspan><tspan x="71.924" y="15">c</tspan></tspan></text>
+  <rect class="fdacb085-c204-49d2-8c2a-1aa18c6c2d9f" x="30.5" y="146.955" width="205" height="167"/>
+  <rect class="a2447e2e-a0af-4785-b080-4bf300685c23" x="45.5" y="205.955" width="175" height="93"/>
+  <text class="f64b3c63-7324-47db-9bcc-d5ee3d35c102" transform="translate(45 172.298)"><tspan class="b8ec20f6-c6d9-4fdd-80bb-20aef4296a77">B</tspan><tspan class="b2825345-b1ff-4f4e-a80e-93938f6dcbb1" x="8.85" y="0">r</tspan><tspan class="b423093d-cff6-4b16-909c-7c5175e0b878" x="14.137" y="0">o</tspan><tspan class="a65e7b99-77b6-433f-98fb-9d0d3e90d09d" x="21.609" y="0">k</tspan><tspan class="aedbe1b1-cd5e-4970-be89-bb7e3550b0ac" x="28.529" y="0">e</tspan><tspan x="35.704" y="0">r 1</tspan><tspan class="eae11e9e-168f-4dd8-a2eb-26178830d59c"><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="0" y="15">b</tspan><tspan class="ac10ae79-1900-40b0-a112-c439eafe5ffb" x="7.028" y="15">r</tspan><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="11.108" y="15">o</tspan><tspan class="f7a15e38-3455-4fc3-b5e4-d935da852535" x="18.112" y="15">k</tspan><tspan class="b3e80552-5e64-4637-b818-9508cafe495b" x="23.643" y="15">e</tspan><tspan class="af1e08ea-8b3e-4757-841f-a32dd2f52963" x="30.356" y="15">r</tspan><tspan class="bddfaab2-c29c-4b01-b0d4-1b6c2ec15899" x="33.855" y="15">.</tspan><tspan class="b1b4d78b-b6fb-4dc1-a90d-751ee28dfea7" x="36.555" y="15">r</tspan><tspan x="40.797" y="15">a</tspan><tspan class="be8da5ca-91c8-4234-8e70-841b86273460" x="47.108" y="15">c</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="53.24" y="15">k</tspan><tspan class="bca158e2-e4be-4aa8-9b23-13fff24f889f" x="59.162" y="15">=</tspan><tspan class="e313f442-5154-4055-ab80-fcf92923eed8" x="65.522" y="15">z</tspan><tspan class="b76bf931-edc0-4afe-950b-7d40e7952792" x="70.748" y="15">o</tspan><tspan class="bf230c57-46b7-4532-9e25-eb1c465eb360" x="77.753" y="15">n</tspan><tspan class="a6714f4c-f1b9-4c53-9839-d54f5a7bbe98" x="84.386" y="15">e</tspan><tspan class="bbd0d3da-f6f2-426d-b2c5-bd210a3dc2a7" x="91.058" y="15">-</tspan><tspan x="96.266" y="15">a</tspan></tspan></text>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(60.501 229.06)"><tspan class="b634c262-dd65-45a9-94b9-3bdb17ab81b7">T</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="6.623" y="0">o</tspan><tspan class="aae405f4-702e-49cd-91c1-8c4b01983a24" x="13.853" y="0">p</tspan><tspan x="21.212" y="0">ic 1</tspan></text>
+  <rect class="aa0f47b7-aa0f-401d-82e4-48233afe27a6" x="60.5" y="243.955" width="45" height="40"/>
+  <text class="bc2c4bae-2174-4bc2-8d1f-ecf212e48099" transform="translate(80.948 267.299)">1</text>
+  <rect class="eaf1d1f7-2b5c-4c97-a590-6d403c4e510f" x="110.5" y="243.974" width="45" height="40"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(129.58 267.298)">2</text>
+  <rect class="eaf1d1f7-2b5c-4c97-a590-6d403c4e510f" x="160.5" y="243.974" width="45" height="40"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(179.358 267.298)">3</text>
+  <polygon class="eaf1d1f7-2b5c-4c97-a590-6d403c4e510f" points="71.5 14.721 53.5 14.713 53.5 32.71 53.502 32.713 71.493 32.713 71.5 14.721"/>
+  <polygon class="aa0f47b7-aa0f-401d-82e4-48233afe27a6" points="48.5 14.721 30.5 14.713 30.5 32.71 30.502 32.713 48.493 32.713 48.5 14.721"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(77.201 27.036)"><tspan class="bb214f6a-1fb5-4fde-a4a3-90527779890b">P</tspan><tspan class="e8e8c1a8-23f3-4f1f-843a-2a37207c1c06" x="8.031" y="0">a</tspan><tspan class="e7e04307-f860-4bad-b218-ef90f3e2dfd9" x="14.709" y="0">r</tspan><tspan class="b96e7af8-a5ea-490f-a634-dd945efa295b" x="19.659" y="0">t</tspan><tspan class="bf2b768b-106c-46f5-bbaf-013e435aa0dd" x="24.614" y="0">i</tspan><tspan class="b96e7af8-a5ea-490f-a634-dd945efa295b" x="27.59" y="0">t</tspan><tspan x="32.544" y="0">i</tspan><tspan class="b1cc34ed-f738-41f8-a730-84105d914bf8" x="35.568" y="0">o</tspan><tspan x="42.798" y="0">n</tspan></text>
+  <g>
+    <polyline class="a936556c-9039-4e3d-86a0-189dd5ce489a" points="284.105 91.955 0.5 91.955 0.5 263.974 50.824 263.974"/>
+    <polygon class="aa0f47b7-aa0f-401d-82e4-48233afe27a6" points="49.365 268.961 58 263.974 49.365 258.988 49.365 268.961"/>
+  </g>
+  <g>
+    <polyline class="a936556c-9039-4e3d-86a0-189dd5ce489a" points="489.75 91.955 691.5 91.955 691.5 234.298"/>
+    <polygon class="aa0f47b7-aa0f-401d-82e4-48233afe27a6" points="686.513 232.839 691.5 241.474 696.486 232.839 686.513 232.839"/>
+  </g>
+  <g>
+    <line class="e3dcfffc-b728-41d2-a5dc-111e35fa3a19" x1="591.5" y1="283.974" x2="591.5" y2="329.279"/>
+    <polygon class="b48b9f2a-e049-460a-bcff-580b033fb8e7" points="586.514 327.82 591.5 336.455 596.486 327.82 586.514 327.82"/>
+  </g>
+  <g>
+    <line class="e3dcfffc-b728-41d2-a5dc-111e35fa3a19" x1="641.5" y1="283.974" x2="641.5" y2="329.279"/>
+    <polygon class="b48b9f2a-e049-460a-bcff-580b033fb8e7" points="636.514 327.82 641.5 336.455 646.486 327.82 636.514 327.82"/>
+  </g>
+  <g>
+    <line class="e3dcfffc-b728-41d2-a5dc-111e35fa3a19" x1="691.5" y1="283.974" x2="691.5" y2="329.279"/>
+    <polygon class="b48b9f2a-e049-460a-bcff-580b033fb8e7" points="686.514 327.82 691.5 336.455 696.486 327.82 686.514 327.82"/>
+  </g>
+  <rect class="a2447e2e-a0af-4785-b080-4bf300685c23" x="73.374" y="413.909" width="119.753" height="20.094"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(80.956 427.587)"><tspan class="f86fa5f6-9ad0-4f23-b8b2-cae462b189cc">A</tspan><tspan class="b1b4d78b-b6fb-4dc1-a90d-751ee28dfea7" x="8.115" y="0">v</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="14.638" y="0">a</tspan><tspan class="a7cf6eea-157b-44db-8986-d53a579a8502" x="21.291" y="0">i</tspan><tspan class="affe880d-ba35-4c99-b49a-ef112127549b" x="24.391" y="0">l</tspan><tspan class="a954f312-7f0e-4b5f-921f-e4adc03b531f" x="27.456" y="0">a</tspan><tspan class="aae405f4-702e-49cd-91c1-8c4b01983a24" x="34.134" y="0">b</tspan><tspan class="a7cf6eea-157b-44db-8986-d53a579a8502" x="41.493" y="0">il</tspan><tspan class="af62e74a-0a79-4b8c-b114-41cbdab98c4d" x="47.692" y="0">i</tspan><tspan class="b4dfec22-5ced-480c-9a00-cb93c71648bc" x="50.668" y="0">t</tspan><tspan x="55.966" y="0">y </tspan><tspan class="b10ae5b6-b3cb-4db5-b090-361e2bda1df7" x="65.109" y="0">Z</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="72.403" y="0">o</tspan><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="79.633" y="0">n</tspan><tspan x="86.648" y="0">e A</tspan></text>
+  <rect class="fdacb085-c204-49d2-8c2a-1aa18c6c2d9f" x="284.75" y="61.955" width="205" height="60"/>
+  <text class="b0cdb549-4514-41f8-934c-648cb5f1ece9" transform="translate(361.475 95.28)"><tspan class="b8c44383-42f6-43c0-afe6-b5b21e039b04">P</tspan><tspan class="b03da93a-7744-49f1-b06a-b88aa0f7f0d2" x="8.031" y="0">r</tspan><tspan x="12.669" y="0">o</tspan><tspan class="f7581a6d-a366-46f4-a8d4-08d24146e177" x="19.845" y="0">d</tspan><tspan class="affe880d-ba35-4c99-b49a-ef112127549b" x="27.238" y="0">u</tspan><tspan class="bd771d17-bb70-4f80-96c9-54a74d1d026b" x="34.263" y="0">c</tspan><tspan class="b36bfa6f-67df-4b48-9eb4-a75b0f9a22fb" x="40.413" y="0">e</tspan><tspan x="47.336" y="0">r</tspan></text>
+  <text class="f64b3c63-7324-47db-9bcc-d5ee3d35c102" transform="translate(299.25 172.298)"><tspan class="b8ec20f6-c6d9-4fdd-80bb-20aef4296a77">B</tspan><tspan class="b2825345-b1ff-4f4e-a80e-93938f6dcbb1" x="8.85" y="0">r</tspan><tspan class="b423093d-cff6-4b16-909c-7c5175e0b878" x="14.137" y="0">o</tspan><tspan class="a65e7b99-77b6-433f-98fb-9d0d3e90d09d" x="21.609" y="0">k</tspan><tspan class="aedbe1b1-cd5e-4970-be89-bb7e3550b0ac" x="28.529" y="0">e</tspan><tspan x="35.704" y="0">r 2</tspan><tspan class="eae11e9e-168f-4dd8-a2eb-26178830d59c"><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="0" y="15">b</tspan><tspan class="ac10ae79-1900-40b0-a112-c439eafe5ffb" x="7.028" y="15">r</tspan><tspan class="b9d7666d-60f9-4729-bc3d-7ca2418c0a51" x="11.108" y="15">o</tspan><tspan class="f7a15e38-3455-4fc3-b5e4-d935da852535" x="18.112" y="15">k</tspan><tspan class="b3e80552-5e64-4637-b818-9508cafe495b" x="23.643" y="15">e</tspan><tspan class="af1e08ea-8b3e-4757-841f-a32dd2f52963" x="30.356" y="15">r</tspan><tspan class="bddfaab2-c29c-4b01-b0d4-1b6c2ec15899" x="33.855" y="15">.</tspan><tspan class="b1b4d78b-b6fb-4dc1-a90d-751ee28dfea7" x="36.555" y="15">r</tspan><tspan x="40.797" y="15">a</tspan><tspan class="be8da5ca-91c8-4234-8e70-841b86273460" x="47.108" y="15">c</tspan><tspan class="a5c65135-2d6c-433b-bafa-36f06221b099" x="53.24" y="15">k</tspan><tspan class="bca158e2-e4be-4aa8-9b23-13fff24f889f" x="59.162" y="15">=</tspan><tspan class="e313f442-5154-4055-ab80-fcf92923eed8" x="65.522" y="15">z</tspan><tspan class="b76bf931-edc0-4afe-950b-7d40e7952792" x="70.748" y="15">o</tspan><tspan class="bf230c57-46b7-4532-9e25-eb1c465eb360" x="77.753" y="15">n</tspan><tspan class="a6714f4c-f1b9-4c53-9839-d54f5a7bbe98" x="84.386" y="15">e</tspan><tspan class="f87e2b7a-e182-448b-9702-5cdbff3772a2" x="91.058" y="15">-</tspan><tspan x="96.422" y="15">b</tspan></tspan></text>
+  <g>
+    <text class="be528b82-15b5-493d-ab6f-6c53a23fcf58" transform="translate(692.241 455.802)">128_AMQ_1220</text>
+    <rect class="a8b9b642-b467-41e3-84c6-c28f8f263d26" y="432.785" width="760" height="40"/>
+  </g>
+</svg>
