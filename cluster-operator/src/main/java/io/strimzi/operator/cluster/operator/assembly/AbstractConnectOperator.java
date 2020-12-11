@@ -53,6 +53,7 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.cluster.operator.resource.MetricsAndLoggingCm;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
@@ -699,7 +700,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return updateStatusPromise.future();
     }
 
-    protected CompositeFuture connectMetricsAndLoggingConfigMap(String namespace, KafkaConnectCluster connect) {
+    protected Future<MetricsAndLoggingCm> connectMetricsAndLoggingConfigMap(String namespace, KafkaConnectCluster connect) {
         final Future<ConfigMap> metricsCmFut;
         if (connect.isMetricsConfigured()) {
             if (connect.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
@@ -715,6 +716,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Future<ConfigMap> loggingCmFut = connect.getLogging() instanceof ExternalLogging ?
                 configMapOperations.getAsync(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                 Future.succeededFuture(null);
-        return CompositeFuture.join(metricsCmFut, loggingCmFut);
+        return CompositeFuture.join(metricsCmFut, loggingCmFut).result().map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 }

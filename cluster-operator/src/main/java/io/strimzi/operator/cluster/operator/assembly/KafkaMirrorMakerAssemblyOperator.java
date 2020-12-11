@@ -22,6 +22,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.MetricsAndLoggingCm;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -94,7 +95,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> mirrorMetricsAndLoggingConfigMap(namespace, mirror))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm.resultAt(1), metricsAndLoggingCm.resultAt(0));
+                    ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm.loggingCm, metricsAndLoggingCm.metricsCm);
                     annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
                     return configMapOperations.reconcile(namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
@@ -131,7 +132,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 mirror.generateServiceAccount());
     }
 
-    private CompositeFuture mirrorMetricsAndLoggingConfigMap(String namespace, KafkaMirrorMakerCluster mirror) {
+    private Future<MetricsAndLoggingCm> mirrorMetricsAndLoggingConfigMap(String namespace, KafkaMirrorMakerCluster mirror) {
         final Future<ConfigMap> metricsCmFut;
         if (mirror.isMetricsConfigured()) {
             if (mirror.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
@@ -148,6 +149,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 configMapOperations.getAsync(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
                 Future.succeededFuture(null);
 
-        return CompositeFuture.join(metricsCmFut, loggingCmFut);
+        return CompositeFuture.join(metricsCmFut, loggingCmFut).result().map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 }

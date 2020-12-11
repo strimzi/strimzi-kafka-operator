@@ -78,6 +78,7 @@ import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
+import io.strimzi.operator.cluster.operator.resource.MetricsAndLoggingCm;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
@@ -2537,24 +2538,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 loggingCmFut = Future.succeededFuture(null);
             }
 
-            return CompositeFuture.join(metricsCmFut, loggingCmFut).compose(metricsAndLoggingCm -> {
-                ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(metricsAndLoggingCm.resultAt(1), metricsAndLoggingCm.resultAt(0), kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
-                KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration
+            return CompositeFuture.join(metricsCmFut, loggingCmFut).result().map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)))
+                .compose(metricsAndLoggingCm -> {
+                    ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(metricsAndLoggingCm.loggingCm, metricsAndLoggingCm.metricsCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
+                    KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration
 
-                // if BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME changes, compute a hash and put it into annotation
-                String brokerConfiguration = brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
-                brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_PORTS_FILENAME, "");
-                brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
+                    // if BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME changes, compute a hash and put it into annotation
+                    String brokerConfiguration = brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
+                    brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_PORTS_FILENAME, "");
+                    brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
 
-                this.kafkaBrokerConfigurationHash = Util.stringHash(brokerConfiguration);
-                this.kafkaBrokerConfigurationHash += Util.stringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
+                    this.kafkaBrokerConfigurationHash = Util.stringHash(brokerConfiguration);
+                    this.kafkaBrokerConfigurationHash += Util.stringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
 
-                String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-                this.kafkaLogging = loggingConfiguration;
-                this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration));
+                    String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                    this.kafkaLogging = loggingConfiguration;
+                    this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration));
 
-                return Future.succeededFuture(brokerCm);
-            });
+                    return Future.succeededFuture(brokerCm);
+                });
         }
 
         Future<ReconciliationState> kafkaAncillaryCm() {
