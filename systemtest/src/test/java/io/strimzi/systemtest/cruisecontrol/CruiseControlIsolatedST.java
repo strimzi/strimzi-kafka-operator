@@ -57,7 +57,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @Test
     void testAutoCreationOfCruiseControlTopics() {
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
@@ -88,51 +88,51 @@ public class CruiseControlIsolatedST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testCruiseControlWithRebalanceResource() {
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
-        KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME).done();
+        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).done();
+        KafkaRebalanceResource.kafkaRebalance(clusterName).done();
 
         LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.PendingProposal);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.PendingProposal);
 
         LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
-        String response = KafkaRebalanceUtils.annotateKafkaRebalanceResource(CLUSTER_NAME, KafkaRebalanceAnnotation.approve);
+        String response = KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.approve);
 
         LOGGER.info("Response from the annotation process {}", response);
 
         LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.Rebalancing);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Rebalancing);
 
         LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.Ready);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Ready);
     }
 
     @Test
     void testCruiseControlWithSingleNodeKafka() {
-        String errMessage =  "Kafka " + NAMESPACE + "/" + CLUSTER_NAME + " has invalid configuration." +
+        String errMessage =  "Kafka " + NAMESPACE + "/" + clusterName + " has invalid configuration." +
             " Cruise Control cannot be deployed with a single-node Kafka cluster. It requires " +
             "at least two Kafka nodes.";
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
-        KafkaResource.kafkaWithCruiseControlWithoutWait(CLUSTER_NAME, 1, 1);
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, errMessage, Duration.ofMinutes(6).toMillis());
+        KafkaResource.kafkaWithCruiseControlWithoutWait(clusterName, 1, 1);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, errMessage, Duration.ofMinutes(6).toMillis());
 
-        KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
 
         assertThat(kafkaStatus.getConditions().get(0).getReason(), is("InvalidResourceException"));
 
         LOGGER.info("Increasing Kafka nodes to 3");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setReplicas(3));
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getSpec().getKafka().setReplicas(3));
+        KafkaUtils.waitForKafkaReady(clusterName);
 
-        kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        kafkaStatus = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is(not(errMessage)));
     }
 
@@ -142,27 +142,27 @@ public class CruiseControlIsolatedST extends AbstractST {
         String excludedTopic2 = "excluded-topic-2";
         String includedTopic = "included-topic";
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, excludedTopic1).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, excludedTopic2).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, includedTopic).done();
+        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).done();
+        KafkaTopicResource.topic(clusterName, excludedTopic1).done();
+        KafkaTopicResource.topic(clusterName, excludedTopic2).done();
+        KafkaTopicResource.topic(clusterName, includedTopic).done();
 
-        KafkaRebalanceResource.kafkaRebalance(CLUSTER_NAME)
+        KafkaRebalanceResource.kafkaRebalance(clusterName)
             .editOrNewSpec()
                 .withExcludedTopics("excluded-.*")
             .endSpec()
             .done();
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Checking status of KafkaRebalance");
-        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic1));
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic2));
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), not(containsString(includedTopic)));
 
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(CLUSTER_NAME, KafkaRebalanceAnnotation.approve);
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(CLUSTER_NAME, KafkaRebalanceState.Ready);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Ready);
     }
 
     @Test
@@ -172,33 +172,33 @@ public class CruiseControlIsolatedST extends AbstractST {
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
-        KafkaClientsResource.deployKafkaClients(KAFKA_CLIENTS_NAME).done();
+        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).done();
+        KafkaClientsResource.deployKafkaClients(kafkaClientsName).done();
 
-        String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
 
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in pod configuration file.");
         Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(NAMESPACE)
-                .withName(CLUSTER_NAME).get().getSpec().getCruiseControl().getConfig();
+                .withName(clusterName).get().getSpec().getCruiseControl().getConfig();
         assertThat(actualStrategies, anEmptyMap());
 
         String ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
 
-        Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(CLUSTER_NAME));
+        Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(clusterName));
 
         Map<String, Object> ccConfigMap = new HashMap<>();
         ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource.");
             kafka.getSpec().getCruiseControl().setConfig(ccConfigMap);
         });
 
         LOGGER.info("Verifying that CC pod is rolling, because of change size of disk");
-        DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(CLUSTER_NAME), 1, kafkaRebalanceSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(clusterName), 1, kafkaRebalanceSnapshot);
 
-        ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(CLUSTER_NAME)).get(0).getMetadata().getName();
+        ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
         ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }
@@ -210,7 +210,7 @@ public class CruiseControlIsolatedST extends AbstractST {
             .withHostnames(aliasHostname)
             .build();
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editSpec()
                 .editCruiseControl()
                     .withNewTemplate()
@@ -222,7 +222,7 @@ public class CruiseControlIsolatedST extends AbstractST {
             .endSpec()
             .done();
 
-        String ccPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-cruise-control").get(0).getMetadata().getName();
+        String ccPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, clusterName + "-cruise-control").get(0).getMetadata().getName();
 
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();

@@ -38,6 +38,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
+    static final String MAIN_NAMESPACE = "my-cluster";
     private static final String TOPIC_EXAMPLES_DIR = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
@@ -61,14 +62,14 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     void checkMirrorMakerForKafkaInDifNamespaceThanCO(String sourceClusterName) {
         String kafkaSourceName = sourceClusterName;
-        String kafkaTargetName = CLUSTER_NAME + "-target";
+        String kafkaTargetName = MAIN_NAMESPACE + "-target";
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaResource.kafkaEphemeral(kafkaTargetName, 1, 1).done();
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
+        KafkaMirrorMakerResource.kafkaMirrorMaker(MAIN_NAMESPACE, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
-        LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
+        LOGGER.info("Waiting for creation {} in namespace {}", MAIN_NAMESPACE + "-mirror-maker", SECOND_NAMESPACE);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(MAIN_NAMESPACE);
         cluster.setNamespace(previousNamespace);
     }
 

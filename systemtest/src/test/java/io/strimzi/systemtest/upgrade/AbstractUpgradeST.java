@@ -40,10 +40,6 @@ public class AbstractUpgradeST extends AbstractST {
     protected Map<String, String> eoPods;
     protected Map<String, String> coPods;
 
-    protected String zkStsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-    protected String kafkaStsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-    protected String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-
     protected File kafkaYaml;
 
     protected static JsonArray readUpgradeJson() {
@@ -68,30 +64,30 @@ public class AbstractUpgradeST extends AbstractST {
         return parameters.stream();
     }
 
-    protected void makeSnapshots() {
+    protected void makeSnapshots(String clusterName) {
         coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        zkPods = StatefulSetUtils.ssSnapshot(zkStsName);
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStsName);
-        eoPods = DeploymentUtils.depSnapshot(eoDepName);
+        zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
+        kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
     }
 
-    protected void changeKafkaAndLogFormatVersion(JsonObject procedures) {
+    protected void changeKafkaAndLogFormatVersion(JsonObject procedures, String clusterName) {
         if (!procedures.isEmpty()) {
             String kafkaVersion = procedures.getString("kafkaVersion");
             if (!kafkaVersion.isEmpty()) {
                 LOGGER.info("Going to set Kafka version to " + kafkaVersion);
-                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
+                KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
                 LOGGER.info("Wait until kafka rolling update is finished");
                 if (!kafkaVersion.equals("2.0.0")) {
-                    StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
+                    StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
                 }
-                makeSnapshots();
+                makeSnapshots(clusterName);
             }
 
             String logMessageVersion = procedures.getString("logMessageVersion");
             String interBrokerProtocolVersion = procedures.getString("interBrokerProtocolVersion");
             if (!logMessageVersion.isEmpty() || !interBrokerProtocolVersion.isEmpty()) {
-                KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+                KafkaResource.replaceKafkaResource(clusterName, k -> {
                     if (!logMessageVersion.isEmpty()) {
                         LOGGER.info("Going to set log message format version to " + logMessageVersion);
                         k.getSpec().getKafka().getConfig().put("log.message.format.version", logMessageVersion);
@@ -104,34 +100,34 @@ public class AbstractUpgradeST extends AbstractST {
                 });
 
                 LOGGER.info("Wait until kafka rolling update is finished");
-                StatefulSetUtils.waitTillSsHasRolled(kafkaStsName, 3, kafkaPods);
-                makeSnapshots();
+                StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                makeSnapshots(clusterName);
             }
         }
     }
 
-    protected void logPodImages() {
-        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(zkStsName));
+    protected void logPodImages(String clusterName) {
+        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(clusterName)));
         for (Pod pod : pods) {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
         }
-        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(kafkaStsName));
+        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName)));
         for (Pod pod : pods) {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
         }
-        pods = kubeClient().listPods(kubeClient().getDeploymentSelectors(eoDepName));
+        pods = kubeClient().listPods(kubeClient().getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(clusterName)));
         for (Pod pod : pods) {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(1).getImage());
         }
     }
 
-    protected void waitForReadinessOfKafkaCluster() {
+    protected void waitForReadinessOfKafkaCluster(String clusterName) {
         LOGGER.info("Waiting for Zookeeper StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-zookeeper", 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(clusterName + "-zookeeper", 3);
         LOGGER.info("Waiting for Kafka StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(CLUSTER_NAME + "-kafka", 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(clusterName + "-kafka", 3);
         LOGGER.info("Waiting for EO Deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady(CLUSTER_NAME + "-entity-operator", 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(clusterName + "-entity-operator", 1);
     }
 }

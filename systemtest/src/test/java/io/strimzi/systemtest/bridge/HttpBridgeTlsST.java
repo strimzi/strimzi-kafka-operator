@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.bridge;
 
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -15,6 +16,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -38,11 +40,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(INTERNAL_CLIENTS_USED)
 class HttpBridgeTlsST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
+    private final String httpBridgeTlsClusterName = "http-bridge-tls-cluster-name";
 
     @Test
     void testSendSimpleMessageTls() {
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.topic(httpBridgeTlsClusterName, TOPIC_NAME).done();
 
         kafkaBridgeClientJob.producerStrimziBridge().done();
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
@@ -50,7 +53,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(httpBridgeTlsClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withKafkaUsername(USER_NAME)
@@ -63,7 +66,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
 
     @Test
     void testReceiveSimpleMessageTls() {
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.topic(httpBridgeTlsClusterName, TOPIC_NAME).done();
 
         kafkaBridgeClientJob.consumerStrimziBridge().done();
 
@@ -71,7 +74,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(httpBridgeTlsClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withKafkaUsername(USER_NAME)
@@ -90,7 +93,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(httpBridgeTlsClusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -108,19 +111,19 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
             .done();
 
         // Create Kafka user
-        KafkaUser tlsUser = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUser tlsUser = KafkaUserResource.tlsUser(httpBridgeTlsClusterName, USER_NAME).done();
 
-        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME, tlsUser).done();
+        KafkaClientsResource.deployKafkaClients(true, kafkaClientsName, tlsUser).done();
 
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
         certSecret.setCertificate("ca.crt");
-        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(httpBridgeTlsClusterName));
 
         // Deploy http bridge
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.kafkaBridge(httpBridgeTlsClusterName, KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName), 1)
             .editSpec()
                 .withNewConsumer()
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
@@ -137,5 +140,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
                 .endTls()
             .endSpec()
             .done();
+
+        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeTlsClusterName)).build();
     }
 }

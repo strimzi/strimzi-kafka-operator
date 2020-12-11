@@ -83,7 +83,7 @@ public class SpecificST extends AbstractST {
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String rackKey = "rack-key";
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewRack()
@@ -92,7 +92,7 @@ public class SpecificST extends AbstractST {
                 .endKafka()
             .endSpec().done();
 
-        Affinity kafkaPodSpecAffinity = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getAffinity();
+        Affinity kafkaPodSpecAffinity = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getSpec().getTemplate().getSpec().getAffinity();
         NodeSelectorRequirement kafkaPodNodeSelectorRequirement = kafkaPodSpecAffinity.getNodeAffinity()
                 .getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
 
@@ -102,23 +102,23 @@ public class SpecificST extends AbstractST {
         PodAffinityTerm kafkaPodAffinityTerm = kafkaPodSpecAffinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm();
 
         assertThat(kafkaPodAffinityTerm.getTopologyKey(), is(rackKey));
-        assertThat(kafkaPodAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", CLUSTER_NAME));
-        assertThat(kafkaPodAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)));
+        assertThat(kafkaPodAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", clusterName));
+        assertThat(kafkaPodAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaStatefulSetName(clusterName)));
 
-        String rackId = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
+        String rackId = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
         assertThat(rackId.trim(), is("zone"));
 
-        String brokerRack = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
+        String brokerRack = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertThat(brokerRack.contains("broker.rack=zone"), is(true));
 
-        String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(clusterName, 0));
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
         KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(0)
@@ -146,7 +146,7 @@ public class SpecificST extends AbstractST {
         String wrongRackKey = "wrong-key";
         String rackKey = "rack-key";
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewRack()
@@ -156,11 +156,11 @@ public class SpecificST extends AbstractST {
                     .endKafka()
                 .endSpec().done();
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with wrong rack-aware topology key: {}", wrongRackKey);
-        KafkaConnect kc = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(CLUSTER_NAME, CLUSTER_NAME, 1)
+        KafkaConnect kc = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(clusterName, clusterName, 1)
                 .editSpec()
                     .withNewRack()
                         .withTopologyKey(wrongRackKey)
@@ -172,28 +172,28 @@ public class SpecificST extends AbstractST {
                 .endSpec().build());
         KafkaConnectResource.allowNetworkPolicyForKafkaConnect(kc);
 
-        PodUtils.waitForPendingPod(CLUSTER_NAME + "-connect");
+        PodUtils.waitForPendingPod(clusterName + "-connect");
         List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         String connectWrongPodName = connectWrongPods.get(0);
         LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrectly set up KafkaConnect");
-        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", NAMESPACE, CLUSTER_NAME);
+        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", NAMESPACE, clusterName);
 
-        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get();
         PodStatus kcWrongStatus = kubeClient().getPod(connectWrongPodName).getStatus();
         assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
         assertThat("PodScheduled", is(kcWrongStatus.getConditions().get(0).getType()));
 
-        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, kafkaConnect -> {
+        KafkaConnectResource.replaceKafkaConnectResource(clusterName, kafkaConnect -> {
             kafkaConnect.getSpec().setRack(new Rack(rackKey));
         });
-        KafkaConnectUtils.waitForConnectReady(CLUSTER_NAME);
+        KafkaConnectUtils.waitForConnectReady(clusterName);
         LOGGER.info("KafkaConnect is ready with changed rack key: '{}'.", rackKey);
         LOGGER.info("Verify KafkaConnect rack key update");
-        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get();
         assertThat(kc.getSpec().getRack().getTopologyKey(), is(rackKey));
 
         List<String> kcPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-        KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, CLUSTER_NAME);
+        KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
         ResourceManager.setClassResources();
@@ -218,7 +218,7 @@ public class SpecificST extends AbstractST {
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String rackKey = "rack-key";
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewRack()
@@ -228,11 +228,11 @@ public class SpecificST extends AbstractST {
                     .endKafka()
                 .endSpec().done();
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with correct rack-aware topology key: {}", rackKey);
-        KafkaConnect kc = KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnect kc = KafkaConnectResource.kafkaConnect(clusterName, 1)
                 .editSpec()
                     .withNewRack()
                         .withTopologyKey(rackKey)
@@ -245,11 +245,11 @@ public class SpecificST extends AbstractST {
         KafkaConnectResource.allowNetworkPolicyForKafkaConnect(kc);
 
         String topicName = "topic-test-rack-aware";
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+        KafkaTopicResource.topic(clusterName, topicName).done();
 
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         for (String connectPodName : connectPods) {
-            Affinity connectPodSpecAffinity = kubeClient().getDeployment(KafkaConnectResources.deploymentName(CLUSTER_NAME)).getSpec().getTemplate().getSpec().getAffinity();
+            Affinity connectPodSpecAffinity = kubeClient().getDeployment(KafkaConnectResources.deploymentName(clusterName)).getSpec().getTemplate().getSpec().getAffinity();
             NodeSelectorRequirement connectPodNodeSelectorRequirement = connectPodSpecAffinity.getNodeAffinity()
                     .getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
             Pod connectPod = kubeClient().getPod(connectPodName);
@@ -259,7 +259,7 @@ public class SpecificST extends AbstractST {
             assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
             assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
-            KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, CLUSTER_NAME);
+            KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
         }
 
         // Revert changes for CO deployment
@@ -276,7 +276,7 @@ public class SpecificST extends AbstractST {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -300,13 +300,13 @@ public class SpecificST extends AbstractST {
             .endSpec()
             .done();
 
-        assertThat("Kafka External bootstrap doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.externalBootstrapServiceName(CLUSTER_NAME)).getSpec().getLoadBalancerIP(), is(bootstrapOverrideIP));
-        assertThat("Kafka Broker-0 service doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.brokerSpecificService(CLUSTER_NAME, 0)).getSpec().getLoadBalancerIP(), is(brokerOverrideIP));
+        assertThat("Kafka External bootstrap doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.externalBootstrapServiceName(clusterName)).getSpec().getLoadBalancerIP(), is(bootstrapOverrideIP));
+        assertThat("Kafka Broker-0 service doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.brokerSpecificService(clusterName, 0)).getSpec().getLoadBalancerIP(), is(brokerOverrideIP));
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -323,7 +323,7 @@ public class SpecificST extends AbstractST {
         String nonExistingVersion = "6.6.6";
         String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported. Supported versions are.*";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion(nonExistingVersion)
@@ -332,10 +332,10 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
 
-        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(CLUSTER_NAME, NAMESPACE, nonExistingVersionMessage);
+        KafkaUtils.waitForKafkaNotReady(clusterName);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, nonExistingVersionMessage);
 
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
     @Test
@@ -356,7 +356,7 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Network address of machine with associated prefix is {}", ipWithPrefix);
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3)
+        KafkaResource.kafkaPersistent(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -377,7 +377,7 @@ public class SpecificST extends AbstractST {
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -391,7 +391,7 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Replacing Kafka CR invalid load-balancer source range to {}", invalidNetworkAddress);
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+        KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getTemplate().getExternalBootstrapService().setLoadBalancerSourceRanges(Collections.singletonList(invalidNetworkAddress))
         );
 

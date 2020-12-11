@@ -56,7 +56,7 @@ public class OpaIntegrationST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withKafkaUsername(OPA_GOOD_USER)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(consumerGroupName)
@@ -90,7 +90,7 @@ public class OpaIntegrationST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withKafkaUsername(OPA_SUPERUSER)
             .withMessageCount(MESSAGE_COUNT)
             .withConsumerGroupName(consumerGroupName)
@@ -113,7 +113,7 @@ public class OpaIntegrationST extends AbstractST {
         // Install OPA
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME,  3, 1)
+        KafkaResource.kafkaEphemeral(clusterName,  3, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()
@@ -133,12 +133,12 @@ public class OpaIntegrationST extends AbstractST {
             .endSpec()
             .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
-        KafkaUser goodUser = KafkaUserResource.tlsUser(CLUSTER_NAME, OPA_GOOD_USER).done();
-        KafkaUser badUser = KafkaUserResource.tlsUser(CLUSTER_NAME, OPA_BAD_USER).done();
-        KafkaUser superuser = KafkaUserResource.tlsUser(CLUSTER_NAME, OPA_SUPERUSER).done();
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
+        KafkaUser goodUser = KafkaUserResource.tlsUser(clusterName, OPA_GOOD_USER).done();
+        KafkaUser badUser = KafkaUserResource.tlsUser(clusterName, OPA_BAD_USER).done();
+        KafkaUser superuser = KafkaUserResource.tlsUser(clusterName, OPA_SUPERUSER).done();
 
-        final String kafkaClientsDeploymentName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
+        final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         KafkaClientsResource.deployKafkaClients(true, kafkaClientsDeploymentName, false, goodUser, badUser, superuser).done();
         clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsDeploymentName).get(0).getMetadata().getName();

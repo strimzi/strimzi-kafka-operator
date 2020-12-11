@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.containsString;
 public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
+    private final String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
 
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
@@ -111,17 +112,19 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     @BeforeAll
     void beforeAll() throws Exception {
         deployClusterOperator(NAMESPACE);
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
+        KafkaResource.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1).done();
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeCorsClusterName)).build();
 
-        KafkaBridgeResource.kafkaBridgeWithCors(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME),
+        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+
+        KafkaBridgeResource.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
             1, ALLOWED_ORIGIN, null).done();
 
-        KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getHttp().getCors();
+        KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(httpBridgeCorsClusterName).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
-        bridgeUrl = KafkaBridgeResources.url(CLUSTER_NAME, NAMESPACE, bridgePort);
+        bridgeUrl = KafkaBridgeResources.url(httpBridgeCorsClusterName, NAMESPACE, bridgePort);
     }
 }
