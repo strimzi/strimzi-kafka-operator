@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -45,6 +46,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(NETWORKPOLICIES_SUPPORTED)
 public class NetworkPoliciesST extends AbstractST {
@@ -229,25 +231,9 @@ public class NetworkPoliciesST extends AbstractST {
 
     @Test
     void testNPWhenOperatorIsInSameNamespaceAsOperand() {
-        EnvVar operatorNamespaceEnv = new EnvVarBuilder()
-            .withName("STRIMZI_OPERATOR_NAMESPACE")
-            .withValue(NAMESPACE)
-            .build();
+        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        prepareEnvForOperator(NAMESPACE);
-        applyRoleBindings(NAMESPACE);
-        // 060-Deployment
-        BundleResource.clusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .editOrNewSpec()
-                .editOrNewTemplate()
-                    .editOrNewSpec()
-                        .editContainer(0)
-                            .addToEnv(operatorNamespaceEnv)
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .done();
+        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -258,6 +244,8 @@ public class NetworkPoliciesST extends AbstractST {
 
     @Test
     void testNPWhenOperatorIsInDifferentNamespaceThanOperand() {
+        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
+
         String secondNamespace = "second-" + NAMESPACE;
 
         Map<String, String> labels = new HashMap<>();
