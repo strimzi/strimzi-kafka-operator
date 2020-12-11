@@ -18,6 +18,7 @@ Kafka Connect is typically used to integrate Kafka with external databases and s
 The procedures in this section show how to:
 
 * xref:deploying-kafka-connect-{context}[Deploy a Kafka Connect cluster using a `KafkaConnect` resource]
+* xref:con-kafka-connect-multiple-instances-{context}[Run multiple Kafka Connect instances]
 * xref:using-kafka-connect-with-plug-ins-{context}[Create a Kafka Connect image containing the connectors you need to make your connection]
 * xref:con-creating-managing-connectors-{context}[Create and manage connectors using a `KafkaConnector` resource or the Kafka Connect REST API]
 * xref:proc-deploying-kafkaconnector-{context}[Deploy a `KafkaConnector` resource to Kafka Connect]
@@ -27,6 +28,8 @@ In this guide, the term _connector_ is used when the meaning is clear from the c
 
 //Procedure to deploy a Kafka Connect cluster
 include::modules/proc-deploy-kafka-connect.adoc[leveloffset=+1]
+//Running multiple Kafka Connect instances
+include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 //Options to deploy Kafka Connect with new container image
 include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
 //Overview of creating connectors through API
