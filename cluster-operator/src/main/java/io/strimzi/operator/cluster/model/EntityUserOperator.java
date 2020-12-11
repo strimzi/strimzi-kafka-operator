@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -336,12 +337,20 @@ public class EntityUserOperator extends AbstractModel {
                 .withKind("ClusterRole")
                 .build();
 
-        return generateRoleBinding(
+        RoleBinding rb = generateRoleBinding(
                 roleBindingForClusterRoleName(cluster),
                 watchedNamespace,
                 roleRef,
                 singletonList(ks)
         );
+
+        // We set OwnerReference only within the same namespace since it does not work cross-namespace
+        if (!namespace.equals(watchedNamespace)) {
+            rb.getMetadata().setOwnerReferences(Collections.emptyList());
+        }
+
+        return rb;
+
     }
 
     @Override
@@ -370,8 +379,8 @@ public class EntityUserOperator extends AbstractModel {
         );
 
         // We set OwnerReference only within the same namespace since it does not work cross-namespace
-        if (namespace.equals(watchedNamespace)) {
-            rb.getMetadata().setOwnerReferences(singletonList(createOwnerReference()));
+        if (!namespace.equals(watchedNamespace)) {
+            rb.getMetadata().setOwnerReferences(Collections.emptyList());
         }
 
         return rb;

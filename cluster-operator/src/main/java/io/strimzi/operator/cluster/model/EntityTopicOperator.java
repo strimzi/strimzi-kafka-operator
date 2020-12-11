@@ -339,12 +339,19 @@ public class EntityTopicOperator extends AbstractModel {
                 .withKind("Role")
                 .build();
 
-        return generateRoleBinding(
+        RoleBinding rb = generateRoleBinding(
                 roleBindingForRoleName(cluster),
                 watchedNamespace,
                 roleRef,
                 singletonList(ks)
         );
+
+        // We set OwnerReference only within the same namespace since it does not work cross-namespace
+        if (!namespace.equals(watchedNamespace)) {
+            rb.getMetadata().setOwnerReferences(Collections.emptyList());
+        }
+
+        return rb;
     }
 
     public void setContainerEnvVars(List<ContainerEnvVar> envVars) {
