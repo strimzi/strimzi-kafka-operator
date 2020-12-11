@@ -5,6 +5,7 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
@@ -24,6 +25,7 @@ import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
@@ -254,7 +256,7 @@ public abstract class AbstractOperator<
                     if (deleteResult) {
                         log.info("{}: {} {} deleted", reconciliation, kind, name);
                     } else {
-                        log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, name);
+                        log.info("{}: Assembly {} or some parts of it will be deleted by garbage collection", reconciliation, name);
                     }
                     return (Void) null;
                 }).recover(deleteResult -> {
@@ -513,5 +515,36 @@ public abstract class AbstractOperator<
                 log.debug("{}: Removed metric " + METRICS_PREFIX + "resource.state{}", reconciliation, metricTags);
             }
         }
+    }
+
+    /**
+     * In some cases, when the ClusterRoleBinding reconciliation fails with RBAC error and the desired object is null,
+     * we want to ignore the error and return success. This is used to let Strimzi work without some Cluster-wide RBAC
+     * rights when the features they are needed for are not used by the user.
+     *
+     * @param reconcileFuture   The original reconciliation future
+     * @param desired           The desired state of the resource.
+     * @return                  A future which completes when the resource was reconciled.
+     */
+    public Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
+        Promise<ReconcileResult<ClusterRoleBinding>> replacementPromise = Promise.promise();
+
+        reconcileFuture.onComplete(res -> {
+            if (res.failed()) {
+                if (desired == null
+                        && res.cause() != null
+                        && res.cause().getMessage() != null
+                        && res.cause().getMessage().contains("Message: Forbidden!")) {
+                    log.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
+                    replacementPromise.complete(ReconcileResult.noop(null));
+                } else {
+                    replacementPromise.fail(res.cause());
+                }
+            } else {
+                replacementPromise.complete(res.result());
+            }
+        });
+
+        return replacementPromise.future();
     }
 }

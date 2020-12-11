@@ -194,25 +194,20 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connectCluster) {
         ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding();
-        Future<ReconcileResult<ClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
-                KafkaConnectResources.initContainerClusterRoleBindingName(name, namespace), desired);
 
-        Promise<ReconcileResult<ClusterRoleBinding>> replacementPromise = Promise.promise();
+        return withIgnoreRbacError(clusterRoleBindingOperations.reconcile(KafkaConnectResources.initContainerClusterRoleBindingName(name, namespace), desired), desired);
+    }
 
-        fut.onComplete(res -> {
-            if (res.failed()) {
-                if (desired == null && res.cause() != null && res.cause().getMessage() != null &&
-                        res.cause().getMessage().contains("Message: Forbidden!")) {
-                    log.debug("Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka Connect rack awareness is disabled.");
-                    replacementPromise.complete();
-                } else {
-                    replacementPromise.fail(res.cause());
-                }
-            } else {
-                replacementPromise.complete(res.result());
-            }
-        });
-
-        return replacementPromise.future();
+    /**
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
+     *
+     * @param reconciliation    The Reconciliation identification
+     * @return                  Future indicating the result of the deletion
+     */
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return super.delete(reconciliation)
+                .compose(i -> withIgnoreRbacError(clusterRoleBindingOperations.reconcile(KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 }
