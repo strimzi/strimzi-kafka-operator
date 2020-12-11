@@ -135,15 +135,15 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void installClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) throws Exception {
+    protected void installClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
         installClusterOperator(namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
     }
 
-    protected void installClusterOperator(String namespace, long operationTimeout) throws Exception {
+    protected void installClusterOperator(String namespace, long operationTimeout) {
         installClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
     }
 
-    protected void installClusterOperator(String namespace) throws Exception {
+    protected void installClusterOperator(String namespace) {
         installClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 

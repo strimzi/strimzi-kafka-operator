@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -44,7 +43,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import kafka.tools.MirrorMaker;
@@ -78,7 +76,6 @@ import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
@@ -700,180 +697,6 @@ class SecurityST extends AbstractST {
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
         );
-    }
-
-    @Test
-    @Tag(NETWORKPOLICIES_SUPPORTED)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testNetworkPoliciesWithPlainListener() {
-        String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
-        String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
-        Map<String, String> matchLabelForPlain = new HashMap<>();
-        matchLabelForPlain.put("app", allowedKafkaClientsName);
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                            .withNewKafkaListenerAuthenticationScramSha512Auth()
-                            .endKafkaListenerAuthenticationScramSha512Auth()
-                            .withNetworkPolicyPeers(
-                                    new NetworkPolicyPeerBuilder()
-                                            .withNewPodSelector()
-                                            .withMatchLabels(matchLabelForPlain)
-                                            .endPodSelector()
-                                            .build())
-                        .endGenericKafkaListener()
-                    .endListeners()
-                .endKafka()
-                .withNewKafkaExporter()
-                .endKafkaExporter()
-            .endSpec()
-            .done();
-
-        String topic0 = "topic-example-0";
-        String topic1 = "topic-example-1";
-
-        String userName = "user-example";
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-
-        KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
-
-        KafkaClientsResource.deployKafkaClients(false, allowedKafkaClientsName, kafkaUser).done();
-
-        String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
-
-        LOGGER.info("Verifying that {} pod is able to exchange messages", allowedKafkaClientsPodName);
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(allowedKafkaClientsPodName)
-            .withTopicName(topic0)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(userName)
-            .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-            .build();
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
-
-        KafkaClientsResource.deployKafkaClients(false, deniedKafkaClientsName, kafkaUser).done();
-
-        String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
-
-        InternalKafkaClient newInternalKafkaClient = internalKafkaClient.toBuilder()
-            .withUsingPodName(deniedKafkaClientsPodName)
-            .withTopicName(topic1)
-            .build();
-
-        LOGGER.info("Verifying that {} pod is not able to exchange messages", deniedKafkaClientsPodName);
-        assertThrows(AssertionError.class, () ->  {
-            newInternalKafkaClient.checkProducedAndConsumedMessages(
-                newInternalKafkaClient.sendMessagesPlain(),
-                newInternalKafkaClient.receiveMessagesPlain()
-            );
-        });
-
-        LOGGER.info("Check metrics exported by Kafka Exporter");
-        Map<String, String> kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
-        assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
-        for (Map.Entry<String, String> entry : kafkaExporterMetricsData.entrySet()) {
-            assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
-            assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_consumergroup_current_offset"));
-            assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topic0 + "\"} 1"));
-            assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topic1 + "\"} 1"));
-        }
-    }
-
-    @Test
-    @Tag(NETWORKPOLICIES_SUPPORTED)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testNetworkPoliciesWithTlsListener() {
-        String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
-        String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
-        Map<String, String> matchLabelsForTls = new HashMap<>();
-        matchLabelsForTls.put("app", allowedKafkaClientsName);
-
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewKafkaListenerAuthenticationScramSha512Auth()
-                            .endKafkaListenerAuthenticationScramSha512Auth()
-                            .withNetworkPolicyPeers(
-                                    new NetworkPolicyPeerBuilder()
-                                            .withNewPodSelector()
-                                            .withMatchLabels(matchLabelsForTls)
-                                            .endPodSelector()
-                                            .build())
-                        .endGenericKafkaListener()
-                    .endListeners()
-                .endKafka()
-            .endSpec()
-            .done();
-
-        String topic0 = "topic-example-0";
-        String topic1 = "topic-example-1";
-        KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
-
-        String userName = "user-example";
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
-
-        KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).done();
-
-        String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
-
-        LOGGER.info("Verifying that {} pod is able to exchange messages", allowedKafkaClientsPodName);
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(allowedKafkaClientsPodName)
-            .withTopicName(topic0)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(userName)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-            .build();
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
-
-        KafkaClientsResource.deployKafkaClients(true, deniedKafkaClientsName, kafkaUser).done();
-
-        String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
-
-        InternalKafkaClient newInternalKafkaClient = internalKafkaClient.toBuilder()
-            .withUsingPodName(deniedKafkaClientsPodName)
-            .withTopicName(topic1)
-            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
-            .build();
-
-        LOGGER.info("Verifying that {} pod is  not able to exchange messages", deniedKafkaClientsPodName);
-
-        assertThrows(AssertionError.class, () -> {
-            newInternalKafkaClient.checkProducedAndConsumedMessages(
-                newInternalKafkaClient.sendMessagesTls(),
-                newInternalKafkaClient.receiveMessagesTls()
-            );
-        });
     }
 
     @Test

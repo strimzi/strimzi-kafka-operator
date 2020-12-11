@@ -214,6 +214,7 @@ public class KafkaUtils {
      */
     public static void  updateConfigurationWithStabilityWait(String clusterName, String brokerConfigName, Object value) {
         updateSpecificConfiguration(clusterName, brokerConfigName, value);
+        waitForClusterStability(clusterName);
     }
 
     /**
