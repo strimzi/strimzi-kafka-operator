@@ -1665,26 +1665,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
             ClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
-            Future<ReconcileResult<ClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
-                    KafkaResources.initContainerClusterRoleBindingName(name, namespace), desired);
 
-            Promise replacementPromise = Promise.promise();
-
-            fut.onComplete(res -> {
-                if (res.failed()) {
-                    if (desired == null && res.cause() != null && res.cause().getMessage() != null &&
-                            res.cause().getMessage().contains("Message: Forbidden!")) {
-                        log.debug("Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.");
-                        replacementPromise.complete();
-                    } else {
-                        replacementPromise.fail(res.cause());
-                    }
-                } else {
-                    replacementPromise.complete();
-                }
-            });
-
-            return withVoid(replacementPromise.future());
+            return withVoid(withIgnoreRbacError(clusterRoleBindingOperations.reconcile(KafkaResources.initContainerClusterRoleBindingName(name, namespace), desired), desired));
         }
 
         Future<ReconciliationState> kafkaScaleDown() {
@@ -3532,5 +3514,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     @Override
     protected KafkaStatus createStatus() {
         return new KafkaStatus();
+    }
+
+    /**
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
+     *
+     * @param reconciliation    The Reconciliation identification
+     * @return                  Future indicating the result of the deletion
+     */
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return withIgnoreRbacError(clusterRoleBindingOperations.reconcile(KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 }

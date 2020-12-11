@@ -1339,9 +1339,8 @@ public abstract class AbstractModel {
     protected ClusterRoleBinding getClusterRoleBinding(String name, Subject subject, RoleRef roleRef) {
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withOwnerReferences(createOwnerReference())
-                .withLabels(labels.toMap())
+                    .withName(name)
+                    .withLabels(labels.toMap())
                 .endMetadata()
                 .withSubjects(subject)
                 .withRoleRef(roleRef)

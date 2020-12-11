@@ -98,5 +98,4 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return Future.succeededFuture(Boolean.FALSE);
     }
-
 }
