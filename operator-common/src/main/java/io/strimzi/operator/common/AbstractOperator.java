@@ -535,7 +535,7 @@ public abstract class AbstractOperator<
                         && res.cause() != null
                         && res.cause().getMessage() != null
                         && res.cause().getMessage().contains("Message: Forbidden!")) {
-                    log.debug("Ignoring forbidden access to resource which does not seem to be required.");
+                    log.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
                     replacementPromise.complete(ReconcileResult.noop(null));
                 } else {
                     replacementPromise.fail(res.cause());
