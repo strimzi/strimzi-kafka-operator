@@ -11,6 +11,7 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClient
 import io.vertx.ext.web.client.WebClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base for test classes where HTTP Bridge is used.

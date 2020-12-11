@@ -63,7 +63,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testStrimziEphemeral() {
         String clusterName = "foo";
-        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-ephemeral", map("clusterName", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -79,7 +79,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testStrimziPersistent() {
         String clusterName = "bar";
-        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-persistent", map("clusterName", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -94,7 +94,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
-        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-ephemeral", map("clusterName", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -122,7 +122,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Test
     void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
-        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-persistent", map("clusterName", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -156,7 +156,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Tag(CONNECT)
     void testConnect() {
         String clusterName = "test-connect";
-        oc.createResourceAndApply("strimzi-connect", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-connect", map("clusterName", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnect connect = getKafkaConnect(clusterName);
@@ -168,7 +168,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     @Tag(CONNECT_S2I)
     void testConnectS2I() {
         String clusterName = "test-s2i";
-        oc.createResourceAndApply("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
+        oc.createResourceAndApply("strimzi-connect-s2i", map("clusterName", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnectS2I cm = getKafkaConnectS2I(clusterName);
