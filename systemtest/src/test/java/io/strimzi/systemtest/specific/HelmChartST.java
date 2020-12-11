@@ -24,7 +24,6 @@ class HelmChartST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
 
     static final String NAMESPACE = "helm-chart-cluster-test";
-    private static final String clusterName = "my-cluster";
 
     @Test
     void testDeployKafkaClusterViaHelmChart() {
