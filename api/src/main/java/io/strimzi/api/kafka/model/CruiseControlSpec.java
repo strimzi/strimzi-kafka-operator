@@ -89,7 +89,8 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
 
     @Description("The Cruise Control configuration. For a full list of configuration options refer to" +
             " https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties " +
-            "with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+            "with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES +
+            " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
