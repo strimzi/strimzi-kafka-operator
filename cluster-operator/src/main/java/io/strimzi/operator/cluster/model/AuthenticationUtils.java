@@ -341,9 +341,9 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Generates the necessary resources that the Kafka Cluster needs to secure the Kafka Jmx Port
+     * Generates the necessary resources that the Kafka Cluster needs to secure the Jmx Port
      *
-     * @param authentication the Authentication Configuration for the Kafka Jmx Port
+     * @param authentication the Authentication Configuration for the Jmx Port
      * @param kafkaCluster the current state of the kafka Cluster CR
      */
     public static void configureKafkaJmxOptions(KafkaJmxAuthentication authentication, KafkaCluster kafkaCluster)   {
@@ -353,6 +353,23 @@ public class AuthenticationUtils {
             }
         } else {
             kafkaCluster.setJmxAuthenticated(false);
+        }
+    }
+
+
+    /**
+     * Generates the necessary resources that the KafkaConnect Cluster needs to secure the Jmx Port
+     *
+     * @param authentication the Authentication Configuration for the Jmx Port
+     * @param kafkaConnectCluster the current state of the kafkaConnect Cluster CR
+     */
+    public static void configureKafkaConnectJmxOptions(KafkaJmxAuthentication authentication, KafkaConnectCluster kafkaConnectCluster)   {
+        if (authentication != null) {
+            if (authentication instanceof KafkaJmxAuthenticationPassword) {
+                kafkaConnectCluster.setJmxAuthenticated(true);
+            }
+        } else {
+            kafkaConnectCluster.setJmxAuthenticated(false);
         }
     }
 
