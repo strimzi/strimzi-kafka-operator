@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
@@ -43,8 +42,8 @@ public class Annotations {
      * Whitelist of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
      */
     public static final List<Predicate<String>> LOADBALANCER_ANNOTATION_WHITELIST = List.of(
-            annotation -> annotation.startsWith("cattle.io/"),
-            annotation -> annotation.startsWith("field.cattle.io")
+        annotation -> annotation.startsWith("cattle.io/"),
+        annotation -> annotation.startsWith("field.cattle.io")
     );
 
     private static Map<String, String> annotations(ObjectMeta metadata) {
