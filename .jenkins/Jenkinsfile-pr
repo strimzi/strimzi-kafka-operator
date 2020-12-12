@@ -87,6 +87,9 @@ pipeline {
                     }
                     if (env.ghprbCommentBody.contains('kube_version=')) {
                         env.KUBE_VERSION = env.ghprbCommentBody.split('kube_version=')[1].split(/\s/)[0]
+                    } else {
+                        // Default version (the oldest supported by Strimzi)
+                        env.KUBE_VERSION = "1.15.0"
                     }
                     println("ENV_VARS: ${env.ENV_VARS}")
                     env.BUILD_PROJECT_STATUS = false
@@ -105,7 +108,7 @@ pipeline {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
-                        lib = evaluate readFile('./jenkins.groovy')
+                        lib = evaluate readFile('./.jenkins/jenkins.groovy')
                         lib.setupKubernetes()
                     }
                 }
