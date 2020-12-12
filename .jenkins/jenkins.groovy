@@ -1,5 +1,7 @@
 
 def setupKubernetes() {
+    // set SElinux to permisive mode
+    sh(script: "sudo setenforce 0")
     sh(script: "${workspace}/.azure/scripts/setup-kubernetes.sh")
 }
 
