@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
@@ -35,6 +37,14 @@ public class Annotations {
     public static final String ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE = "operator." + Annotations.STRIMZI_DOMAIN + "manual-rolling-update";
 
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
+
+    /**
+     * Whitelist of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
+     */
+    public static final List<Predicate<String>> LOADBALANCER_ANNOTATION_WHITELIST = List.of(
+        annotation -> annotation.startsWith("cattle.io/"),
+        annotation -> annotation.startsWith("field.cattle.io")
+    );
 
     private static Map<String, String> annotations(ObjectMeta metadata) {
         Map<String, String> annotations = metadata.getAnnotations();
