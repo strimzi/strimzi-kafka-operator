@@ -56,7 +56,6 @@ def postAction(String artifactDir, String prID, String prAuthor, String prTitle,
         currentBuild.result = 'SUCCESS'
         sendMail(address, "succeeded", prID, prAuthor, prTitle, prUrl, buildUrl)
     }
-    teardownEnvironment(workspace)
 }
 
 def sendMail(String address, String status, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl) {
