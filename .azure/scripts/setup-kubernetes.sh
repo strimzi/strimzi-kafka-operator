@@ -3,6 +3,8 @@ set -x
 
 rm -rf ~/.kube
 
+KUBE_VERSION=${KUBE_VERSION:-1.15.0}
+
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
         TEST_KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
@@ -72,7 +74,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     docker run -d -p 5000:5000 registry
 
     export KUBECONFIG=$HOME/.kube/config
-    sudo -E minikube start --vm-driver=none --kubernetes-version=v1.15.0 \
+    sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=RBAC
     sudo -E minikube addons enable default-storageclass
 
