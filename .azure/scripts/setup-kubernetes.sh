@@ -22,28 +22,6 @@ function install_nsenter {
     sudo cp nsenter /usr/bin
 }
 
-function wait_for_minikube {
-    i="0"
-
-    while [ $i -lt 60 ]
-    do
-        # The role needs to be added because Minikube is not fully prepared for RBAC.
-        # Without adding the cluster-admin rights to the default service account in kube-system
-        # some components would be crashing (such as KubeDNS). This should have no impact on
-        # RBAC for Strimzi during the system tests.
-        kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
-        if [ $? -ne 0 ]
-        then
-            sleep 1
-        else
-            return 0
-        fi
-        i=$[$i+1]
-    done
-
-    return 1
-}
-
 function label_node {
 	# It should work for all clusters
 	for nodeName in $(kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
@@ -75,16 +53,16 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 
     export KUBECONFIG=$HOME/.kube/config
     sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} \
-      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=RBAC
-    sudo -E minikube addons enable default-storageclass
-
-    wait_for_minikube
+      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC
 
     if [ $? -ne 0 ]
     then
         echo "Minikube failed to start or RBAC could not be properly set up"
         exit 1
     fi
+
+    sudo -E minikube addons enable default-storageclass
+	kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
