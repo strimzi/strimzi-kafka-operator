@@ -52,7 +52,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     docker run -d -p 5000:5000 registry
 
     export KUBECONFIG=$HOME/.kube/config
-    sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} \
+    sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} --network-plugin=cni --cni=calico \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC
 
     if [ $? -ne 0 ]

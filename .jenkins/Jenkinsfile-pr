@@ -1,7 +1,8 @@
 #!/usr/bin/env groovy
 
 def lib
-def DEFAULT_EXCLUDED_GROUPS = null
+// Currently the loadbalancer service is not working on minikube
+def DEFAULT_EXCLUDED_GROUPS = "loadbalancer"
 
 pipeline {
     agent {
