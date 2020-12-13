@@ -33,7 +33,6 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     public static final String TYPE_KEYCLOAK = "keycloak";
 
     public static final String AUTHORIZER_CLASS_NAME = "io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer";
-    public static final String PRINCIPAL_BUILDER_CLASS_NAME = "io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder";
 
     private String clientId;
     private String tokenEndpointUri;

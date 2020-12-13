@@ -201,7 +201,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
-                "principal.builder.class=io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder\n" +
+                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder\n" +
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
                 "strimzi.authorization.client.id=my-client-id\n" +
                 "strimzi.authorization.delegate.to.kafka.acl=false\n" +
@@ -234,7 +234,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
-                "principal.builder.class=io.strimzi.kafka.oauth.server.authorizer.JwtKafkaPrincipalBuilder\n" +
+                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder\n" +
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
                 "strimzi.authorization.client.id=my-client-id\n" +
                 "strimzi.authorization.delegate.to.kafka.acl=false\n" +
