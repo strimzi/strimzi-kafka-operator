@@ -201,7 +201,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder\n" +
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
                 "strimzi.authorization.client.id=my-client-id\n" +
                 "strimzi.authorization.delegate.to.kafka.acl=false\n" +
@@ -234,7 +233,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder\n" +
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
                 "strimzi.authorization.client.id=my-client-id\n" +
                 "strimzi.authorization.delegate.to.kafka.acl=false\n" +
@@ -932,6 +930,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "sasl.enabled.mechanisms=",
                 "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
+                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.crypto.provider.bouncycastle=\"true\" oauth.username.claim=\"preferred_username\";",
                 "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
@@ -971,7 +970,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" ;",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER"));
+                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
+                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
 
     @Test
@@ -1016,7 +1016,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.jwks.endpoint.uri=\"https://jwks\" oauth.crypto.provider.bouncycastle=\"true\" oauth.username.claim=\"preferred_username\" oauth.ssl.endpoint.identification.algorithm=\"\" oauth.ssl.truststore.location=\"/tmp/kafka/oauth-plain-9092.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER"));
+                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
+                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
 
     @Test
@@ -1057,7 +1058,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.client.secret=\"${STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET}\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER"));
+                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
+                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
 
     @Test
