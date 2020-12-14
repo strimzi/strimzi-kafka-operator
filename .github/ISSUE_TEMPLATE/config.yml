@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and Discussions
+    url: https://github.com/strimzi/strimzi-kafka-operator/discussions
+    about: Please ask and discuss questions here.

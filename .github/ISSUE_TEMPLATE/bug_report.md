@@ -1,11 +1,13 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: "[Bug] ..."
+title: ''
 labels: bug
 assignees: ''
 
 ---
+
+_Please use this to only for bug reports. For questions or when you need help, you can use the [GitHub Discussions](https://github.com/strimzi/strimzi-kafka-operator/discussions), our [#strimzi Slack channel](https://slack.cncf.io/) or out [user mailing list](https://lists.cncf.io/g/cncf-strimzi-users/topics)._
 
 **Describe the bug**
 A clear and concise description of what the bug is.
