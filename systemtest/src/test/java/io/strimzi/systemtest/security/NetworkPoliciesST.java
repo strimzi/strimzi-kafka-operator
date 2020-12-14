@@ -60,12 +60,12 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesWithPlainListener() {
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
-        String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
-        String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
+        String allowedKafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS + "-allow";
+        String deniedKafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS + "-deny";
         Map<String, String> matchLabelForPlain = new HashMap<>();
         matchLabelForPlain.put("app", allowedKafkaClientsName);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -94,10 +94,10 @@ public class NetworkPoliciesST extends AbstractST {
         String topic1 = "topic-example-1";
 
         String userName = "user-example";
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(clusterName, userName).done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
+        KafkaTopicResource.topic(clusterName, topic0).done();
+        KafkaTopicResource.topic(clusterName, topic1).done();
 
         KafkaClientsResource.deployKafkaClients(false, allowedKafkaClientsName, kafkaUser).done();
 
@@ -109,7 +109,7 @@ public class NetworkPoliciesST extends AbstractST {
             .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -139,7 +139,7 @@ public class NetworkPoliciesST extends AbstractST {
         });
 
         LOGGER.info("Check metrics exported by Kafka Exporter");
-        Map<String, String> kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
+        Map<String, String> kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(clusterName);
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
         for (Map.Entry<String, String> entry : kafkaExporterMetricsData.entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
@@ -154,12 +154,12 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesWithTlsListener() {
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
-        String allowedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-allow";
-        String deniedKafkaClientsName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS + "-deny";
+        String allowedKafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS + "-allow";
+        String deniedKafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS + "-deny";
         Map<String, String> matchLabelsForTls = new HashMap<>();
         matchLabelsForTls.put("app", allowedKafkaClientsName);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -184,11 +184,11 @@ public class NetworkPoliciesST extends AbstractST {
 
         String topic0 = "topic-example-0";
         String topic1 = "topic-example-1";
-        KafkaTopicResource.topic(CLUSTER_NAME, topic0).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, topic1).done();
+        KafkaTopicResource.topic(clusterName, topic0).done();
+        KafkaTopicResource.topic(clusterName, topic1).done();
 
         String userName = "user-example";
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
+        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(clusterName, userName).done();
 
         KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).done();
 
@@ -200,7 +200,7 @@ public class NetworkPoliciesST extends AbstractST {
             .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
@@ -237,7 +237,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaEphemeral(clusterName, 3).done();
 
         checkNetworkPoliciesInNamespace(NAMESPACE);
 
@@ -290,7 +290,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         cluster.setNamespace(secondNamespace);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.kafkaEphemeral(clusterName, 3)
             .editMetadata()
                 .addToLabels(labels)
             .endMetadata()
@@ -304,17 +304,17 @@ public class NetworkPoliciesST extends AbstractST {
     void checkNetworkPoliciesInNamespace(String namespace) {
         List<NetworkPolicy> networkPolicyList = new ArrayList<>(kubeClient().getClient().network().networkPolicies().inNamespace(namespace).list().getItems());
 
-        String networkPolicyPrefix = CLUSTER_NAME + "-network-policy";
+        String networkPolicyPrefix = clusterName + "-network-policy";
 
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(networkPolicyPrefix + "-kafka")).findFirst());
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(networkPolicyPrefix + "-zookeeper")).findFirst());
     }
 
     void changeKafkaConfigurationAndCheckObservedGeneration(String namespace) {
-        long observedGen = KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
-        KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, "log.message.timestamp.type", "LogAppendTime");
+        long observedGen = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getObservedGeneration();
+        KafkaUtils.updateConfigurationWithStabilityWait(clusterName, "log.message.timestamp.type", "LogAppendTime");
 
-        assertThat(KafkaResource.kafkaClient().inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(not(observedGen)));
+        assertThat(KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getObservedGeneration(), is(not(observedGen)));
     }
 
     @BeforeAll
