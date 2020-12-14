@@ -224,39 +224,23 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testRoleBindingInOtherNamespace()   {
-        RoleBinding binding = entityTopicOperator.generateRoleBindingForClusterRole(namespace, toWatchedNamespace);
-
-        assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
-        assertThat(binding.getMetadata().getNamespace(), is(toWatchedNamespace));
-        assertThat(binding.getMetadata().getOwnerReferences().size(), is(0));
-    }
-
-    @Test
-    public void testRoleBindingInTheSameNamespace()   {
-        RoleBinding binding = entityTopicOperator.generateRoleBindingForClusterRole(namespace, namespace);
-
-        assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
-        assertThat(binding.getMetadata().getNamespace(), is(namespace));
-        assertThat(binding.getMetadata().getOwnerReferences().size(), is(1));
-    }
-
-    @Test
-    public void testRoleBindingForClusterRole() {
-        RoleBinding binding = entityTopicOperator.generateRoleBindingForClusterRole(namespace, toWatchedNamespace);
-
-        assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
-        assertThat(binding.getMetadata().getNamespace(), is(toWatchedNamespace));
-
-        assertThat(binding.getRoleRef().getKind(), is("ClusterRole"));
-        assertThat(binding.getRoleRef().getName(), is("strimzi-entity-operator"));
-    }
-
-    @Test
-    public void testRoleBindingForRole() {
         RoleBinding binding = entityTopicOperator.generateRoleBindingForRole(namespace, toWatchedNamespace);
 
         assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
         assertThat(binding.getMetadata().getNamespace(), is(toWatchedNamespace));
+        assertThat(binding.getMetadata().getOwnerReferences().size(), is(0));
+
+        assertThat(binding.getRoleRef().getKind(), is("Role"));
+        assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
+    }
+
+    @Test
+    public void testRoleBindingInTheSameNamespace()   {
+        RoleBinding binding = entityTopicOperator.generateRoleBindingForRole(namespace, namespace);
+
+        assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
+        assertThat(binding.getMetadata().getNamespace(), is(namespace));
+        assertThat(binding.getMetadata().getOwnerReferences().size(), is(1));
 
         assertThat(binding.getRoleRef().getKind(), is("Role"));
         assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));

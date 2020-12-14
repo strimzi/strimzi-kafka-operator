@@ -384,7 +384,6 @@ public class EntityOperator extends AbstractModel {
      * @return role for the entity operator
      */
     public Role generateRole() {
-
         List<PolicyRule> rules;
 
         try (BufferedReader br = new BufferedReader(

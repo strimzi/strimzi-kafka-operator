@@ -170,16 +170,6 @@ public class EntityTopicOperator extends AbstractModel {
 
     /**
      * Get the name of the TO role binding given the name of the {@code cluster}.
-     * This binding binds to a ClusterRole, retains old naming convention for backwards compatibility.
-     * @param cluster The cluster name.
-     * @return The name of the role binding.
-     */
-    public static String roleBindingForClusterRoleName(String cluster) {
-        return "strimzi-" + cluster + "-entity-topic-operator";
-    }
-
-    /**
-     * Get the name of the TO role binding given the name of the {@code cluster}.
      * @param cluster The cluster name.
      * @return The name of the role binding.
      */
@@ -290,35 +280,6 @@ public class EntityTopicOperator extends AbstractModel {
         return asList(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
             VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
             VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
-    }
-
-    public RoleBinding generateRoleBindingForClusterRole(String namespace, String watchedNamespace) {
-        Subject ks = new SubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
-                .withNamespace(namespace)
-                .build();
-
-        RoleRef roleRef = new RoleRefBuilder()
-                .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .build();
-
-        RoleBinding rb = generateRoleBinding(
-                roleBindingForClusterRoleName(cluster),
-                watchedNamespace,
-                roleRef,
-                singletonList(ks)
-        );
-
-        // We set OwnerReference only within the same namespace since it does not work cross-namespace
-        if (!namespace.equals(watchedNamespace)) {
-            rb.getMetadata().setOwnerReferences(Collections.emptyList());
-        }
-
-        return rb;
-
     }
 
     @Override

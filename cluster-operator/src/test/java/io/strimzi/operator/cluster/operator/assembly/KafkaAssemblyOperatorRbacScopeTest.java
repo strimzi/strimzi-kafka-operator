@@ -46,7 +46,6 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -99,9 +98,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     .compose(state -> state.entityOperatorRole())
                     .compose(state -> state.entityOperatorServiceAccount())
                     .compose(state -> state.entityOperatorTopicOpRoleBindingForRole())
-                    .compose(state -> state.entityOperatorTopicOpRoleBindingForClusterRole())
                     .compose(state -> state.entityOperatorUserOpRoleBindingForRole())
-                    .compose(state -> state.entityOperatorUserOpRoleBindingForClusterRole())
                     .map((Void) null);
         }
 
@@ -164,8 +161,8 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     List<String> roleBindingNames = roleBindingNameCaptor.getAllValues();
                     List<RoleBinding> roleBindings = roleBindingCaptor.getAllValues();
 
-                    assertThat(roleBindingNames, hasSize(4));
-                    assertThat(roleBindings, hasSize(4));
+                    assertThat(roleBindingNames, hasSize(2));
+                    assertThat(roleBindings, hasSize(2));
 
                     // Check all RoleBindings, easier to index by order applied
                     assertThat(roleBindingNames.get(0), is("test-instance-entity-topic-operator-role"));
@@ -175,18 +172,12 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                             .withName("test-instance-entity-operator")
                             .build()));
 
-                    assertThat(roleBindingNames.get(1), is("strimzi-test-instance-entity-topic-operator"));
-                    assertThat(roleBindings.get(1), is(nullValue()));
-
-                    assertThat(roleBindingNames.get(2), is("test-instance-entity-user-operator-role"));
-                    assertThat(roleBindings.get(2), hasRoleRef(new RoleRefBuilder()
+                    assertThat(roleBindingNames.get(1), is("test-instance-entity-user-operator-role"));
+                    assertThat(roleBindings.get(1), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
                             .withKind("Role")
                             .withName("test-instance-entity-operator")
                             .build()));
-
-                    assertThat(roleBindingNames.get(3), is("strimzi-test-instance-entity-user-operator"));
-                    assertThat(roleBindings.get(3), is(nullValue()));
 
                     verify(supplier.clusterRoleBindingOperator, never()).reconcile(anyString(), any());
 
@@ -199,7 +190,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
      * binds to ClusterRoles
      */
     @Test
-    public void testRoleBindingForClusterRoleDeployedWhenClusterRbacScope(VertxTestContext context) {
+    public void testRolesDeployedWhenClusterRbacScope(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(clusterName)
@@ -251,28 +242,22 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     List<String> roleBindingNames = roleBindingNameCaptor.getAllValues();
                     List<RoleBinding> roleBindings = roleBindingCaptor.getAllValues();
 
-                    assertThat(roleBindingNames, hasSize(4));
-                    assertThat(roleBindings, hasSize(4));
+                    assertThat(roleBindingNames, hasSize(2));
+                    assertThat(roleBindings, hasSize(2));
 
                     // Check all RoleBindings, easier to index by order applied
                     assertThat(roleBindingNames.get(0), is("test-instance-entity-topic-operator-role"));
-                    assertThat(roleBindings.get(0), is(nullValue()));
-
-                    assertThat(roleBindingNames.get(1), is("strimzi-test-instance-entity-topic-operator"));
-                    assertThat(roleBindings.get(1), hasRoleRef(new RoleRefBuilder()
+                    assertThat(roleBindings.get(0), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                            .withKind("Role")
+                            .withName("test-instance-entity-operator")
                             .build()));
 
-                    assertThat(roleBindingNames.get(2), is("test-instance-entity-user-operator-role"));
-                    assertThat(roleBindings.get(2), is(nullValue()));
-
-                    assertThat(roleBindingNames.get(3), is("strimzi-test-instance-entity-user-operator"));
-                    assertThat(roleBindings.get(3), hasRoleRef(new RoleRefBuilder()
+                    assertThat(roleBindingNames.get(1), is("test-instance-entity-user-operator-role"));
+                    assertThat(roleBindings.get(1), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                            .withKind("Role")
+                            .withName("test-instance-entity-operator")
                             .build()));
 
                     async.flag();
@@ -284,7 +269,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
      * binds to ClusterRoles when it can't use Roles due to cross namespace permissions
      */
     @Test
-    public void testRoleBindingForClusterRoleDeployedWhenNamespaceRbacScopeAndMultiWatchNamespace(VertxTestContext context) {
+    public void testRolesDeployedWhenNamespaceRbacScopeAndMultiWatchNamespace(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(clusterName)
@@ -338,48 +323,43 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     List<String> roleBindingNames = roleBindingNameCaptor.getAllValues();
                     List<RoleBinding> roleBindings = roleBindingCaptor.getAllValues();
 
-                    assertThat(roleBindingNames, hasSize(6));
-                    assertThat(roleBindings, hasSize(6));
+                    System.out.println(roleBindingNames);
+                    assertThat(roleBindingNames, hasSize(4));
+                    assertThat(roleBindings, hasSize(4));
 
 
                     // Check all RoleBindings, easier to index by order applied
                     assertThat(roleBindingNames.get(0), is("test-instance-entity-topic-operator-role"));
-                    assertThat(roleBindings.get(0), is(nullValue()));
+                    assertThat(roleBindings.get(0).getMetadata().getNamespace(), is("other-ns"));
+                    assertThat(roleBindings.get(0), hasRoleRef(new RoleRefBuilder()
+                            .withApiGroup("rbac.authorization.k8s.io")
+                            .withKind("Role")
+                            .withName(EntityOperator.entityOperatorRoleName(clusterName))
+                            .build()));
 
-                    assertThat(roleBindingNames.get(1), is("strimzi-test-instance-entity-topic-operator"));
+                    assertThat(roleBindingNames.get(1), is("test-instance-entity-topic-operator-role"));
+                    assertThat(roleBindings.get(1).getMetadata().getNamespace(), is("test-ns"));
                     assertThat(roleBindings.get(1), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                            .withKind("Role")
+                            .withName(EntityOperator.entityOperatorRoleName(clusterName))
                             .build()));
-                    assertThat(roleBindings.get(1).getMetadata().getNamespace(), is("other-ns"));
 
-                    assertThat(roleBindingNames.get(2), is("strimzi-test-instance-entity-topic-operator"));
+                    assertThat(roleBindingNames.get(2), is("test-instance-entity-user-operator-role"));
+                    assertThat(roleBindings.get(2).getMetadata().getNamespace(), is("other-ns"));
                     assertThat(roleBindings.get(2), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                            .withKind("Role")
+                            .withName(EntityOperator.entityOperatorRoleName(clusterName))
                             .build()));
-                    assertThat(roleBindings.get(2).getMetadata().getNamespace(), is("test-ns"));
 
                     assertThat(roleBindingNames.get(3), is("test-instance-entity-user-operator-role"));
-                    assertThat(roleBindings.get(3), is(nullValue()));
-
-                    assertThat(roleBindingNames.get(4), is("strimzi-test-instance-entity-user-operator"));
-                    assertThat(roleBindings.get(4), hasRoleRef(new RoleRefBuilder()
+                    assertThat(roleBindings.get(3).getMetadata().getNamespace(), is("test-ns"));
+                    assertThat(roleBindings.get(3), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                            .withKind("Role")
+                            .withName(EntityOperator.entityOperatorRoleName(clusterName))
                             .build()));
-                    assertThat(roleBindings.get(4).getMetadata().getNamespace(), is("other-ns"));
-
-                    assertThat(roleBindingNames.get(5), is("strimzi-test-instance-entity-user-operator"));
-                    assertThat(roleBindings.get(5), hasRoleRef(new RoleRefBuilder()
-                            .withApiGroup("rbac.authorization.k8s.io")
-                            .withKind("ClusterRole")
-                            .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
-                            .build()));
-                    assertThat(roleBindings.get(5).getMetadata().getNamespace(), is("test-ns"));
 
                     async.flag();
                 })));
@@ -414,7 +394,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
      * deploys and binds to Roles
      */
     @Test
-    public void testClusterRoleBindingNotDeployedWhenNamespaceRbacScope(VertxTestContext context) {
+    public void testClusterRoleBindingsNotDeployedWhenNamespaceRbacScope(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(clusterName)
