@@ -668,9 +668,9 @@ public class ListenersValidatorTest {
 
         Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
         assertThat(exception.getMessage(), allOf(
-                containsString("listener 'listener1' cannot have empty secret name in the brokerCertChainAndKey"),
-                containsString("listener 'listener1' cannot have empty key in the brokerCertChainAndKey"),
-                containsString("listener 'listener1' cannot have empty certificate in the brokerCertChainAndKey")));
+                containsString("listener 'listener1' cannot have an empty secret name in the brokerCertChainAndKey"),
+                containsString("listener 'listener1' cannot have an empty key in the brokerCertChainAndKey"),
+                containsString("listener 'listener1' cannot have an empty certificate in the brokerCertChainAndKey")));
     }
 
     @Test

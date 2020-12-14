@@ -114,17 +114,17 @@ public class ListenersValidator {
     private static void validateBrokerCertChainAndKey(Set<String> errors, GenericKafkaListener listener) {
         if (listener.getConfiguration().getBrokerCertChainAndKey().getSecretName() == null
                 || listener.getConfiguration().getBrokerCertChainAndKey().getSecretName().isEmpty()) {
-            errors.add("listener '" + listener.getName() + "' cannot have empty secret name in the brokerCertChainAndKey");
+            errors.add("listener '" + listener.getName() + "' cannot have an empty secret name in the brokerCertChainAndKey");
         }
 
         if (listener.getConfiguration().getBrokerCertChainAndKey().getKey() == null
                 || listener.getConfiguration().getBrokerCertChainAndKey().getKey().isEmpty()) {
-            errors.add("listener '" + listener.getName() + "' cannot have empty key in the brokerCertChainAndKey");
+            errors.add("listener '" + listener.getName() + "' cannot have an empty key in the brokerCertChainAndKey");
         }
 
         if (listener.getConfiguration().getBrokerCertChainAndKey().getCertificate() == null
                 || listener.getConfiguration().getBrokerCertChainAndKey().getCertificate().isEmpty()) {
-            errors.add("listener '" + listener.getName() + "' cannot have empty certificate in the brokerCertChainAndKey");
+            errors.add("listener '" + listener.getName() + "' cannot have an empty certificate in the brokerCertChainAndKey");
         }
     }
 
