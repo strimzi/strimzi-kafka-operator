@@ -194,6 +194,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println();
         }
 
+        configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
+
         printSectionHeader("Common listener configuration");
         writer.println("listeners=" + String.join(",", listeners));
         writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
@@ -205,6 +207,16 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println();
 
         return this;
+    }
+
+    private void configureOAuthPrincipalBuilderIfNeeded(PrintWriter writer, List<GenericKafkaListener> kafkaListeners) {
+        for (GenericKafkaListener listener : kafkaListeners) {
+            if (listener.getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                writer.println(String.format("principal.builder.class=%s", KafkaListenerAuthenticationOAuth.PRINCIPAL_BUILDER_CLASS_NAME));
+                writer.println();
+                return;
+            }
+        }
     }
 
     /**
@@ -297,11 +309,6 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println(String.format("listener.name.%s.connections.max.reauth.ms=%s", listenerNameInProperty, 1000 * oauth.getMaxSecondsWithoutReauthentication()));
             }
             writer.println();
-
-            if (oauth.isEnableOauthBearer() || oauth.isEnablePlain()) {
-                writer.println(String.format("principal.builder.class=%s", KafkaListenerAuthenticationOAuth.PRINCIPAL_BUILDER_CLASS_NAME));
-                writer.println();
-            }
         } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
 
