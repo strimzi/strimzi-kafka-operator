@@ -651,6 +651,29 @@ public class ListenersValidatorTest {
     }
 
     @Test
+    public void testValidateBrokerCertChainAndKey() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withNewConfiguration()
+                    .withNewBrokerCertChainAndKey()
+                        .withCertificate("")
+                        .withKey("")
+                    .endBrokerCertChainAndKey()
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener1);
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener 'listener1' cannot have an empty secret name in the brokerCertChainAndKey"),
+                containsString("listener 'listener1' cannot have an empty key in the brokerCertChainAndKey"),
+                containsString("listener 'listener1' cannot have an empty certificate in the brokerCertChainAndKey")));
+    }
+
+    @Test
     public void testMinimalConfiguration() {
         GenericKafkaListener internal = new GenericKafkaListenerBuilder()
                 .withName("internal")
