@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
@@ -937,13 +938,21 @@ public class TracingST extends AbstractST {
     private void deployJaeger() {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles())
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
+        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles()))
+                .collect(Collectors.toMap(
+                    file -> file,
+                    f -> TestUtils.getContent(f, TestUtils::toYamlString),
+                    (x, y) -> x,
+                    LinkedHashMap::new));
 
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
-            jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
+            String fileContents = entry.getValue();
+            if (Environment.isNamespaceRbacScope()) {
+                fileContents = switchClusterRolesToRoles(fileContents);
+            }
+            jaegerConfigs.push(fileContents);
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
 
         installJaegerInstance();
@@ -980,8 +989,12 @@ public class TracingST extends AbstractST {
 
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
-            jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
+            String fileContents = entry.getValue();
+            if (Environment.isNamespaceRbacScope()) {
+                fileContents = switchClusterRolesToRoles(fileContents);
+            }
+            jaegerConfigs.push(fileContents);
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
     }
 

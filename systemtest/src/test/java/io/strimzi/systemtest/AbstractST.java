@@ -170,15 +170,17 @@ public abstract class AbstractST implements TestSeparator {
                 .collect(Collectors.toMap(
                     file -> file,
                     f -> TestUtils.getContent(f, TestUtils::toYamlString),
-                    (x, y) -> x, LinkedHashMap::new));
+                    (x, y) -> x,
+                    LinkedHashMap::new));
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
+            String fileContents = entry.getValue();
             if (Environment.isNamespaceRbacScope()) {
-                LOGGER.info("as Role");
-                switchClusterRolesToRoles(entry.getValue());
+                fileContents = switchClusterRolesToRoles(fileContents);
+
             }
             clusterOperatorConfigs.push(entry.getKey().getPath());
-            cmdKubeClient().clientWithAdmin().namespace(namespace).apply(entry.getKey().getPath());
+            cmdKubeClient().clientWithAdmin().namespace(namespace).applyContent(fileContents);
         }
     }
 
@@ -186,8 +188,12 @@ public abstract class AbstractST implements TestSeparator {
      * Replace all references to ClusterRole to Role.
      * This includes ClusterRoles themselves as well as RoleBindings that reference them.
      */
-    private void switchClusterRolesToRoles(String fileContents) {
-        fileContents.replace("ClusterRole", "Role");
+    public static String switchClusterRolesToRoles(String fileContents) {
+        String newContents = fileContents.replace("ClusterRole", "Role");
+        if (!newContents.equals(fileContents)) {
+            LOGGER.info("Replaced ClusterRole for Role");
+        }
+        return newContents;
     }
 
     /**

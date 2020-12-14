@@ -61,7 +61,6 @@ public class EntityOperator extends AbstractModel {
 
     // Entity Operator configuration keys
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-    public static final String EO_CLUSTER_ROLE_NAME = "strimzi-entity-operator";
 
     private String zookeeperConnect;
     private EntityTopicOperator topicOperator;

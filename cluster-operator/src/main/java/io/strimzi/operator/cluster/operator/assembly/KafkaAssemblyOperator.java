@@ -1823,7 +1823,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
             if (!rbacScope.canUseClusterRoles()) {
                 log.debug("Using STRIMZI_RBAC_SCOPE set to namespace requires user to apply ClusterRole and ClusterRoleBinding manually");
-                return Future.succeededFuture();
+                return withVoid(Future.succeededFuture());
             }
 
             ClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
@@ -3159,6 +3159,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 role = null;
             }
 
+            // Currently only deploys role into target namespace
+            // Role must be applied manually if using 'watchedNamespace' feature
             return withVoid(roleOperations.reconcile(
                     namespace,
                     EntityOperator.entityOperatorRoleName(name),
@@ -3184,7 +3186,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!isEntityOperatorDeployed()
                     || entityOperator.getTopicOperator() == null) {
                 log.debug("entityOperatorTopicOpRoleBindingForRole not required");
-                return withVoid(roleBindingOperations.reconcile(namespace, EntityTopicOperator.roleBindingForRoleName(name), null));
+                return withVoid(roleBindingOperations.reconcile(
+                        namespace,
+                        EntityTopicOperator.roleBindingForRoleName(name),
+                        null));
             }
 
 

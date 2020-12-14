@@ -716,11 +716,11 @@ class ConnectST extends AbstractST {
 
         KafkaConnectorResource.kafkaConnector(CLUSTER_NAME)
                 .editSpec()
-                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("topics", TOPIC_NAME)
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
-                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                    .addToConfig("topics", TOPIC_NAME)
+                    .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().done();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

@@ -88,6 +88,10 @@ public class KubernetesResource {
     public static DoneableRoleBinding roleBinding(String yamlPath, String namespace, String clientNamespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
+        if (Environment.isNamespaceRbacScope()) {
+            LOGGER.info("Replacing ClusterRole RoleRef for Role RoleRef");
+            roleBinding.getRoleRef().setKind("Role");
+        }
         return roleBinding(
                 new RoleBindingBuilder(roleBinding)
                     .editFirstSubject()
