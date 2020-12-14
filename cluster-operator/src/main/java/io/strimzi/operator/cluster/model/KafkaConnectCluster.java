@@ -68,7 +68,13 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.nio.charset.StandardCharsets;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Base64;
+
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectCluster extends AbstractModel {
