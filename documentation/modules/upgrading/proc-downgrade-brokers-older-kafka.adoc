@@ -30,7 +30,7 @@ For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLowe
 +
 [source,yaml,subs=attributes+]
 ----
-apiVersion: v1alpha1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # ...

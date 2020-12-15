@@ -56,7 +56,7 @@ For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}
 --
 [source,yaml,subs=attributes+]
 ----
-apiVersion: v1alpha1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # ...
@@ -132,7 +132,7 @@ For example, if upgrading to {KafkaVersionHigher}:
 +
 [source,yaml,subs=attributes+]
 ----
-apiVersion: v1alpha1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # ...

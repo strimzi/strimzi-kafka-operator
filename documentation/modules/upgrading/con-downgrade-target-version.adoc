@@ -29,7 +29,7 @@ Downgrading is _not possible_ if the new version has ever used a `log.message.fo
 
 [source,yaml,subs=attributes+]
 ----
-apiVersion: v1alpha1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # ...
