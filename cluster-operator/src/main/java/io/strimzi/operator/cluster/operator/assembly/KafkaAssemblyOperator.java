@@ -2537,7 +2537,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 loggingCmFut = Future.succeededFuture(null);
             }
 
-            return CompositeFuture.join(metricsCmFut, loggingCmFut).result().map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)))
+            return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(metricsAndLoggingCm.loggingCm, metricsAndLoggingCm.metricsCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
                     KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration

@@ -148,6 +148,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 configMapOperations.getAsync(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
                 Future.succeededFuture(null);
 
-        return CompositeFuture.join(metricsCmFut, loggingCmFut).result().map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
+        return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 }

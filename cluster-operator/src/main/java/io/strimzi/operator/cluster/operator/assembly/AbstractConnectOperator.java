@@ -715,6 +715,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Future<ConfigMap> loggingCmFut = connect.getLogging() instanceof ExternalLogging ?
                 configMapOperations.getAsync(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                 Future.succeededFuture(null);
-        return CompositeFuture.join(metricsCmFut, loggingCmFut).result().map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
+        return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 }
