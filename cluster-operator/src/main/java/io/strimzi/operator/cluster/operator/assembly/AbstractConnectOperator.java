@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaConnector;
+import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -698,15 +699,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return updateStatusPromise.future();
     }
 
-    protected Future<ConfigMap> connectMetricsConfigMap(String namespace, KafkaConnectCluster connect) {
+    protected Future<MetricsAndLoggingCm> connectMetricsAndLoggingConfigMap(String namespace, KafkaConnectCluster connect) {
+        final Future<ConfigMap> metricsCmFut;
         if (connect.isMetricsConfigured()) {
             if (connect.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                return configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
+                metricsCmFut = configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
             } else {
                 log.warn("Unknown metrics type {}", connect.getMetricsConfigInCm().getType());
                 throw new InvalidResourceException("Unknown metrics type " + connect.getMetricsConfigInCm().getType());
             }
+        } else {
+            metricsCmFut = Future.succeededFuture(null);
         }
-        return Future.succeededFuture(null);
+
+        Future<ConfigMap> loggingCmFut = connect.getLogging() instanceof ExternalLogging ?
+                configMapOperations.getAsync(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
+                Future.succeededFuture(null);
+        return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 }

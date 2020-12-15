@@ -33,7 +33,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaConnectorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -134,10 +133,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         Promise<KafkaMirrorMaker2Status> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
 
-        ConfigMap loggingCm = mirrorMaker2Cluster.getLogging() instanceof ExternalLogging ?
-                configMapOperations.get(namespace, ((ExternalLogging) mirrorMaker2Cluster.getLogging()).getName()) :
-                null;
-
         Map<String, String> annotations = new HashMap<>(1);
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
 
@@ -148,9 +143,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> networkPolicyOperator.reconcile(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), true, operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
-                .compose(i -> connectMetricsConfigMap(namespace, mirrorMaker2Cluster))
-                .compose(metricsCm -> {
-                    ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(loggingCm, metricsCm);
+                .compose(i -> connectMetricsAndLoggingConfigMap(namespace, mirrorMaker2Cluster))
+                .compose(metricsAndLoggingCm -> {
+                    ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm.loggingCm, metricsAndLoggingCm.metricsCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                             Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
                     desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
