@@ -52,7 +52,10 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     docker run -d -p 5000:5000 registry
 
     export KUBECONFIG=$HOME/.kube/config
-    sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} --network-plugin=cni --cni=calico \
+    # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
+    # We have to allow trafic for ITS when NPs are turned on
+    # We can allow NP after Strimzi#4092 which should fix some issues on STs side
+    sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC
 
     if [ $? -ne 0 ]

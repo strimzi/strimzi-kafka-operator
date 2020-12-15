@@ -1,8 +1,8 @@
 #!/usr/bin/env groovy
 
 def lib
-// Currently the loadbalancer service is not working on minikube
-def DEFAULT_EXCLUDED_GROUPS = "loadbalancer"
+// Currently the loadbalancer service is not working on minikube, same for network policies
+def DEFAULT_EXCLUDED_GROUPS = "loadbalancer,networkpolicies"
 
 pipeline {
     agent {
@@ -17,7 +17,7 @@ pipeline {
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
     }
     options {
-        timeout(time: 22, unit: 'HOURS')
+        timeout(time: 24, unit: 'HOURS')
         ansiColor('xterm')
     }
     environment {
@@ -108,7 +108,7 @@ pipeline {
         }
         stage('Start Minikube') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
+                timeout(time: 10, unit: 'MINUTES') {
                     script {
                         lib = evaluate readFile('./.jenkins/jenkins.groovy')
                         lib.setupKubernetes()
@@ -138,7 +138,7 @@ pipeline {
             steps {
                 script {
                     withMaven(mavenOpts: '-Djansi.force=true') {
-                        sh "mvn clean install -DskipTests -Dstyle.color=always --no-transfer-progress"
+                        sh(script: "mvn clean install -DskipTests -Dstyle.color=always --no-transfer-progress")
                         env.BUILD_PROJECT_STATUS = true
                     }
                 }
