@@ -843,7 +843,7 @@ class KafkaST extends AbstractST {
         assertThat(KafkaCmdClient.listTopicsUsingPodCli(clusterName, 0), not(hasItems("topic-without-labels")));
 
         // Checking TO logs
-        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=my-cluster-entity-operator").get(0);
+        String tOPodName = cmdKubeClient().listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
         String tOlogs = kubeClient().logs(tOPodName, "topic-operator");
         assertThat(tOlogs, not(containsString("Created topic 'topic-without-labels'")));
 
@@ -1025,8 +1025,6 @@ class KafkaST extends AbstractST {
         Map<String, String> labels = new HashMap<>();
         String[] labelKeys = {"label-name-1", "label-name-2", ""};
         String[] labelValues = {"name-of-the-label-1", "name-of-the-label-2", ""};
-        String brokerServiceName = "my-cluster-kafka-brokers";
-        String configMapName = "my-cluster-kafka-config";
 
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
@@ -1085,18 +1083,18 @@ class KafkaST extends AbstractST {
         labels.put(labelKeys[2], labelValues[2]);
 
         LOGGER.info("Waiting for kafka service labels changed {}", labels);
-        ServiceUtils.waitForServiceLabelsChange(brokerServiceName, labels);
+        ServiceUtils.waitForServiceLabelsChange(KafkaResources.brokersServiceName(clusterName), labels);
 
         LOGGER.info("Verifying kafka labels via services");
-        Service service = kubeClient().getService(brokerServiceName);
+        Service service = kubeClient().getService(KafkaResources.brokersServiceName(clusterName));
 
         verifyPresentLabels(labels, service);
 
         LOGGER.info("Waiting for kafka config map labels changed {}", labels);
-        ConfigMapUtils.waitForConfigMapLabelsChange(configMapName, labels);
+        ConfigMapUtils.waitForConfigMapLabelsChange(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName), labels);
 
         LOGGER.info("Verifying kafka labels via config maps");
-        ConfigMap configMap = kubeClient().getConfigMap(configMapName);
+        ConfigMap configMap = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
 
         verifyPresentLabels(labels, configMap);
 
@@ -1130,17 +1128,17 @@ class KafkaST extends AbstractST {
         labels.remove(labelKeys[2]);
 
         LOGGER.info("Waiting for kafka service labels deletion {}", labels.toString());
-        ServiceUtils.waitForServiceLabelsDeletion(brokerServiceName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        ServiceUtils.waitForServiceLabelsDeletion(KafkaResources.brokersServiceName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via services");
-        service = kubeClient().getService(brokerServiceName);
+        service = kubeClient().getService(KafkaResources.brokersServiceName(clusterName));
 
         verifyNullLabels(labelKeys, service);
 
         LOGGER.info("Verifying kafka labels via config maps");
-        ConfigMapUtils.waitForConfigMapLabelsDeletion(configMapName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        ConfigMapUtils.waitForConfigMapLabelsDeletion(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
 
-        configMap = kubeClient().getConfigMap(configMapName);
+        configMap = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
 
         verifyNullLabels(labelKeys, configMap);
 

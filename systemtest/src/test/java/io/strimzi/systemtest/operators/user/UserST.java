@@ -336,9 +336,9 @@ class UserST extends AbstractST {
             String userName = "alisa" + i;
 
             if (typeOfUser.equals("TLS")) {
-                KafkaUserResource.tlsUser(clusterName, userName).done();
+                KafkaUserResource.tlsUser(userClusterName, userName).done();
             } else {
-                KafkaUserResource.scramShaUser(clusterName, userName).done();
+                KafkaUserResource.scramShaUser(userClusterName, userName).done();
             }
 
             LOGGER.info("Checking status of KafkaUser {}", userName);
