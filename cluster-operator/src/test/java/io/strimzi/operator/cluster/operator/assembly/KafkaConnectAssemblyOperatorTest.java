@@ -122,6 +122,7 @@ public class KafkaConnectAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -142,6 +143,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockPodOps.reconcile(eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
@@ -262,6 +264,7 @@ public class KafkaConnectAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
@@ -278,6 +281,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(new HashMap<String, String>(), true, null, null)));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -359,6 +363,7 @@ public class KafkaConnectAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
@@ -376,6 +381,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(new HashMap<String, String>(), true, null, null)));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -492,6 +498,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -508,6 +515,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(new HashMap<String, String>(), true, null, null)));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -556,6 +564,7 @@ public class KafkaConnectAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
@@ -574,6 +583,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(new HashMap<String, String>(), true, null, null)));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -626,8 +636,12 @@ public class KafkaConnectAssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+<<<<<<< HEAD
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+=======
+        SecretOperator mockSecretOps = supplier.secretOperations;
+>>>>>>> fix test
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
@@ -646,6 +660,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(new HashMap<String, String>(), true, null, null)));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -761,8 +776,12 @@ public class KafkaConnectAssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+<<<<<<< HEAD
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+=======
+        SecretOperator mockSecretOps = supplier.secretOperations;
+>>>>>>> fix test
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -786,6 +805,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPodOps.reconcile(eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
         when(mockBcOps.reconcile(eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
         when(mockConnectOps.updateStatusAsync(connectCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -819,6 +839,7 @@ public class KafkaConnectAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         kc.getMetadata().setCreationTimestamp("2020-01-27T19:31:12Z");
@@ -845,6 +866,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockNetPolOps.reconcile(eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
 
@@ -1010,6 +1032,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -1025,6 +1048,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockCrbOps.reconcile(any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
         when(mockServiceOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
@@ -1061,6 +1085,7 @@ public class KafkaConnectAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -1076,6 +1101,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(new HashMap<String, String>(), true, null, null)));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockCrbOps.reconcile(any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
         when(mockServiceOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
