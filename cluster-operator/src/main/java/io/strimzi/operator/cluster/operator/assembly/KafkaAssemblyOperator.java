@@ -3154,17 +3154,62 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorRole() {
             final Role role;
             if (isEntityOperatorDeployed()) {
-                role = entityOperator.generateRole();
+                role = entityOperator.generateRole(namespace);
             } else {
                 role = null;
             }
 
             // Currently only deploys role into target namespace
             // Role must be applied manually if using 'watchedNamespace' feature
-            return withVoid(roleOperations.reconcile(
+            final Future<ReconcileResult<Role>> ownNamespaceFuture = roleOperations.reconcile(
                     namespace,
                     EntityOperator.entityOperatorRoleName(name),
-                    role));
+                    role);
+
+            final String userWatchedNamespace;
+            if (isEntityOperatorDeployed()
+                    && entityOperator.getUserOperator() != null
+                    && entityOperator.getUserOperator().getWatchedNamespace() != null
+                    && !entityOperator.getUserOperator().getWatchedNamespace().isEmpty()) {
+                userWatchedNamespace = entityOperator.getTopicOperator().getWatchedNamespace();
+            } else {
+                userWatchedNamespace = namespace;
+            }
+
+            final Future<ReconcileResult<Role>> userWatchedNamespaceFuture;
+            if (!namespace.equals(userWatchedNamespace)) {
+                userWatchedNamespaceFuture = roleOperations.reconcile(
+                        userWatchedNamespace,
+                        EntityOperator.entityOperatorRoleName(name),
+                        entityOperator.generateRole(userWatchedNamespace));
+            } else {
+                userWatchedNamespaceFuture = Future.succeededFuture();
+            }
+
+            final String topicWatchedNamespace;
+            if (isEntityOperatorDeployed()
+                    && entityOperator.getTopicOperator() != null
+                    && entityOperator.getTopicOperator().getWatchedNamespace() != null
+                    && !entityOperator.getTopicOperator().getWatchedNamespace().isEmpty()) {
+                topicWatchedNamespace = entityOperator.getTopicOperator().getWatchedNamespace();
+            } else {
+                topicWatchedNamespace = namespace;
+            }
+
+            final Future<ReconcileResult<Role>> topicWatchedNamespaceFuture;
+            if (!namespace.equals(topicWatchedNamespace)) {
+                topicWatchedNamespaceFuture = roleOperations.reconcile(
+                        topicWatchedNamespace,
+                        EntityOperator.entityOperatorRoleName(name),
+                        entityOperator.generateRole(topicWatchedNamespace));
+            } else {
+                topicWatchedNamespaceFuture = Future.succeededFuture();
+            }
+
+            return withVoid(CompositeFuture.join(
+                    ownNamespaceFuture,
+                    userWatchedNamespaceFuture,
+                    topicWatchedNamespaceFuture));
         }
 
         Future<ReconciliationState> entityOperatorServiceAccount() {

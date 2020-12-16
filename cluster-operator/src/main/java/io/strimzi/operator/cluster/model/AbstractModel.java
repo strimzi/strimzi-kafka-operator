@@ -1375,7 +1375,7 @@ public abstract class AbstractModel {
             .build();
     }
 
-    public Role generateRole(List<PolicyRule> rules) {
+    public Role generateRole(String namespace, List<PolicyRule> rules) {
         return new RoleBuilder()
                 .withNewMetadata()
                     .withName(getRoleName())

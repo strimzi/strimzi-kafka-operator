@@ -883,7 +883,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
-        Role role = eo.generateRole();
+        Role role = eo.generateRole(namespace);
 
         assertThat(role.getMetadata().getName(), is("foo-entity-operator"));
 

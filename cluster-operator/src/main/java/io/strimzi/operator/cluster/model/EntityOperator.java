@@ -382,7 +382,7 @@ public class EntityOperator extends AbstractModel {
      *
      * @return role for the entity operator
      */
-    public Role generateRole() {
+    public Role generateRole(String namespace) {
         List<PolicyRule> rules;
 
         try (BufferedReader br = new BufferedReader(
@@ -400,7 +400,7 @@ public class EntityOperator extends AbstractModel {
             throw new RuntimeException(e);
         }
 
-        return super.generateRole(rules);
+        return super.generateRole(namespace, rules);
     }
 
     protected static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {
