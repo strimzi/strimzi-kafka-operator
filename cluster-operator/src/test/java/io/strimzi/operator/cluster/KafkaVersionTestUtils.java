@@ -21,12 +21,12 @@ public class KafkaVersionTestUtils {
     public static final String KAFKA_MIRROR_MAKER_IMAGE_STR = "strimzi/kafka-mirror-maker:latest-kafka-";
     public static final String KAFKA_MIRROR_MAKER_2_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
 
-    public static final String LATEST_KAFKA_VERSION = "2.6.0";
-    public static final String LATEST_FORMAT_VERSION = "2.6";
-    public static final String LATEST_PROTOCOL_VERSION = "2.6";
+    public static final String LATEST_KAFKA_VERSION = "2.7.0";
+    public static final String LATEST_FORMAT_VERSION = "2.7";
+    public static final String LATEST_PROTOCOL_VERSION = "2.7";
     public static final String LATEST_ZOOKEEPER_VERSION = "3.5.8";
     public static final String LATEST_CHECKSUM = "ABCD1234";
-    public static final String LATEST_THIRD_PARTY_VERSION = "2.6.x";
+    public static final String LATEST_THIRD_PARTY_VERSION = "2.7.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + LATEST_KAFKA_VERSION;

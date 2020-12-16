@@ -5,7 +5,7 @@ metadata:
   labels:
     app: my-mm2-cluster
 spec:
-  version: 2.6.0
+  version: 2.7.0
   replicas: 1
   connectCluster: "my-cluster-target"
   clusters:

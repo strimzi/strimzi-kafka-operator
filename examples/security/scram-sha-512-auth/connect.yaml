@@ -96,7 +96,7 @@ metadata:
 #  # needing to call the Connect REST API directly
 #    strimzi.io/use-connector-resources: "true"
 spec:
-  version: 2.6.0
+  version: 2.7.0
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9093
   tls:
