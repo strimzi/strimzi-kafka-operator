@@ -574,6 +574,7 @@ class TopicOperator {
             }
         } else {
             if (k8sTopic == null) {
+                statusUpdateGeneration.remove(privateTopic.getTopicName().toString());
                 if (kafkaTopic == null) {
                     // delete privateState
                     LOGGER.debug("{}: KafkaTopic deleted in k8s and topic deleted in kafka => delete from topicStore", logContext);
@@ -780,6 +781,7 @@ class TopicOperator {
                     new Reconciliation("onTopicDeleted", true) {
                         @Override
                         public Future<Void> execute() {
+                            statusUpdateGeneration.remove(topicName.toString());
                             return reconcileOnTopicChange(logContext, topicName, null, this);
                         }
                     }),
@@ -1049,6 +1051,10 @@ class TopicOperator {
                             .compose(mt ->  {
                                 final Topic k8sTopic;
                                 if (mt != null) {
+
+                                    if (action.equals(Watcher.Action.DELETED)) {
+                                        statusUpdateGeneration.remove(mt.getMetadata().getName());
+                                    }
 
                                     Long generation = statusUpdateGeneration.get(mt.getMetadata().getName());
                                     LOGGER.debug("{}: last updated generation={}", logContext, generation);
