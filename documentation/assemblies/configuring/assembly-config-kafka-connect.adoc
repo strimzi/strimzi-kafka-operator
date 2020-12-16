@@ -21,6 +21,9 @@ Use the `KafkaConnectS2I` resource if you are using the {docs-okd-s2i} framework
 
 * link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^]
 * link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying a `KafkaConnector` resource to Kafka Connect^]
+* link:{BookURLDeploying}#proc-manual-restart-connector-str[Restart a Kafka connector by annotating a `KafkaConnector` resource]
+* link:{BookURLDeploying}#proc-manual-restart-connector-task-str[Restart a Kafka connector task by annotating a `KafkaConnector` resource]
+
 
 //procedure to configure Kafka Connect
 include::../../modules/configuring/proc-config-kafka-connect.adoc[leveloffset=+1]
@@ -28,6 +31,10 @@ include::../../modules/configuring/proc-config-kafka-connect.adoc[leveloffset=+1
 include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 //If authorization is enabled, configure the Kafka Connect user for read/write access rights
 include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+1]
+//Procedure to restart a Kafka connector
+include::../../modules/proc-manual-restart-connector.adoc[leveloffset=+1]
+//Procedure to restart a Kafka connector task
+include::../../modules/proc-manual-restart-connector-task.adoc[leveloffset=+1]
 //Resources created for Kafka Connect
 include::../../modules/configuring/ref-config-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 //Resources created for Kafka Connect S2I

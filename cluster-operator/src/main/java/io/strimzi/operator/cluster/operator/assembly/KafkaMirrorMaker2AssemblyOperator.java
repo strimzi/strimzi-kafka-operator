@@ -468,7 +468,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * the restart action specified by user has been completed.
      */
     @Override
-    protected Future<? extends CustomResource> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR);
     }
 
@@ -478,21 +478,22 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * the restart action specified by user has been completed.
      */
     @Override
-    protected Future<? extends CustomResource> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK);
     }
 
     /**
      * Patches the KafkaMirrorMaker2 CR to remove the supplied annotation
      */
-    protected Future<? extends CustomResource> removeAnnotation(Reconciliation reconciliation, KafkaMirrorMaker2 resource, String annotationKey) {
+    protected Future<Void> removeAnnotation(Reconciliation reconciliation, KafkaMirrorMaker2 resource, String annotationKey) {
         log.debug("{}: Removing annotation {}", reconciliation, annotationKey);
         KafkaMirrorMaker2 patchedKafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(resource)
             .editMetadata()
             .removeFromAnnotations(annotationKey)
             .endMetadata()
             .build();
-        return resourceOperator.patchAsync(patchedKafkaMirrorMaker2);
+        return resourceOperator.patchAsync(patchedKafkaMirrorMaker2)
+            .compose(ignored -> Future.succeededFuture());
     }
 
 

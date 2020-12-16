@@ -489,8 +489,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     log.debug("{}: Connector {} exists and has desired config, {}=={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return apiClient.status(host, port, connectorName)
                         .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
-                        .compose(status -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, status))
-                        .compose(status -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, status));
+                        .compose(ignored -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource))
+                        .compose(ignored -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource))
+                        .compose(ignored ->
+                            apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
+                                connectorName));
                 } else {
                     log.debug("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec);
@@ -533,12 +536,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return apiClient.createOrUpdatePutRequest(host, port, connectorName, asJson(connectorSpec))
             .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
                     connectorName))
-            .compose(status -> {
-                return pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status);
-            });
+            .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
+            .compose(ignored ->  apiClient.status(host, port, connectorName));
     }
 
-    private Future<Map<String, Object>> pauseResume(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status) {
+    private Future<Void> pauseResume(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status) {
         Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
         if (!(path instanceof String)) {
             return Future.failedFuture("JSON response lacked $.connector.state");
@@ -547,26 +549,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             boolean shouldPause = Boolean.TRUE.equals(connectorSpec.getPause());
             if ("RUNNING".equals(state) && shouldPause) {
                 log.debug("{}: Pausing connector {}", reconciliation, connectorName);
-                return apiClient.pause(host, port,
-                        connectorName)
-                        .compose(ignored ->
-                                apiClient.status(host, port,
-                                        connectorName));
+                return apiClient.pause(host, port, connectorName);
             } else if ("PAUSED".equals(state) && !shouldPause) {
                 log.debug("{}: Resuming connector {}", reconciliation, connectorName);
-                return apiClient.resume(host, port,
-                        connectorName)
-                        .compose(ignored ->
-                                apiClient.status(host, port,
-                                        connectorName));
-
+                return apiClient.resume(host, port, connectorName);
             } else {
-                return Future.succeededFuture(status);
+                return Future.succeededFuture();
             }
         }
     }
 
-    private Future<Map<String, Object>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, Map<String, Object> status) {
+    private Future<Void> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource) {
         if (hasRestartAnnotation(resource, connectorName)) {
             log.debug("{}: Restarting connector {}", reconciliation, connectorName);
             return apiClient.restart(host, port, connectorName)
@@ -575,15 +568,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                             // Ignore restart failures - just try again on the next reconcile
                             log.warn("{}: Failed to restart connector {}. {}", reconciliation, connectorName, throwable.getMessage());
                             return Future.succeededFuture();
-                        })
-                    .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
-                        connectorName));
+                        });
         } else {
-            return Future.succeededFuture(status);
+            return Future.succeededFuture();
         }
     }
 
-    private Future<Map<String, Object>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, Map<String, Object> status) {
+    private Future<Void> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource) {
         int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
         if (taskID >= 0) {
             log.debug("{}: Restarting connector task {}:{}", reconciliation, connectorName, taskID);
@@ -593,11 +584,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                             // Ignore restart failures - just try again on the next reconcile
                             log.warn("{}: Failed to restart connector task {}:{}. {}", reconciliation, connectorName, taskID, throwable.getMessage());
                             return Future.succeededFuture();
-                        })
-                    .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
-                        connectorName));
+                        });
         } else {
-            return Future.succeededFuture(status);
+            return Future.succeededFuture();
         }
     }
 
@@ -627,7 +616,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Patches the KafkaConnector CR to remove the strimzi.io/restart annotation, as
      * the restart action specified by the user has been completed.
      */
-    protected Future<? extends CustomResource> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART);
     }
 
@@ -635,21 +624,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Patches the KafkaConnector CR to remove the strimzi.io/restart-task annotation, as
      * the restart action specified by the user has been completed.
      */
-    protected Future<? extends CustomResource> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART_TASK);
     }
 
     /**
      * Patches the KafkaConnector CR to remove the supplied annotation.
      */
-    private Future<? extends CustomResource> removeAnnotation(Reconciliation reconciliation, KafkaConnector resource, String annotationKey) {
+    private Future<Void> removeAnnotation(Reconciliation reconciliation, KafkaConnector resource, String annotationKey) {
         log.debug("{}: Removing annotation {}", reconciliation, annotationKey);
         KafkaConnector patchedKafkaConnector = new KafkaConnectorBuilder(resource)
             .editMetadata()
             .removeFromAnnotations(annotationKey)
             .endMetadata()
             .build();
-        return connectorOperator.patchAsync(patchedKafkaConnector);
+        return connectorOperator.patchAsync(patchedKafkaConnector)
+            .compose(ignored -> Future.succeededFuture());
     }
 
     public static void updateStatus(Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?, ?> connectorOperations) {
