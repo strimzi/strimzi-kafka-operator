@@ -27,6 +27,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -172,16 +173,15 @@ public class KafkaRollerST extends AbstractST {
         KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
 
         KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setImage("strimzi/kafka:not-existent-tag");
-            kafka.getSpec().getZookeeper().setImage("strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION);
+            kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
+            kafka.getSpec().getZookeeper().setImage(StUtils.changeOrgAndTag("quay.io/strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION));
         });
 
         KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
 
         assertTrue(checkIfExactlyOneKafkaPodIsNotReady(CLUSTER_NAME));
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
-                kafka.getSpec().getKafka().setImage("strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION));
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setImage(StUtils.changeOrgAndTag("quay.io/strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION)));
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
