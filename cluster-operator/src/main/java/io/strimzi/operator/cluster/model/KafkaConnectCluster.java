@@ -771,7 +771,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Generate the Secret containing the username and password to secure the jmx port on the kafka brokers
+     * Generate the Secret containing the username and password to secure the jmx port on the kafka connect workers
      *
      * @return The generated Secret
      */

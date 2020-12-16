@@ -872,7 +872,7 @@ spec:
                         required:
                         - type
                         description: Authentication configuration for connecting to
-                          the Kafka JMX port.
+                          the JMX port.
                     description: JMX Options for Kafka brokers.
                   resources:
                     type: object

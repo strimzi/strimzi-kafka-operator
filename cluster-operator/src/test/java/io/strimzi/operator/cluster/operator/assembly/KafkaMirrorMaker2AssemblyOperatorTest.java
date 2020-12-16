@@ -102,6 +102,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -121,6 +122,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockSecretOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -189,6 +191,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -202,6 +205,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -268,6 +272,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -283,6 +288,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 .thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -387,6 +393,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -402,6 +409,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -447,6 +455,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -462,6 +471,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.get(kmm2Namespace, mirrorMaker2.getName())).thenReturn(mirrorMaker2.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -504,6 +514,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -521,7 +532,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
-
+        when(mockSecretOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
@@ -616,6 +627,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -633,6 +645,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockMirrorMaker2Ops.updateStatusAsync(mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());
@@ -663,6 +676,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -681,6 +695,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockNetPolOps.reconcile(eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockSecretOps.reconcile(eq(kmm2Namespace), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
