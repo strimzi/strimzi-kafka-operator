@@ -3,7 +3,7 @@ set -x
 
 rm -rf ~/.kube
 
-KUBE_VERSION=${KUBE_VERSION:-1.15.0}
+KUBE_VERSION=${KUBE_VERSION:-1.16.0}
 
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
