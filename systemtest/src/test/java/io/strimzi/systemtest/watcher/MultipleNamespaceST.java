@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.watcher;
 
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 class MultipleNamespaceST extends AbstractNamespaceST {
@@ -33,6 +35,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         cluster.setNamespace(SECOND_NAMESPACE);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
@@ -48,6 +52,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testKafkaInDifferentNsThanClusterOperator() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
         checkKafkaInDiffNamespaceThanCO(CLUSTER_NAME, SECOND_NAMESPACE);
     }
@@ -58,6 +64,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(CLUSTER_NAME);
     }

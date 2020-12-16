@@ -886,6 +886,7 @@ public class EntityOperatorTest {
         Role role = eo.generateRole(namespace);
 
         assertThat(role.getMetadata().getName(), is("foo-entity-operator"));
+        assertThat(role.getMetadata().getNamespace(), is(namespace));
 
         List<PolicyRule> rules = new ArrayList<>();
         rules.add(new PolicyRuleBuilder()

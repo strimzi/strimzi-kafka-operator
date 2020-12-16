@@ -52,7 +52,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
         // Naturally returns false positives if another Strimzi operator has been installed
         List<ClusterRole> strimziClusterRoles = kubeClient().listClusterRoles().stream()
                 .filter(cr -> {
-                    Map<String, String> labels = cr.getMetadata().getLabels();
+                    Map<String, String> labels = cr.getMetadata().getLabels() != null ? cr.getMetadata().getLabels() : Collections.emptyMap();
                     return "strimzi".equals(labels.get("app"));
                 })
                 .collect(Collectors.toList());

@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
@@ -27,6 +28,7 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RoleOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -287,7 +289,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                             .withWatchedNamespace("other-ns")
                         .endUserOperator()
                         .withNewTopicOperator()
-                            .withWatchedNamespace("other-ns")
+                            .withWatchedNamespace("another-ns")
                         .endTopicOperator()
                     .endEntityOperator()
                 .endSpec()
@@ -300,6 +302,14 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+
+        // Mock the operations for Roles
+        RoleOperator mockRoleOps = supplier.roleOperations;
+        // Capture the names of reconciled Roles and their patched state
+        ArgumentCaptor<String> roleNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Role> roleCaptor = ArgumentCaptor.forClass(Role.class);
+        when(mockRoleOps.reconcile(anyString(), roleNameCaptor.capture(), roleCaptor.capture()))
+                .thenReturn(Future.succeededFuture());
 
         // Mock the operations for RoleBindings
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
@@ -323,14 +333,13 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     List<String> roleBindingNames = roleBindingNameCaptor.getAllValues();
                     List<RoleBinding> roleBindings = roleBindingCaptor.getAllValues();
 
-                    System.out.println(roleBindingNames);
                     assertThat(roleBindingNames, hasSize(4));
                     assertThat(roleBindings, hasSize(4));
 
 
                     // Check all RoleBindings, easier to index by order applied
                     assertThat(roleBindingNames.get(0), is("test-instance-entity-topic-operator-role"));
-                    assertThat(roleBindings.get(0).getMetadata().getNamespace(), is("other-ns"));
+                    assertThat(roleBindings.get(0).getMetadata().getNamespace(), is("another-ns"));
                     assertThat(roleBindings.get(0), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
                             .withKind("Role")
@@ -360,6 +369,22 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                             .withKind("Role")
                             .withName(EntityOperator.entityOperatorRoleName(clusterName))
                             .build()));
+
+                    List<String> roleNames = roleNameCaptor.getAllValues();
+                    List<Role> roles = roleCaptor.getAllValues();
+
+                    assertThat(roleNames, hasSize(3));
+                    assertThat(roles, hasSize(3));
+
+                    // Check all Roles, easier to index by order applied
+                    assertThat(roleNames.get(0), is("test-instance-entity-operator"));
+                    assertThat(roles.get(0).getMetadata().getNamespace(), is("test-ns"));
+
+                    assertThat(roleNames.get(1), is("test-instance-entity-operator"));
+                    assertThat(roles.get(1).getMetadata().getNamespace(), is("other-ns"));
+
+                    assertThat(roleNames.get(2), is("test-instance-entity-operator"));
+                    assertThat(roles.get(2).getMetadata().getNamespace(), is("another-ns"));
 
                     async.flag();
                 })));

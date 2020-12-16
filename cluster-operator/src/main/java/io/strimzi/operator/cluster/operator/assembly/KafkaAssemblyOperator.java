@@ -3171,7 +3171,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     && entityOperator.getUserOperator() != null
                     && entityOperator.getUserOperator().getWatchedNamespace() != null
                     && !entityOperator.getUserOperator().getWatchedNamespace().isEmpty()) {
-                userWatchedNamespace = entityOperator.getTopicOperator().getWatchedNamespace();
+                userWatchedNamespace = entityOperator.getUserOperator().getWatchedNamespace();
             } else {
                 userWatchedNamespace = namespace;
             }

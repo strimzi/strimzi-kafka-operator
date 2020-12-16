@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
@@ -30,6 +31,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -425,15 +427,15 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         deployTestSpecificResources();
     }
 
-    void deployTestSpecificResources() throws Exception {
+    void deployTestSpecificResources() {
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
+        DoneableKafka kafka = KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -449,16 +451,25 @@ class CustomResourceStatusST extends AbstractST {
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                         .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(false)
-                        .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec()
-            .done();
+            .endSpec();
+
+        if (!Environment.isNamespaceRbacScope()) {
+            kafka.editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .addNewGenericKafkaListener()
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(false)
+                            .endGenericKafkaListener()
+                        .endListeners()
+                    .endKafka()
+                .endSpec();
+        }
+        kafka.done();
 
         KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();

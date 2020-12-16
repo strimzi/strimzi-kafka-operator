@@ -44,6 +44,7 @@ import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -112,6 +113,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
     @Test
     @Tag(MIRROR_MAKER)
+    @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker() {
         oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
@@ -222,6 +224,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Test
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
+    @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker2() {
         oauthInternalClientJob.producerStrimziOauthPlain().done();
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);

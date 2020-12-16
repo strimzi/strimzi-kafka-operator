@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -66,6 +67,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(SPECIFIC)
 public class SpecificST extends AbstractST {
@@ -77,6 +79,7 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAware() {
+        assumeFalse(Environment.isNamespaceRbacScope());
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String rackKey = "rack-key";
@@ -130,6 +133,7 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAwareConnectWrongDeployment() {
+        assumeFalse(Environment.isNamespaceRbacScope());
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
@@ -203,6 +207,7 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     public void testRackAwareConnectCorrectDeployment() {
+        assumeFalse(Environment.isNamespaceRbacScope());
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
