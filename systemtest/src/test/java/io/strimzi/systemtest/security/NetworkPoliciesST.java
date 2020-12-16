@@ -40,6 +40,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -49,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(NETWORKPOLICIES_SUPPORTED)
+@Tag(REGRESSION)
 public class NetworkPoliciesST extends AbstractST {
     public static final String NAMESPACE = "np-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(NetworkPoliciesST.class);

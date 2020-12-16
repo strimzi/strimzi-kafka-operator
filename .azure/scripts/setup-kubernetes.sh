@@ -3,6 +3,8 @@ set -x
 
 rm -rf ~/.kube
 
+KUBE_VERSION=${KUBE_VERSION:-1.16.0}
+
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
         TEST_KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
@@ -18,28 +20,6 @@ function install_nsenter {
     ./configure --without-ncurses
     make nsenter
     sudo cp nsenter /usr/bin
-}
-
-function wait_for_minikube {
-    i="0"
-
-    while [ $i -lt 60 ]
-    do
-        # The role needs to be added because Minikube is not fully prepared for RBAC.
-        # Without adding the cluster-admin rights to the default service account in kube-system
-        # some components would be crashing (such as KubeDNS). This should have no impact on
-        # RBAC for Strimzi during the system tests.
-        kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
-        if [ $? -ne 0 ]
-        then
-            sleep 1
-        else
-            return 0
-        fi
-        i=$[$i+1]
-    done
-
-    return 1
 }
 
 function label_node {
@@ -72,17 +52,20 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     docker run -d -p 5000:5000 registry
 
     export KUBECONFIG=$HOME/.kube/config
-    sudo -E minikube start --vm-driver=none --kubernetes-version=v1.15.0 \
-      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=RBAC
-    sudo -E minikube addons enable default-storageclass
-
-    wait_for_minikube
+    # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
+    # We have to allow trafic for ITS when NPs are turned on
+    # We can allow NP after Strimzi#4092 which should fix some issues on STs side
+    sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} \
+      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC
 
     if [ $? -ne 0 ]
     then
         echo "Minikube failed to start or RBAC could not be properly set up"
         exit 1
     fi
+
+    sudo -E minikube addons enable default-storageclass
+	kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
