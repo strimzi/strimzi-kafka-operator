@@ -1,0 +1,69 @@
+Configures the Topic Operator.
+
+[id='property-topic-operator-logging-{context}']
+=== `logging`
+
+The Topic Operator has a configurable logger:
+
+* `rootLogger.level`
+
+The Topic Operator uses the Apache `log4j2` logger implementation.
+
+Use the `logging` property in the `entityOperator.topicOperator` field of the Kafka resource `Kafka` resource to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j2.properties`.
+For more information about log levels, see {ApacheLoggers}.
+
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  entityOperator:
+    # ...
+    topicOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
+      logging:
+        type: inline
+        loggers:
+          rootLogger.level: INFO
+  # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  entityOperator:
+    # ...
+    topicOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
+      logging:
+        type: external
+        name: customConfigMap
+  # ...
+----
+
+.Garbage collector (GC)
+
+Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].

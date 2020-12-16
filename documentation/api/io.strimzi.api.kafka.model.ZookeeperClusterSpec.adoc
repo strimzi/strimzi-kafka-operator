@@ -1,0 +1,109 @@
+Configures a ZooKeeper cluster.
+
+[id='property-zookeeper-config-{context}']
+=== `config`
+
+Use the `config` properties to configure ZooKeeper options as keys.
+
+Standard Apache ZooKeeper configuration may be provided, restricted to those properties not managed directly by Strimzi.
+
+Configuration options that cannot be configured relate to:
+
+* Security (Encryption, Authentication, and Authorization)
+* Listener configuration
+* Configuration of data directories
+* ZooKeeper cluster composition
+
+The values can be one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+You can specify and configure the options listed in the {ApacheZookeeperConfig} with the exception of those managed directly by Strimzi.
+Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+
+* `server.`
+* `dataDir`
+* `dataLogDir`
+* `clientPort`
+* `authProvider`
+* `quorum.auth`
+* `requireClientAuthScheme`
+
+When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
+All other supported options are passed to ZooKeeper.
+
+There are exceptions to the forbidden options.
+For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
+
+.Example ZooKeeper configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+    config:
+      autopurge.snapRetainCount: 3
+      autopurge.purgeInterval: 1
+      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+      ssl.enabled.protocols: "TLSv1.2"
+      ssl.protocol: "TLSv1.2"
+    # ...
+----
+
+[id='property-zookeeper-logging-{context}']
+=== `logging`
+
+ZooKeeper has a configurable logger:
+
+* `zookeeper.root.logger`
+
+ZooKeeper uses the Apache `log4j` logger implementation.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+For more information about log levels, see {ApacheLoggers}.
+
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  # ...
+  zookeeper:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        zookeeper.root.logger: "INFO"
+    # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  # ...
+  zookeeper:
+    # ...
+    logging:
+      type: external
+      name: customConfigMap
+  # ...
+----
+
+.Garbage collector (GC)
+
+Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].

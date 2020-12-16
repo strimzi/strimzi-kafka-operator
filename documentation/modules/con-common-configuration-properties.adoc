@@ -128,6 +128,17 @@ IMPORTANT: If the resource request is for more than the available free resources
 
 A request may be configured for one or more supported resources.
 
+.Example resource requests configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    cpu: 12
+    memory: 64Gi
+# ...
+----
+
 *Resource limits*
 
 Limits specify the maximum resources that can be consumed by a given container.
@@ -137,12 +148,35 @@ Resource limits should be always higher than the resource requests.
 
 A resource may be configured for one or more supported limits.
 
+.Example resource limits configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  limits:
+    cpu: 12
+    memory: 64Gi
+# ...
+----
+
 *Supported CPU formats*
 
 CPU requests and limits are supported in the following formats:
 
 * Number of CPU cores as integer (`5` CPU core) or decimal (`2.5` CPU core).
 * Number or _millicpus_ / _millicores_ (`100m`) where 1000 _millicores_ is the same `1` CPU core.
+
+.Example CPU units
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    cpu: 500m
+  limits:
+    cpu: 2.5
+# ...
+----
 
 NOTE: The computing power of 1 CPU core may differ depending on the platform where Kubernetes is deployed.
 
@@ -156,6 +190,18 @@ Memory requests and limits are specified in megabytes, gigabytes, mebibytes, and
 * To specify memory in gigabytes, use the `G` suffix. For example `1G`.
 * To specify memory in mebibytes, use the `Mi` suffix. For example `1000Mi`.
 * To specify memory in gibibytes, use the `Gi` suffix. For example `1Gi`.
+
+.Example resources using different memory units
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    memory: 512Mi
+  limits:
+    memory: 2Gi
+# ...
+----
 
 For more details about memory specification and additional supported units, see {K8sMeaningOfMemory}.
 
@@ -331,12 +377,21 @@ When metrics are enabled, they are exposed on port 9404.
 
 When the `metricsConfig` (or deprecated `metrics`) property is not defined in the resource, the Prometheus metrics are disabled.
 
-For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka] in the _Deploying Strimzi_ guide.
+For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-setup-str[Introducing Metrics to Kafka] in the _Deploying and Upgrading Strimzi_ guide.
 
 [id='con-common-configuration-jvm-{context}']
 === `jvmOptions`
 
-JVM options can be configured using the `jvmOptions` property in following resources:
+The following components of Strimzi run inside a Virtual Machine (VM):
+
+* Apache Kafka
+* Apache ZooKeeper
+* Apache Kafka Connect
+* Apache Kafka MirrorMaker
+* Strimzi Kafka Bridge
+
+JVM configuration options optimize the performance for different platforms and architectures,
+and can be configured using the `jvmOptions` property in following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
