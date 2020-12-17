@@ -125,6 +125,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withLivenessProbe(spec.getLivenessProbe())
                 .withReadinessProbe(spec.getReadinessProbe())
                 .withJvmOptions(spec.getJvmOptions())
+                .withJmxOptions(spec.getJmxOptions())
                 .withMetrics(spec.getMetrics())
                 .withMetricsConfig(spec.getMetricsConfig())
                 .withTracing(spec.getTracing())
