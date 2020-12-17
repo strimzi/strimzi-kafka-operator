@@ -2,7 +2,7 @@
 //
 //
 
-[id='proc-manual-restart-connector-{context}']
+[id='proc-manual-restart-mirrormaker2-connector-{context}']
 = Performing a restart of a Kafka MirrorMaker 2.0 connector
 
 This procedure describes how to manually trigger a restart of a Kafka MirrorMaker 2.0 connector by using a Kubernetes annotation.

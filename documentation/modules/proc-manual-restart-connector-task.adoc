@@ -2,7 +2,7 @@
 //
 //
 
-[id='proc-manual-restart-connector-{context}']
+[id='proc-manual-restart-connector-task-{context}']
 = Performing a restart of a Kafka connector task
 
 This procedure describes how to manually trigger a restart of a Kafka connector task by using a Kubernetes annotation.
