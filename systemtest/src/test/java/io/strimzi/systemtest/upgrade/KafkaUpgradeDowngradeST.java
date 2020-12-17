@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
