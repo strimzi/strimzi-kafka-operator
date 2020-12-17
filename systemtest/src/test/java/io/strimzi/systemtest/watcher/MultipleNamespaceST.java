@@ -37,6 +37,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     void testTopicOperatorWatchingOtherNamespace() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         cluster.setNamespace(SECOND_NAMESPACE);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
@@ -54,6 +55,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     void testKafkaInDifferentNsThanClusterOperator() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
         checkKafkaInDiffNamespaceThanCO(CLUSTER_NAME, SECOND_NAMESPACE);
     }
@@ -66,12 +68,16 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(CLUSTER_NAME);
     }
 
     @BeforeAll
     void setupEnvironment() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         deployTestSpecificResources();
     }
 

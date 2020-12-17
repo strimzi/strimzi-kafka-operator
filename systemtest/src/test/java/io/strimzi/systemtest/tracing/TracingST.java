@@ -72,6 +72,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @Tag(TRACING)
@@ -112,6 +113,9 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -154,6 +158,9 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testConnectService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
@@ -241,6 +248,9 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerWithStreamsService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -297,6 +307,9 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerConsumerService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -343,6 +356,9 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -405,6 +421,9 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2Service() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
@@ -513,6 +532,9 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
@@ -625,6 +647,9 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
@@ -785,6 +810,8 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_S2I)
     @Tag(CONNECT_COMPONENTS)
     void testConnectS2IService() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 

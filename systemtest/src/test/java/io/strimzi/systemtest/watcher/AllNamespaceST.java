@@ -63,6 +63,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testTopicOperatorWatchingOtherNamespace() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
@@ -81,6 +82,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testKafkaInDifferentNsThanClusterOperator() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO(SECOND_CLUSTER_NAME, SECOND_NAMESPACE);
     }
@@ -93,6 +95,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployMirrorMakerAcrossMultipleNamespace() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(SECOND_CLUSTER_NAME);
     }
@@ -104,6 +107,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
@@ -125,6 +129,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
@@ -142,6 +147,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testUOWatchingOtherNamespace() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
@@ -153,6 +159,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testUserInDifferentNamespace() {
         // TODO temporary fix
         assumeFalse(Environment.isNamespaceRbacScope());
+
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
@@ -248,6 +255,9 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment() {
+        // TODO temporary fix
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         deployTestSpecificResources();
     }
 }
