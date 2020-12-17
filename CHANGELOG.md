@@ -4,6 +4,7 @@
 ## 0.22.0
 
 * Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
+* Add support for JMX options configuration of all Kafka Connect (KC, KC2SI, MM2)
 
 ### Deprecations and removals
 
@@ -27,6 +28,7 @@
 * Add support for rolling individual Kafka or ZooKeeper pods through the Cluster Operator using an annotation
 * Add support for Topology Spread Constraints in Pod templates
 * Make Kafka `cluster-id` (KIP-78) available on Kafka CRD status
+
 
 ### Deprecations and removals
 * The `metrics` field in the Strimzi custom resources has been deprecated and will be removed in the future. For configuring metrics, use the new `metricsConfig` field and pass the configuration via ConfigMap.
