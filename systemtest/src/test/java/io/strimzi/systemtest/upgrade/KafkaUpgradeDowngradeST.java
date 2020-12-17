@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -121,19 +122,19 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
     }
 
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, String interBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
         Map<String, String> kafkaPods;
 
         boolean sameMinorVersion = initialVersion.protocolVersion().equals(newVersion.protocolVersion());
 
         if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get() == null) {
-            LOGGER.info("Deploying initial Kafka version (" + initialVersion.version() + ")");
+            LOGGER.info("Deploying initial Kafka version {} with logMessageFormat={} and interBrokerProtocol={}", initialVersion.version(), initLogMsgFormat, initInterBrokerProtocol);
             KafkaResource.kafkaPersistent(CLUSTER_NAME, kafkaReplicas, zkReplicas)
                 .editSpec()
                     .editKafka()
                         .withVersion(initialVersion.version())
                         .addToConfig("log.message.format.version", initLogMsgFormat)
-                        .addToConfig("inter.broker.protocol.version", interBrokerProtocol)
+                        .addToConfig("inter.broker.protocol.version", initInterBrokerProtocol)
                     .endKafka()
                 .endSpec()
                 .done();
@@ -163,12 +164,15 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             LOGGER.info("Initial Kafka version (" + initialVersion.version() + ") is already ready");
             kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
-            // Wait for log.message.format.version change
-            if (!sameMinorVersion && testContext.getDisplayName().contains("Downgrade"))   {
+            // Wait for log.message.format.version and inter.broker.protocol.version change
+            if (!sameMinorVersion
+                    && testContext.getDisplayName().contains("Downgrade")
+                    && !testContext.getDisplayName().contains("DowngradeToOlderMessageFormat"))   {
                 KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
                     LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                     Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
                     config.put("log.message.format.version", newVersion.messageVersion());
+                    config.put("inter.broker.protocol.version", newVersion.protocolVersion());
                     kafka.getSpec().getKafka().setConfig(config);
                     LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                 });
@@ -208,7 +212,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         if (testContext.getDisplayName().contains("Downgrade")) {
             kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaReplicas, kafkaPods);
-            LOGGER.info("3rd Kafka roll (update) is complete");
+            LOGGER.info("2nd Kafka roll (update) is complete");
         }
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
@@ -232,13 +236,14 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
 
         if (testContext.getDisplayName().contains("Upgrade") && !sameMinorVersion) {
-            LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.version(), newVersion.version());
-            LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
+            LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.messageVersion(), newVersion.messageVersion());
+            LOGGER.info("Updating kafka config attribute 'inter.broker.protocol.version' from '{}' to '{}' version", initialVersion.protocolVersion(), newVersion.protocolVersion());
 
             KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
                 LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                 Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
                 config.put("log.message.format.version", newVersion.messageVersion());
+                config.put("inter.broker.protocol.version", newVersion.protocolVersion());
                 kafka.getSpec().getKafka().setConfig(config);
                 LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             });
@@ -252,10 +257,16 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", initLogMsgFormat);
             assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
                     .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(initLogMsgFormat));
+            LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", initInterBrokerProtocol);
+            assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
+                    .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(initInterBrokerProtocol));
         } else {
             LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
             assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
                     .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
+            LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", newVersion.protocolVersion());
+            assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(CLUSTER_NAME)
+                    .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(newVersion.protocolVersion()));
         }
     }
 
