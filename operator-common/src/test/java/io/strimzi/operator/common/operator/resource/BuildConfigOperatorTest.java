@@ -10,7 +10,6 @@ import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
 import io.fabric8.openshift.api.model.BuildConfigList;
 import io.fabric8.openshift.api.model.BuildTriggerPolicy;
-import io.fabric8.openshift.api.model.DoneableBuildConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.vertx.core.Vertx;
@@ -20,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.when;
 
 public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, BuildConfig,
-        BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> {
+        BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
 
     @Override
     protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {

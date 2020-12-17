@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefin
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
@@ -29,12 +28,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * test them against real clusters.
  */
 @ExtendWith(VertxExtension.class)
-public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, Kafka, KafkaList, DoneableKafka> {
+public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, Kafka, KafkaList> {
     protected static final Logger log = LogManager.getLogger(KafkaCrdOperatorIT.class);
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class, Crds.kafka());
+        return new CrdOperator(vertx, client, Kafka.class, KafkaList.class, Crds.kafka());
     }
 
     @Override

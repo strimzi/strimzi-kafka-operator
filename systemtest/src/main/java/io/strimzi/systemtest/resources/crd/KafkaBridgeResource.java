@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaBridgeList;
-import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -29,7 +28,7 @@ public class KafkaBridgeResource {
     public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = TestUtils.USER_PATH + "/../examples/bridge/kafka-bridge.yaml";
     public static final String PATH_TO_KAFKA_BRIDGE_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-bridge-metrics.yaml";
 
-    public static MixedOperation<KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> kafkaBridgeClient() {
+    public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeClient() {
         return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());
     }
 
@@ -126,6 +125,6 @@ public class KafkaBridgeResource {
     }
 
     public static void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
-        ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class, resourceName, editor);
+        ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, resourceName, editor);
     }
 }

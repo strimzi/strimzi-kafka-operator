@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -16,8 +15,7 @@ public class RoleOperator extends AbstractResourceOperator<
         KubernetesClient,
         Role,
         RoleList,
-        DoneableRole,
-        Resource<Role, DoneableRole>> {
+        Resource<Role>> {
 
     /**
      * Constructor
@@ -29,7 +27,7 @@ public class RoleOperator extends AbstractResourceOperator<
     }
 
     @Override
-    protected MixedOperation<Role, RoleList, DoneableRole, Resource<Role, DoneableRole>> operation() {
+    protected MixedOperation<Role, RoleList, Resource<Role>> operation() {
         return client.rbac().roles();
     }
 }

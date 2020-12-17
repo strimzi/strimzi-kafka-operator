@@ -35,7 +35,7 @@ public class DeploymentUtils {
 
     /**
      * Log actual status of deployment with pods
-     * @param deployment - every DoneableDeployment, that HasMetadata and has status (fabric8 status)
+     * @param deployment - every Deployment, that HasMetadata and has status (fabric8 status)
      **/
     public static void logCurrentDeploymentStatus(Deployment deployment) {
         if (deployment != null) {

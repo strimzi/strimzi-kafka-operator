@@ -10,14 +10,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-import io.sundr.builder.annotations.Inline;
+import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
@@ -74,12 +75,14 @@ import static java.util.Collections.unmodifiableList;
         editableEnabled = false, 
         generateBuilderPackage = false, 
         builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
+        refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "apiVersion", "kind", "metadata", "spec", "status" })
 @EqualsAndHashCode
-public class KafkaMirrorMaker2 extends CustomResource implements HasSpecAndStatus<KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status>, UnknownPropertyPreserving {
+@Version(Constants.V1ALPHA1)
+@Group(Constants.STRIMZI_GROUP)
+public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> implements UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
@@ -123,12 +126,12 @@ public class KafkaMirrorMaker2 extends CustomResource implements HasSpecAndStatu
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Override
     public ObjectMeta getMetadata() {
-        return super.getMetadata();
+        return metadata;
     }
 
     @Override
     public void setMetadata(ObjectMeta metadata) {
-        super.setMetadata(metadata);
+        this.metadata = metadata;
     }
 
     @Description("The specification of the Kafka MirrorMaker 2.0 cluster.")
@@ -136,15 +139,18 @@ public class KafkaMirrorMaker2 extends CustomResource implements HasSpecAndStatu
         return spec;
     }
 
+    @Override
     public void setSpec(KafkaMirrorMaker2Spec spec) {
         this.spec = spec;
     }
 
+    @Override
     @Description("The status of the Kafka MirrorMaker 2.0 cluster.")
     public KafkaMirrorMaker2Status getStatus() {
         return status;
     }
 
+    @Override
     public void setStatus(KafkaMirrorMaker2Status status) {
         this.status = status;
     }

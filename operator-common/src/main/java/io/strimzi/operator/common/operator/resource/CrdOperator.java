@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
@@ -24,13 +23,11 @@ import io.vertx.core.Vertx;
         justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
-            L extends CustomResourceList<T>,
-            D extends Doneable<T>>
-        extends AbstractWatchableStatusedResourceOperator<C, T, L, D, Resource<T, D>> {
+            L extends CustomResourceList<T>>
+        extends AbstractWatchableStatusedResourceOperator<C, T, L, Resource<T>> {
 
     private final Class<T> cls;
     private final Class<L> listCls;
-    private final Class<D> doneableCls;
     protected final CustomResourceDefinition crd;
 
     /**
@@ -39,20 +36,18 @@ public class CrdOperator<C extends KubernetesClient,
      * @param client The Kubernetes client
      * @param cls The class of the CR
      * @param listCls The class of the list.
-     * @param doneableCls The class of the CR's "doneable".
      * @param crd The CustomResourceDefinition of the CR
      */
-    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, Class<D> doneableCls, CustomResourceDefinition crd) {
+    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, CustomResourceDefinition crd) {
         super(vertx, client, crd.getSpec().getNames().getKind());
         this.cls = cls;
         this.listCls = listCls;
-        this.doneableCls = doneableCls;
         this.crd = crd;
     }
 
     @Override
-    protected MixedOperation<T, L, D, Resource<T, D>> operation() {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), cls, listCls, doneableCls);
+    protected MixedOperation<T, L, Resource<T>> operation() {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), cls, listCls);
     }
 
     /**
@@ -68,7 +63,7 @@ public class CrdOperator<C extends KubernetesClient,
      */
     @Override
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
-        Resource<T, D> resourceOp = operation().inNamespace(namespace).withName(name);
+        Resource<T> resourceOp = operation().inNamespace(namespace).withName(name);
 
         Future<Void> watchForDeleteFuture = Util.waitFor(vertx,
             String.format("%s resource %s", resourceKind, name),

@@ -7,7 +7,6 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
-import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
@@ -19,8 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
-        ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
-        Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> {
+        ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> {
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
@@ -31,7 +29,7 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, ClusterRoleBinding, ClusterRoleBindingList,
-            DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> createResourceOperations(
+            Resource<ClusterRoleBinding>> createResourceOperations(
                     Vertx vertx, KubernetesClient mockClient) {
         return new ClusterRoleBindingOperator(vertx, mockClient) {
             @Override

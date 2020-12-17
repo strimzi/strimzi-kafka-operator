@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigBuilder;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
-import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
 import io.vertx.core.Vertx;
@@ -19,8 +18,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.when;
 
 public class DeploymentConfigOperatorTest extends ScalableResourceOperatorTest<OpenShiftClient, DeploymentConfig,
-        DeploymentConfigList, DoneableDeploymentConfig,
-        DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> {
+        DeploymentConfigList, DeployableScalableResource<DeploymentConfig>> {
 
     @Override
     protected Class<OpenShiftClient> clientType() {

@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
@@ -26,7 +25,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 public class KafkaConnectorResource {
     public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../examples/connect/source-connector.yaml";
 
-    public static MixedOperation<KafkaConnector, KafkaConnectorList, DoneableKafkaConnector, Resource<KafkaConnector, DoneableKafkaConnector>> kafkaConnectorClient() {
+    public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
     }
 
@@ -91,6 +90,6 @@ public class KafkaConnectorResource {
     }
 
     public static void replaceKafkaConnectorResource(String resourceName, Consumer<KafkaConnector> editor) {
-        ResourceManager.replaceCrdResource(KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class, resourceName, editor);
+        ResourceManager.replaceCrdResource(KafkaConnector.class, KafkaConnectorList.class, resourceName, editor);
     }
 }

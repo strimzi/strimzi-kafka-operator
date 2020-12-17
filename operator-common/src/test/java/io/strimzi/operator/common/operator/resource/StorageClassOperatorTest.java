@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.storage.DoneableStorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.fabric8.kubernetes.api.model.storage.StorageClassList;
@@ -19,7 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class StorageClassOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
-        StorageClass, StorageClassList, DoneableStorageClass, Resource<StorageClass, DoneableStorageClass>> {
+        StorageClass, StorageClassList, Resource<StorageClass>> {
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
@@ -30,7 +29,7 @@ public class StorageClassOperatorTest extends AbstractNonNamespacedResourceOpera
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, StorageClass, StorageClassList,
-            DoneableStorageClass, Resource<StorageClass, DoneableStorageClass>> createResourceOperations(
+            Resource<StorageClass>> createResourceOperations(
                     Vertx vertx, KubernetesClient mockClient) {
         return new StorageClassOperator(vertx, mockClient) {
             @Override

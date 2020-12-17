@@ -13,11 +13,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
-
-import static java.util.Collections.emptyMap;
 
 @Buildable(
         editableEnabled = false,
@@ -26,7 +22,7 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"partitions", "replicas", "config"})
 @EqualsAndHashCode
-public class KafkaTopicSpec implements UnknownPropertyPreserving, Serializable {
+public class KafkaTopicSpec extends Spec {
 
     private static final long serialVersionUID = 1L;
 
@@ -37,8 +33,6 @@ public class KafkaTopicSpec implements UnknownPropertyPreserving, Serializable {
     private Integer replicas;
 
     private Map<String, Object> config;
-
-    private Map<String, Object> additionalProperties;
 
     @Description("The name of the topic. " +
             "When absent this will default to the metadata.name of the topic. " +
@@ -86,18 +80,5 @@ public class KafkaTopicSpec implements UnknownPropertyPreserving, Serializable {
 
     public void setConfig(Map<String, Object> config) {
         this.config = config;
-    }
-
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
-    }
-
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>(1);
-        }
-        this.additionalProperties.put(name, value);
     }
 }

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableNode;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.NodeBuilder;
 import io.fabric8.kubernetes.api.model.NodeList;
@@ -20,13 +19,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
 public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
-        Node, NodeList, DoneableNode,
-        Resource<Node, DoneableNode>> {
+        Node, NodeList, Resource<Node>> {
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
-            Node, NodeList, DoneableNode,
-            Resource<Node, DoneableNode>> operator() {
+            Node, NodeList, Resource<Node>> operator() {
         return new NodeOperator(vertx, client);
     }
 

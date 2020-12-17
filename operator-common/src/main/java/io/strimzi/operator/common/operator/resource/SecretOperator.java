@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -15,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Secret}s.
  */
-public class SecretOperator extends AbstractResourceOperator<KubernetesClient, Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> {
+public class SecretOperator extends AbstractResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> {
 
     /**
      * Constructor
@@ -27,7 +26,7 @@ public class SecretOperator extends AbstractResourceOperator<KubernetesClient, S
     }
 
     @Override
-    protected MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> operation() {
+    protected MixedOperation<Secret, SecretList, Resource<Secret>> operation() {
         return client.secrets();
     }
 }

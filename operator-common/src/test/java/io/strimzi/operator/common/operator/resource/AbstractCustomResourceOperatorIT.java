@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
@@ -53,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 // Methods must be be non static as they make a non-static call to getCrd()
 // to correctly setup the test environment before the tests.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> {
+public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource, L extends CustomResourceList<T>> {
     protected static final Logger log = LogManager.getLogger(AbstractCustomResourceOperatorIT.class);
     protected static final String RESOURCE_NAME = "my-test-resource";
     protected static final Condition READY_CONDITION = new ConditionBuilder()
@@ -66,7 +65,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     private static KubeClusterResource cluster;
 
 
-    protected abstract CrdOperator<C, T, L, D> operator();
+    protected abstract CrdOperator<C, T, L> operator();
     protected abstract CustomResourceDefinition getCrd();
     protected abstract String getNamespace();
     protected abstract T getResource(String name);
@@ -118,7 +117,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
-        CrdOperator<C, T, L, D> op = operator();
+        CrdOperator<C, T, L> op = operator();
 
         log.info("Getting Kubernetes version");
         PlatformFeaturesAvailability.create(vertx, client)
@@ -164,7 +163,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
-        CrdOperator<C, T, L, D> op = operator();
+        CrdOperator<C, T, L> op = operator();
 
         AtomicReference<T> newStatus = new AtomicReference<>();
 
@@ -209,7 +208,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
-        CrdOperator<C, T, L, D> op = operator();
+        CrdOperator<C, T, L> op = operator();
 
         Promise updateFailed = Promise.promise();
 

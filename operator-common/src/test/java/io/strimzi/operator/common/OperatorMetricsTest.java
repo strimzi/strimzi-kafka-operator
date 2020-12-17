@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
-import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
@@ -349,7 +348,7 @@ public class OperatorMetricsTest {
         return metrics;
     }
 
-    private abstract class MyResource extends CustomResource implements HasSpecAndStatus {
+    private abstract class MyResource extends CustomResource {
     }
 
     private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
@@ -398,8 +397,7 @@ public class OperatorMetricsTest {
                     }
 
                     @Override
-                    public void setSpec(Spec spec) {
-
+                    public void setSpec(Object spec) {
                     }
 
                     @Override
@@ -408,7 +406,7 @@ public class OperatorMetricsTest {
                     }
 
                     @Override
-                    public void setStatus(Status status) {
+                    public void setStatus(Object status) {
 
                     }
                 };

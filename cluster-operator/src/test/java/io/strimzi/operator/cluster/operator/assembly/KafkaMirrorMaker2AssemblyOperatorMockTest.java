@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
-import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
@@ -88,7 +87,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         }
         mockKube = new MockKube();
         mockClient = mockKube
-                .withCustomResourceDefinition(Crds.kafkaMirrorMaker2(), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, DoneableKafkaMirrorMaker2.class, KafkaMirrorMaker2::getStatus, KafkaMirrorMaker2::setStatus)
+                .withCustomResourceDefinition(Crds.kafkaMirrorMaker2(), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2::getStatus, KafkaMirrorMaker2::setStatus)
                     .withInitialInstances(Collections.singleton(mirrorMaker2Resource))
                 .end()
                 .build();

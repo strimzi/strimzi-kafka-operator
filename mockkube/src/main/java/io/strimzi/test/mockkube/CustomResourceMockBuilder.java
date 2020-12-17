@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.mockkube;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -15,15 +14,15 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.function.Function;
 
-class CustomResourceMockBuilder<T extends CustomResource, L extends KubernetesResource & KubernetesResourceList<T>, D extends Doneable<T>, S>
-        extends MockBuilder<T, L, D, Resource<T, D>> {
+class CustomResourceMockBuilder<T extends CustomResource, L extends KubernetesResource & KubernetesResourceList<T>, S>
+        extends MockBuilder<T, L, Resource<T>> {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceMockBuilder.class);
 
-    private final MockKube.MockedCrd<T, L, D, S> mockedCrd;
+    private final MockKube.MockedCrd<T, L, S> mockedCrd;
 
-    public CustomResourceMockBuilder(MockKube.MockedCrd<T, L, D, S> mockedCrd) {
-        super(mockedCrd.getCrClass(), mockedCrd.getCrListClass(), mockedCrd.getCrDoneableClass(), castClass(Resource.class), mockedCrd.getInstances());
+    public CustomResourceMockBuilder(MockKube.MockedCrd<T, L, S> mockedCrd) {
+        super(mockedCrd.getCrClass(), mockedCrd.getCrListClass(), castClass(Resource.class), mockedCrd.getInstances());
         this.mockedCrd = mockedCrd;
     }
 

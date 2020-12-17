@@ -18,7 +18,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
@@ -57,9 +56,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class StatefulSetOperatorTest
-        extends ScalableResourceOperatorTest<KubernetesClient, StatefulSet, StatefulSetList,
-                                DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<KubernetesClient, StatefulSet, StatefulSetList,
+                                RollableScalableResource<StatefulSet>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

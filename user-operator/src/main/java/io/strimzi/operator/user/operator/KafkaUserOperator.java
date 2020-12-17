@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaUserList;
-import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
@@ -48,7 +47,7 @@ import java.util.stream.Collectors;
  * Operator for a Kafka Users.
  */
 public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec, KafkaUserStatus,
-        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser>> {
+        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList>> {
     private static final Logger log = LogManager.getLogger(KafkaUserOperator.class.getName());
 
     private final SecretOperator secretOperations;
@@ -79,7 +78,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      */
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
-                             CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator,
+                             CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> crdOperator,
                              Labels labels,
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,

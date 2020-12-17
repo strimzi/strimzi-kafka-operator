@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.fabric8.openshift.api.model.RouteList;
@@ -15,7 +14,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class RouteOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> {
+public class RouteOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Route, RouteList, Resource<Route>> {
     @Override
     protected Class<OpenShiftClient> clientType() {
         return OpenShiftClient.class;
@@ -37,7 +36,7 @@ public class RouteOperatorTest extends AbstractResourceOperatorTest<OpenShiftCli
     }
 
     @Override
-    protected AbstractResourceOperator<OpenShiftClient, Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
+    protected AbstractResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
         return new RouteOperator(vertx, mockClient);
     }
 }

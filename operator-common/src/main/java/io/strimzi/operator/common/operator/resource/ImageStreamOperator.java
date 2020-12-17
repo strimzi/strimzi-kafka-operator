@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.api.model.DoneableImageStream;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -15,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code ImageStream}s.
  */
-public class ImageStreamOperator extends AbstractResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> {
+public class ImageStreamOperator extends AbstractResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, Resource<ImageStream>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -26,7 +25,7 @@ public class ImageStreamOperator extends AbstractResourceOperator<OpenShiftClien
     }
 
     @Override
-    protected MixedOperation<ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> operation() {
+    protected MixedOperation<ImageStream, ImageStreamList, Resource<ImageStream>> operation() {
         return client.imageStreams();
     }
 }

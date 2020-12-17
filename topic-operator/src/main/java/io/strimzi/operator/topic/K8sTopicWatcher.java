@@ -5,8 +5,8 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -80,7 +80,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     }
 
     @Override
-    public void onClose(KubernetesClientException exception) {
+    public void onClose(WatcherException exception) {
         LOGGER.debug("Closing {}", this);
         if (exception != null) {
             LOGGER.debug("Restarting  topic watcher due to ", exception);

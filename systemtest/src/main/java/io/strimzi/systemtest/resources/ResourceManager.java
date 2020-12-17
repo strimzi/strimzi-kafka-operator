@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
@@ -32,8 +31,9 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.HasStatus;
+import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -108,14 +108,14 @@ public class ResourceManager {
         pointerResources = classResources;
     }
 
-    public static <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
-        Resource<T, D> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass, doneableClass).inNamespace(kubeClient().getNamespace()).withName(resourceName);
+    public static <T extends CustomResource, L extends CustomResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor) {
+        Resource<T> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(kubeClient().getNamespace()).withName(resourceName);
         T resource = namedResource.get();
         editor.accept(resource);
         namedResource.replace(resource);
     }
     @SuppressWarnings("unchecked")
-    public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> operation, T resource) {
+    public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?> operation, T resource) {
         LOGGER.debug("Scheduled deletion of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
         switch (resource.getKind()) {
@@ -387,7 +387,7 @@ public class ResourceManager {
      * Log actual status of custom resource with pods.
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
-    public static <T extends HasMetadata & HasStatus> void logCurrentResourceStatus(T customResource) {
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> void logCurrentResourceStatus(T customResource) {
         if (customResource != null) {
             List<String> printWholeCR = Arrays.asList(KafkaConnector.RESOURCE_KIND, KafkaTopic.RESOURCE_KIND, KafkaUser.RESOURCE_KIND);
 
@@ -435,12 +435,13 @@ public class ResourceManager {
      * @param status - desired status
      * @return returns CR
      */
-    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Enum<?> status, long resourceTimeout) {
+
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> T waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> status, long resourceTimeout) {
         waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), status, resourceTimeout);
         return resource;
     }
 
-    public static <T extends HasMetadata & HasStatus> void waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, String kind, String namespace, String name, Enum<?> status, long resourceTimeoutMs) {
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> void waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> status, long resourceTimeoutMs) {
         LOGGER.info("Wait for {}: {} will have desired state: {}", kind, name, status);
 
         TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", kind, name, status),
@@ -455,7 +456,8 @@ public class ResourceManager {
         LOGGER.info("{}: {} is in desired state: {}", kind, name, status);
     }
 
-    public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Enum<?> status) {
+
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> T waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> status) {
         long resourceTimeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
         return waitForResourceStatus(operation, resource, status, resourceTimeout);
     }

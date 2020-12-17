@@ -11,14 +11,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-import io.sundr.builder.annotations.Inline;
+import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
@@ -79,14 +80,14 @@ import static java.util.Collections.unmodifiableList;
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        inline = {
-                @Inline(type = Doneable.class, prefix = "Doneable", value = "done"),
-        }
+        refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class Kafka extends CustomResource implements HasSpecAndStatus<KafkaSpec, KafkaStatus>, UnknownPropertyPreserving {
+@Version(Constants.V1BETA2)
+@Group(Constants.STRIMZI_GROUP)
+public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements UnknownPropertyPreserving {
 
     public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1BETA1 = Constants.V1BETA1;
@@ -130,19 +131,21 @@ public class Kafka extends CustomResource implements HasSpecAndStatus<KafkaSpec,
 
     @Override
     public ObjectMeta getMetadata() {
-        return super.getMetadata();
+        return metadata;
     }
 
     @Override
     public void setMetadata(ObjectMeta metadata) {
-        super.setMetadata(metadata);
+        this.metadata = metadata;
     }
 
+    @Override
     @Description("The specification of the Kafka and ZooKeeper clusters, and Topic Operator.")
     public KafkaSpec getSpec() {
         return spec;
     }
 
+    @Override
     public void setSpec(KafkaSpec spec) {
         this.spec = spec;
     }
@@ -153,6 +156,7 @@ public class Kafka extends CustomResource implements HasSpecAndStatus<KafkaSpec,
         return status;
     }
 
+    @Override
     public void setStatus(KafkaStatus status) {
         this.status = status;
     }

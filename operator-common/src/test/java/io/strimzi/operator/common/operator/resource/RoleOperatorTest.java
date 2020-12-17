@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -24,8 +23,7 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
         KubernetesClient,
         Role,
         RoleList,
-        DoneableRole,
-        Resource<Role, DoneableRole>> {
+        Resource<Role>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -62,8 +60,7 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, Role, RoleList, DoneableRole,
-            Resource<Role, DoneableRole>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractResourceOperator<KubernetesClient, Role, RoleList, Resource<Role>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new RoleOperator(vertx, mockClient);
     }
 }

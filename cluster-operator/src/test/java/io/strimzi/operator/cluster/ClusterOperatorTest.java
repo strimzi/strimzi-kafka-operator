@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionList;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.DoneableCustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
@@ -139,8 +138,8 @@ public class ClusterOperatorTest {
             throw new RuntimeException(e);
         }
         MixedOperation mockCms = mock(MixedOperation.class);
-        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
-        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> mockResource = mock(Resource.class);
+        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
+        Resource<CustomResourceDefinition> mockResource = mock(Resource.class);
         if (openShift) {
             when(mockResource.get()).thenReturn(Crds.kafkaConnectS2I());
         } else {
@@ -148,7 +147,7 @@ public class ClusterOperatorTest {
         }
         when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
-        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(mockCms);
+        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any())).thenReturn(mockCms);
 
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
@@ -220,9 +219,9 @@ public class ClusterOperatorTest {
         }
 
         MixedOperation mockCms = mock(MixedOperation.class);
-        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition,
-                Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
-        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> mockResource = mock(Resource.class);
+        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList,
+                Resource<CustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
+        Resource<CustomResourceDefinition> mockResource = mock(Resource.class);
         if (openShift) {
             when(mockResource.get()).thenReturn(Crds.kafkaConnectS2I());
         } else {
@@ -230,7 +229,7 @@ public class ClusterOperatorTest {
         }
         when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
-        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any(), any())).thenReturn(mockCms);
+        when(client.customResources(any(CustomResourceDefinitionContext.class), any(), any())).thenReturn(mockCms);
 
         FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
         when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);

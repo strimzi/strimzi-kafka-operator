@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaRebalanceList;
-import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
@@ -28,7 +27,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 public class KafkaRebalanceResource {
     public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-rebalance.yaml";
 
-    public static MixedOperation<KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance, Resource<KafkaRebalance, DoneableKafkaRebalance>> kafkaRebalanceClient() {
+    public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
     }
 
@@ -90,6 +89,6 @@ public class KafkaRebalanceResource {
     }
 
     public static void replaceKafkaRebalanceResource(String resourceName, Consumer<KafkaRebalance> editor) {
-        ResourceManager.replaceCrdResource(KafkaRebalance.class, KafkaRebalanceList.class, DoneableKafkaRebalance.class, resourceName, editor);
+        ResourceManager.replaceCrdResource(KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor);
     }
 }

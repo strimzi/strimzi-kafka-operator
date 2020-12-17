@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
@@ -33,11 +32,10 @@ import java.util.Objects;
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
  * @param <L> The list variant of the Kubernetes resource type.
- * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
 public abstract class AbstractNonNamespacedResourceOperator<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList<T>, D, R extends Resource<T, D>> {
+        L extends KubernetesResourceList<T>, R extends Resource<T>> {
 
     protected final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
@@ -58,7 +56,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         this.resourceSupport = new ResourceSupport(vertx);
     }
 
-    protected abstract NonNamespaceOperation<T, L, D, R> operation();
+    protected abstract NonNamespaceOperation<T, L, R> operation();
 
     /**
      * Asynchronously create or update the given {@code resource} depending on whether it already exists,
@@ -234,8 +232,8 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         return resourceSupport.listAsync(listOperation(selector));
     }
 
-    protected FilterWatchListDeletable<T, L, Boolean, Watch> listOperation(Labels selector) {
-        FilterWatchListMultiDeletable<T, L, Boolean, Watch> operation = operation();
+    protected FilterWatchListDeletable<T, L> listOperation(Labels selector) {
+        FilterWatchListMultiDeletable<T, L> operation = operation();
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();

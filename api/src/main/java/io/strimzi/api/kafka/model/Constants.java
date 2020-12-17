@@ -15,6 +15,7 @@ public class Constants {
 
     public static final String CRD_KIND = "CustomResourceDefinition";
     public static final String STRIMZI_CATEGORY = "strimzi";
+    public static final String STRIMZI_GROUP = "kafka.strimzi.io";
 
     public static final String FABRIC8_KUBERNETES_API = "io.fabric8.kubernetes.api.builder";
 

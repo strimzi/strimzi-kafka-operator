@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableEndpoints;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsBuilder;
 import io.fabric8.kubernetes.api.model.EndpointsList;
@@ -15,7 +14,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class EndpointOperatorTest extends AbtractReadyResourceOperatorTest<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> {
+public class EndpointOperatorTest extends AbtractReadyResourceOperatorTest<KubernetesClient, Endpoints, EndpointsList, Resource<Endpoints>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

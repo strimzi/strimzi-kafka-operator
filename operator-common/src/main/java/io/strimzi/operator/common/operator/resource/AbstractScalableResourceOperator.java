@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -22,15 +21,13 @@ import org.apache.logging.log4j.Logger;
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
  * @param <L> The list variant of the Kubernetes resource type.
- * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
 public abstract class AbstractScalableResourceOperator<C extends KubernetesClient,
             T extends HasMetadata,
             L extends KubernetesResourceList<T>,
-            D extends Doneable<T>,
-            R extends ScalableResource<T, D>>
-        extends AbstractReadyResourceOperator<C, T, L, D, R> {
+            R extends ScalableResource<T>>
+        extends AbstractReadyResourceOperator<C, T, L, R> {
 
     public static final String ANNO_STRIMZI_IO_GENERATION = Annotations.STRIMZI_DOMAIN + "generation";
     @Deprecated

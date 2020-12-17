@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -30,10 +29,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>> extends AbstractResourceOperatorTest<C, T, L, D, R> {
+        L extends KubernetesResourceList<T>, R extends Resource<T>> extends AbstractResourceOperatorTest<C, T, L, R> {
 
     @Override
-    protected abstract AbstractReadyResourceOperator<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);
+    protected abstract AbstractReadyResourceOperator<C, T, L, R> createResourceOperations(Vertx vertx, C mockClient);
 
     @Test
     public void testReadinessThrowsWhenResourceDoesNotExist(VertxTestContext context) {
@@ -50,7 +49,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
@@ -79,7 +78,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
@@ -131,7 +130,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000)
@@ -167,7 +166,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)
@@ -203,7 +202,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100)

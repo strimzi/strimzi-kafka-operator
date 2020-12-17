@@ -6,15 +6,13 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
-import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
 public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
-        ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
-        Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> {
+        ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> {
 
     /**
      * Constructor.
@@ -26,9 +24,7 @@ public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOpe
     }
 
     @Override
-    protected MixedOperation<ClusterRoleBinding, ClusterRoleBindingList,
-            DoneableClusterRoleBinding, Resource<ClusterRoleBinding,
-            DoneableClusterRoleBinding>> operation() {
+    protected MixedOperation<ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> operation() {
         return client.rbac().clusterRoleBindings();
     }
 }

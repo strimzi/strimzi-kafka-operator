@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -15,6 +14,7 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.micrometer.core.instrument.Counter;
@@ -26,11 +26,7 @@ import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.AbstractKafkaConnectSpec;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -43,7 +39,6 @@ import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -100,13 +95,13 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_TAS
 import static java.util.Collections.emptyMap;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
-public abstract class AbstractConnectOperator<C extends KubernetesClient, T extends CustomResource & HasSpecAndStatus<P, S>,
-        L extends CustomResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
-        extends AbstractOperator<T, P, S, CrdOperator<C, T, L, D>> {
+public abstract class AbstractConnectOperator<C extends KubernetesClient, T extends CustomResource<P, S>,
+        L extends CustomResourceList<T>, R extends Resource<T>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
+        extends AbstractOperator<T, P, S, CrdOperator<C, T, L>> {
 
     private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
 
-    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> connectorOperator;
+    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
     protected final ConfigMapOperator configMapOperations;
@@ -129,7 +124,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private final Timer connectorsReconciliationsTimer;
 
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
-                                   CrdOperator<C, T, L, D> resourceOperator,
+                                   CrdOperator<C, T, L> resourceOperator,
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
                                    Function<Vertx, KafkaConnectApi> connectClientProvider,
                                    int port) {
@@ -202,8 +197,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param watchNamespaceOrWildcard The namespace to watch.
      * @return A future which completes when the watch has been set up.
      */
-    public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
-                                                    AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> connectS2IOperator,
+    public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
+                                                    AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> connectS2IOperator,
                                                     String watchNamespaceOrWildcard) {
         return Util.async(connectOperator.vertx, () -> {
             connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
@@ -299,9 +294,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 }
 
                 @Override
-                public void onClose(KubernetesClientException e) {
+                public void onClose(WatcherException e) {
                     if (e != null) {
-                        throw e;
+                        throw new KubernetesClientException(e.getMessage());
                     }
                 }
             });
@@ -657,7 +652,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             .compose(ignored -> Future.succeededFuture());
     }
 
-    public static void updateStatus(Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?, ?> connectorOperations) {
+    public static void updateStatus(Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?> connectorOperations) {
         KafkaConnectorStatus status = new KafkaConnectorStatus();
         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnector2, status, error);
         StatusDiff diff = new StatusDiff(kafkaConnector2.getStatus(), status);
@@ -768,8 +763,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return
      */
-    protected <T extends CustomResource & HasStatus<S>, S extends Status, L extends CustomResourceList<T>, D extends Doneable<T>> Future<Void>
-        maybeUpdateStatusCommon(CrdOperator<KubernetesClient, T, L, D> resourceOperator,
+    protected <T extends CustomResource<?, S>, S extends Status, L extends CustomResourceList<T>> Future<Void>
+        maybeUpdateStatusCommon(CrdOperator<KubernetesClient, T, L> resourceOperator,
                                 T resource,
                                 Reconciliation reconciliation,
                                 S desiredStatus,

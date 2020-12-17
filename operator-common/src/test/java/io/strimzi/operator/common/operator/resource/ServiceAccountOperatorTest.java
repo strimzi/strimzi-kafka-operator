@@ -5,7 +5,6 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.DoneableServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
@@ -28,7 +27,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> {
+public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
 
 
     @Override
@@ -58,7 +57,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new ServiceAccountOperator(vertx, mockClient);
     }
 
@@ -84,7 +83,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource)
@@ -93,7 +92,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
                 verify(mockResource).get();
                 //verify(mockResource).patch(any());
                 verify(mockResource, never()).create(any());
-                verify(mockResource, never()).createNew();
+                verify(mockResource, never()).create();
                 verify(mockResource, never()).createOrReplace(any());
                 verify(mockCms, never()).createOrReplace(any());
                 async.flag();

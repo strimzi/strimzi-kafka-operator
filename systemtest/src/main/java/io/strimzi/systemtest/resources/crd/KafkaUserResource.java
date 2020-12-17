@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
-import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
@@ -23,7 +22,7 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
 
-    public static MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUserClient() {
+    public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserClient() {
         return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
     }
 
@@ -84,6 +83,6 @@ public class KafkaUserResource {
     }
 
     public static void replaceUserResource(String resourceName, Consumer<KafkaUser> editor) {
-        ResourceManager.replaceCrdResource(KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class, resourceName, editor);
+        ResourceManager.replaceCrdResource(KafkaUser.class, KafkaUserList.class, resourceName, editor);
     }
 }

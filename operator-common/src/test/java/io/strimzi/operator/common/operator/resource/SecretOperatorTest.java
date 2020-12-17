@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretList;
@@ -16,7 +15,7 @@ import io.vertx.core.Vertx;
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
-public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> {
+public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Secret, SecretList, Resource<Secret>> {
 
 
     @Override
@@ -47,7 +46,7 @@ public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesC
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new SecretOperator(vertx, mockClient);
     }
 }

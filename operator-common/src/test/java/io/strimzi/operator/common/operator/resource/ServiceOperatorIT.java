@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceList;
@@ -21,12 +20,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
-public class ServiceOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, Service, ServiceList,
-        DoneableService, ServiceResource<Service, DoneableService>> {
+public class ServiceOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, Service, ServiceList,
-            DoneableService, ServiceResource<Service, DoneableService>> operator() {
+            ServiceResource<Service>> operator() {
         return new ServiceOperator(vertx, client);
     }
 

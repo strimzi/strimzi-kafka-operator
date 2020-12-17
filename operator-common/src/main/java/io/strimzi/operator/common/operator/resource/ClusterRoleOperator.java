@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleList;
-import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRole;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -17,8 +16,7 @@ import io.vertx.core.Vertx;
 import java.io.IOException;
 
 public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
-        ClusterRole, ClusterRoleList, DoneableClusterRole, Resource<ClusterRole,
-        DoneableClusterRole>> {
+        ClusterRole, ClusterRoleList, Resource<ClusterRole>> {
 
     /**
      * Constructor.
@@ -30,8 +28,8 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
     }
 
     @Override
-    protected MixedOperation<ClusterRole, ClusterRoleList, DoneableClusterRole,
-            Resource<ClusterRole, DoneableClusterRole>> operation() {
+    protected MixedOperation<ClusterRole, ClusterRoleList,
+            Resource<ClusterRole>> operation() {
         return client.rbac().clusterRoles();
     }
 
