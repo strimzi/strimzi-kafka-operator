@@ -34,9 +34,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(UPGRADE)
-public class ZookeeperUpgradeST extends AbstractST {
+public class KafkaUpgradeDowngradeST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(ZookeeperUpgradeST.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);
 
     public static final String NAMESPACE = "zookeeper-upgrade-test";
 
