@@ -85,7 +85,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 @Tag(REGRESSION)
-@Tag(ACCEPTANCE)
 @Tag(METRICS)
 public class MetricsST extends AbstractST {
 
@@ -109,6 +108,7 @@ public class MetricsST extends AbstractST {
     private String bridgeTopic = "bridge-topic";
 
     @Test
+    @Tag(ACCEPTANCE)
     void testKafkaBrokersCount() {
         Pattern brokerOnlineCount = Pattern.compile("kafka_server_replicamanager_leadercount ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(brokerOnlineCount, kafkaMetricsData);
@@ -137,6 +137,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testZookeeperQuorumSize() {
         Pattern quorumSize = Pattern.compile("zookeeper_quorumsize ([\\d.][^\\n]+)");
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(quorumSize, zookeeperMetricsData);
@@ -158,6 +159,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     @Tag(CONNECT)
     void testKafkaConnectRequests() {
         Pattern connectRequests = Pattern.compile("kafka_connect_node_request_total\\{clientid=\".*\",} ([\\d.][^\\n]+)");
@@ -182,6 +184,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange() {
         KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
@@ -235,6 +238,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics() {
         clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics();
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnectS2I", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2", "KafkaRebalance");
@@ -280,6 +284,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testUserOperatorMetrics() {
         userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(CLUSTER_NAME);
         assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaUser", userOperatorMetricsData);
@@ -297,6 +302,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     void testTopicOperatorMetrics() {
         topicOperatorMetricsData = MetricsUtils.collectTopicOperatorPodMetrics(CLUSTER_NAME);
         assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaTopic", topicOperatorMetricsData);
@@ -318,6 +324,7 @@ public class MetricsST extends AbstractST {
 
     @Test
     @Tag(MIRROR_MAKER2)
+    @Tag(ACCEPTANCE)
     void testMirrorMaker2Metrics() {
         kafkaMirrorMaker2MetricsData = MetricsUtils.collectKafkaMirrorMaker2PodsMetrics(MIRROR_MAKER_CLUSTER);
         Pattern connectResponse = Pattern.compile("kafka_connect_worker_connector_count ([\\d.][^\\n]+)");
@@ -331,6 +338,7 @@ public class MetricsST extends AbstractST {
 
     @Test
     @Tag(BRIDGE)
+    @Tag(ACCEPTANCE)
     void testKafkaBridgeMetrics() {
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
@@ -376,6 +384,7 @@ public class MetricsST extends AbstractST {
     }
 
     @Test
+    @Tag(ACCEPTANCE)
     @Tag(CRUISE_CONTROL)
     void testCruiseControlMetrics() {
 

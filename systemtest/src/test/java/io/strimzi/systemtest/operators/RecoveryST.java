@@ -33,7 +33,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
@@ -65,7 +64,6 @@ class RecoveryST extends AbstractST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     void testRecoveryFromKafkaStatefulSetDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
@@ -85,7 +83,6 @@ class RecoveryST extends AbstractST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     void testRecoveryFromZookeeperStatefulSetDeletion() {
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
         // kafka cluster already deployed
