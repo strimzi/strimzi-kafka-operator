@@ -46,6 +46,7 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -244,6 +245,8 @@ public class TopicST extends AbstractST {
             }
         }
 
+        assertThat(sent, greaterThan(0));
+
         internalKafkaClient.assertSentAndReceivedMessages(
                 sent,
                 internalKafkaClient.receiveMessagesPlain()
@@ -254,9 +257,13 @@ public class TopicST extends AbstractST {
         assertThat(created, is(true));
 
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        assertThat(kafkaTopic, notNullValue());
         ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
 
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is(Ready.toString()));
+        assertThat(kafkaTopic.getStatus(), notNullValue());
+        assertThat(kafkaTopic.getStatus().getConditions(), notNullValue());
+        assertThat(kafkaTopic.getStatus().getConditions().isEmpty(), is(false));
+        assertThat(kafkaTopic.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
         LOGGER.info("Topic successfully created");
     }
 
