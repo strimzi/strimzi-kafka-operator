@@ -14,19 +14,19 @@ This procedure shows only some of the possible configuration options, but those 
 
 * Resource requests (CPU / Memory)
 * JVM options for maximum and minimum memory allocation
-* Listeners (and authentication)
+* Listeners (and authentication of clients)
 * Authentication
 * Storage
 * Rack awareness
 * Metrics
-* Cruise Control
+* Cruise Control for cluster rebalancing
 
 .Prerequisites
 
 * An OpenShift cluster
 * A running Cluster Operator
 
-See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
+See the _Deploying and Upgrading Strimzi_ guide for instructions on deploying a:
 
 * link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
 * link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
@@ -185,15 +185,15 @@ spec:
     tlsSidecar: <36>
     # ...
 ----
-<1> xref:con-common-configuration-replicas-reference[The number of broker nodes]. If your cluster already has topics defined, you can
+<1> xref:con-common-configuration-replicas-reference[The number of replica nodes]. If your cluster already has topics defined, you can
 xref:scaling-clusters-{context}[scale clusters].
-<2> Kafka version, which can be changed by following link:{BookURLDeploying}#assembly-upgrade-str[the upgrade procedure].
+<2> Kafka version, which can be changed to a supported version by following link:{BookURLDeploying}#assembly-upgrade-str[the upgrade procedure].
 <3> Specified xref:property-kafka-logging-reference[Kafka loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` key. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <4> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <5> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <6> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka.
 <7> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<8> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-securing-kafka-brokers-str[configured as _internal_ or _external_ listeners for connection inside or outside the Kubernetes cluster].
+<8> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-securing-kafka-brokers-str[configured as _internal_ or _external_ listeners for connection from inside or outside the Kubernetes cluster].
 <9> Name to identify the listener. Must be unique within the Kafka cluster.
 <10> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 <11> Listener type specified as `internal`, or for external listeners, as `route`, `loadbalancer`, `nodeport` or `ingress`.
@@ -201,16 +201,16 @@ xref:scaling-clusters-{context}[scale clusters].
 <13> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
 <14> Listener authentication mechanism xref:assembly-securing-kafka-brokers-str[specified as mutual TLS, SCRAM-SHA-512 or token-based OAuth 2.0].
 <15> External listener configuration specifies xref:assembly-configuring-external-listeners-str[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
-<16> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` property specifies a `Secret` that holds a server certificate and a private key. Kafka listener certificates can also be configured for TLS listeners.
-<17> Authorization xref:con-securing-kafka-authorization-str[enables simple, OAUTH 2.0 or OPA authorization on the Kafka broker.] Simple authorization uses the `AclAuthorizer` Kafka plugin.
-<18> Config specifies the broker configuration. xref:property-kafka-config-reference[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
+<16> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates for both `tls` and `external` listeners.
+<17> Authorization xref:con-securing-kafka-authorization-str[enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker.] Simple authorization uses the `AclAuthorizer` Kafka plugin.
+<18> The `config` specifies the broker configuration. xref:property-kafka-config-reference[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
 <19> xref:con-common-configuration-ssl-reference[SSL properties for external listeners to run with a specific _cipher suite_ for a TLS version].
-<20> Storage is xref:assembly-storage-{context}[configured as `ephemeral`, `persistent-claim` or `jbod`].
+<20> xref:assembly-storage-{context}[Storage] is configured as `ephemeral`, `persistent-claim` or `jbod`.
 <21> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
 <22> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
 <23> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
-<24> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled with configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using `metrics: {}`.
-<25> Kafka rules for exporting metrics to a Grafana dashboard through the JMX Exporter. A set of rules provided with Strimzi may be copied to your Kafka resource configuration.
+<24> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter). You can enable metrics without further configuration using `metrics: {}`.
+<25> Prometheus rules for exporting metrics to a Grafana dashboard through the Prometheus JMX Exporter. A set of Prometheus rules provided with Strimzi may be copied to your Kafka resource configuration.
 <26> xref:property-kafka-jmx-reference[JMX options] to open JMX port 9999 to obtain JMX metrics, which is configured for password protection in this example. You can open the port without protection using `jmxOptions: {}`.
 <27> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
 <28> xref:con-common-configuration-replicas-reference[The number of ZooKeeper nodes]. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
@@ -219,11 +219,10 @@ Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
 <29> Specified xref:property-zookeeper-logging-reference[ZooKeeper loggers and log levels].
 <30> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
 <31> Entity Operator xref:type-TlsSidecar-reference[TLS sidecar configuration]. Entity Operator uses the TLS sidecar for secure communication with ZooKeeper.
-<32> Specified xref:property-topic-operator-logging-reference[Topic Operator loggers and log levels].
+<32> Specified xref:property-topic-operator-logging-reference[Topic Operator loggers and log levels]. This example uses `inline` logging.
 <33> Specified xref:property-user-operator-logging-reference[User Operator loggers and log levels].
-<34> Kafka Exporter configuration, to deploy Kafka Exporter in your cluster and expose data as Prometheus metrics. Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to offsets, consumer groups, consumer lag and topics.
-For information on setting up Kafka Exporter and why it is important to monitor consumer lag for performance, see link:{BookURLDeploying}#assembly-metrics-kafka-exporter-str[Kafka Exporter] in the _Deploying and Upgrading Strimzi_ guide.
-<35> Cruise Control configuration, which is used xref:cruise-control-concepts-str[to rebalance the Kafka cluster].
+<34> Kafka Exporter configuration. link:{BookURLDeploying}#assembly-metrics-kafka-exporter-str[Kafka Exporter] is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data.
+<35> Optional configuration for Cruise Control, which is used to xref:cruise-control-concepts-str[rebalance the Kafka cluster].
 <36> Cruise Control xref:type-TlsSidecar-reference[TLS sidecar configuration]. Cruise Control uses the TLS sidecar for secure communication with ZooKeeper.
 
 . Create or update the resource:

@@ -149,7 +149,11 @@ Persistent Volume Claim for the volume used for storing data for the ZooKeeper n
 
 == Log directories
 
-The persistent volume will be used by the Kafka brokers as log directories mounted into the following path:
+The persistent volume is used by the Kafka brokers as log directories mounted into the following path:
 
-`/var/lib/kafka/data/kafka-log_idx_`::
-Where `_idx_` is the Kafka broker pod index. For example `/var/lib/kafka/data/kafka-log0`.
+[source,shell,subs="+quotes,attributes"]
+----
+/var/lib/kafka/data/kafka-log__IDX__
+----
+
+Where `_IDX_` is the Kafka broker pod index. For example `/var/lib/kafka/data/kafka-log0`.

@@ -23,7 +23,7 @@ Default `20`.
 `topicMetadataMaxAttempts`::
 The number of attempts at getting topic metadata from Kafka.
 The time between each attempt is defined as an exponential back-off.
-Consider increasing this value when topic creation could take more time due to the number of partitions or replicas.
+Consider increasing this value when topic creation might take more time due to the number of partitions or replicas.
 Default `6`.
 
 `image`::
