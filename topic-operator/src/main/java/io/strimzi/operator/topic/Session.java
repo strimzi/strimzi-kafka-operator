@@ -94,7 +94,7 @@ public class Session extends AbstractVerticle {
             topicsWatcher.stop();
 
             Promise<Void> promise = Promise.promise();
-            Handler<Long> longHandler = new Handler<Long>() {
+            Handler<Long> longHandler = new Handler<>() {
                 @Override
                 public void handle(Long inflightTimerId) {
                     if (!topicOperator.isWorkInflight()) {
@@ -145,7 +145,6 @@ public class Session extends AbstractVerticle {
         }, stop);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void start(Promise<Void> start) {
         LOGGER.info("Starting");
@@ -192,21 +191,19 @@ public class Session extends AbstractVerticle {
                 if (config.get(Config.USE_ZOOKEEPER_TOPIC_STORE)) {
                     topicStore = new ZkTopicStore(zk, topicsPath);
                 } else {
-                    // TODO -- better async handling?
-                    CompletionStage<Boolean> topicPathExists = zk.pathExists(topicsPath).toCompletionStage();
-                    topicStore = ConcurrentUtil.result(topicPathExists.thenCompose(exists -> {
-                        if (exists) {
-                            return Zk2KafkaStreams.upgrade(zk, config, kafkaClientProps, false);
-                        } else {
-                            KafkaStreamsTopicStoreService ksc = new KafkaStreamsTopicStoreService();
-                            return ksc.start(config, kafkaClientProps)
-                                    .thenCompose(s -> CompletableFuture.completedFuture(ksc));
-                        }
-
-                    }).thenApply(s -> {
-                        service = s;
-                        return s.store;
-                    }));
+                    boolean exists = zk.getPathExists(topicsPath);
+                    CompletionStage<KafkaStreamsTopicStoreService> cs;
+                    if (exists) {
+                        cs = Zk2KafkaStreams.upgrade(zk, config, kafkaClientProps, false);
+                    } else {
+                        KafkaStreamsTopicStoreService ksc = new KafkaStreamsTopicStoreService();
+                        cs = ksc.start(config, kafkaClientProps).thenCompose(s -> CompletableFuture.completedFuture(ksc));
+                    }
+                    topicStore = ConcurrentUtil.result(
+                            cs.thenApply(s -> {
+                                service = s;
+                                return s.store;
+                            }));
                 }
 
                 LOGGER.debug("Using TopicStore {}", topicStore);
@@ -224,7 +221,7 @@ public class Session extends AbstractVerticle {
 
                 Promise<Void> initReconcilePromise = Promise.promise();
 
-                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), () -> startWatcher());
+                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
                 LOGGER.debug("Starting watcher");
                 startWatcher().compose(
                     ignored -> {
@@ -234,7 +231,7 @@ public class Session extends AbstractVerticle {
                     }).onComplete(start);
 
                 final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
-                Handler<Long> periodic = new Handler<Long>() {
+                Handler<Long> periodic = new Handler<>() {
                     @Override
                     public void handle(Long oldTimerId) {
                         if (!stopped) {

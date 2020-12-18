@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
@@ -212,15 +211,6 @@ public class KafkaResource {
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
-                        // try every 10sec, for 2min ... currently KSTS takes ~1min to start ... dunno why so long
-                        .withLivenessProbe(
-                                new ProbeBuilder()
-                                        .withPeriodSeconds(10)
-                                        .withFailureThreshold(12)
-                                        .withTimeoutSeconds(1)
-                                        .withInitialDelaySeconds(30)
-                                        .build()
-                        )
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec();

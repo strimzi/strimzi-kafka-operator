@@ -255,7 +255,7 @@ public class ZkImpl implements Zk {
             p -> {
                 p.future().onComplete(promise);
                 try {
-                    p.complete(zookeeper.exists(path));
+                    p.complete(getPathExists(path));
                 } catch (Throwable t) {
                     p.fail(t);
                 }
@@ -264,5 +264,25 @@ public class ZkImpl implements Zk {
             }
         );
         return promise.future();
+    }
+
+    @Override
+    public boolean getPathExists(String path) {
+        return zookeeper.exists(path);
+    }
+
+    @Override
+    public List<String> getChildren(String path) {
+        return zookeeper.getChildren(path);
+    }
+
+    @Override
+    public byte[] getData(String path) {
+        return zookeeper.readData(path);
+    }
+
+    @Override
+    public void delete(String path, int version) {
+        zookeeper.delete(path, version);
     }
 }

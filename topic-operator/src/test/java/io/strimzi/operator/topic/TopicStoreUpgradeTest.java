@@ -17,16 +17,15 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.zookeeper.CreateMode;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 @ExtendWith(VertxExtension.class)
@@ -42,8 +41,6 @@ public class TopicStoreUpgradeTest {
 
     private static Vertx vertx;
 
-    private Zk zk;
-
     private static <T> T result(Future<T> future) throws Throwable {
         future = future.onComplete(ar -> {
             if (ar.cause() != null) {
@@ -58,7 +55,36 @@ public class TopicStoreUpgradeTest {
     }
 
     @Test
-    public void testUpgrade() throws Throwable {
+    public void testUpgrade(VertxTestContext context) throws Throwable {
+        String zkConnectionString = MANDATORY_CONFIG.get(Config.ZOOKEEPER_CONNECT.key);
+
+        CompletableFuture<Void> flag = new CompletableFuture<>();
+        Zk.create(vertx, zkConnectionString, 60_000, 10_000, ar -> {
+            try {
+                if (ar.failed()) {
+                    flag.completeExceptionally(ar.cause());
+                } else {
+                    Zk zk = ar.result();
+                    doTestUpgrade(zk);
+                }
+            } catch (Throwable t) {
+                flag.completeExceptionally(t);
+            } finally {
+                flag.complete(null);
+            }
+        });
+        flag.join();
+
+        Zk zk = Zk.createSync(vertx, zkConnectionString, 60_000, 10_000);
+        try {
+            doTestUpgrade(zk);
+        } finally {
+            Checkpoint async = context.checkpoint();
+            zk.disconnect(ar -> async.flag());
+        }
+    }
+
+    private void doTestUpgrade(Zk zk) throws Throwable {
         Config config = new Config(MANDATORY_CONFIG);
 
         String topicsPath = config.get(Config.TOPICS_PATH);
@@ -113,17 +139,5 @@ public class TopicStoreUpgradeTest {
         } finally {
             vertx.close();
         }
-    }
-
-    @BeforeEach
-    public void setup() {
-        String zkConnectionString = MANDATORY_CONFIG.get(Config.ZOOKEEPER_CONNECT.key);
-        zk = Zk.createSync(vertx, zkConnectionString, 60_000, 10_000);
-    }
-
-    @AfterEach
-    public void teardown(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-        zk.disconnect(ar -> async.flag());
     }
 }

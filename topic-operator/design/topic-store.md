@@ -62,7 +62,7 @@ is an important detail with regard to the new Kafka Streams based implementation
 
 ### Kafka Streams based implementation
 
-In Kafka Streams you describe and configure your topics, processing, etc using the so called [Topology](https://kafka.apache.org/26/javadoc/org/apache/kafka/streams/Topology.html).
+In Kafka Streams you describe and configure your topics, processing, etc using the so called [Topology](https://kafka.apache.org/27/javadoc/org/apache/kafka/streams/Topology.html).
 With it you describe the flow of your messages. As part of this processing you can make use
 of the [Kafka Streams store](https://kafka.apache.org/20/documentation/streams/developer-guide/interactive-queries.html) 
 . This is a local in-memory store, which is backed by the Kafka topic (created by the Kafka Streams)
@@ -74,14 +74,14 @@ one of the running instances of this in-memory store - exactly which one it is d
 
 What if we want an application, that uses the TopicStore, and runs in a clustered setup - distributed?
 Then we need to provide our own distributed mechanism for the data lookup. Although the distributed implementation 
-is not available, there is a [Kafka Streams API](https://kafka.apache.org/26/javadoc/org/apache/kafka/streams/KafkaStreams.html) that provides us with the needed information to (easily) implement
-such a distributed mechanism - e.g. we can get the key owner's [HostInfo](https://kafka.apache.org/26/javadoc/org/apache/kafka/streams/state/HostInfo.html)
+is not available, there is a [Kafka Streams API](https://kafka.apache.org/27/javadoc/org/apache/kafka/streams/KafkaStreams.html) that provides us with the needed information to (easily) implement
+such a distributed mechanism - e.g. we can get the key owner's [HostInfo](https://kafka.apache.org/27/javadoc/org/apache/kafka/streams/state/HostInfo.html)
 or HostInfos of all the available running stores.
 
 We have built our distributed implementation on top of the [gRPC](https://grpc.io/). We needed to implement
 both the client and the server side. gRPC has a [streaming API](https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html) implemented 
 by its [StreamObserver](https://grpc.github.io/grpc-java/javadoc/io/grpc/stub/StreamObserver.html) mechanism - which is what we used
-to implement the iterating methods of [ReadOnlyKeyValueStore API](https://kafka.apache.org/26/javadoc/org/apache/kafka/streams/state/ReadOnlyKeyValueStore.html)
+to implement the iterating methods of [ReadOnlyKeyValueStore API](https://kafka.apache.org/27/javadoc/org/apache/kafka/streams/state/ReadOnlyKeyValueStore.html)
 . The data exchanged between the gRPC client and the server is based on [Protobuf](https://developers.google.com/protocol-buffers).  
 
 The next problem we had to tackle was the async nature of Kafka and the lack of a callback API.

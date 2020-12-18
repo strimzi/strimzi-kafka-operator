@@ -61,7 +61,8 @@ public class KafkaStreamsTopicStoreService {
                 })
                 .thenCompose(v -> createKafkaStreams(config, kafkaProperties, storeTopic, storeName))
                 .thenApply(serviceImpl -> createKafkaTopicStore(config, kafkaProperties, storeTopic, serviceImpl))
-                .whenComplete((v, t) -> {
+                .whenCompleteAsync((v, t) -> {
+                    // use another thread to stop, if needed
                     try {
                         if (t != null) {
                             log.warn("Failed to start.", t);
