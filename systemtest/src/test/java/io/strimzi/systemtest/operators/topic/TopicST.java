@@ -166,6 +166,28 @@ public class TopicST extends AbstractST {
     }
 
     @Test
+    void testCreateDeleteCreate() {
+        String topicName = "topic-create-delete-create";
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName)
+                .editSpec()
+                .withReplicas(3)
+                .endSpec()
+                .done();
+        KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+
+        cmdKubeClient().deleteByName("kafkatopic", topicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
+
+        KafkaTopicResource.topic(CLUSTER_NAME, topicName)
+                .editSpec()
+                .withReplicas(3)
+                .endSpec()
+                .done();
+        KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+    }
+
+    @Test
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
 
