@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
+import java.util.Objects;
 
 class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
@@ -44,23 +45,24 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             }
             LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
                     metadata.getGeneration(), labels);
-            Handler<AsyncResult<Void>> resultHandler = ar -> {
-                if (ar.succeeded()) {
-                    LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
-                } else {
-                    String message;
-                    if (ar.cause() instanceof InvalidTopicException) {
-                        message = kind + " " + name + " has an invalid spec section: " + ar.cause().getMessage();
-                        LOGGER.error("{}", message);
-
+            if (!action.equals(Action.ERROR)
+                    && (action.equals(Action.DELETED) || kafkaTopic.getStatus() == null || !Objects.equals(metadata.getGeneration(), kafkaTopic.getStatus().getObservedGeneration()))) {
+                Handler<AsyncResult<Void>> resultHandler = ar -> {
+                    if (ar.succeeded()) {
+                        LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
                     } else {
-                        message = "Failure processing " + kind + " watch event " + action + " on resource " + name + " with labels " + labels + ": " + ar.cause().getMessage();
-                        LOGGER.error("{}: {}", logContext, message, ar.cause());
+                        String message;
+                        if (ar.cause() instanceof InvalidTopicException) {
+                            message = kind + " " + name + " has an invalid spec section: " + ar.cause().getMessage();
+                            LOGGER.error("{}", message);
+
+                        } else {
+                            message = "Failure processing " + kind + " watch event " + action + " on resource " + name + " with labels " + labels + ": " + ar.cause().getMessage();
+                            LOGGER.error("{}: {}", logContext, message, ar.cause());
+                        }
+                        topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> { }));
                     }
-                    topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> { }));
-                }
-            };
-            if (!action.equals(Action.ERROR)) {
+                };
                 topicOperator.onResourceEvent(logContext, kafkaTopic, action).onComplete(resultHandler);
             } else {
                 LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
