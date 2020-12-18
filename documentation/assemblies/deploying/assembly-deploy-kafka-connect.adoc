@@ -36,6 +36,8 @@ include::../../modules/configuring/con-config-kafka-connect-multiple-instances.a
 include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
 //Overview of creating connectors through API
 include::modules/con-deploy-kafka-connect-managing-connectors.adoc[leveloffset=+1]
+//Procedure to deploy a KafkaConnector resource
+include::modules/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector
 include::../../modules/proc-manual-restart-connector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector task
