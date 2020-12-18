@@ -13,7 +13,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +28,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(PROMETHEUS)
 @Tag(METRICS)
-@Disabled
 public class PrometheusST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PrometheusST.class);
