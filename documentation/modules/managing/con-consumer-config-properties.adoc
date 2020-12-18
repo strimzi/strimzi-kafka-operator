@@ -250,9 +250,9 @@ The consumer group coordinator can identify a new consumer instance using a uniq
 During a restart, the consumer is assigned a new member id, but as a static member it continues with the same instance id,
 and the same assignment of topic partitions is made.
 
-If the consumer application does not make a call to poll at least every `max.poll.interval.ms milliseconds`, the consumer is considered to be failed, causing a rebalance.
+If the consumer application does not make a call to poll at least every `max.poll.interval.ms` milliseconds, the consumer is considered to be failed, causing a rebalance.
 If the application cannot process all the records returned from poll in time, you can avoid a rebalance by using the `max.poll.interval.ms` property to specify the interval in milliseconds between polls for new messages from a consumer.
-Or you can use the `max.poll.records` property to set a maximum limit on the number of records returned from the consumer buffer, allowing your application to process fewer records within the `max.poll.interval.ms limit`.
+Or you can use the `max.poll.records` property to set a maximum limit on the number of records returned from the consumer buffer, allowing your application to process fewer records within the `max.poll.interval.ms` limit.
 
 [source,shell,subs="+quotes,attributes"]
 ----
