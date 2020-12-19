@@ -266,7 +266,6 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectAndConnectorFileSinkPlugin() {

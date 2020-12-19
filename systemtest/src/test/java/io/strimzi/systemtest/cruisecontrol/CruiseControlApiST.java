@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -33,7 +32,6 @@ public class CruiseControlApiST extends AbstractST {
 
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
 
-    @Tag(ACCEPTANCE)
     @Test
     void testCruiseControlBasicAPIRequests()  {
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");

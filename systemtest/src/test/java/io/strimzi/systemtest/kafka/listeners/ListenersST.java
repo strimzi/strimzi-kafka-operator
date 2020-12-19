@@ -186,7 +186,6 @@ public class ListenersST extends AbstractST {
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha() {
         String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -259,6 +258,7 @@ public class ListenersST extends AbstractST {
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
+    @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsScramSha() {
         String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -443,7 +443,6 @@ public class ListenersST extends AbstractST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls() {
