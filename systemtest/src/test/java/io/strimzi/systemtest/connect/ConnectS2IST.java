@@ -348,7 +348,6 @@ class ConnectS2IST extends AbstractST {
                 .withNewJvmOptions()
                     .withXmx("200m")
                     .withXms("200m")
-                    .withServer(true)
                     .withXx(jvmOptionsXX)
                 .endJvmOptions()
             .endSpec().build());
@@ -381,7 +380,7 @@ class ConnectS2IST extends AbstractST {
         assertResources(NAMESPACE, podName, kafkaConnectS2IName + "-connect",
             "400M", "2", "300M", "1");
         assertExpectedJavaOpts(podName, kafkaConnectS2IName + "-connect",
-            "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
+            "-Xmx200m", "-Xms200m", "-XX:+UseG1GC");
 
         KafkaConnectS2IResource.deleteKafkaConnectS2IWithoutWait(kafkaConnectS2IName);
         DeploymentConfigUtils.waitForDeploymentConfigDeletion(KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName));

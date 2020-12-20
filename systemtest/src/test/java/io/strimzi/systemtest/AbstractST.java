@@ -272,7 +272,7 @@ public abstract class AbstractST implements TestSeparator {
         return result;
     }
 
-    protected void assertExpectedJavaOpts(String podName, String containerName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
+    protected void assertExpectedJavaOpts(String podName, String containerName, String expectedXmx, String expectedXms, String expectedXx) {
         List<List<String>> cmdLines = commandLines(podName, containerName, "java");
         assertThat("Expected exactly 1 java process to be running", cmdLines.size(), is(1));
         List<String> cmd = cmdLines.get(0);
@@ -287,8 +287,6 @@ public abstract class AbstractST implements TestSeparator {
             assertCmdOption(cmd, expectedXmx);
         if (expectedXms != null)
             assertCmdOption(cmd, expectedXms);
-        if (expectedServer != null)
-            assertCmdOption(cmd, expectedServer);
         if (expectedXx != null)
             assertCmdOption(cmd, expectedXx);
     }
