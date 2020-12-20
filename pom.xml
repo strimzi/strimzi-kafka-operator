@@ -30,14 +30,6 @@
         <url>https://github.com/strimzi/strimzi-kafka-operator/issues</url>
     </issueManagement>
 
-    <repositories>
-        <repository>
-            <id>kafka-staging</id>
-            <name>Kafka Staging</name>
-            <url>https://repository.apache.org/content/groups/staging/</url>
-        </repository>
-    </repositories>
-
     <developers>
         <developer>
             <name>Tom Bentley</name>
