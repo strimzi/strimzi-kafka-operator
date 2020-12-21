@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -23,6 +24,7 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,6 +52,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 public class TopicST extends AbstractST {
@@ -166,26 +169,85 @@ public class TopicST extends AbstractST {
         assertThat(kafkaTopic.getSpec().getReplicas(), is(1));
     }
 
+    @Tag(NODEPORT_SUPPORTED)
     @Test
     void testCreateDeleteCreate() {
-        String topicName = "topic-create-delete-create";
+        String clusterName = CLUSTER_NAME + "-sdkvnsdkjn";
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
-                .withReplicas(3)
+                    .editKafka()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(false)
+                            .endGenericKafkaListener()
+                        .endListeners()
+                    .endKafka()
+                    .editEntityOperator()
+                        .editTopicOperator()
+                            .withReconciliationIntervalSeconds(120)
+                        .endTopicOperator()
+                    .endEntityOperator()
                 .endSpec()
                 .done();
-        KafkaTopicUtils.waitForKafkaTopicReady(topicName);
 
-        cmdKubeClient().deleteByName("kafkatopic", topicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
+        Properties properties = new Properties();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName)
-                .editSpec()
-                .withReplicas(3)
-                .endSpec()
-                .done();
-        KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaResource.kafkaClient().inNamespace(NAMESPACE)
+                .withName(clusterName).get().getStatus().getListeners().stream()
+                .filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
+                .findFirst()
+                .orElseThrow(RuntimeException::new)
+                .getBootstrapServers());
+
+        try (AdminClient adminClient = AdminClient.create(properties)) {
+
+            String topicName = "topic-create-delete-create";
+
+            KafkaTopicResource.topic(clusterName, topicName)
+                    .editSpec()
+                    .withReplicas(3)
+                    .endSpec()
+                    .done();
+            KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+
+            adminClient.describeTopics(singletonList(topicName)).values().get(topicName);
+
+            for (int i = 0; i < 10; i++) {
+                LOGGER.info("Iteration {}: Deleting {}", i, topicName);
+                cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
+                KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
+                TestUtils.waitFor("Deletion of topic " + topicName, 1000, 15_000, () -> {
+                    try {
+                        return !adminClient.listTopics().names().get().contains(topicName);
+                    } catch (ExecutionException | InterruptedException e) {
+                        return false;
+                    }
+                });
+
+                long t0 = System.currentTimeMillis();
+                LOGGER.info("Iteration {}: Recreating {}", i, topicName);
+                KafkaTopicResource.topic(clusterName, topicName)
+                        .editSpec()
+                        .withReplicas(3)
+                        .endSpec()
+                        .done();
+                ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), "KafkaTopic", NAMESPACE, topicName, Ready, 15_000);
+                TestUtils.waitFor("Recreation of topic " + topicName, 1000, 2_000, () -> {
+                    try {
+                        return adminClient.listTopics().names().get().contains(topicName);
+                    } catch (ExecutionException | InterruptedException e) {
+                        return false;
+                    }
+                });
+                if (System.currentTimeMillis() - t0 > 10_000) {
+                    fail("Took too long to recreate");
+                }
+            }
+        }
     }
 
     @Test
