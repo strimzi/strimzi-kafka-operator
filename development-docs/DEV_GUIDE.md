@@ -92,7 +92,7 @@ To build this project you must first install several command line utilities and 
     - Both Helm 2 and Helm 3 are supported. In order to use either two, you need to download both versions. A convenient way to do so is to download the [get_helm.sh](https://helm.sh/docs/intro/install/#from-script) script and specify the version you want to download either for Helm 2 or Helm 3.
     - After you download one binary, you can, for convenience, rename it to `helm2` and `helm3` accordingly.
     - Note that if you are using the Helm version 2 charts, after installing the Helm CLI, ensure you run `helm2 init` to configure to your cluster.
-- [`asciidoctor`](https://asciidoctor.org/) - Documentation generation. 
+- [`asciidoctor` and `asciidoctor-pdf`](https://asciidoctor.org/) - Documentation generation. 
     - Use `gem` to install latest version for your platform.
 - [`yq`](https://github.com/mikefarah/yq) - (version 3.3.1 and above) YAML manipulation tool. 
     - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq). You need **v3** version.

@@ -12,7 +12,7 @@ function grep_check {
   local description=$2
   local opts=${3:--i -E -r -n}
   local fatalness=${4:-1}
-  local excludes="--exclude-dir=logo --exclude-dir=images --exclude-dir=contributing --exclude-dir=html --exclude-dir=htmlnoheader"
+  local excludes="--exclude-dir=logo --exclude-dir=images --exclude-dir=contributing --exclude-dir=html --exclude-dir=htmlnoheader --exclude-dir=pdf"
   x=$($GREP $opts $excludes "$pattern" documentation/)
   if [ -n "$x" ]; then
     echo "$description:"
