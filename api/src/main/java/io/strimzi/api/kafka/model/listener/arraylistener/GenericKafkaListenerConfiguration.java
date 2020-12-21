@@ -124,7 +124,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     }
 
     @Description("Configures whether the Kubernetes service DNS domain should be used or not. " +
-            "If set to `true`, the generated addresses with contain the service DNS domain suffix " +
+            "If set to `true`, the generated addresses will contain the service DNS domain suffix " +
             "(by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). " +
             "Defaults to `false`." +
             "This field can be used only with `internal` type listener.")
