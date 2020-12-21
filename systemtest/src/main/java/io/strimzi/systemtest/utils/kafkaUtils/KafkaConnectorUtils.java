@@ -54,17 +54,17 @@ public class KafkaConnectorUtils {
      * @param connectorName name of KafkaConnector
      * @param state desired state
      */
-    public static void waitForConnectorStatus(String connectorName, Enum<?>  state) {
+    public static boolean waitForConnectorStatus(String connectorName, Enum<?>  state) {
         KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get();
-        ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
+        return ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
     }
 
-    public static void waitForConnectorReady(String connectorName) {
-        waitForConnectorStatus(connectorName, Ready);
+    public static boolean waitForConnectorReady(String connectorName) {
+        return waitForConnectorStatus(connectorName, Ready);
     }
 
-    public static void waitForConnectorNotReady(String connectorName) {
-        waitForConnectorStatus(connectorName, NotReady);
+    public static boolean waitForConnectorNotReady(String connectorName) {
+        return waitForConnectorStatus(connectorName, NotReady);
     }
 
     public static String getCreatedConnectors(String connectPodName) {

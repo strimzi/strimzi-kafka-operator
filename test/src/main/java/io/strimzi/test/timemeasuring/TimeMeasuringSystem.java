@@ -45,18 +45,16 @@ public class TimeMeasuringSystem {
      *      - operation 1
      * where operation run time data are stored in MeasureRecord and keys provide names of classes and methods.
      */
-    private Map<String, Map<String, Map<String, MeasureRecord>>> measuringMap;
+    private static Map<String, Map<String, Map<String, MeasureRecord>>> measuringMap;
     private String testClass;
     private String testName;
     private String operationID;
 
-    private TimeMeasuringSystem() {
-        measuringMap = new LinkedHashMap<>();
-    }
-
     public static synchronized TimeMeasuringSystem getInstance() {
         if (instance == null) {
+            LOGGER.info("====================Hello from singleton");
             instance = new TimeMeasuringSystem();
+            measuringMap = new LinkedHashMap<>();
         }
         return instance;
     }
@@ -73,16 +71,21 @@ public class TimeMeasuringSystem {
 
     private void addRecord(String operationID, MeasureRecord record) {
         if (measuringMap.get(testClass) == null) {
-            LinkedHashMap<String, Map<String, MeasureRecord>> newData = new LinkedHashMap<>();
-            LinkedHashMap<String, MeasureRecord> newRecord = new LinkedHashMap<>();
+            // new test suite
+            LOGGER.info("Hello testClass {} is new....", testClass);
+            Map<String, Map<String, MeasureRecord>> newData = new LinkedHashMap<>();
+            Map<String, MeasureRecord> newRecord = new LinkedHashMap<>();
             newData.put(testName, newRecord);
             newRecord.put(operationID, record);
             measuringMap.put(testClass, newData);
         } else if (measuringMap.get(testClass).get(testName) == null) {
-            LinkedHashMap<String, MeasureRecord> newRecord = new LinkedHashMap<>();
+            LOGGER.info("Hello testMethod:{} is new but we know testClass:{}....", testName, testClass);
+            // new test case
+            Map<String, MeasureRecord> newRecord = new LinkedHashMap<>();
             newRecord.put(operationID, record);
             measuringMap.get(testClass).put(testName, newRecord);
         } else {
+            // already know test suite and test case
             measuringMap.get(testClass).get(testName).put(operationID, record);
         }
     }
@@ -155,7 +158,6 @@ public class TimeMeasuringSystem {
         } catch (Exception ex) {
             LOGGER.warn("Cannot save output of time measuring: " + ex.getMessage());
         }
-
     }
 
     private Map<String, Long> getSumDuration() {
@@ -190,6 +192,15 @@ public class TimeMeasuringSystem {
         return instance.startOperation(operation);
     }
 
+    public String startTimeMeasuringConcurrent(String testClass, String testName, Operation operation) {
+        synchronized (this) {
+            instance.setTestClass(testClass);
+            instance.setTestName(testName);
+
+            return instance.startOperation(operation);
+        }
+    }
+
     public String startOperation(Operation operation) {
         return instance.setStartTime(operation);
     }
@@ -204,7 +215,7 @@ public class TimeMeasuringSystem {
 
     public void printAndSaveResults(String path) {
         instance.printResults();
-        instance.saveResults(instance.measuringMap, "duration_report", path);
+        instance.saveResults(measuringMap, "duration_report", path);
         instance.saveResults(instance.getSumDuration(), "duration_sum_report", path);
     }
 
@@ -232,7 +243,8 @@ public class TimeMeasuringSystem {
     /**
      * Test time duration class for data about each operation.
      */
-    private static class MeasureRecord {
+    public static class MeasureRecord {
+
         private long startTime;
         private long endTime;
         private long duration;
@@ -298,5 +310,9 @@ public class TimeMeasuringSystem {
             SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss,SSS");
             return format.format(date);
         }
+    }
+
+    public static Map<String, Map<String, Map<String, MeasureRecord>>> getMeasuringMap() {
+        return measuringMap;
     }
 }

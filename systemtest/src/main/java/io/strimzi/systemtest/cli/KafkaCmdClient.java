@@ -37,7 +37,8 @@ public class KafkaCmdClient {
         KafkaTopicUtils.waitForKafkaTopicCreation(topic);
 
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topic).get();
-        ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
+        // TODO: how??
+//        ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
 
         return response;
     }

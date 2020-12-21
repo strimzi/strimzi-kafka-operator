@@ -10,6 +10,7 @@ import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -109,7 +110,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         this.caCertName = this.caCertName == null ?
-            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            KafkaUtils.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
             this.caCertName;
 
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);
@@ -200,7 +201,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
         this.caCertName = this.caCertName == null ?
-            KafkaResource.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
+            KafkaUtils.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
             this.caCertName;
 
         LOGGER.info("Going to use the following CA certificate: {}", caCertName);

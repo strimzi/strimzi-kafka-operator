@@ -4,10 +4,14 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
+import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.TestUtils;
@@ -33,7 +37,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class OlmResource {
+public class OlmResource implements ResourceType<Deployment> {
     private static final Logger LOGGER = LogManager.getLogger(OlmResource.class);
 
     public static final String NO_MORE_NON_USED_INSTALL_PLANS = "NoMoreNonUsedInstallPlans";
@@ -41,23 +45,50 @@ public class OlmResource {
     // only three versions
     private static final Map<String, Boolean> CLOSED_MAP_INSTALL_PLAN = new HashMap<>(3);
 
-    private static Map<String, JsonObject> exampleResources = new HashMap<>();
-
-    public static void clusterOperator(String namespace) {
-        clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
+    @Override
+    public String getKind() {
+        return "Deployment";
+    }
+    @Override
+    public Deployment get(String namespace, String name) {
+        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+    }
+    @Override
+    public void create(Deployment resource) {
+        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
+    }
+    @Override
+    public void delete(Deployment resource) throws Exception {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
+    }
+    @Override
+    public boolean isReady(Deployment resource) {
+        return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getName());
+    }
+    @Override
+    public void refreshResource(Deployment existing, Deployment newResource) {
+        existing.setMetadata(newResource.getMetadata());
+        existing.setSpec(newResource.getSpec());
+        existing.setStatus(newResource.getStatus());
     }
 
-    public static void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
-        clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
+    private static Map<String, JsonObject> exampleResources = new HashMap<>();
+
+    public static Deployment clusterOperator(String namespace) {
+        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
+    }
+
+    public static Deployment clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
             olmInstallationStrategy, fromVersion);
     }
 
-    public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
+    public static Deployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+        return clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
     }
 
-    public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
-                                       OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+    public static Deployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
+                                             OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
 
         // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
         if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(namespace)) {
@@ -89,12 +120,13 @@ public class OlmResource {
         String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
 
-
-        ResourceManager.getPointerResources().push(() -> deleteOlm(deploymentName, namespace, csvName));
+        // TODO: how??
+//        ResourceManager.getPointerResources().push(() -> deleteOlm(deploymentName, namespace, csvName));
         // Wait for operator creation
-        waitFor(deploymentName, namespace, 1);
 
         exampleResources = parseExamplesFromCsv(csvName, namespace);
+
+        return kubeClient().namespace(namespace).getDeployment(deploymentName);
     }
 
     /**

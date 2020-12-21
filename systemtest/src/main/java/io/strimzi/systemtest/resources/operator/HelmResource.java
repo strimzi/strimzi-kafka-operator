@@ -4,9 +4,13 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
+import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
@@ -23,8 +27,9 @@ import java.util.stream.Stream;
 
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class HelmResource {
+public class HelmResource implements ResourceType<Deployment> {
     private static final Logger LOGGER = LogManager.getLogger(HelmResource.class);
 
     public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
@@ -35,15 +40,43 @@ public class HelmResource {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    public static void clusterOperator() {
-        clusterOperator(Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    @Override
+    public String getKind() {
+        return "Deployment";
+    }
+    @Override
+    public Deployment get(String namespace, String name) {
+        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+    }
+    @Override
+    public void create(Deployment resource) {
+        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
+    }
+    @Override
+    public void delete(Deployment resource) throws Exception {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
+    }
+    @Override
+    public boolean isReady(Deployment resource) {
+        return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getName());
     }
 
-    public static void clusterOperator(long operationTimeout) {
-        clusterOperator(operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    @Override
+    public void refreshResource(Deployment existing, Deployment newResource) {
+        existing.setMetadata(newResource.getMetadata());
+        existing.setSpec(newResource.getSpec());
+        existing.setStatus(newResource.getStatus());
     }
 
-    public static void clusterOperator(long operationTimeout, long reconciliationInterval) {
+    public static Deployment clusterOperator() {
+        return clusterOperator(Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    }
+
+    public static Deployment clusterOperator(long operationTimeout) {
+        return clusterOperator(operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    public static Deployment clusterOperator(long operationTimeout, long reconciliationInterval) {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 // image registry config
                 entry("image.registry", Environment.STRIMZI_REGISTRY),
@@ -83,9 +116,13 @@ public class HelmResource {
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
         cmdKubeClient().applyContent(helmServiceAccount);
         KubeClusterResource.getInstance().setNamespace(oldNamespace);
-        ResourceManager.getPointerResources().push(HelmResource::deleteClusterOperator);
+        // TODO: how??
+//        ResourceManager.getPointerResources().push(HelmResource::deleteClusterOperator);
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
+
+        return kubeClient().getDeployment(ResourceManager.getCoDeploymentName());
+
     }
 
     /**
