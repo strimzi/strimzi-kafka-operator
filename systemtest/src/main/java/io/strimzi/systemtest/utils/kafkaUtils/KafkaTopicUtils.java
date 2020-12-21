@@ -108,17 +108,17 @@ public class KafkaTopicUtils {
      * @param topicName name of KafkaTopic
      * @param state desired state
      */
-    public static void waitForKafkaTopicStatus(String topicName, Enum<?>  state) {
+    public static boolean waitForKafkaTopicStatus(String topicName, Enum<?>  state) {
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
-        ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, state);
+        return ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, state);
     }
 
-    public static void waitForKafkaTopicReady(String topicName) {
-        waitForKafkaTopicStatus(topicName, Ready);
+    public static boolean waitForKafkaTopicReady(String topicName) {
+        return waitForKafkaTopicStatus(topicName, Ready);
     }
 
-    public static void waitForKafkaTopicNotReady(String topicName) {
-        waitForKafkaTopicStatus(topicName, NotReady);
+    public static boolean waitForKafkaTopicNotReady(String topicName) {
+        return waitForKafkaTopicStatus(topicName, NotReady);
     }
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {

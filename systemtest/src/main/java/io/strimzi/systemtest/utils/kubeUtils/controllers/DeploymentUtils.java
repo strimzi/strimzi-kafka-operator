@@ -147,7 +147,7 @@ public class DeploymentUtils {
         LOGGER.info("Deployment {} was recovered", name);
     }
 
-    public static void waitForDeploymentReady(String deploymentName) {
+    public static boolean waitForDeploymentReady(String deploymentName) {
         LOGGER.info("Wait for Deployment: {} will be ready", deploymentName);
 
         TestUtils.waitFor(String.format("Wait for Deployment: %s will be ready", deploymentName),
@@ -156,6 +156,7 @@ public class DeploymentUtils {
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
 
         LOGGER.info("Deployment: {} is ready", deploymentName);
+        return true;
     }
 
     /**
