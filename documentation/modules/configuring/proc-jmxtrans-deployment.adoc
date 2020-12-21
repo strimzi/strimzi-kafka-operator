@@ -1,0 +1,82 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+// assembly-jmxtrans.adoc.
+
+[id='proc-jmxtrans-deployment-{context}']
+= Configuring a JmxTrans deployment
+
+.Prerequisites
+* A running Kubernetes cluster
+
+You can configure a JmxTrans deployment by using the `Kafka.spec.jmxTrans` property.
+A JmxTrans deployment can read from a secure or insecure Kafka broker.
+To configure a JmxTrans deployment, define the following properties:
+
+* `Kafka.spec.jmxTrans.outputDefinitions`
+* `Kafka.spec.jmxTrans.kafkaQueries`
+
+For more information on these properties, see the xref:type-JmxTransSpec-reference[`JmxTransSpec` schema reference].
+
+NOTE: To use JMXTrans, xref:proc-config-kafka-{context}[`jmxOptions` must be configured on the Kafka broker].
+
+[discrete]
+== Configuring JmxTrans output definitions
+
+Output definitions specify where JMX metrics are pushed to, and in which data format.
+For information about supported data formats, see link:https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[Data formats^].
+How many seconds JmxTrans agent waits for before pushing new data can be configured through the `flushDelay` property.
+The `host` and `port` properties define the target host address and target port the data is pushed to.
+The `name` property is a required property that is referenced by the `Kafka.spec.jmxTrans.kafkaQueries` property.
+
+Here is an example configuration pushing JMX data in the Graphite format every 5 seconds to a Logstash database on \http://myLogstash:9999, and another pushing to `standardOut` (standard output):
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  jmxTrans:
+    outputDefinitions:
+      - outputType: "com.googlecode.jmxtrans.model.output.GraphiteWriter"
+        host: "http://myLogstash"
+        port: 9999
+        flushDelay: 5
+        name: "logstash"
+      - outputType: "com.googlecode.jmxtrans.model.output.StdOutWriter"
+        name: "standardOut"
+        # ...
+    # ...
+  zookeeper:
+    # ...
+----
+
+[discrete]
+== Configuring JmxTrans queries
+JmxTrans queries specify what JMX metrics are read from the Kafka brokers.
+Currently JmxTrans queries can only be sent to the Kafka Brokers.
+Configure the `targetMBean` property to specify which target MBean on the Kafka broker is addressed.
+Configuring the `attributes` property specifies which MBean attribute is read as JMX metrics from the target MBean.
+JmxTrans supports wildcards to read from target MBeans, and filter by specifying the `typenames`.
+The `outputs` property defines where the metrics are pushed to by specifying the name of the output definitions.
+
+The following JmxTrans deployment reads from all MBeans that match the pattern `kafka.server:type=BrokerTopicMetrics,name=*` and have `name` in the target MBean's name.
+From those Mbeans, it obtains JMX metrics about the `Count` attribute and pushes the metrics to standard output as defined by `outputs`.
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  jmxTrans:
+    kafkaQueries:
+      - targetMBean: "kafka.server:type=BrokerTopicMetrics,*"
+        typeNames: ["name"]
+        attributes:  ["Count"]
+        outputs: ["standardOut"]
+  zookeeper:
+    # ...
+----

@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-config-kafka.adoc
+
+[id='proc-connnecting-to-zookeeper-{context}']
+= Connecting to ZooKeeper from a terminal
+
+Most Kafka CLI tools can connect directly to Kafka, so under normal circumstances you should not need to connect to ZooKeeper.
+ZooKeeper services are secured with encryption and authentication and are not intended to be used by external applications that are not part of Strimzi.
+
+However, if you want to use Kafka CLI tools that require a connection to ZooKeeper, such as the `kafka-topics.sh` tool, you can open a terminal inside a Kafka container and connect to the local end of the TLS tunnel to ZooKeeper by using `localhost:2181` as the ZooKeeper address.
+
+.Prerequisites
+
+* A Kubernetes cluster is available.
+* A Kafka cluster is running.
+* The Cluster Operator is running.
+
+.Procedure
+
+. Open the terminal using the Kubernetes console or run the `exec` command from your CLI.
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl exec -it _my-cluster_-zookeeper-0 -- bin/kafka-topics.sh --list --zookeeper localhost:12181
+----
++
+Be sure to use `localhost:12181`.
++
+You can now run Kafka commands to ZooKeeper.

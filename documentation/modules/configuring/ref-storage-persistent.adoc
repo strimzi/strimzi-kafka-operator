@@ -1,0 +1,159 @@
+// Module included in the following assemblies:
+//
+// assembly-storage.adoc
+
+[id='ref-persistent-storage-{context}']
+= Persistent storage
+
+Persistent storage uses {K8sPersistentVolumeClaims} to provision persistent volumes for storing data.
+Persistent Volume Claims can be used to provision volumes of many different types, depending on the {K8SStorageClass} which will provision the volume.
+The data types which can be used with persistent volume claims include many types of SAN storage as well as {K8sLocalPersistentVolumes}.
+
+To use persistent storage, the `type` has to be set to `persistent-claim`.
+Persistent storage supports additional configuration options:
+
+`id` (optional)::
+Storage identification number. This option is mandatory for storage volumes defined in a JBOD storage declaration.
+Default is `0`.
+
+`size` (required)::
+Defines the size of the persistent volume claim, for example, "1000Gi".
+
+`class` (optional)::
+The Kubernetes {K8SStorageClass} to use for dynamic volume provisioning.
+
+`selector` (optional)::
+Allows selecting a specific persistent volume to use.
+It contains key:value pairs representing labels for selecting such a volume.
+
+`deleteClaim` (optional)::
+Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
+Default is `false`.
+
+WARNING: Increasing the size of persistent volumes in an existing Strimzi cluster is only supported in Kubernetes versions that support persistent volume resizing. The persistent volume to be resized must use a storage class that supports volume expansion.
+For other versions of Kubernetes and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
+Decreasing the size of existing persistent volumes is not possible.
+
+.Example fragment of persistent storage configuration with 1000Gi `size`
+[source,yaml]
+----
+# ...
+storage:
+  type: persistent-claim
+  size: 1000Gi
+# ...
+----
+
+The following example demonstrates the use of a storage class.
+
+.Example fragment of persistent storage configuration with specific Storage Class
+[source,yaml,subs="attributes+"]
+----
+# ...
+storage:
+  type: persistent-claim
+  size: 1Gi
+  class: my-storage-class
+# ...
+----
+
+Finally, a `selector` can be used to select a specific labeled persistent volume to provide needed features such as an SSD.
+
+.Example fragment of persistent storage configuration with selector
+[source,yaml,subs="attributes+"]
+----
+# ...
+storage:
+  type: persistent-claim
+  size: 1Gi
+  selector:
+    hdd-type: ssd
+  deleteClaim: true
+# ...
+----
+
+== Storage class overrides
+
+You can specify a different storage class for one or more Kafka brokers or ZooKeeper nodes, instead of using the default storage class.
+This is useful if, for example, storage classes are restricted to different availability zones or data centers.
+You can use the `overrides` field for this purpose.
+
+In this example, the default storage class is named `my-storage-class`:
+
+.Example Strimzi cluster using storage class overrides
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  labels:
+    app: my-cluster
+  name: my-cluster
+  namespace: myproject
+spec:
+  # ...
+  kafka:
+    replicas: 3
+    storage:
+      deleteClaim: true
+      size: 100Gi
+      type: persistent-claim
+      class: my-storage-class
+      overrides:
+        - broker: 0
+          class: my-storage-class-zone-1a
+        - broker: 1
+          class: my-storage-class-zone-1b
+        - broker: 2
+          class: my-storage-class-zone-1c
+  # ...
+  zookeeper:
+    replicas: 3
+    storage:
+      deleteClaim: true
+      size: 100Gi
+      type: persistent-claim
+      class: my-storage-class
+      overrides:
+        - broker: 0
+          class: my-storage-class-zone-1a
+        - broker: 1
+          class: my-storage-class-zone-1b
+        - broker: 2
+          class: my-storage-class-zone-1c
+  # ...
+----
+
+As a result of the configured `overrides` property, the volumes use the following storage classes:
+
+* The persistent volumes of ZooKeeper node 0 will use `my-storage-class-zone-1a`.
+* The persistent volumes of ZooKeeper node 1 will use `my-storage-class-zone-1b`.
+* The persistent volumes of ZooKeeepr node 2 will use `my-storage-class-zone-1c`.
+* The persistent volumes of Kafka broker 0 will use `my-storage-class-zone-1a`.
+* The persistent volumes of Kafka broker 1 will use `my-storage-class-zone-1b`.
+* The persistent volumes of Kafka broker 2 will use `my-storage-class-zone-1c`.
+
+The `overrides` property is currently used only to override storage class configurations. Overriding other storage configuration fields is not currently supported.
+Other fields from the storage configuration are currently not supported.
+
+[[pvc-naming]]
+== Persistent Volume Claim naming
+
+When persistent storage is used, it creates Persistent Volume Claims with the following names:
+
+`data-_cluster-name_-kafka-_idx_`::
+Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`.
+
+`data-_cluster-name_-zookeeper-_idx_`::
+Persistent Volume Claim for the volume used for storing data for the ZooKeeper node pod `_idx_`.
+
+== Log directories
+
+The persistent volume is used by the Kafka brokers as log directories mounted into the following path:
+
+[source,shell,subs="+quotes,attributes"]
+----
+/var/lib/kafka/data/kafka-log__IDX__
+----
+
+Where `_IDX_` is the Kafka broker pod index. For example `/var/lib/kafka/data/kafka-log0`.

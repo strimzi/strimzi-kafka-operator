@@ -1,0 +1,22 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-config-kafka.adoc
+
+[id='scaling-clusters-{context}']
+= Scaling clusters
+
+include::../../modules/configuring/con-scaling-kafka-clusters.adoc[leveloffset=+1]
+
+include::../../modules/configuring/con-partition-reassignment.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-generating-reassignment-json-files.adoc[leveloffset=+1]
+
+== Creating reassignment JSON files manually
+
+You can manually create the reassignment JSON file if you want to move specific partitions.
+
+include::../../modules/configuring/con-reassignment-throttles.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-scaling-up-a-kafka-cluster.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-scaling-down-a-kafka-cluster.adoc[leveloffset=+1]

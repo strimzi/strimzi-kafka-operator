@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-storage.adoc
+
+[id='ref-ephemeral-storage-{context}']
+= Ephemeral storage
+
+Ephemeral storage uses `{K8sEmptyDir}` volumes to store data.
+To use ephemeral storage, set the `type` field to `ephemeral`.
+
+IMPORTANT: `emptyDir` volumes are not persistent and the data stored in them is lost when the pod is restarted.
+After the new pod is started, it must recover all data from the other nodes of the cluster.
+Ephemeral storage is not suitable for use with single-node ZooKeeper clusters or for Kafka topics with a replication factor of 1. This configuration will cause data loss.
+
+.An example of Ephemeral storage
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    storage:
+      type: ephemeral
+    # ...
+  zookeeper:
+    # ...
+    storage:
+      type: ephemeral
+    # ...
+----
+
+== Log directories
+
+The ephemeral volume is used by the Kafka brokers as log directories mounted into the following path:
+
+[source,shell,subs="+quotes,attributes"]
+----
+/var/lib/kafka/data/kafka-log__IDX__
+----
+
+Where `_IDX_` is the Kafka broker pod index. For example `/var/lib/kafka/data/kafka-log0`.

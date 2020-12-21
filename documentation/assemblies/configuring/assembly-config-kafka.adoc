@@ -1,0 +1,58 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-config-kafka-{context}']
+= Kafka cluster configuration
+
+This section describes how to configure a Kafka deployment in your Strimzi cluster.
+A Kafka cluster is deployed with a ZooKeeper cluster. The deployment can also include the Topic Operator and User Operator, which manage Kafka topics and users.
+
+You configure Kafka using the `Kafka` resource.
+Configuration options are also available for ZooKeeper and the Entity Operator within the `Kafka` resource.
+The Entity Operator comprises the Topic Operator and User Operator.
+
+The full schema of the `Kafka` resource is described in the xref:type-Kafka-reference[].
+
+.Listener configuration
+You configure listeners for connecting clients to Kafka brokers.
+For more information on configuring listeners for connecting brokers, see xref:configuration-points-listeners-{context}[Listener configuration].
+
+.Authorizing access to Kafka
+You can configure your Kafka cluster to allow or decline actions executed by users.
+For more information on securing access to Kafka brokers, see xref:assembly-securing-kafka-str[Managing access to Kafka].
+
+.Managing TLS certificates
+When deploying Kafka, the Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
+If required, you can manually renew the cluster and client CA certificates before their renewal period ends.
+You can also replace the keys used by the cluster and client CA certificates.
+For more information, see xref:proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually] and xref:proc-replacing-private-keys-{context}[Replacing private keys].
+
+.Additional resources
+
+* For more information about Apache Kafka, see the http://kafka.apache.org[Apache Kafka website^].
+
+//procedure to configure Kafka
+include::../../modules/configuring/proc-config-kafka.adoc[leveloffset=+1]
+//entity operator config
+include::assembly-kafka-entity-operator.adoc[leveloffset=+1]
+//storage considerations
+include::assembly-storage.adoc[leveloffset=+1]
+//scaling Kafka clusters
+include::assembly-scaling-clusters.adoc[leveloffset=+1]
+//incorporating jmxtrans metrics
+ifdef::Metrics[]
+include::assembly-jmxtrans.adoc[leveloffset=+1]
+endif::Metrics[]
+//windows (time) for maintenance
+include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
+//connecting to ZooKeeper from terminal
+include::../../modules/configuring/proc-connecting-to-zookeeper.adoc[leveloffset=+1]
+//steps for manual rolling updates
+include::../../modules/configuring/proc-manual-rolling-update-kafka.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-manual-rolling-update-zookeeper.adoc[leveloffset=+1]
+//steps to delete kafka, zookeeper nodes
+include::../../modules/configuring/proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+1]
+//Kafka cluster resources created
+include::../../modules/configuring/ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]

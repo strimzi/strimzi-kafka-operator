@@ -7,7 +7,7 @@ include::shared/attributes.adoc[]
 
 include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
-include::assemblies/assembly-deployment-configuration.adoc[leveloffset=+1]
+include::assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
 
 include::assemblies/assembly-securing-external-listeners.adoc[leveloffset=+1]
 

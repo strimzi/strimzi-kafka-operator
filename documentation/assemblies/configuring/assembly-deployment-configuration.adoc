@@ -1,0 +1,37 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-deployment-configuration-{context}']
+
+= Deployment configuration
+
+This chapter describes how to configure different aspects of the supported deployments using custom resources:
+
+* Kafka clusters
+* Kafka Connect clusters
+* Kafka Connect clusters with _Source2Image_ support
+* Kafka MirrorMaker
+* Kafka Bridge
+* Cruise Control
+
+NOTE: Labels applied to a custom resource are also applied to the Kubernetes resources comprising Kafka MirrorMaker.
+This provides a convenient mechanism for resources to be labeled as required.
+
+The _Deploying and Upgrading Strimzi_ guide describes how to link:{BookURLDeploying}#assembly-metrics-str[monitor your Strimzi deployment^].
+
+include::assembly-config-kafka.adoc[leveloffset=+1]
+
+include::assembly-config-kafka-connect.adoc[leveloffset=+1]
+
+include::assembly-config-mirrormaker.adoc[leveloffset=+1]
+
+include::assembly-config-mirrormaker2.adoc[leveloffset=+1]
+
+include::assembly-config-kafka-bridge.adoc[leveloffset=+1]
+
+include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]
+
+include::assembly-scheduling.adoc[leveloffset=+1]
+
+include::assembly-external-logging.adoc[leveloffset=+1]

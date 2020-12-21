@@ -1,0 +1,46 @@
+// Module included in the following assemblies:
+//
+// assembly-maintenance-time-windows.adoc
+
+[id='proc-configuring-maintenance-time-windows-{context}']
+= Configuring a maintenance time window
+
+You can configure a maintenance time window for rolling updates triggered by supported processes.
+
+.Prerequisites
+
+* A Kubernetes cluster.
+* The Cluster Operator is running.
+
+.Procedure
+
+. Add or edit the `maintenanceTimeWindows` property in the `Kafka` resource.
+For example to allow maintenance between 0800 and 1059 and between 1400 and 1559 you would set the `maintenanceTimeWindows` as shown below:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  maintenanceTimeWindows:
+    - "* * 8-10 * * ?"
+    - "* * 14-15 * * ?"
+----
+
+. Create or update the resource:
++
+[source,shell,subs=+quotes]
+kubectl apply -f _KAFKA-CONFIG-FILE_
+
+.Additional resources
+
+Performing rolling updates:
+
+* xref:proc-manual-rolling-update-kafka-{context}[]
+* xref:proc-manual-rolling-update-zookeeper-{context}[]

@@ -1,0 +1,27 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-config-kafka.adoc
+
+[id='assembly-kafka-entity-operator-{context}']
+
+= Configuring the Entity Operator
+
+The Entity Operator is responsible for managing Kafka-related entities in a running Kafka cluster.
+
+The Entity Operator comprises the:
+
+* xref:overview-concepts-topic-operator-str[Topic Operator] to manage Kafka topics
+* xref:overview-concepts-user-operator-str[User Operator] to manage Kafka users
+
+Through `Kafka` resource configuration, the Cluster Operator can deploy the Entity Operator, including one or both operators, when deploying a Kafka cluster.
+
+NOTE: When deployed, the Entity Operator contains the operators according to the deployment configuration.
+
+The operators are automatically configured to manage the topics and users of the Kafka cluster.
+
+include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]
+
+//topic operator config
+include::../../modules/configuring/con-configuring-topic-operator.adoc[leveloffset=+1]
+//user operator config
+include::../../modules/configuring/con-configuring-user-operator.adoc[leveloffset=+1]
