@@ -22,7 +22,7 @@ helm_template:
 	../kafka-version-tpl.sh strimzi-kafka-operator/templates/_kafka_image_map.tpl
 
 helm_pkg: helm_lint helm_template
-	$(HELM_CLI) init --client-only
+	$(HELM_CLI) init --client-only --skip-refresh
 	# Copying unarchived Helm Chart to release directory
 	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
 	$(CP) -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
