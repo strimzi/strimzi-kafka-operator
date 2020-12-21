@@ -40,7 +40,7 @@ jobs:
     # Install yq
     - name: Install yq
       run: |
-          brew install yq
+          brew install yq@3.3.2
 
     # Setup OpenJDK 11
     - name: Setup java
