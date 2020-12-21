@@ -79,7 +79,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.json
     // main idea of the test and usage of latestReleasedVersion: upgrade CO from version X, kafka Y, to CO version Z and kafka Y + 1 at the end
-    private final String strimziReleaseWithOlderKafkaVersion = "0.19.0";
+    private final String strimziReleaseWithOlderKafkaVersion = "0.20.0";
     private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
         strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
@@ -475,13 +475,19 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         List<Pod> pods1 = kubeClient().listPods(matchLabels);
         for (Pod pod : pods1) {
             if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
-                LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
-                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(image));
+                LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), StUtils.changeOrgAndTag(image), pod.getSpec().getContainers().get(container).getImage());
+                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(StUtils.changeOrgAndTag(image)));
             }
         }
     }
 
     void deployClients(String image, KafkaUser kafkaUser) {
+        if (image.contains(":latest"))  {
+            image = StUtils.changeOrgAndTag(image);
+        }
+
+        LOGGER.info("Deploying Kafka clients with image {}", image);
+
         // Deploy new clients
         KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
             .editSpec()

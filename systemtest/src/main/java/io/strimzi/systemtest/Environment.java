@@ -105,7 +105,7 @@ public class Environment {
 
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
-    private static final String ST_KAFKA_VERSION_DEFAULT = "2.6.0";
+    private static final String ST_KAFKA_VERSION_DEFAULT = "2.7.0";
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";

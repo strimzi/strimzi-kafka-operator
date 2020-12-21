@@ -13,17 +13,17 @@
 :toclevels: 3
 
 // Kubernetes and OpenShift versions
-:OpenShiftVersion: 3.11 and later
-:KubernetesVersion: 1.11 and later
+:OpenShiftVersion: 4.3 and later
+:KubernetesVersion: 1.16 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 2.6.0
-:KafkaVersionLower: 2.5.0
-:KafkaVersionHigher: 2.6.0
+:DefaultKafkaVersion: 2.7.0
+:KafkaVersionLower: 2.6.0
+:KafkaVersionHigher: 2.7.0
 
 //log message format version
-:LogMsgVersLower: 2.5
-:LogMsgVersHigher: 2.6
+:LogMsgVersLower: 2.6
+:LogMsgVersHigher: 2.7
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
@@ -38,7 +38,7 @@
 
 //OAuth attributes and links
 :oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
-:oauth-artifact-version: 0.6.0
+:oauth-artifact-version: 0.6.1
 :keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Authorization Services^]
 :oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using OAuth 2.0^]
@@ -139,7 +139,7 @@
 
 // Tracing versions
 :JaegerClientVersion: 1.3.2
-:OpenTracingKafkaClient: 0.1.13
+:OpenTracingKafkaClient: 0.1.15
 
 // Section enablers
 :Helm:
