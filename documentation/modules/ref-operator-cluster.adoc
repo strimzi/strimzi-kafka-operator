@@ -7,6 +7,8 @@
 
 The Cluster Operator can be configured through the following supported environment variables and through the logging configuration.
 
+For more information of `image` configuration, see, xref:con-common-configuration-images-reference[].
+
 `STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
 When not set, set to empty string, or to `*` the Cluster Operator will operate in all namespaces.
 The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^]
@@ -48,40 +50,40 @@ When not set, the namespace selector in network policies is configured to allow 
 This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image`, as described in xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image` in the `Kafka` resource.
 
 `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
-The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the `Kafka` resource.
 
 `STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`, as described in xref:con-common-configuration-images-reference[].
+This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`.
 
 `STRIMZI_KAFKA_CONNECT_S2I_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaConnectS2I.spec.version` property is specified but not the `KafkaConnectS2I.spec.image`, as described in xref:con-common-configuration-images-reference[].
+This is used when a `KafkaConnectS2I.spec.version` property is specified but not the `KafkaConnectS2I.spec.image`.
 
 `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`, as described in xref:con-common-configuration-images-reference[].
+This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`.
 
 `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
 The image name to use as the default when deploying the topic operator,
-if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
+if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in `Kafka` resource.
 
 `STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional, default `{DockerUserOperator}`.
 The image name to use as the default when deploying the user operator,
-if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
+if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the `Kafka` resource.
 
 `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `{DockerEntityOperatorStunnel}`.
 The image name to use as the default when deploying the sidecar container which provides TLS support for the Entity Operator, if
-no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the `Kafka` resource.
 
 `STRIMZI_IMAGE_PULL_POLICY`:: Optional.
 The `ImagePullPolicy` which will be applied to containers in all pods managed by Strimzi Cluster Operator.

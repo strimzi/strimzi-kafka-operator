@@ -15,7 +15,7 @@ You can specify properties to configure _internal_ listeners for connecting with
 
 .Generic listener configuration
 
-Each listener is xref:ref-sample-kafka-resource-config-deployment-configuration-kafka[defined as an array in the `Kafka` resource].
+Each listener is xref:proc-config-kafka-{context}[defined as an array in the `Kafka` resource].
 
 For more information on listener configuration, see the xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
 

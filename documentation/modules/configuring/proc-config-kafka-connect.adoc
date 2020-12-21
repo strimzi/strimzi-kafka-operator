@@ -17,7 +17,7 @@ In the configuration, you enable `KafkaConnectors` for a Kafka Connect cluster b
 You can also specify external configuration for Kafka Connect connectors through the `externalConfiguration` property.
 
 Connectors are created, reconfigured, and deleted using the Kafka Connect HTTP REST interface, or by using `KafkaConnectors`.
-For more information on these methods, see link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^] in the _Deploying Strimzi_ guide.
+For more information on these methods, see link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^] in the _Deploying and Upgrading Strimzi_ guide.
 
 The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
 ConfigMaps and Secrets are standard Kubernetes resources used for storing configurations and confidential data.
@@ -30,7 +30,7 @@ This method applies especially to confidential data, such as usernames, password
 * A Kubernetes cluster
 * A running Cluster Operator
 
-See the _Deploying Strimzi_ guide for instructions on running a:
+See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
 
 * link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
 * link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]

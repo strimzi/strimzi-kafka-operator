@@ -29,7 +29,7 @@ It is important that you consider the following before making your changes:
 .Prerequisites
 
 * A running Kafka cluster xref:con-securing-kafka-authentication-{context}[configured with a Kafka broker listener using TLS authentication and encryption].
-* A running Topic Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
+* A running Topic Operator (typically xref:assembly-kafka-entity-operator-str[deployed with the Entity Operator]).
 * For deleting a topic, `delete.topic.enable=true` (default) in the `spec.kafka.config` of the `Kafka` resource.
 
 .Procedure

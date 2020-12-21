@@ -19,7 +19,7 @@ On deployment, the Cluster Operator automatically sets up TLS certificates for d
 
 Strimzi provides additional configuration options for _encryption_, _authentication_ and _authorization_, which are described in the _Using Strimzi_ guide:
 
-* Secure data exchange between the Kafka cluster and clients by link:{BookURLUsing}#assembly-deployment-configuration-str[configuration of Kafka resources^].
+* Secure data exchange between the Kafka cluster and clients by link:{BookURLUsing}#assembly-securing-access-str[Managing secure access to Kafka^].
 * Configure your deployment to use an authorization server to provide link:{BookURLUsing}#assembly-oauth-authentication_str[OAuth 2.0 authentication^] and link:{BookURLUsing}#assembly-oauth-authorization_str[OAuth 2.0 authorization^].
 * link:{BookURLUsing}#security-str[Secure Kafka using your own certificates^].
 

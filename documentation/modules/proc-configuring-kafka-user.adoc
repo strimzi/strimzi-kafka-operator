@@ -30,7 +30,7 @@ For example, it is not possible to authenticate a user with TLS if it is not als
 .Prerequisites
 
 * A running Kafka cluster xref:con-mutual-tls-authentication-{context}[configured with a Kafka broker listener using TLS authentication and encryption].
-* A running User Operator (typically xref:assembly-kafka-entity-operator-deployment-configuration-kafka[deployed with the Entity Operator]).
+* A running User Operator (typically xref:assembly-kafka-entity-operator-str[deployed with the Entity Operator]).
 
 The authentication type in `KafkaUser` should match the authentication configured in `Kafka` brokers.
 

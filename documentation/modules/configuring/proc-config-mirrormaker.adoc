@@ -12,7 +12,7 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Prerequisites
 
-* See the _Deploying Strimzi_ guide for instructions on running a:
+* See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
 ** link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
 ** link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
 * Source and target Kafka clusters must be available
