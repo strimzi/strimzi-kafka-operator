@@ -135,7 +135,7 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
 [source,shell,subs="+quotes,attributes"]
 ----
 kubectl logs -f ${POD_NAME} -c ${CONTAINER_NAME}
-kubectl get po -w
+kubectl get pod -w
 ----
 +
 The rolling update configures the brokers to use OAuth 2.0 authentication.

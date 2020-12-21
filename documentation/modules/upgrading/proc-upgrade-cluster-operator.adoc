@@ -41,7 +41,7 @@ Wait for the rolling updates to complete.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+kubectl get pod my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
 The image tag shows the new Strimzi version followed by the Kafka version. For example, `_NEW-STRIMZI-VERSION_-kafka-_CURRENT-KAFKA-VERSION_`.

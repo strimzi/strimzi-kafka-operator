@@ -62,7 +62,7 @@ kubectl logs -f _CLUSTER-OPERATOR-POD-NAME_ | grep -E "Kafka version downgrade f
 +
 [source,shell,subs=+quotes]
 ----
-kubectl get po -w
+kubectl get pod -w
 ----
 +
 Check the Cluster Operator logs for an `INFO` level message:

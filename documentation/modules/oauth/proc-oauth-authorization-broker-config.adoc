@@ -86,7 +86,7 @@ Default is `false`.
 [source,shell,subs="+quotes,attributes"]
 ----
 kubectl logs -f ${POD_NAME} -c kafka
-kubectl get po -w
+kubectl get pod -w
 ----
 +
 The rolling update configures the brokers to use OAuth 2.0 authorization.

@@ -91,7 +91,7 @@ kubectl logs -f _CLUSTER-OPERATOR-POD-NAME_ | grep -E "Kafka version upgrade fro
 +
 [source,shell,subs=+quotes]
 ----
-kubectl get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+kubectl get pod my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
 If the current and new versions of Kafka have different inter-broker protocol versions, check the Cluster Operator logs for an `INFO` level message:
