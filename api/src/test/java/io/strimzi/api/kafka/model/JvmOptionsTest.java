@@ -30,37 +30,6 @@ public class JvmOptionsTest {
     }
 
     @Test
-    public void testServer() {
-        JvmOptions opts = TestUtils.fromJson("{" +
-                "  \"-server\": \"true\"" +
-                "}", JvmOptions.class);
-
-        assertThat(opts.isServer(), is(true));
-
-        opts = TestUtils.fromJson("{" +
-                "  \"-server\": true" +
-                "}", JvmOptions.class);
-
-        assertThat(opts.isServer(), is(true));
-
-        opts = TestUtils.fromJson("{" +
-                "  \"-server\": \"false\"" +
-                "}", JvmOptions.class);
-
-        assertThat(opts.isServer(), is(false));
-
-        opts = TestUtils.fromJson("{" +
-                "  \"-server\": false" +
-                "}", JvmOptions.class);
-
-        assertThat(opts.isServer(), is(false));
-
-        opts = TestUtils.fromJson("{}", JvmOptions.class);
-
-        assertThat(opts.isServer(), is(nullValue()));
-    }
-
-    @Test
     public void testXx() {
         JvmOptions opts = TestUtils.fromJson("{" +
                 "    \"-XX\":" +

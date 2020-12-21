@@ -130,7 +130,6 @@ public class MirrorMakerST extends AbstractST {
                 .withNewJvmOptions()
                     .withXmx("200m")
                     .withXms("200m")
-                    .withServer(true)
                     .withXx(jvmOptionsXX)
                 .endJvmOptions()
                 .endSpec().done();
@@ -151,7 +150,7 @@ public class MirrorMakerST extends AbstractST {
         assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),
                 "400M", "2", "300M", "1");
         assertExpectedJavaOpts(podName, KafkaMirrorMakerResources.deploymentName(CLUSTER_NAME),
-                "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
+                "-Xmx200m", "-Xms200m", "-XX:+UseG1GC");
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
 

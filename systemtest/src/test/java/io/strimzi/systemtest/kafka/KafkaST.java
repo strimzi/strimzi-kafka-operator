@@ -465,7 +465,6 @@ class KafkaST extends AbstractST {
                     .withNewJvmOptions()
                         .withXmx("1g")
                         .withXms("512m")
-                        .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endKafka()
@@ -480,7 +479,6 @@ class KafkaST extends AbstractST {
                     .withNewJvmOptions()
                         .withXmx("1G")
                         .withXms("512M")
-                        .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endZookeeper()
@@ -527,12 +525,12 @@ class KafkaST extends AbstractST {
         assertResources(cmdKubeClient().namespace(), KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "1536Mi", "1", "1Gi", "50m");
         assertExpectedJavaOpts(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "kafka",
-                "-Xmx1g", "-Xms512m", "-server", "-XX:+UseG1GC");
+                "-Xmx1g", "-Xms512m", "-XX:+UseG1GC");
 
         assertResources(cmdKubeClient().namespace(), KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
                 "1G", "500m", "500M", "25m");
         assertExpectedJavaOpts(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
-                "-Xmx1G", "-Xms512M", "-server", "-XX:+UseG1GC");
+                "-Xmx1G", "-Xms512M", "-XX:+UseG1GC");
 
         Optional<Pod> pod = kubeClient().listPods()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)))
@@ -544,9 +542,9 @@ class KafkaST extends AbstractST {
         assertResources(cmdKubeClient().namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "30m");
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "topic-operator",
-                "-Xmx2G", "-Xms1024M", null, null);
+                "-Xmx2G", "-Xms1024M", null);
         assertExpectedJavaOpts(pod.get().getMetadata().getName(), "user-operator",
-                "-Xmx1G", "-Xms512M", null, null);
+                "-Xmx1G", "-Xms512M", null);
 
         String eoPod = eoPods.keySet().toArray()[0].toString();
         kubeClient().getPod(eoPod).getSpec().getContainers().forEach(container -> {

@@ -136,12 +136,6 @@ public class AbstractModelTest {
         assertThat(getPerformanceOptions(opts), is(nullValue()));
 
         opts = TestUtils.fromJson("{" +
-                "  \"-server\": \"true\"" +
-                "}", JvmOptions.class);
-
-        assertThat(getPerformanceOptions(opts), is("-server"));
-
-        opts = TestUtils.fromJson("{" +
                 "    \"-XX\":" +
                 "            {\"key1\": \"value1\"," +
                 "            \"key2\": \"true\"," +
