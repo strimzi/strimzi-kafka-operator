@@ -128,7 +128,7 @@ As a result of the configured `overrides` property, the volumes use the followin
 
 * The persistent volumes of ZooKeeper node 0 will use `my-storage-class-zone-1a`.
 * The persistent volumes of ZooKeeper node 1 will use `my-storage-class-zone-1b`.
-* The persistent volumes of ZooKeeepr node 2 will use `my-storage-class-zone-1c`.
+* The persistent volumes of ZooKeeper node 2 will use `my-storage-class-zone-1c`.
 * The persistent volumes of Kafka broker 0 will use `my-storage-class-zone-1a`.
 * The persistent volumes of Kafka broker 1 will use `my-storage-class-zone-1b`.
 * The persistent volumes of Kafka broker 2 will use `my-storage-class-zone-1c`.
