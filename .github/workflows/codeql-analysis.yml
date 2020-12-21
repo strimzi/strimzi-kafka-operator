@@ -36,17 +36,27 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-    
+
     # Install yq
     - name: Install yq
       run: |
-          brew install yq
+          curl -L https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 > yq && chmod +x yq
+          sudo cp -v yq /usr/bin/
 
     # Setup OpenJDK 11
     - name: Setup java
       uses: joschi/setup-jdk@v2
       with:
         java-version: 11
+
+    # Setup Maven cache
+    - name: Cache local Maven repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
