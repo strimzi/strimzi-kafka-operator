@@ -1,9 +1,0 @@
-// Module included in the following assemblies:
-//
-// assembly-jmxtrans.adoc
-
-[id='con-jmxtrans-{context}']
-= About JmxTrans
-
-JmxTrans reads JMX metrics data from secure or insecure Kafka brokers and pushes the data to remote sinks in various data formats.
-As an example use case, JmxTrans can obtain JMX metrics about the request rate of each Kafka broker's network and then push the data to a Logstash database outside the Kubernetes cluster.
