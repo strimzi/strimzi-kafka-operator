@@ -161,7 +161,7 @@ release_docu: docu_html docu_htmlnoheader docu_pdf
 	$(CP) -rv documentation/html/using.html strimzi-$(RELEASE_VERSION)/docs/html/
 	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/html/images/
 
-docu_clean: docu_htmlclean docu_htmlnoheaderclean
+docu_clean: docu_htmlclean docu_htmlnoheaderclean docu_pdfclean
 
 docu_htmlclean:
 	rm -rf documentation/html
