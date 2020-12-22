@@ -117,7 +117,6 @@ docu_html: docu_htmlclean docu_versions docu_check
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/quickstart/master.adoc -o documentation/html/quickstart.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
-
 docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	mkdir -p documentation/htmlnoheader
 	$(CP) -vrL documentation/shared/images documentation/htmlnoheader/images
@@ -126,6 +125,14 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/overview/master.adoc -o documentation/htmlnoheader/overview-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/quickstart/master.adoc -o documentation/htmlnoheader/quickstart-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing-book.html
+
+docu_pdf: docu_pdfclean docu_versions docu_check
+	mkdir -p documentation/pdf
+	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/deploying/master.adoc -o documentation/pdf/deploying.pdf
+	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/using/master.adoc -o documentation/pdf/using.pdf
+	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/overview/master.adoc -o documentation/pdf/overview.pdf
+	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/quickstart/master.adoc -o documentation/pdf/quickstart.pdf
+	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/pdf/contributing.pdf
 
 docu_check:
 	./.azure/scripts/check_docs.sh
@@ -141,21 +148,29 @@ docu_pushtowebsite: docu_htmlnoheader docu_html
 pushtonexus:
 	./.azure/scripts/push-to-nexus.sh
 
-release_docu: docu_html docu_htmlnoheader
-	mkdir -p strimzi-$(RELEASE_VERSION)/docs
-	$(CP) -rv documentation/html/overview.html strimzi-$(RELEASE_VERSION)/docs/
-	$(CP) -rv documentation/html/quickstart.html strimzi-$(RELEASE_VERSION)/docs/
-	$(CP) -rv documentation/html/deploying.html strimzi-$(RELEASE_VERSION)/docs/
-	$(CP) -rv documentation/html/using.html strimzi-$(RELEASE_VERSION)/docs/
-	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/images/
+release_docu: docu_html docu_htmlnoheader docu_pdf
+	mkdir -p strimzi-$(RELEASE_VERSION)/docs/html
+	mkdir -p strimzi-$(RELEASE_VERSION)/docs/pdf
+	$(CP) -rv documentation/pdf/overview.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
+	$(CP) -rv documentation/pdf/quickstart.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
+	$(CP) -rv documentation/pdf/deploying.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
+	$(CP) -rv documentation/pdf/using.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
+	$(CP) -rv documentation/html/overview.html strimzi-$(RELEASE_VERSION)/docs/html/
+	$(CP) -rv documentation/html/quickstart.html strimzi-$(RELEASE_VERSION)/docs/html/
+	$(CP) -rv documentation/html/deploying.html strimzi-$(RELEASE_VERSION)/docs/html/
+	$(CP) -rv documentation/html/using.html strimzi-$(RELEASE_VERSION)/docs/html/
+	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/html/images/
 
-docu_clean: docu_htmlclean docu_htmlnoheaderclean
+docu_clean: docu_htmlclean docu_htmlnoheaderclean docu_pdfclean
 
 docu_htmlclean:
 	rm -rf documentation/html
 
 docu_htmlnoheaderclean:
 	rm -rf documentation/htmlnoheader
+
+docu_pdfclean:
+	rm -rf documentation/pdf
 
 systemtests:
 	./systemtest/scripts/run_tests.sh $(SYSTEMTEST_ARGS)

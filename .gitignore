@@ -25,6 +25,7 @@ velocity.log
 
 # Generated docs
 documentation/html/**
+documentation/pdf/**
 documentation/htmlnoheader/**
 documentation/**/build/**
 master.html
