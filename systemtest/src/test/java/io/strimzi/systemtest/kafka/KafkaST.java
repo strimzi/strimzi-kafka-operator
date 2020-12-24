@@ -721,7 +721,7 @@ class KafkaST extends AbstractST {
 
     @Test
     void testRemoveUserAndTopicOperatorsFromEntityOperator() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying Kafka cluster {}", CLUSTER_NAME);

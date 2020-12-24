@@ -358,22 +358,18 @@ public class EntityOperator extends AbstractModel {
         return super.generateServiceAccount();
     }
 
-    /**
-     * Get the name of the Entity Operator Role given the name of the {@code cluster}.
-     * @param cluster The cluster name
-     * @return The name of the EO role.
-     */
-    public static String entityOperatorRoleName(String cluster) {
-        return entityOperatorName(cluster);
-    }
-
     @Override
     protected String getRoleName() {
         return getRoleName(cluster);
     }
 
-    protected static String getRoleName(String cluster) {
-        return entityOperatorRoleName(cluster);
+    /**
+     * Get the name of the Entity Operator Role given the name of the {@code cluster}.
+     * @param cluster The cluster name
+     * @return The name of the EO role.
+     */
+    public static String getRoleName(String cluster) {
+        return entityOperatorName(cluster);
     }
 
     /**

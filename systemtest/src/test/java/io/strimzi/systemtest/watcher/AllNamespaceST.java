@@ -61,7 +61,7 @@ class AllNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
@@ -80,7 +80,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(ACCEPTANCE)
     void testKafkaInDifferentNsThanClusterOperator() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
@@ -93,7 +93,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
@@ -105,7 +105,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
@@ -127,7 +127,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
@@ -145,7 +145,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Test
     void testUOWatchingOtherNamespace() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
@@ -157,7 +157,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Test
     void testUserInDifferentNamespace() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
@@ -255,7 +255,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         deployTestSpecificResources();

@@ -1821,11 +1821,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
-            if (!rbacScope.canUseClusterRoles()) {
-                log.debug("Using STRIMZI_RBAC_SCOPE set to namespace requires user to apply ClusterRole and ClusterRoleBinding manually");
-                return withVoid(Future.succeededFuture());
-            }
-
             ClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
 
             return withVoid(withIgnoreRbacError(
@@ -3163,7 +3158,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Role must be applied manually if using 'watchedNamespace' feature
             final Future<ReconcileResult<Role>> ownNamespaceFuture = roleOperations.reconcile(
                     namespace,
-                    EntityOperator.entityOperatorRoleName(name),
+                    EntityOperator.getRoleName(name),
                     role);
 
             final String userWatchedNamespace;
@@ -3180,7 +3175,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!namespace.equals(userWatchedNamespace)) {
                 userWatchedNamespaceFuture = roleOperations.reconcile(
                         userWatchedNamespace,
-                        EntityOperator.entityOperatorRoleName(name),
+                        EntityOperator.getRoleName(name),
                         entityOperator.generateRole(userWatchedNamespace));
             } else {
                 userWatchedNamespaceFuture = Future.succeededFuture();
@@ -3200,7 +3195,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!namespace.equals(topicWatchedNamespace)) {
                 topicWatchedNamespaceFuture = roleOperations.reconcile(
                         topicWatchedNamespace,
-                        EntityOperator.entityOperatorRoleName(name),
+                        EntityOperator.getRoleName(name),
                         entityOperator.generateRole(topicWatchedNamespace));
             } else {
                 topicWatchedNamespaceFuture = Future.succeededFuture();

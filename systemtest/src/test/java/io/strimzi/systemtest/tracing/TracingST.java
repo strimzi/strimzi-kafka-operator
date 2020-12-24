@@ -113,7 +113,7 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         Map<String, Object> configOfSourceKafka = new HashMap<>();
@@ -158,7 +158,7 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testConnectService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
@@ -248,7 +248,7 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerWithStreamsService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         Map<String, Object> configOfSourceKafka = new HashMap<>();
@@ -307,7 +307,7 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerConsumerService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         Map<String, Object> configOfSourceKafka = new HashMap<>();
@@ -356,7 +356,7 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         Map<String, Object> configOfSourceKafka = new HashMap<>();
@@ -421,7 +421,7 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2Service() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
@@ -532,7 +532,7 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
@@ -647,7 +647,7 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
@@ -810,7 +810,7 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_S2I)
     @Tag(CONNECT_COMPONENTS)
     void testConnectS2IService() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();

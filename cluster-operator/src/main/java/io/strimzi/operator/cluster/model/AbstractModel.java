@@ -728,7 +728,7 @@ public abstract class AbstractModel {
      * @return the name of the role used by the service account for the deployed cluster for Kubernetes API operations.
      */
     protected String getRoleName() {
-        return null;
+        throw new RuntimeException("Unsupported method: this method should be overridden");
     }
 
     /**
@@ -1375,6 +1375,12 @@ public abstract class AbstractModel {
             .build();
     }
 
+    /**
+     * @param namespace The namespace the role will be deployed into
+     * @param rules the list of rules associated with this role
+     *
+     * @return The role for the component.
+     */
     public Role generateRole(String namespace, List<PolicyRule> rules) {
         return new RoleBuilder()
                 .withNewMetadata()
@@ -1387,6 +1393,14 @@ public abstract class AbstractModel {
                 .build();
     }
 
+    /**
+     * @param name The name of the rolebinding
+     * @param namespace The namespace the rolebinding will be deployed into
+     * @param roleRef a reference to a Role to bind to
+     * @param subjects a list of subject ServiceAccounts to bind the role to
+     *
+     * @return The RoleBinding for the component with thee given name and namespace.
+     */
     public RoleBinding generateRoleBinding(String name, String namespace, RoleRef roleRef, List<Subject> subjects) {
         return new RoleBindingBuilder()
                 .withNewMetadata()

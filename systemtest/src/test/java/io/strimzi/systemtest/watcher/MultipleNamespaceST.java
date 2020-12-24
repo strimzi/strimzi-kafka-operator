@@ -35,7 +35,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
@@ -53,7 +53,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testKafkaInDifferentNsThanClusterOperator() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
@@ -66,7 +66,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
@@ -75,7 +75,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment() {
-        // TODO temporary fix
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         deployTestSpecificResources();
