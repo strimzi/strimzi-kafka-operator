@@ -39,6 +39,7 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
                 .endMetadata()
                 .withNewSpec()
                     .withNewUnschedulable(true)
+                    .withNewPodCIDR("172.16.3.0/24")
                 .endSpec()
                 .build();
     }
@@ -52,6 +53,7 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
                 .endMetadata()
                 .withNewSpec()
                     .withNewUnschedulable(true)
+                    .withNewPodCIDR("172.16.3.0/24")
                 .endSpec()
                 .build();
     }
