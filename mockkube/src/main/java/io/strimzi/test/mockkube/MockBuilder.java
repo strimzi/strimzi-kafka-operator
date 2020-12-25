@@ -284,6 +284,7 @@ class MockBuilder<T extends HasMetadata,
         mockGet(resourceName, resource);
         mockWatch(resourceName, resource);
         mockCreate(resourceName, resource);
+        mockSetStatus(resourceName, resource);
         when(resource.createNew()).thenReturn(doneable(resource::create));
         when(resource.createOrReplace(any())).thenAnswer(i -> {
             T resource2 = i.getArgument(0);
@@ -466,6 +467,16 @@ class MockBuilder<T extends HasMetadata,
         return when(resource.isReady()).thenAnswer(i -> {
             LOGGER.debug("{} {} is ready", resourceType, resourceName);
             return Boolean.TRUE;
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    protected OngoingStubbing<T> mockSetStatus(String resourceName, R resource) {
+        return when(resource.updateStatus((T) any())).thenAnswer(i -> {
+            T r = i.getArgument(0);
+            updateStatus(r.getMetadata().getNamespace(), r.getMetadata().getName(), r);
+            LOGGER.debug("{} {} setStatus {}", resourceType, resourceName, r);
+            return copyResource(db.get(resourceName));
         });
     }
 

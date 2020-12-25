@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.mockkube;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
@@ -71,16 +70,7 @@ import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
-import okio.Buffer;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -90,8 +80,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
@@ -358,8 +346,6 @@ public class MockKube {
             mockCrs(mockOpenShiftClient);
         }
 
-        mockHttpClient();
-
         doAnswer(i -> {
             for (MockBuilder<?, ?, ?, ?> a : mockBuilders.values()) {
                 a.assertNoWatchers();
@@ -400,52 +386,6 @@ public class MockKube {
                     }
                     return createOrReplaceable;
                 });
-    }
-
-    @SuppressWarnings("unchecked")
-    private void mockHttpClient()   {
-        // The CRD status update is build on the HTTP client directly since it is not supported in Fabric8.
-        // We have to mock the HTTP client to make it pass.
-        URL fakeUrl = null;
-        try {
-            fakeUrl = new URL("http", "my-host", 9443, "/");
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-
-        when(mockClient.getMasterUrl()).thenReturn(fakeUrl);
-        OkHttpClient mockedOkHttp = mock(OkHttpClient.class);
-        when(mockClient.adapt(OkHttpClient.class)).thenReturn(mockedOkHttp);
-        Call mockedCall = mock(Call.class);
-        when(mockedOkHttp.newCall(any(Request.class))).thenAnswer(i -> {
-            Request request = i.getArgument(0);
-            Pattern p = Pattern.compile("/?apis/(?<apiVersion>[^/]+)/namespaces/(?<namespace>[^/]+)/(?<plural>[^/]+)/(?<name>[^/]+)/status/?");
-            Matcher matcher = p.matcher(request.url().encodedPath());
-
-            if ("PUT".equals(request.method())
-                && matcher.matches()) {
-                String plural = matcher.group("plural");
-                String resourceName = matcher.group("name");
-                String resourceNamespace = matcher.group("namespace");
-                ObjectMapper mapper = new ObjectMapper();
-                Class<? extends HasMetadata> crdClass = mockBuilders3.get(plural);
-                //MixedOperation<?, ?, ?, ?> operation = mockBuilders.get(crdClass).build();
-                Buffer bufferedSink = new Buffer();
-                request.body().writeTo(bufferedSink);
-                String json = bufferedSink.readString(request.body().contentType().charset());
-                HasMetadata resourceWithStatus = mapper.readValue(json, crdClass);
-                //HasMetadata currentResource = (HasMetadata) operation.inNamespace(resourceNamespace).withName(resourceName).get();
-                MockBuilder mockBuilder = mockBuilders2.get(plural);
-                mockBuilder.updateStatus(resourceNamespace, resourceName, resourceWithStatus);
-            }
-            return mockedCall;
-        });
-        Response response = new Response.Builder().code(200).request(new Request.Builder().url(fakeUrl).build()).message("HTTP OK").protocol(Protocol.HTTP_1_1).build();
-        try {
-            when(mockedCall.execute()).thenReturn(response);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>
