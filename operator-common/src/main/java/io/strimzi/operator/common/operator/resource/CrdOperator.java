@@ -31,7 +31,6 @@ public class CrdOperator<C extends KubernetesClient,
     private final Class<T> cls;
     private final Class<L> listCls;
     private final Class<D> doneableCls;
-    protected final String plural;
     protected final CustomResourceDefinition crd;
 
     /**
@@ -48,7 +47,6 @@ public class CrdOperator<C extends KubernetesClient,
         this.cls = cls;
         this.listCls = listCls;
         this.doneableCls = doneableCls;
-        this.plural = crd.getSpec().getNames().getPlural();
         this.crd = crd;
     }
 
