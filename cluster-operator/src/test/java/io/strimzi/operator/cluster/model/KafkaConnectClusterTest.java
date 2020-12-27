@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
@@ -25,6 +26,8 @@ import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -555,6 +558,20 @@ public class KafkaConnectClusterTest {
                 .withIp("192.168.1.87")
                 .build();
 
+        TopologySpreadConstraint tsc1 = new TopologySpreadConstraintBuilder()
+                .withTopologyKey("kubernetes.io/zone")
+                .withMaxSkew(1)
+                .withWhenUnsatisfiable("DoNotSchedule")
+                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
+                .build();
+
+        TopologySpreadConstraint tsc2 = new TopologySpreadConstraintBuilder()
+                .withTopologyKey("kubernetes.io/hostname")
+                .withMaxSkew(2)
+                .withWhenUnsatisfiable("ScheduleAnyway")
+                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
+                .build();
+
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -573,6 +590,7 @@ public class KafkaConnectClusterTest {
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
                             .withHostAliases(hostAlias1, hostAlias2)
+                            .withTopologySpreadConstraints(tsc1, tsc2)
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -604,6 +622,7 @@ public class KafkaConnectClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
 
         // Check Service
         Service svc = kc.generateService();

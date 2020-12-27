@@ -1274,6 +1274,10 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[HostAlias] array
+|topologySpreadConstraints      1.2+<.<|The pod's topology spread constraints. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#topologyspreadconstraint-v1-core[external documentation for core/v1 topologyspreadconstraint].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#topologyspreadconstraint-v1-core[TopologySpreadConstraint] array
 |====
 
 [id='type-ResourceTemplate-{context}']

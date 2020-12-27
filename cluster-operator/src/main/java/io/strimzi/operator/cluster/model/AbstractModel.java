@@ -39,6 +39,7 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -260,6 +261,7 @@ public abstract class AbstractModel {
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
     protected List<HostAlias> templatePodHostAliases;
+    protected List<TopologySpreadConstraint> templatePodTopologySpreadConstraints;
     protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
@@ -1012,6 +1014,7 @@ public abstract class AbstractModel {
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
                             .withHostAliases(templatePodHostAliases)
+                            .withTopologySpreadConstraints(templatePodTopologySpreadConstraints)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -1061,6 +1064,7 @@ public abstract class AbstractModel {
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName)
                             .withHostAliases(templatePodHostAliases)
+                            .withTopologySpreadConstraints(templatePodTopologySpreadConstraints)
                         .endSpec()
                     .endTemplate()
                 .endSpec()

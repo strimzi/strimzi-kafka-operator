@@ -1300,6 +1300,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
                         type: object
@@ -2325,6 +2355,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
                         type: object
@@ -3469,6 +3529,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Entity Operator `Pods`.
                       tlsSidecarContainer:
                         type: object
@@ -4360,6 +4450,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Cruise Control `Pods`.
                       apiService:
                         type: object
@@ -5087,6 +5207,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for JmxTrans `Pods`.
                       container:
                         type: object
@@ -5569,6 +5719,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Kafka Exporter `Pods`.
                       service:
                         type: object
@@ -8254,6 +8434,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
                         type: object
@@ -9581,6 +9791,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
                         type: object
@@ -11337,6 +11577,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Entity Operator `Pods`.
                       tlsSidecarContainer:
                         type: object
@@ -12228,6 +12498,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Cruise Control `Pods`.
                       apiService:
                         type: object
@@ -12959,6 +13259,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for JmxTrans `Pods`.
                       container:
                         type: object
@@ -13441,6 +13771,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Kafka Exporter `Pods`.
                       service:
                         type: object
@@ -16126,6 +16486,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
                         type: object
@@ -17453,6 +17843,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
                         type: object
@@ -19209,6 +19629,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Entity Operator `Pods`.
                       tlsSidecarContainer:
                         type: object
@@ -20100,6 +20550,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Cruise Control `Pods`.
                       apiService:
                         type: object
@@ -20831,6 +21311,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for JmxTrans `Pods`.
                       container:
                         type: object
@@ -21313,6 +21823,36 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the pod's hosts file if specified.
+                          topologySpreadConstraints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
+                                maxSkew:
+                                  type: integer
+                                topologyKey:
+                                  type: string
+                                whenUnsatisfiable:
+                                  type: string
+                            description: The pod's topology spread constraints.
                         description: Template for Kafka Exporter `Pods`.
                       service:
                         type: object

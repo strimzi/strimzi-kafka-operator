@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -20,6 +21,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -50,10 +53,12 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaBridgeClusterTest {
@@ -368,6 +373,20 @@ public class KafkaBridgeClusterTest {
                 .withValue("value1")
                 .build());
 
+        TopologySpreadConstraint tsc1 = new TopologySpreadConstraintBuilder()
+                .withTopologyKey("kubernetes.io/zone")
+                .withMaxSkew(1)
+                .withWhenUnsatisfiable("DoNotSchedule")
+                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
+                .build();
+
+        TopologySpreadConstraint tsc2 = new TopologySpreadConstraintBuilder()
+                .withTopologyKey("kubernetes.io/hostname")
+                .withMaxSkew(2)
+                .withWhenUnsatisfiable("ScheduleAnyway")
+                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
+                .build();
+
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -387,6 +406,7 @@ public class KafkaBridgeClusterTest {
                             .withNewSchedulerName("my-scheduler")
                             .withAffinity(affinity)
                             .withTolerations(tolerations)
+                            .withTopologySpreadConstraints(tsc1, tsc2)
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -419,6 +439,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
 
         // Check Service
         Service svc = kbc.generateService();

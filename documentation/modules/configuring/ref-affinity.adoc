@@ -3,10 +3,10 @@
 // assembly-scheduling.adoc
 
 [id='affinity-{context}']
-= Specifying affinity and tolerations
+= Specifying affinity, tolerations, and topology spread constraints
 
-Use affinity and tolerations to schedule the pods of kafka resources onto nodes.
-Affinity and tolerations are configured using the `affinity` and `tolerations` properties in following resources:
+Use affinity, tolerations and topology spread constraints to schedule the pods of kafka resources onto nodes.
+Affinity, tolerations and topology spread constraints are configured using the `affinity`, `tolerations`, and `topologySpreadConstraint` properties in following resources:
 
 * `Kafka.spec.kafka.template.pod`
 * `Kafka.spec.zookeeper.template.pod`
@@ -14,17 +14,23 @@ Affinity and tolerations are configured using the `affinity` and `tolerations` p
 * `KafkaConnect.spec.template.pod`
 * `KafkaConnectS2I.spec.template.pod`
 * `KafkaBridge.spec.template.pod`
+* `KafkaMirrorMaker.spec.template.pod`
+* `KafkaMirrorMaker2.spec.template.pod`
 
-The format of the `affinity` and `tolerations` properties follows the Kubernetes specification.
+The format of the `affinity`, `tolerations`, and `topologySpreadConstraint` properties follows the Kubernetes specification.
 The affinity configuration can include different types of affinity:
 
 * Pod affinity and anti-affinity
 * Node affinity
 
+NOTE: On Kubernetes 1.16 and 1.17, teh support for `topologySpreadConstraint` is disabled by default.
+In order to use `topologySpreadConstraint`, you have to enable the `EvenPodsSpread` feature gate in Kubernetes API server and scheduler.
+
 .Additional resources
 
 * {K8sAffinity}
 * {K8sTolerations}
+* {K8sTopologySpreadConstraints}
 
 [id='con-scheduling-based-on-other-pods-{context}']
 == Use pod anti-affinity to avoid critical applications sharing nodes
