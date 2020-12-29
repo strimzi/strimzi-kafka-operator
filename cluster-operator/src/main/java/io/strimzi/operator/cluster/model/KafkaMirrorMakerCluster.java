@@ -223,7 +223,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(1);
+        List<Volume> volumeList = new ArrayList<>(2);
+
+        volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         createClientSecretVolume(producer, volumeList, "producer-oauth-certs", isOpenShift);
@@ -246,7 +248,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     protected List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(1);
+        List<VolumeMount> volumeMountList = new ArrayList<>(2);
+
+        volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         /** producer auth*/

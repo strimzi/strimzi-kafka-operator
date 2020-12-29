@@ -48,6 +48,7 @@ function find_ca {
 echo "Preparing truststore"
 # Add each certificate to the trust store
 STORE=/tmp/zookeeper/cluster.truststore.p12
+rm -f "$STORE"
 for CRT in /opt/kafka/cluster-ca-certs/*.crt; do
   ALIAS=$(basename "$CRT" .crt)
   echo "Adding $CRT to truststore $STORE with alias $ALIAS"
@@ -65,7 +66,9 @@ fi
 echo "Found the right CA: $CA"
 
 echo "Preparing keystore for client and quorum listeners"
-create_keystore /tmp/zookeeper/cluster.keystore.p12 "$CERTS_STORE_PASSWORD" \
+STORE=/tmp/zookeeper/cluster.keystore.p12
+rm -f "$STORE"
+create_keystore "$STORE" "$CERTS_STORE_PASSWORD" \
     "/opt/kafka/zookeeper-node-certs/$HOSTNAME.crt" \
     "/opt/kafka/zookeeper-node-certs/$HOSTNAME.key" \
     "$CA" \

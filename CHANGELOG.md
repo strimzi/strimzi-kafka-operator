@@ -9,6 +9,7 @@
 * Strimzi `test-container` has been renamed to `strimzi-test-container` to make the name more clear
 * Updated the CPU usage metric in the Kafka, ZooKeeper and Cruise Control dashboards to include the CPU kernel time (other than the current user time)
 * Allow disabling ownerReference on CA secrets
+* Make it possible to run Strimzi operators and operands with read-only root filesystem
 * Move from Docker Hub to Quay.io as our container registry
 * Add possibility to configure DeploymentStrategy for Kafka Connect, Kafka Mirror Maker (1 and 2), and Kafka Bridge
 * Support passing metrics configuration as an external ConfigMap
