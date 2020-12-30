@@ -25,8 +25,6 @@ public class EphemeralStorage extends SingleVolumeStorage {
 
     private static final long serialVersionUID = 1L;
 
-    private Integer id;
-
     private String sizeLimit;
 
     @Description("Must be `" + TYPE_EPHEMERAL + "`")

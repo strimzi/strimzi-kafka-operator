@@ -36,8 +36,6 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     private boolean deleteClaim;
     private List<PersistentClaimStorageOverride> overrides;
 
-    private Integer id;
-
     @Description("Must be `" + TYPE_PERSISTENT_CLAIM + "`")
     @Override
     public String getType() {
