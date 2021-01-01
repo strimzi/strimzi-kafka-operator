@@ -73,6 +73,8 @@ spec:
               value: {{ default .Values.kafkaBridge.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: {{ default .Values.jmxTrans.image.registry .Values.imageRegistryOverride }}/{{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
+              value: {{ default .Values.kanikoExecutor.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kanikoExecutor.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kanikoExecutor.image.name }}:{{ default .Values.kanikoExecutor.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:

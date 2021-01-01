@@ -32,10 +32,13 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     private DeploymentTemplate deployment;
     private PodTemplate pod;
+    private PodTemplate buildPod;
     private ResourceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate connectContainer;
     private ContainerTemplate initContainer;
+    private ContainerTemplate buildContainer;
+    private MetadataTemplate buildConfig;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")
@@ -56,6 +59,17 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     public void setPod(PodTemplate pod) {
         this.pod = pod;
+    }
+
+    @Description("Template for Kafka Connect Build `Pods`. " +
+            "The build pod is used only on Kubernetes.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodTemplate getBuildPod() {
+        return buildPod;
+    }
+
+    public void setBuildPod(PodTemplate buildPod) {
+        this.buildPod = buildPod;
     }
 
     @Description("Template for Kafka Connect API `Service`.")
@@ -96,6 +110,28 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     public void setInitContainer(ContainerTemplate initContainer) {
         this.initContainer = initContainer;
+    }
+
+    @Description("Template for the Kafka Connect Build container. " +
+            "The build container is used only on Kubernetes.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getBuildContainer() {
+        return buildContainer;
+    }
+
+    public void setBuildContainer(ContainerTemplate buildContainer) {
+        this.buildContainer = buildContainer;
+    }
+
+    @Description("Template for the Kafka Connect BuildConfig used to build new container images. " +
+            "The BuildConfig is used only on OpenShift.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public MetadataTemplate getBuildConfig() {
+        return buildConfig;
+    }
+
+    public void setBuildConfig(MetadataTemplate buildConfig) {
+        this.buildConfig = buildConfig;
     }
 
     @Override

@@ -24,6 +24,8 @@ import lombok.EqualsAndHashCode;
 public class ImageStreamOutput extends Output {
     private static final long serialVersionUID = 1L;
 
+    private String image;
+
     @Description("Must be `" + TYPE_IMAGESTREAMS + "`")
     @Override
     public String getType() {

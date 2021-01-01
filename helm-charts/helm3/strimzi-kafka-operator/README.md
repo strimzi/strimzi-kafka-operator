@@ -142,6 +142,10 @@ the documentation for more details.
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
 | `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.19.0`                                             |
+| `kanikoExecutor.image.registry`      | Kaniko Executor image registry            | `gcr.io`                                             |
+| `kanikoExecutor.image.repository`    | Kaniko Executor image repository          | `kaniko-project`                                     |
+| `kanikoExecutor.image.name`          | Kaniko Executor image name                | `executor`                                           |
+| `kanikoExecutor.image.tag`           | Kaniko Executor image tag                 | `v1.3.0`                                             |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |

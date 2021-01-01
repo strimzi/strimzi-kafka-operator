@@ -1042,7 +1042,6 @@ public abstract class AbstractModel {
             String name,
             Map<String, String> podAnnotations,
             List<Volume> volumes,
-            Affinity affinity,
             List<Container> initContainers,
             List<Container> containers,
             List<LocalObjectReference> imagePullSecrets,
@@ -1070,7 +1069,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withRestartPolicy("Never")
                     .withServiceAccountName(getServiceAccountName())
-                    .withAffinity(affinity)
+                    .withAffinity(getUserAffinity())
                     .withInitContainers(initContainers)
                     .withContainers(containers)
                     .withVolumes(volumes)

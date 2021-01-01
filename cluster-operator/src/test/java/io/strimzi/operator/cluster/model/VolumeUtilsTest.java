@@ -4,10 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.Volume;
+
+import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -76,5 +79,15 @@ public class VolumeUtilsTest {
     public void testCreateConfigMapVolumeWithInvalidName() {
         Volume volume = VolumeUtils.createConfigMapVolume("oauth-my.cm", "my.cm");
         assertThat(volume.getName(), is("oauth-my-cm-62fdd747"));
+    }
+
+    @Test
+    public void testCreateConfigMapVolumeWithItems() {
+        Volume volume = VolumeUtils.createConfigMapVolume("my-cm-volume", "my-cm", Collections.singletonMap("fileName.txt", "/path/to/fileName.txt"));
+
+        assertThat(volume.getName(), is("my-cm-volume"));
+        assertThat(volume.getConfigMap().getName(), is("my-cm"));
+        assertThat(volume.getConfigMap().getItems().size(), is(1));
+        assertThat(volume.getConfigMap().getItems().get(0), is(new KeyToPathBuilder().withKey("fileName.txt").withPath("/path/to/fileName.txt").build()));
     }
 }

@@ -1215,7 +1215,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
+Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 
 include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[leveloffset=+1]
 
@@ -2176,6 +2176,12 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<|Template for Kafka Connect API `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|buildConfig          1.2+<.<|Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|buildContainer       1.2+<.<|Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|buildPod             1.2+<.<|Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
 |connectContainer     1.2+<.<|Template for the Kafka Connect container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |initContainer        1.2+<.<|Template for the Kafka init container.
@@ -2285,7 +2291,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |Property          |Description
 |output     1.2+<.<|Configures where should the newly build image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
 |xref:type-DockerOutput-{context}[`DockerOutput`], xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`]
-|resources  1.2+<.<|CPU and memory resources to reserve for the build. See external documentation of https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[core/v1 resourcerequirements].
+|resources  1.2+<.<|CPU and memory resources to reserve for the build. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
@@ -2299,7 +2305,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 Used in: xref:type-Build-{context}[`Build`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `DockerOutput` from xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`].
+The `type` property is a discriminator that distinguishes use of the `DockerOutput` type from xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`].
 It must have the value `docker` for the type `DockerOutput`.
 [options="header"]
 |====
@@ -2320,7 +2326,7 @@ It must have the value `docker` for the type `DockerOutput`.
 Used in: xref:type-Build-{context}[`Build`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `ImageStreamOutput` from xref:type-DockerOutput-{context}[`DockerOutput`].
+The `type` property is a discriminator that distinguishes use of the `ImageStreamOutput` type from xref:type-DockerOutput-{context}[`DockerOutput`].
 It must have the value `imagestream` for the type `ImageStreamOutput`.
 [options="header"]
 |====

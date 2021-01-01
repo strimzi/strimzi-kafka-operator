@@ -25,6 +25,7 @@ import lombok.EqualsAndHashCode;
 public class DockerOutput extends Output {
     private static final long serialVersionUID = 1L;
 
+    private String image;
     private String pushSecret;
     private boolean insecure = false;
 
