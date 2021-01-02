@@ -58,7 +58,7 @@ Where _<PartitionObjects>_ is a comma-separated list of objects like:
 
 NOTE: Although Kafka also supports a `"log_dirs"` property this should not be used in Strimzi.
 
-The following is an example reassignment JSON file that assigns topic `topic-a`, partition `4` to brokers `2`, `4` and `7`, and topic `topic-b` partition `2` to brokers `1`, `5` and `7`:
+The following is an example reassignment JSON file that assigns partition `4` of topic `topic-a` to brokers `2`, `4` and `7`, and partition `2` of topic `topic-b` to brokers `1`, `5` and `7`:
 
 [source,json]
 ----
