@@ -69,7 +69,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-connect";
 
