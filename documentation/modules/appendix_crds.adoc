@@ -2312,10 +2312,8 @@ It must have the value `docker` for the type `DockerOutput`.
 |Property           |Description
 |image       1.2+<.<|The name of the image which will be built. Required.
 |string
-|pushSecret  1.2+<.<|Docker Registry Secret with the credentials for pushing the newly built image. Required.
+|pushSecret  1.2+<.<|Docker Registry Secret with the credentials for pushing the newly built image.
 |string
-|insecure    1.2+<.<|When true, the target repository will be treated as insecure.
-|boolean
 |type        1.2+<.<|Must be `docker`.
 |string
 |====
@@ -2349,7 +2347,7 @@ Used in: xref:type-Build-{context}[`Build`]
 |name       1.2+<.<|The unique name of the connector plugin. Will be used to generate the path when the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
 |string
 |artifacts  1.2+<.<|List of artifacts which belong to this connector plugin. Required.
-|xref:type-JarArtifact-{context}[`JarArtifact`] array
+|xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`] array
 |====
 
 [id='type-JarArtifact-{context}']
@@ -2361,11 +2359,28 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 [options="header"]
 |====
 |Property          |Description
-|url        1.2+<.<|URL of the artifact which will be downloaded. Required.
+|url        1.2+<.<|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
 |string
 |sha512sum  1.2+<.<|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
 |string
 |type       1.2+<.<|Must be `jar`.
+|string
+|====
+
+[id='type-TgzArtifact-{context}']
+### `TgzArtifact` schema reference
+
+Used in: xref:type-Plugin-{context}[`Plugin`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|url        1.2+<.<|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+|string
+|sha512sum  1.2+<.<|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+|string
+|type       1.2+<.<|Must be `tgz`.
 |string
 |====
 

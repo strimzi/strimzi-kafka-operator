@@ -161,6 +161,7 @@ rules:
       - build.openshift.io
     resources:
       - buildconfigs
+      - buildconfigs/instantiate
       - builds
     verbs:
       - get

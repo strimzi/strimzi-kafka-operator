@@ -37,6 +37,7 @@ import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
+import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -88,6 +89,7 @@ public class ResourceOperatorSupplier {
     public final IngressOperator ingressOperations;
     public final ImageStreamOperator imagesStreamOperations;
     public final BuildConfigOperator buildConfigOperations;
+    public final BuildOperator buildOperations;
     public final DeploymentConfigOperator deploymentConfigOperations;
     public final StorageClassOperator storageClassOperations;
     public final NodeOperator nodeOperator;
@@ -127,6 +129,7 @@ public class ResourceOperatorSupplier {
                 new IngressOperator(vertx, client),
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasApps() ? new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class, Crds.kafka()),
                 new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, Crds.kafkaConnect()),
@@ -161,6 +164,7 @@ public class ResourceOperatorSupplier {
                                     IngressOperator ingressOperations,
                                     ImageStreamOperator imagesStreamOperations,
                                     BuildConfigOperator buildConfigOperations,
+                                    BuildOperator buildOperations,
                                     DeploymentConfigOperator deploymentConfigOperations,
                                     CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator,
                                     CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperator,
@@ -194,6 +198,7 @@ public class ResourceOperatorSupplier {
         this.ingressOperations = ingressOperations;
         this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
+        this.buildOperations = buildOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.connectOperator = connectOperator;
         this.connectS2IOperator = connectS2IOperator;

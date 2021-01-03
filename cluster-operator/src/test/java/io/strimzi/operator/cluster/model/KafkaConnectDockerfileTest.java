@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
+import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderTest.IsEquivalent.isEquivalent;
@@ -23,6 +24,15 @@ public class KafkaConnectDockerfileTest {
 
     private final Artifact jarArtifactWithChecksum = new JarArtifactBuilder()
             .withUrl("https://mydomain.tld/my2.jar")
+            .withSha512sum("sha-512-checksum")
+            .build();
+
+    private final Artifact tgzArtifactNoChecksum = new TgzArtifactBuilder()
+            .withUrl("https://mydomain.tld/my.tgz")
+            .build();
+
+    private final Artifact tgzArtifactWithChecksum = new TgzArtifactBuilder()
+            .withUrl("https://mydomain.tld/my2.tgz")
             .withSha512sum("sha-512-checksum")
             .build();
 
@@ -114,6 +124,76 @@ public class KafkaConnectDockerfileTest {
                 "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/0df6d15c/my2.jar\" > /opt/kafka/plugins/my-connector-plugin/0df6d15c/my2.jar.sha512 \\",
                 "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/0df6d15c/my2.jar.sha512 \\",
                 "      && rm -f /opt/kafka/plugins/my-connector-plugin/0df6d15c/my2.jar.sha512",
+                "USER 1001"));
+    }
+
+    @Test
+    public void testNoChecksumTgzArtifact()   {
+        Build connectBuild = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(tgzArtifactNoChecksum)
+                        .build())
+                .build();
+
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+
+        assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
+                "USER root:root",
+                "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/6718766b \\",
+                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/my.tgz https://mydomain.tld/my.tgz \\",
+                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/my.tgz -C /opt/kafka/plugins/my-connector-plugin/6718766b \\",
+                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/my.tgz",
+                "USER 1001"));
+    }
+
+    @Test
+    public void testChecksumTgzArtifact()   {
+        Build connectBuild = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(tgzArtifactWithChecksum)
+                        .build())
+                .build();
+
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+
+        assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
+                "USER root:root",
+                "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
+                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/my2.tgz https://mydomain.tld/my2.tgz \\",
+                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/my2.tgz\" > /opt/kafka/plugins/my-connector-plugin/my2.tgz.sha512 \\",
+                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/my2.tgz.sha512 \\",
+                "      && rm -f /opt/kafka/plugins/my-connector-plugin/my2.tgz.sha512 \\",
+                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/my2.tgz -C /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
+                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/my2.tgz",
+                "USER 1001"));
+    }
+
+    @Test
+    public void testMultipleTgzArtifact()   {
+        Build connectBuild = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(tgzArtifactNoChecksum, tgzArtifactWithChecksum)
+                        .build())
+                .build();
+
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+
+        assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
+                "USER root:root",
+                "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/6718766b \\",
+                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/my.tgz https://mydomain.tld/my.tgz \\",
+                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/my.tgz -C /opt/kafka/plugins/my-connector-plugin/6718766b \\",
+                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/my.tgz",
+                "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
+                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/my2.tgz https://mydomain.tld/my2.tgz \\",
+                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/my2.tgz\" > /opt/kafka/plugins/my-connector-plugin/my2.tgz.sha512 \\",
+                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/my2.tgz.sha512 \\",
+                "      && rm -f /opt/kafka/plugins/my-connector-plugin/my2.tgz.sha512 \\",
+                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/my2.tgz -C /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
+                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/my2.tgz",
                 "USER 1001"));
     }
 

@@ -27,7 +27,10 @@ public abstract class DownloadableArtifact extends Artifact {
     private String url;
     private String sha512sum;
 
-    @Description("URL of the artifact which will be downloaded. Required.")
+    @Description("URL of the artifact which will be downloaded. " +
+            "Strimzi does not do any security scanning of the downloaded artifacts. " +
+            "For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. " +
+            "Required.")
     @JsonProperty(required = true)
     @Pattern("^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
     public String getUrl() {

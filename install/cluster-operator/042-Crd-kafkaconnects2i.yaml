@@ -1586,14 +1586,10 @@ spec:
                     image:
                       type: string
                       description: The name of the image which will be built. Required.
-                    insecure:
-                      type: boolean
-                      description: When true, the target repository will be treated
-                        as insecure.
                     pushSecret:
                       type: string
                       description: Docker Registry Secret with the credentials for
-                        pushing the newly built image. Required.
+                        pushing the newly built image.
                     type:
                       type: string
                       enum:
@@ -1604,7 +1600,6 @@ spec:
                         for pushing the image to OpenShift ImageStream. Required.
                   required:
                   - image
-                  - pushSecret
                   - type
                   description: Configures where should the newly build image be stored.
                     Required.
@@ -1623,7 +1618,7 @@ spec:
                     properties:
                       name:
                         type: string
-                        pattern: ^[a-z][-_a-z0-9]*[a-z]$
+                        pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
                         description: 'The unique name of the connector plugin. Will
                           be used to generate the path when the connector artifacts
                           will be stored. The name has to be unique within the KafkaConnect
@@ -1644,13 +1639,18 @@ spec:
                               type: string
                               enum:
                               - jar
-                              description: Storage type, must be either 'ephemeral',
-                                'persistent-claim', or 'jbod'.
+                              - tgz
+                              description: Artifact type. Currently, the supported
+                                artifact types are `tgz` anf `jar`.
                             url:
                               type: string
                               pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
                               description: URL of the artifact which will be downloaded.
-                                Required.
+                                Strimzi does not do any security scanning of the downloaded
+                                artifacts. For security reasons, you should first
+                                verify the artifacts manually and configure the checksum
+                                verification to make sure the same artifact is used
+                                in the automated build. Required.
                           required:
                           - type
                           - url

@@ -12,33 +12,21 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * Represents Docker output from the build
+ * TGZ artifact represents an artifact which is downloaded and unpacked using TAR (with GZIP decompression)
  */
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "image", "pushSecret" })
+@JsonPropertyOrder({ "url", "sha512sum" })
 @EqualsAndHashCode
-public class DockerOutput extends Output {
+public class TgzArtifact extends DownloadableArtifact {
     private static final long serialVersionUID = 1L;
 
-    private String image;
-    private String pushSecret;
-
-    @Description("Must be `" + TYPE_DOCKER + "`")
+    @Description("Must be `" + TYPE_TGZ + "`")
     @Override
     public String getType() {
-        return TYPE_DOCKER;
-    }
-
-    @Description("Docker Registry Secret with the credentials for pushing the newly built image.")
-    public String getPushSecret() {
-        return pushSecret;
-    }
-
-    public void setPushSecret(String pushSecret) {
-        this.pushSecret = pushSecret;
+        return TYPE_TGZ;
     }
 }

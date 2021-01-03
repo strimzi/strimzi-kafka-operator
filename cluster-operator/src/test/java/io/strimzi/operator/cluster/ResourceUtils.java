@@ -72,6 +72,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
+import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -752,6 +753,7 @@ public class ResourceUtils {
                 mock(IngressOperator.class),
                 mock(ImageStreamOperator.class),
                 mock(BuildConfigOperator.class),
+                mock(BuildOperator.class),
                 mock(DeploymentConfigOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
@@ -766,6 +768,7 @@ public class ResourceUtils {
                 zookeeperScalerProvider(),
                 metricsProvider(),
                 adminClientProvider());
+
         when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());

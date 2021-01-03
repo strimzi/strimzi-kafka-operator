@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.JarArtifact;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
+import io.strimzi.api.kafka.model.connect.build.TgzArtifact;
 import io.strimzi.operator.common.Util;
 
 import java.io.PrintWriter;
@@ -96,6 +97,8 @@ public class KafkaConnectDockerfile {
         for (Artifact art : plugin.getArtifacts())  {
             if (art instanceof JarArtifact) {
                 addJarArtifact(writer, connectorPath, (JarArtifact) art);
+            } else if (art instanceof TgzArtifact) {
+                addTgzArtifact(writer, connectorPath, (TgzArtifact) art);
             } else {
                 throw new RuntimeException("Unexpected artifact type " + art.getType());
             }
@@ -127,6 +130,43 @@ public class KafkaConnectDockerfile {
             writer.println("      && echo \"" + checksum + "\" > " + artifactPath + ".sha512 \\");
             writer.println("      && sha512sum --check " + artifactPath + ".sha512 \\");
             writer.println("      && rm -f " + artifactPath + ".sha512");
+        }
+
+        writer.println();
+    }
+
+    /**
+     * Add command sequence for downloading and unpacking TAR.GZ archives and checking their checksums.
+     *
+     * @param writer            Writer for printing the Docker commands
+     * @param connectorPath     Path where the connector to which this artifact belongs should be downloaded
+     * @param tgz               The TGZ-type artifact
+     */
+    private void addTgzArtifact(PrintWriter writer, String connectorPath, TgzArtifact tgz) {
+        String artifactDir = connectorPath + "/" + Util.hashStub(tgz.getUrl());
+        String archivePath = connectorPath + "/" + tgz.getUrl().substring(tgz.getUrl().lastIndexOf("/") + 1);
+
+        String downloadCmd =  "curl -L --output " + archivePath + " " + tgz.getUrl();
+        String unpackCmd =  "tar xvfz " + archivePath + " -C " + artifactDir;
+        String deleteCmd =  "rm -vf " + archivePath;
+
+        writer.println("RUN mkdir -p " + artifactDir + " \\");
+
+        if (tgz.getSha512sum() == null || tgz.getSha512sum().isEmpty()) {
+            // No checksum => we just download and unpack the file
+            writer.println("      && " + downloadCmd + " \\");
+            writer.println("      && " + unpackCmd + " \\");
+            writer.println("      && " + deleteCmd);
+        } else {
+            // Checksum exists => we need to check it
+            String checksum = tgz.getSha512sum() + " " + archivePath;
+
+            writer.println("      && " + downloadCmd + " \\");
+            writer.println("      && echo \"" + checksum + "\" > " + archivePath + ".sha512 \\");
+            writer.println("      && sha512sum --check " + archivePath + ".sha512 \\");
+            writer.println("      && rm -f " + archivePath + ".sha512 \\");
+            writer.println("      && " + unpackCmd + " \\");
+            writer.println("      && " + deleteCmd);
         }
 
         writer.println();

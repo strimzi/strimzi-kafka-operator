@@ -43,7 +43,7 @@ public class Plugin implements Serializable, UnknownPropertyPreserving {
             "The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. " +
             "Required")
     @JsonProperty(required = true)
-    @Pattern("^[a-z][-_a-z0-9]*[a-z]$")
+    @Pattern("^[a-z0-9][-_a-z0-9]*[a-z0-9]$")
     public String getName() {
         return name;
     }

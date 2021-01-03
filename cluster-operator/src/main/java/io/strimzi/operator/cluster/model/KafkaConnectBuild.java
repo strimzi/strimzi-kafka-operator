@@ -20,7 +20,8 @@ import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
 import io.fabric8.openshift.api.model.BuildOutput;
 import io.fabric8.openshift.api.model.BuildOutputBuilder;
-import io.fabric8.openshift.api.model.BuildTriggerPolicyBuilder;
+import io.fabric8.openshift.api.model.BuildRequest;
+import io.fabric8.openshift.api.model.BuildRequestBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -248,10 +249,8 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  List of environment variables
      */
     private List<EnvVar> getBuildContainerEnvVars() {
-        List<EnvVar> varList = new ArrayList<>();
-
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        List<EnvVar> varList = new ArrayList<>(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateBuildContainerEnvVars);
 
@@ -293,7 +292,7 @@ public class KafkaConnectBuild extends AbstractModel {
      * logging configuration, so this currently just returns an unsupported exception (but it has to exist due to the
      * inheritance).
      *
-     * @return
+     * @return  Name of the default logging configuration file
      */
     @Override
     protected String getDefaultLogConfigFileName() {
@@ -303,7 +302,7 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Generates a BuildConfig which will be used to build new container images with additional connector plugins on OCP.
      *
-     * @param dockerfile
+     * @param dockerfile    Dockerfile which should be built by the BuildConfig
      *
      * @return  OpenShift BuildConfig for building new container images on OpenShift
      */
@@ -347,10 +346,11 @@ public class KafkaConnectBuild extends AbstractModel {
                 .withNewSpec()
                     .withOutput(output)
                     .withNewSource()
+                        .withType("Dockerfile")
                         .withDockerfile(dockerfile.getDockerfile())
                     .endSource()
-                    .withTriggers(new BuildTriggerPolicyBuilder().withType("ConfigChange").build())
                     .withNewStrategy()
+                        .withType("Docker")
                         .withNewDockerStrategy()
                         .endDockerStrategy()
                     .endStrategy()
@@ -360,6 +360,15 @@ public class KafkaConnectBuild extends AbstractModel {
                     .withSuccessfulBuildsHistoryLimit(5)
                     .withFailedBuildsHistoryLimit(5)
                 .endSpec()
+                .build();
+    }
+
+    public BuildRequest generateBuildRequest()  {
+        return new BuildRequestBuilder()
+                .withNewMetadata()
+                    .withName(KafkaConnectResources.buildConfigName(cluster))
+                    .withNamespace(namespace)
+                .endMetadata()
                 .build();
     }
 }

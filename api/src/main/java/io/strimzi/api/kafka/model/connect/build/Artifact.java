@@ -25,7 +25,8 @@ import java.util.Map;
 )
 @JsonSubTypes(
         {
-            @JsonSubTypes.Type(value = JarArtifact.class, name = Artifact.TYPE_JAR)
+            @JsonSubTypes.Type(value = JarArtifact.class, name = Artifact.TYPE_JAR),
+            @JsonSubTypes.Type(value = TgzArtifact.class, name = Artifact.TYPE_TGZ)
         }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -34,12 +35,12 @@ public abstract class Artifact implements UnknownPropertyPreserving, Serializabl
     private static final long serialVersionUID = 1L;
 
     public static final String TYPE_JAR = "jar";
-    public static final String TYPE_ZIP = "zip";
     public static final String TYPE_TGZ = "tgz";
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'.")
+    @Description("Artifact type. " +
+            "Currently, the supported artifact types are `tgz` anf `jar`.")
     public abstract String getType();
 
     @Override
