@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.connect.build;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -31,6 +32,18 @@ public class DockerOutput extends Output {
     @Override
     public String getType() {
         return TYPE_DOCKER;
+    }
+
+    @Description("The full name which should be used for tagging anf pushing the newly built image. " +
+            "For example `quay.io/my-organization/my-custom-connect:latest`. " +
+            "Required")
+    @JsonProperty(required = true)
+    public String getImage() {
+        return super.getImage();
+    }
+
+    public void setImage(String image) {
+        super.setImage(image);
     }
 
     @Description("Docker Registry Secret with the credentials for pushing the newly built image.")

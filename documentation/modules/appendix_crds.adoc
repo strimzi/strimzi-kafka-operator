@@ -2310,7 +2310,7 @@ It must have the value `docker` for the type `DockerOutput`.
 [options="header"]
 |====
 |Property           |Description
-|image       1.2+<.<|The name of the image which will be built. Required.
+|image       1.2+<.<|The full name which should be used for tagging anf pushing the newly built image. For example `quay.io/my-organization/my-custom-connect:latest`. Required.
 |string
 |pushSecret  1.2+<.<|Docker Registry Secret with the credentials for pushing the newly built image.
 |string
@@ -2329,7 +2329,7 @@ It must have the value `imagestream` for the type `ImageStreamOutput`.
 [options="header"]
 |====
 |Property      |Description
-|image  1.2+<.<|The name of the image which will be built. Required.
+|image  1.2+<.<|The name and tag of the ImageStream where the newly built image will be pushed. For example `my-custom-connect:latest`. Required.
 |string
 |type   1.2+<.<|Must be `imagestream`.
 |string
