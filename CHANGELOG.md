@@ -3,6 +3,7 @@
 
 ## 0.21.0
 
+* Add support for declarative management of connector plugins in Kafka Connect CR 
 * Add `inter.broker.protocol.version` to the default configuration in example YAMLs
 * Add support for `secretPrefix` property for User Operator to prefix all secret names created from KafkaUser resource.
 * Allow configuring labels and annotations for Cluster CA certificate secrets
