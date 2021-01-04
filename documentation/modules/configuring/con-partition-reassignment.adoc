@@ -14,7 +14,7 @@ It has three different modes:
 
 `--generate`::
 Takes a set of topics and brokers and generates a _reassignment JSON file_ which will result in the partitions of those topics being assigned to those brokers.
-Because this operates on whole topics, it cannot be used when you just need to reassign some partitions of some topics.
+Because this operates on whole topics, it cannot be used when you only want to reassign some partitions of some topics.
 
 `--execute`::
 Takes a _reassignment JSON file_ and applies it to the partitions and brokers in the cluster.
