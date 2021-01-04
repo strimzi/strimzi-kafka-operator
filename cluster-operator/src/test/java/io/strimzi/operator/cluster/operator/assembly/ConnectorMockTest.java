@@ -580,7 +580,7 @@ public class ConnectorMockTest {
         verify(api, times(2)).list(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         // triggered three times (Connect creation, Connector Status update, Connect Status update)
-        verify(api, times(3)).createOrUpdatePutRequest(
+        verify(api, times(4)).createOrUpdatePutRequest(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertThat(runningConnectors.keySet(), is(Collections.singleton(key("cluster-connect-api.ns.svc", connectorName))));

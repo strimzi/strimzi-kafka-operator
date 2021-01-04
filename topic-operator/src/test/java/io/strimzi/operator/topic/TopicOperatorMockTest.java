@@ -91,7 +91,7 @@ public class TopicOperatorMockTest {
     public void createMockKube(VertxTestContext context) throws Exception {
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
-                        KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+                        KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, KafkaTopic::getStatus, KafkaTopic::setStatus);
         kubeClient = mockKube.build();
 
         kafkaCluster = new KafkaCluster();
@@ -205,14 +205,15 @@ public class TopicOperatorMockTest {
         int retention = 100_000_000;
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
-                .withName("my-topic")
-                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
-                .addToLabels(Labels.KUBERNETES_NAME_LABEL, "topic-operator")
+                    .withName("my-topic")
+                    .withNamespace("myproject")
+                    .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
+                    .addToLabels(Labels.KUBERNETES_NAME_LABEL, "topic-operator")
                 .endMetadata()
                 .withNewSpec()
-                .withPartitions(1)
-                .withReplicas(1)
-                .addToConfig("retention.bytes", retention)
+                    .withPartitions(1)
+                    .withReplicas(1)
+                    .addToConfig("retention.bytes", retention)
                 .endSpec().build();
 
         testCreatedInKube(context, kt);
@@ -320,14 +321,15 @@ public class TopicOperatorMockTest {
         int retention = 100_000_000;
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
-                .withName("my-topic")
-                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
+                    .withName("my-topic")
+                    .withNamespace("myproject")
+                    .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
-                .withTopicName("my-topic") // the same as metadata.name
-                .withPartitions(1)
-                .withReplicas(1)
-                .addToConfig("retention.bytes", retention)
+                    .withTopicName("my-topic") // the same as metadata.name
+                    .withPartitions(1)
+                    .withReplicas(1)
+                    .addToConfig("retention.bytes", retention)
                 .endSpec().build();
 
         testCreatedInKube(context, kt);
@@ -338,8 +340,9 @@ public class TopicOperatorMockTest {
         int retention = 100_000_000;
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
-                .withName("my-topic")
-                .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
+                    .withName("my-topic")
+                    .withNamespace("myproject")
+                    .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
                     .withTopicName("DIFFERENT") // different to metadata.name
