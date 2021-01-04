@@ -43,10 +43,10 @@ The Grafana dashboards provided show metrics for CPU, memory and disk volume usa
 +
 The Prometheus Operator does not have a monitoring resource like `PodMonitor` for scraping the nodes, so the `prometheus-additional.yaml` file contains the additional configuration needed.
 
-.. Create a `Secret` resource:
+.. Create a `Secret` resource from the configuration file (`prometheus-additional.yaml` in the `examples/metrics/prometheus-additional-properties` directory):
 +
 [source,shell,subs="+quotes,attributes"]
-kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
+kubectl apply -f prometheus-additional.yaml
 
 .. Edit the `additionalScrapeConfigs` property in the `prometheus.yaml` file to include the name of the `Secret` and the `prometheus-additional.yaml` file.
 

@@ -22,10 +22,10 @@ The following resources are defined on deployment:
 
 .Procedure
 
-. Create a `Secret` resource from the Alertmanager configuration file (`alert-manager-config.yaml`):
+. Create a `Secret` resource from the Alertmanager configuration file (`alert-manager-config.yaml` in the `examples/metrics/prometheus-alertmanager-config` directory):
 +
 [source,shell,subs="+quotes,attributes"]
-kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml=alert-manager-config.yaml
+kubectl apply -f alert-manager-config.yaml
 
 . Update the `alert-manager-config.yaml` file to replace the:
 +
