@@ -150,6 +150,10 @@ public class KubeClient {
     // ---------> POD <---------
     // =========================
 
+    public DoneablePod editPod(String podName) {
+        return client.pods().inNamespace(getNamespace()).withName(podName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit();
+    }
+
     public String execInPod(String podName, String container, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
