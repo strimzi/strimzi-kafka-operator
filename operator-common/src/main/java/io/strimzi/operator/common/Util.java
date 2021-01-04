@@ -464,7 +464,7 @@ public class Util {
      * @param   toBeHashed   String for which the hash will be returned
      * @return              First 8 characters of the SHA-1 hash
      */
-    public static String hashStub(String toBeHashed)   {
+    public static String sha1Prefix(String toBeHashed)   {
         try {
             // This is used to generate unique identifier which is not used for security => using SHA-1 is ok
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");

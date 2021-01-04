@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonSubTypes(
         {
             @JsonSubTypes.Type(value = DockerOutput.class, name = Output.TYPE_DOCKER),
-            @JsonSubTypes.Type(value = ImageStreamOutput.class, name = Output.TYPE_IMAGESTREAMS)
+            @JsonSubTypes.Type(value = ImageStreamOutput.class, name = Output.TYPE_IMAGESTREAM)
         }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -36,14 +36,14 @@ public abstract class Output implements UnknownPropertyPreserving, Serializable 
     private static final long serialVersionUID = 1L;
 
     public static final String TYPE_DOCKER = "docker";
-    public static final String TYPE_IMAGESTREAMS = "imagestream";
+    public static final String TYPE_IMAGESTREAM = "imagestream";
 
     private String image;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Output type. " +
-            "Must be either 'docker' for pushing the newly build image to Docker compatible registry or 'imagestream' for pushing the image to OpenShift ImageStream. " +
+            "Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. " +
             "Required.")
     public abstract String getType();
 

@@ -27,10 +27,10 @@ public class ImageStreamOutput extends Output {
 
     private String image;
 
-    @Description("Must be `" + TYPE_IMAGESTREAMS + "`")
+    @Description("Must be `" + TYPE_IMAGESTREAM + "`")
     @Override
     public String getType() {
-        return TYPE_IMAGESTREAMS;
+        return TYPE_IMAGESTREAM;
     }
 
     @Description("The name and tag of the ImageStream where the newly built image will be pushed. " +

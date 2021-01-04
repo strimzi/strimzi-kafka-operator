@@ -73,47 +73,47 @@ public class KafkaConnectBuild extends AbstractModel {
         KafkaConnectBuild build = new KafkaConnectBuild(kafkaConnect);
         KafkaConnectSpec spec = kafkaConnect.getSpec();
 
-        if (spec != null) {
-            build.setOwnerReference(kafkaConnect);
-
-            if (spec.getBuild() != null)    {
-                validateBuildConfiguration(spec.getBuild());
-            }
-
-            if (spec.getImage() == null) {
-                build.baseImage = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
-            }
-
-            if (spec.getTemplate() != null) {
-                KafkaConnectTemplate template = spec.getTemplate();
-
-                ModelUtils.parsePodTemplate(build, template.getBuildPod());
-
-                if (template.getBuildContainer() != null && template.getBuildContainer().getEnv() != null) {
-                    build.templateBuildContainerEnvVars = template.getBuildContainer().getEnv();
-                }
-
-                if (template.getBuildContainer() != null && template.getBuildContainer().getSecurityContext() != null) {
-                    build.templateBuildContainerSecurityContext = template.getBuildContainer().getSecurityContext();
-                }
-
-                if (template.getBuildConfig() != null)  {
-                    if (template.getBuildConfig().getLabels() != null)  {
-                        build.templateBuildConfigLabels = template.getBuildConfig().getLabels();
-                    }
-
-                    if (template.getBuildConfig().getAnnotations() != null)  {
-                        build.templateBuildConfigAnnotations = template.getBuildConfig().getAnnotations();
-                    }
-                }
-            }
-
-            build.build = spec.getBuild();
-
-            return build;
-        } else {
+        if (spec == null) {
             throw new InvalidResourceException("Required .spec section is missing.");
         }
+
+        build.setOwnerReference(kafkaConnect);
+
+        if (spec.getBuild() != null)    {
+            validateBuildConfiguration(spec.getBuild());
+        }
+
+        if (spec.getImage() == null) {
+            build.baseImage = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
+        }
+
+        if (spec.getTemplate() != null) {
+            KafkaConnectTemplate template = spec.getTemplate();
+
+            ModelUtils.parsePodTemplate(build, template.getBuildPod());
+
+            if (template.getBuildContainer() != null && template.getBuildContainer().getEnv() != null) {
+                build.templateBuildContainerEnvVars = template.getBuildContainer().getEnv();
+            }
+
+            if (template.getBuildContainer() != null && template.getBuildContainer().getSecurityContext() != null) {
+                build.templateBuildContainerSecurityContext = template.getBuildContainer().getSecurityContext();
+            }
+
+            if (template.getBuildConfig() != null)  {
+                if (template.getBuildConfig().getLabels() != null)  {
+                    build.templateBuildConfigLabels = template.getBuildConfig().getLabels();
+                }
+
+                if (template.getBuildConfig().getAnnotations() != null)  {
+                    build.templateBuildConfigAnnotations = template.getBuildConfig().getAnnotations();
+                }
+            }
+        }
+
+        build.build = spec.getBuild();
+
+        return build;
     }
 
     /**
@@ -122,20 +122,20 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param build     Kafka Connect Build configuration
      */
     private static void validateBuildConfiguration(Build build)    {
-        if (build.getPlugins() != null) {
-            List<String> names = build.getPlugins().stream().map(Plugin::getName).distinct().collect(Collectors.toList());
-
-            if (names.size() != build.getPlugins().size())  {
-                throw new InvalidResourceException("Connector plugins names have to be unique within a single KafkaConnect resource.");
-            }
-
-            for (Plugin plugin : build.getPlugins())    {
-                if (plugin.getArtifacts() == null)  {
-                    throw new InvalidResourceException("Each connector plugin needs to have a list of artifacts.");
-                }
-            }
-        } else {
+        if (build.getPlugins() == null) {
             throw new InvalidResourceException("List of connector plugins is required when Kafka Connect Build is used.");
+        }
+
+        List<String> names = build.getPlugins().stream().map(Plugin::getName).distinct().collect(Collectors.toList());
+
+        if (names.size() != build.getPlugins().size())  {
+            throw new InvalidResourceException("Connector plugins names have to be unique within a single KafkaConnect resource.");
+        }
+
+        for (Plugin plugin : build.getPlugins())    {
+            if (plugin.getArtifacts() == null)  {
+                throw new InvalidResourceException("Each connector plugin needs to have a list of artifacts.");
+            }
         }
     }
 

@@ -2289,7 +2289,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 [options="header"]
 |====
 |Property          |Description
-|output     1.2+<.<|Configures where should the newly build image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
+|output     1.2+<.<|Configures where should the newly built image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
 |xref:type-DockerOutput-{context}[`DockerOutput`], xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`]
 |resources  1.2+<.<|CPU and memory resources to reserve for the build. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
@@ -2310,9 +2310,9 @@ It must have the value `docker` for the type `DockerOutput`.
 [options="header"]
 |====
 |Property           |Description
-|image       1.2+<.<|The full name which should be used for tagging anf pushing the newly built image. For example `quay.io/my-organization/my-custom-connect:latest`. Required.
+|image       1.2+<.<|The full name which should be used for tagging and pushing the newly built image. For example `quay.io/my-organization/my-custom-connect:latest`. Required.
 |string
-|pushSecret  1.2+<.<|Docker Registry Secret with the credentials for pushing the newly built image.
+|pushSecret  1.2+<.<|Container Registry Secret with the credentials for pushing the newly built image.
 |string
 |type        1.2+<.<|Must be `docker`.
 |string
@@ -2344,7 +2344,7 @@ Used in: xref:type-Build-{context}[`Build`]
 [options="header"]
 |====
 |Property          |Description
-|name       1.2+<.<|The unique name of the connector plugin. Will be used to generate the path when the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
+|name       1.2+<.<|The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
 |string
 |artifacts  1.2+<.<|List of artifacts which belong to this connector plugin. Required.
 |xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`] array

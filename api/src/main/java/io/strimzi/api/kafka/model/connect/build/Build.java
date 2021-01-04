@@ -39,7 +39,7 @@ public class Build implements Serializable, UnknownPropertyPreserving {
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Configures where should the newly build image be stored. " +
+    @Description("Configures where should the newly built image be stored. " +
             "Required")
     @JsonProperty(required = true)
     public Output getOutput() {

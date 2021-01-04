@@ -1462,17 +1462,17 @@ spec:
                       description: The name of the image which will be built. Required.
                     pushSecret:
                       type: string
-                      description: Docker Registry Secret with the credentials for pushing the newly built image.
+                      description: Container Registry Secret with the credentials for pushing the newly built image.
                     type:
                       type: string
                       enum:
                         - docker
                         - imagestream
-                      description: Output type. Must be either 'docker' for pushing the newly build image to Docker compatible registry or 'imagestream' for pushing the image to OpenShift ImageStream. Required.
+                      description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
                   required:
                     - image
                     - type
-                  description: Configures where should the newly build image be stored. Required.
+                  description: Configures where should the newly built image be stored. Required.
                 resources:
                   type: object
                   properties:
@@ -1489,7 +1489,7 @@ spec:
                       name:
                         type: string
                         pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
-                        description: 'The unique name of the connector plugin. Will be used to generate the path when the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
+                        description: 'The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
                       artifacts:
                         type: array
                         items:
@@ -1503,7 +1503,7 @@ spec:
                               enum:
                                 - jar
                                 - tgz
-                              description: Artifact type. Currently, the supported artifact types are `tgz` anf `jar`.
+                              description: Artifact type. Currently, the supported artifact types are `tgz` and `jar`.
                             url:
                               type: string
                               pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]

@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * This class is used to generate the Dockerfile used by Kafka Connect Build. It takes the API definition with the
- * desired plugins and generated a Dockerfile which pulls and installs them. To generate the Dockerfile, it is using
+ * desired plugins and generates a Dockerfile which pulls and installs them. To generate the Dockerfile, it is using
  * the PrintWriter.
  */
 public class KafkaConnectDockerfile {
@@ -113,7 +113,7 @@ public class KafkaConnectDockerfile {
      * @param jar               The JAR-type artifact
      */
     private void addJarArtifact(PrintWriter writer, String connectorPath, JarArtifact jar) {
-        String artifactDir = connectorPath + "/" + Util.hashStub(jar.getUrl());
+        String artifactDir = connectorPath + "/" + Util.sha1Prefix(jar.getUrl());
         String artifactPath = artifactDir + "/" + jar.getUrl().substring(jar.getUrl().lastIndexOf("/") + 1);
         String downloadCmd =  "curl -L --output " + artifactPath + " " + jar.getUrl();
 
@@ -143,7 +143,7 @@ public class KafkaConnectDockerfile {
      * @param tgz               The TGZ-type artifact
      */
     private void addTgzArtifact(PrintWriter writer, String connectorPath, TgzArtifact tgz) {
-        String artifactDir = connectorPath + "/" + Util.hashStub(tgz.getUrl());
+        String artifactDir = connectorPath + "/" + Util.sha1Prefix(tgz.getUrl());
         String archivePath = connectorPath + "/" + tgz.getUrl().substring(tgz.getUrl().lastIndexOf("/") + 1);
 
         String downloadCmd =  "curl -L --output " + archivePath + " " + tgz.getUrl();
@@ -211,6 +211,6 @@ public class KafkaConnectDockerfile {
      * @return  Dockerfile hash stub
      */
     public String hashStub()    {
-        return Util.hashStub(dockerfile);
+        return Util.sha1Prefix(dockerfile);
     }
 }

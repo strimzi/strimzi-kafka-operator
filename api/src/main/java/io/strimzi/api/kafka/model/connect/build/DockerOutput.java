@@ -34,7 +34,7 @@ public class DockerOutput extends Output {
         return TYPE_DOCKER;
     }
 
-    @Description("The full name which should be used for tagging anf pushing the newly built image. " +
+    @Description("The full name which should be used for tagging and pushing the newly built image. " +
             "For example `quay.io/my-organization/my-custom-connect:latest`. " +
             "Required")
     @JsonProperty(required = true)
@@ -46,7 +46,7 @@ public class DockerOutput extends Output {
         super.setImage(image);
     }
 
-    @Description("Docker Registry Secret with the credentials for pushing the newly built image.")
+    @Description("Container Registry Secret with the credentials for pushing the newly built image.")
     public String getPushSecret() {
         return pushSecret;
     }

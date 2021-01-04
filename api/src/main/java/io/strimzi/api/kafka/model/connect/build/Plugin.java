@@ -38,7 +38,7 @@ public class Plugin implements Serializable, UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The unique name of the connector plugin. " +
-            "Will be used to generate the path when the connector artifacts will be stored. " +
+            "Will be used to generate the path where the connector artifacts will be stored. " +
             "The name has to be unique within the KafkaConnect resource. " +
             "The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. " +
             "Required")

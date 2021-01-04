@@ -112,7 +112,7 @@ public class KafkaConnectResources {
     }
 
     /**
-     * Returns the name of the Kafka Connect {@code Pod} for a {@code KafkaConnect} build builds the new image.
+     * Returns the name of the Kafka Connect {@code Pod} for a {@code KafkaConnect} build that builds the new image.
      *
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding Kafka Connect build {@code Pod}.
@@ -122,7 +122,7 @@ public class KafkaConnectResources {
     }
 
     /**
-     * Returns the name of the Kafka Connect {@code BuildConfig} for a {@code KafkaConnect} build builds the new image.
+     * Returns the name of the Kafka Connect {@code BuildConfig} for a {@code KafkaConnect} build that builds the new image.
      *
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding Kafka Connect build {@code Pod}.
