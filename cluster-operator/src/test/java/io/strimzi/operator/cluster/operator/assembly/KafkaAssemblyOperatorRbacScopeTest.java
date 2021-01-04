@@ -94,6 +94,8 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.getEntityOperatorDescription()
                     .compose(state -> state.entityOperatorRole())
+                    .compose(state -> state.entityUserOperatorRole())
+                    .compose(state -> state.entityTopicOperatorRole())
                     .compose(state -> state.entityOperatorServiceAccount())
                     .compose(state -> state.entityOperatorTopicOpRoleBindingForRole())
                     .compose(state -> state.entityOperatorUserOpRoleBindingForRole())

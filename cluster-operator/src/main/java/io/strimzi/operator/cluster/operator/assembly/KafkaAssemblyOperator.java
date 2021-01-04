@@ -329,6 +329,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 .compose(state -> state.getEntityOperatorDescription())
                 .compose(state -> state.entityOperatorRole())
+                .compose(state -> state.entityTopicOperatorRole())
+                .compose(state -> state.entityUserOperatorRole())
                 .compose(state -> state.entityOperatorServiceAccount())
                 .compose(state -> state.entityOperatorTopicOpRoleBindingForRole())
                 .compose(state -> state.entityOperatorUserOpRoleBindingForRole())
@@ -3154,33 +3156,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 role = null;
             }
 
-            // Currently only deploys role into target namespace
-            // Role must be applied manually if using 'watchedNamespace' feature
-            final Future<ReconcileResult<Role>> ownNamespaceFuture = roleOperations.reconcile(
+            return withVoid(roleOperations.reconcile(
                     namespace,
                     EntityOperator.getRoleName(name),
-                    role);
+                    role));
+        }
 
-            final String userWatchedNamespace;
-            if (isEntityOperatorDeployed()
-                    && entityOperator.getUserOperator() != null
-                    && entityOperator.getUserOperator().getWatchedNamespace() != null
-                    && !entityOperator.getUserOperator().getWatchedNamespace().isEmpty()) {
-                userWatchedNamespace = entityOperator.getUserOperator().getWatchedNamespace();
-            } else {
-                userWatchedNamespace = namespace;
-            }
-
-            final Future<ReconcileResult<Role>> userWatchedNamespaceFuture;
-            if (!namespace.equals(userWatchedNamespace)) {
-                userWatchedNamespaceFuture = roleOperations.reconcile(
-                        userWatchedNamespace,
-                        EntityOperator.getRoleName(name),
-                        entityOperator.generateRole(userWatchedNamespace));
-            } else {
-                userWatchedNamespaceFuture = Future.succeededFuture();
-            }
-
+        // Deploy entity topic operator Role if entity operator is deployed
+        Future<ReconciliationState> entityTopicOperatorRole() {
             final String topicWatchedNamespace;
             if (isEntityOperatorDeployed()
                     && entityOperator.getTopicOperator() != null
@@ -3201,10 +3184,32 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 topicWatchedNamespaceFuture = Future.succeededFuture();
             }
 
-            return withVoid(CompositeFuture.join(
-                    ownNamespaceFuture,
-                    userWatchedNamespaceFuture,
-                    topicWatchedNamespaceFuture));
+            return withVoid(topicWatchedNamespaceFuture);
+        }
+
+        // Deploy entity user operator Role if entity operator is deployed
+        Future<ReconciliationState> entityUserOperatorRole() {
+            final String userWatchedNamespace;
+            if (isEntityOperatorDeployed()
+                    && entityOperator.getUserOperator() != null
+                    && entityOperator.getUserOperator().getWatchedNamespace() != null
+                    && !entityOperator.getUserOperator().getWatchedNamespace().isEmpty()) {
+                userWatchedNamespace = entityOperator.getUserOperator().getWatchedNamespace();
+            } else {
+                userWatchedNamespace = namespace;
+            }
+
+            final Future<ReconcileResult<Role>> userWatchedNamespaceFuture;
+            if (!namespace.equals(userWatchedNamespace)) {
+                userWatchedNamespaceFuture = roleOperations.reconcile(
+                        userWatchedNamespace,
+                        EntityOperator.getRoleName(name),
+                        entityOperator.generateRole(userWatchedNamespace));
+            } else {
+                userWatchedNamespaceFuture = Future.succeededFuture();
+            }
+
+            return withVoid(userWatchedNamespaceFuture);
         }
 
         Future<ReconciliationState> entityOperatorServiceAccount() {
@@ -3220,8 +3225,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorTopicOpRoleBindingForRole() {
-            // Don't deploy Role RoleBinding if not running in roles only mode,
-            // or if the topic operator is not deployed,
+            // Don't deploy Role RoleBinding if the topic operator is not deployed,
             // or if the topic operator needs to watch a different namespace
             if (!isEntityOperatorDeployed()
                     || entityOperator.getTopicOperator() == null) {
@@ -3263,8 +3267,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorUserOpRoleBindingForRole() {
-            // Don't deploy Role RoleBinding if not running in roles only mode,
-            // or if the user operator is not deployed,
+            // Don't deploy Role RoleBinding if the user operator is not deployed,
             // or if the user operator needs to watch a different namespace
             if (!isEntityOperatorDeployed()
                     || entityOperator.getUserOperator() == null) {

@@ -190,11 +190,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return                  Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
      */
     Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connectCluster) {
-        if (!rbacScope.canUseClusterRoles()) {
-            log.debug("Using STRIMZI_RBAC_SCOPE set to namespace requires user to apply ClusterRole and ClusterRoleBinding manually");
-            return Future.succeededFuture();
-        }
-        
         ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding();
 
         return withIgnoreRbacError(
