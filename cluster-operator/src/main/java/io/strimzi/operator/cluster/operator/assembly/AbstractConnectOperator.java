@@ -481,7 +481,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connectorName The connector name.
      * @param connectorSpec The desired connector spec.
      * @param resource The resource that defines the connector.
-     * @return A Future whose result, when successfully completed, is a map of the current connector state.
+     * @return A Future whose result, when successfully completed, is a ConnectorStatusAndConditions object containing the map of the current connector state plus any conditions that have arisen.
      */
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                        String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
