@@ -53,6 +53,7 @@
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
 :K8sTolerations: link:https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/[Kubernetes taints and tolerations^]
+:K8sTopologySpreadConstraints: link:https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints^]
 :K8sEmptyDir: link:https://kubernetes.io/docs/concepts/storage/volumes/#emptydir[emptyDir^]
 :K8sPersistentVolumeClaims: link:https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/[Persistent Volume Claims^]
 :K8sLocalPersistentVolumes: link:https://kubernetes.io/docs/concepts/storage/volumes/#local[Local persistent volumes^]

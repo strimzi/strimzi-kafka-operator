@@ -149,6 +149,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName)
                             .withHostAliases(templatePodHostAliases)
+                            .withTopologySpreadConstraints(templatePodTopologySpreadConstraints)
                         .endSpec()
                     .endTemplate()
                     .withTriggers(configChangeTrigger, imageChangeTrigger)
