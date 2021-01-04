@@ -315,9 +315,11 @@ class AlternativeReconcileTriggersST extends AbstractST {
         String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
 
         Pod kafkaPod = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        // snapshot of one single Kafka pod
         Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
 
         Pod zkPod = kubeClient().getPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0));
+        // snapshot of one single ZK pod
         Map<String, String> zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
 
         LOGGER.info("Trying to roll just single Kafka and single ZK pod");
@@ -327,6 +329,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .endMetadata()
             .done();
 
+        // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
+        // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaSnapshot);
 
         kubeClient().editPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0))
@@ -335,6 +339,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .endMetadata()
             .done();
 
+        // same as above
         zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(zkSsName, 3, zkSnapshot);
 
 
