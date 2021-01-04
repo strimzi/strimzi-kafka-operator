@@ -14,7 +14,7 @@ It has three different modes:
 
 `--generate`::
 Takes a set of topics and brokers and generates a _reassignment JSON file_ which will result in the partitions of those topics being assigned to those brokers.
-Because this operates on whole topics, it cannot be used when you just need to reassign some of the partitions of some topics.
+Because this operates on whole topics, it cannot be used when you just need to reassign some partitions of some topics.
 
 `--execute`::
 Takes a _reassignment JSON file_ and applies it to the partitions and brokers in the cluster.
@@ -22,7 +22,7 @@ Brokers that gain partitions as a result become followers of the partition leade
 For a given partition, once the new broker has caught up and joined the ISR (in-sync replicas) the old broker will stop being a follower and will delete its replica.
 
 `--verify`::
-Using the same _reassignment JSON file_ as the `--execute` step, `--verify` checks whether all of the partitions in the file have been moved to their intended brokers.
+Using the same _reassignment JSON file_ as the `--execute` step, `--verify` checks whether all the partitions in the file have been moved to their intended brokers.
 If the reassignment is complete, --verify also removes any xref:con-reassignment-throttles-{context}[throttles] that are in effect.
 Unless removed, throttles will continue to affect the cluster even after the reassignment has finished.
 
