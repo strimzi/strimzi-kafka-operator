@@ -1865,6 +1865,8 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |integer
 |listeners           1.2+<.<|Addresses of the internal and external listeners.
 |xref:type-ListenerStatus-{context}[`ListenerStatus`] array
+|clusterId           1.2+<.<|Kafka cluster Id.
+|string
 |====
 
 [id='type-Condition-{context}']

@@ -16,6 +16,7 @@
 * Enable CORS configuration for Cruise Control
 * Add support for rolling individual Kafka or ZooKeeper pods through the Cluster Operator using an annotation
 * Add support for Topology Spread Constraints in Pod templates
+* Make Kafka `cluster-id` (KIP-78) available on Kafka CRD status
 
 ### Deprecations and removals
 * The `metrics` field in the Strimzi custom resources has been deprecated and will be removed in the future. For configuring metrics, use the new `metricsConfig` field and pass the configuration via ConfigMap.

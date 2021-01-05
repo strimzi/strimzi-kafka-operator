@@ -8057,4 +8057,7 @@ spec:
                       the identity of the server when connecting to the given listener.
                       Set only for `tls` and `external` listeners.
               description: Addresses of the internal and external listeners.
+            clusterId:
+              type: string
+              description: Kafka cluster Id.
           description: The status of the Kafka and ZooKeeper clusters, and Topic Operator.

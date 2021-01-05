@@ -108,6 +108,9 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.common.KafkaException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.CronExpression;
@@ -131,6 +134,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -313,6 +317,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaPodsReady())
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
+                .compose(state -> state.kafkaGetClusterId())
                 .compose(state -> state.kafkaPersistentClaimDeletion())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(state -> state.kafkaNodePortExternalListenerStatus())
@@ -1954,6 +1959,43 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(fut);
         }
 
+        /**
+         * Get the cluster Id of the Kafka cluster
+         * 
+         * @return
+         */
+        Future<ReconciliationState> kafkaGetClusterId() {
+            return adminClientSecrets()
+                .compose(compositeFuture -> {
+                    log.debug("{}: Attempt to get clusterId", reconciliation);
+                    Promise<ReconciliationState> resultPromise = Promise.promise();
+                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                        future -> {
+                            Admin kafkaAdmin = null;
+                            try {
+                                String bootstrapHostname = KafkaResources.bootstrapServiceName(this.name) + "." + this.namespace + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                                log.debug("{}: Creating AdminClient for clusterId using {}", reconciliation, bootstrapHostname);
+                                kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
+                                kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
+                            } catch (KafkaException e) {
+                                log.warn("{}: Kafka exception getting clusterId {}", reconciliation, e.getMessage());
+                            } catch (InterruptedException e) {
+                                log.warn("{}: Interrupted exception getting clusterId {}", reconciliation, e.getMessage());
+                            } catch (ExecutionException e) {
+                                log.warn("{}: Execution exception getting clusterId {}", reconciliation, e.getMessage());
+                            } finally {
+                                if (kafkaAdmin != null) {
+                                    kafkaAdmin.close();
+                                }
+                            }
+                            future.complete(this);
+                        },
+                        true,
+                        resultPromise);
+                    return resultPromise.future();
+                });
+        }
+        
         Future<ReconciliationState> kafkaInternalServicesReady()   {
             for (GenericKafkaListener listener : ListenersUtils.internalListeners(kafkaCluster.getListeners())) {
                 boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)

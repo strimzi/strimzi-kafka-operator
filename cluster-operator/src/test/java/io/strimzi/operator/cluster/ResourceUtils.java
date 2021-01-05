@@ -646,7 +646,8 @@ public class ResourceUtils {
                     Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
                     declaredConstructor.setAccessible(true);
                     KafkaFuture<Node> objectKafkaFuture = KafkaFutureImpl.completedFuture(new Node(0, "localhost", 9091));
-                    dcr = declaredConstructor.newInstance(null, objectKafkaFuture, null, null);
+                    KafkaFuture<String> stringKafkaFuture = KafkaFutureImpl.completedFuture("CLUSTERID");
+                    dcr = declaredConstructor.newInstance(null, objectKafkaFuture, stringKafkaFuture, null);
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
                 }
