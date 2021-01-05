@@ -25,6 +25,8 @@ rules:
       - roles
     verbs:
       - get
+      - list
+      - watch
       - create
       - delete
       - patch
