@@ -134,6 +134,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -1964,37 +1965,35 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<ReconciliationState> kafkaGetClusterId() {
-            if (kafkaStatus.getClusterId() != null) {
-                // Cluster Id does not change
-                return Future.succeededFuture(this);
-            } else {
-                return adminClientSecrets()
-                    .compose(compositeFuture -> {
-                        log.debug("{}: Attempt to get clusterId", reconciliation);
-                        try {
-                            String bootstrapHostname = KafkaResources.bootstrapServiceName(this.name) + "." + this.namespace + ".svc:" + KafkaCluster.REPLICATION_PORT;
-                            log.debug("{}: Creating AdminClient for clusterId using {}", reconciliation, bootstrapHostname);
-                            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
-                            Promise<ReconciliationState> resultPromise = Promise.promise();
-                            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
-                                future -> {
-                                    try {
-                                        kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
-                                        future.complete(this);
-                                    } catch (Throwable e) {
-                                        future.fail(e);
-                                    }
-                                },
-                                true,
-                                resultPromise);
-                            return resultPromise.future();
-                        } catch (KafkaException e) {
-                            log.warn("{}: Kafka exception getting clusterId {}", reconciliation, e.getMessage());
-                        }
-
-                        return Future.succeededFuture(this);
-                    });
-            }
+            return adminClientSecrets()
+                .compose(compositeFuture -> {
+                    log.debug("{}: Attempt to get clusterId", reconciliation);
+                    Promise<ReconciliationState> resultPromise = Promise.promise();
+                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                        future -> {
+                            Admin kafkaAdmin = null;
+                            try {
+                                String bootstrapHostname = KafkaResources.bootstrapServiceName(this.name) + "." + this.namespace + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                                log.debug("{}: Creating AdminClient for clusterId using {}", reconciliation, bootstrapHostname);
+                                kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
+                                kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
+                            } catch (KafkaException e) {
+                                log.warn("{}: Kafka exception getting clusterId {}", reconciliation, e.getMessage());
+                            } catch (InterruptedException e) {
+                                log.warn("{}: Interrupted exception getting clusterId {}", reconciliation, e.getMessage());
+                            } catch (ExecutionException e) {
+                                log.warn("{}: Execution exception getting clusterId {}", reconciliation, e.getMessage());
+                            } finally {
+                                if (kafkaAdmin != null) {
+                                    kafkaAdmin.close();
+                                }
+                            }
+                            future.complete(this);
+                        },
+                        true,
+                        resultPromise);
+                    return resultPromise.future();
+                });
         }
         
         Future<ReconciliationState> kafkaInternalServicesReady()   {
