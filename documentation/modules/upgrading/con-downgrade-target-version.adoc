@@ -9,7 +9,7 @@
 Kafka downgrades are dependent on compatible current and target xref:ref-kafka-versions-{context}[Kafka versions],
 and the state at which messages have been logged.
 
-You cannot revert to the previous Kafka version if that version don't support any of the `inter.broker.protocol.version` settings which have ever been used in that cluster,
+You cannot revert to the previous Kafka version if that version does not support any of the `inter.broker.protocol.version` settings which have _ever been used_ in that cluster,
 or messages have been added to message logs that use a newer `log.message.format.version`.
 
 The `inter.broker.protocol.version` determines the schemas used for persistent metadata stored by the broker, such as the schema for messages written to `__consumer_offsets`.
