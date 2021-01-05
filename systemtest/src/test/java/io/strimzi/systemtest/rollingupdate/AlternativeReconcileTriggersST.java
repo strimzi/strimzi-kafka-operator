@@ -74,19 +74,19 @@ class AlternativeReconcileTriggersST extends AbstractST {
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         String zkName = KafkaResources.zookeeperStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
         // ##############################
         // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-        KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
@@ -102,14 +102,14 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        kafkaBasicClientJob.producerStrimzi().done();
-        kafkaBasicClientJob.consumerStrimzi().done();
+        kafkaBasicClientJob.create(kafkaBasicClientJob.producerStrimzi().build());
+        kafkaBasicClientJob.create(kafkaBasicClientJob.consumerStrimzi().build());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -182,7 +182,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(newTopicName)
@@ -214,13 +214,13 @@ class AlternativeReconcileTriggersST extends AbstractST {
      */
     @Test
     void testRollingUpdateOnNextReconciliationAfterClusterCAKeyDel() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(clusterName, topicName, 2, 2).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 2, 2).build());
 
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, USER_NAME).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -264,7 +264,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
@@ -312,7 +312,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @Test
     void testManualRollingUpdateForSinglePod() {
-        KafkaResource.kafkaPersistent(clusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3).build());
 
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
         String zkSsName = KafkaResources.zookeeperStatefulSetName(clusterName);
@@ -386,17 +386,17 @@ class AlternativeReconcileTriggersST extends AbstractST {
         PersistentClaimStorage vol0 = new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(true).build();
         PersistentClaimStorage vol1 = new PersistentClaimStorageBuilder().withId(1).withSize("100Gi").withDeleteClaim(true).build();
 
-        KafkaResource.kafkaJBOD(clusterName, 3, 3, new JbodStorageBuilder().addToVolumes(vol0).build()).done();
+        KafkaResource.create(KafkaResource.kafkaJBOD(clusterName, 3, 3, new JbodStorageBuilder().addToVolumes(vol0).build()).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
         // ##############################
         // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-        KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
@@ -412,14 +412,14 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-        kafkaBasicClientJob.producerStrimzi().done();
-        kafkaBasicClientJob.consumerStrimzi().done();
+        kafkaBasicClientJob.create(kafkaBasicClientJob.producerStrimzi().build());
+        kafkaBasicClientJob.create(kafkaBasicClientJob.consumerStrimzi().build());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();

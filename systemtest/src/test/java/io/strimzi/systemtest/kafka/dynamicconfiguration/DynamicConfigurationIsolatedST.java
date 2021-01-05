@@ -64,13 +64,13 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     @Test
     void testSimpleDynamicConfiguration() {
-        KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         String kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
         assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
@@ -99,7 +99,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Test
     void testUpdateToExternalListenerCausesRollingRestart() {
-        KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -113,7 +113,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
@@ -216,7 +216,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
-        KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -230,15 +230,15 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
 
-        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
-        KafkaUserResource.tlsUser(clusterName, USER_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClientTls = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -356,7 +356,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }

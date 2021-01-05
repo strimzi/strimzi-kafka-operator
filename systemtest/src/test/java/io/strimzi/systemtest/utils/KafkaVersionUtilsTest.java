@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class KafkaVersionUtilsTest {
 
     @Test
-    public void parsingTest() throws Exception {
+    public void parsingTest() {
         List<TestKafkaVersion> versions = TestKafkaVersion.getKafkaVersions();
         assertTrue(versions.size() > 0);
     }

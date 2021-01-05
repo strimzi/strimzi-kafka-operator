@@ -8,8 +8,8 @@ import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
@@ -144,7 +144,7 @@ class CustomResourceStatusST extends AbstractST {
     @Test
     void testKafkaUserStatus() {
         String userName = "status-user-test";
-        KafkaUserResource.tlsUser(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).build());
 
         LOGGER.info("Checking status of deployed KafkaUser");
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
@@ -179,7 +179,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatus() {
         // Deploy Mirror Maker
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).done();
+        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).build());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
@@ -198,7 +198,7 @@ class CustomResourceStatusST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatusWrongBootstrap() {
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).done();
+        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).build());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaMirrorMakerStatus(1);
         // Corrupt Mirror Maker pods
@@ -214,7 +214,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(BRIDGE)
     void testKafkaBridgeStatus() {
         String bridgeUrl = KafkaBridgeResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, NAMESPACE, 8080);
-        KafkaBridgeResource.kafkaBridge(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME), 1).done();
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME), 1).build());
         KafkaBridgeUtils.waitForKafkaBridgeReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaBridgeStatus(1, bridgeUrl);
 
@@ -236,12 +236,13 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorStatus() {
         String connectUrl = KafkaConnectResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, NAMESPACE, 8083);
-        KafkaConnectResource.kafkaConnect(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
+        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata().done();
+            .endMetadata()
+            .build());
 
-        KafkaConnectorResource.kafkaConnector(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).done();
+        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).build());
 
         assertKafkaConnectStatus(1, connectUrl);
         assertKafkaConnectorStatus(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source");
@@ -292,10 +293,11 @@ class CustomResourceStatusST extends AbstractST {
         String connectS2IDeploymentConfigName = KafkaConnectS2IResources.deploymentName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         String connectS2IUrl = KafkaConnectS2IResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, NAMESPACE, 8083);
 
-        KafkaConnectS2IResource.kafkaConnectS2I(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata().done();
+            .endMetadata()
+            .build());
 
         assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
 
@@ -316,7 +318,7 @@ class CustomResourceStatusST extends AbstractST {
     void testKafkaConnectorWithoutClusterConfig() {
         // This test check NPE when connect cluster is not specified in labels
         // Check for NPE in CO logs is performed after every test in BaseST
-        KafkaConnectorResource.kafkaConnectorWithoutWait(KafkaConnectorResource.defaultKafkaConnector(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 2)
+        KafkaConnectorResource.kafkaConnectorWithoutWait(KafkaConnectorResource.kafkaConnector(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 2)
             .withNewMetadata()
                 .withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
@@ -361,8 +363,8 @@ class CustomResourceStatusST extends AbstractST {
     void testKafkaMirrorMaker2Status() {
         String mm2Url = KafkaMirrorMaker2Resources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, NAMESPACE, 8083);
         String targetClusterName = "target-cluster";
-        KafkaResource.kafkaEphemeral(targetClusterName, 1, 1).done();
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, targetClusterName, 1, false).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(targetClusterName, 1, 1).build());
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, targetClusterName, 1, false).build());
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaMirrorMaker2Status(1, mm2Url);
 
@@ -383,7 +385,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     void testKafkaMirrorMaker2WrongBootstrap() {
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithoutWait(
-                KafkaMirrorMaker2Resource.defaultKafkaMirrorMaker2(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
+                KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
             "non-existing-source", "non-existing-target", 1, false).build());
 
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
@@ -394,7 +396,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     void testKafkaTopicDecreaseStatus() throws InterruptedException {
-        KafkaTopicResource.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TEST_TOPIC_NAME, 5).build());
         int decreaseTo = 1;
 
         LOGGER.info("Decreasing number of partitions to {}", decreaseTo);
@@ -412,7 +414,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     void testKafkaTopicChangingInSyncReplicasStatus() throws InterruptedException {
-        KafkaTopicResource.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TEST_TOPIC_NAME, 5).build());
         String invalidValue = "x";
 
         LOGGER.info("Changing min.insync.replicas to random char");
@@ -436,7 +438,7 @@ class CustomResourceStatusST extends AbstractST {
     void deployTestSpecificResources() {
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
 
-        DoneableKafka kafka = KafkaResource.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 3, 3)
+        KafkaBuilder kafkaBuilder = KafkaResource.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -457,7 +459,7 @@ class CustomResourceStatusST extends AbstractST {
             .endSpec();
 
         if (!Environment.isNamespaceRbacScope()) {
-            kafka.editSpec()
+            kafkaBuilder.editSpec()
                     .editKafka()
                         .editListeners()
                             .addNewGenericKafkaListener()
@@ -470,10 +472,10 @@ class CustomResourceStatusST extends AbstractST {
                     .endKafka()
                 .endSpec();
         }
-        kafka.done();
+        KafkaResource.create(kafkaBuilder.build());
 
-        KafkaTopicResource.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME).done();
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
         topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get()
             .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000 * 2 + 5_000;

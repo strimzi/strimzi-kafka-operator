@@ -32,43 +32,39 @@ public class KafkaRebalanceResource {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaRebalance kafkaRebalance(String name) {
+    public static KafkaRebalanceBuilder kafkaRebalance(String name) {
         KafkaRebalance kafkaRebalance = getKafkaRebalanceFromYaml(PATH_TO_KAFKA_REBALANCE_CONFIG);
-        return deployKafkaRebalance(defaultKafkaRebalance(kafkaRebalance, name));
+        return defaultKafkaRebalance(kafkaRebalance, name);
     }
 
-    private static KafkaRebalance defaultKafkaRebalance(KafkaRebalance kafkaRebalance, String name) {
+    private static KafkaRebalanceBuilder defaultKafkaRebalance(KafkaRebalance kafkaRebalance, String name) {
 
         Map<String, String> kafkaRebalanceLabels = new HashMap<>();
         kafkaRebalanceLabels.put("strimzi.io/cluster", name);
-
         return new KafkaRebalanceBuilder(kafkaRebalance)
             .editMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withLabels(kafkaRebalanceLabels)
-            .endMetadata()
-            .build();
+            .endMetadata();
     }
 
-    private static DoneableKafkaRebalance deployKafkaRebalance(KafkaRebalance kafkaRebalance) {
-        return new DoneableKafkaRebalance(kafkaRebalance, kB -> {
-            TestUtils.waitFor("KafkaRebalance creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kB);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static KafkaRebalance create(KafkaRebalance kafkaRebalance) {
+        TestUtils.waitFor("KafkaRebalance creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaRebalance);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return waitFor(deleteLater(kB));
-        });
+            }
+        );
+        return waitFor(deleteLater(kafkaRebalance));
     }
 
     public static KafkaRebalance kafkaRebalanceWithoutWait(KafkaRebalance kafkaRebalance) {

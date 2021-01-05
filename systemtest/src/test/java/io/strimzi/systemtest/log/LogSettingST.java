@@ -201,8 +201,8 @@ class LogSettingST extends AbstractST {
         String userName = "test-user";
         String topicName = "test-topic";
 
-        KafkaTopicResource.topic(LOG_SETTING_CLUSTER_NAME, topicName).done();
-        KafkaUserResource.tlsUser(LOG_SETTING_CLUSTER_NAME, userName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(LOG_SETTING_CLUSTER_NAME, topicName).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(LOG_SETTING_CLUSTER_NAME, userName).build());
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has log level set properly", LOG_SETTING_CLUSTER_NAME);
         assertThat("Kafka's log level is set properly", checkLoggersLevel(KAFKA_LOGGERS, KAFKA_MAP), is(true));
@@ -249,7 +249,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testConnectLogSetting() {
-        KafkaConnectResource.kafkaConnect(CONNECT_NAME, LOG_SETTING_CLUSTER_NAME, 1, true)
+        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(CONNECT_NAME, LOG_SETTING_CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -258,7 +258,7 @@ class LogSettingST extends AbstractST {
                     .withGcLoggingEnabled(true)
                 .endJvmOptions()
             .endSpec()
-            .done();
+            .build());
 
         String connectDepName = KafkaConnectResources.deploymentName(CONNECT_NAME);
         Map<String, String> connectPods = DeploymentUtils.depSnapshot(connectDepName);
@@ -278,7 +278,7 @@ class LogSettingST extends AbstractST {
     @Test
     @OpenShiftOnly
     void testConnectS2ILogSetting() {
-        KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_NAME, LOG_SETTING_CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_NAME, LOG_SETTING_CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -287,7 +287,7 @@ class LogSettingST extends AbstractST {
                     .withGcLoggingEnabled(true)
                 .endJvmOptions()
             .endSpec()
-            .done();
+            .build());
 
         String connectS2IDepName = KafkaConnectS2IResources.deploymentName(CONNECTS2I_NAME);
         Map<String, String> connectS2IPods = DeploymentConfigUtils.depConfigSnapshot(connectS2IDepName);
@@ -306,7 +306,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testMirrorMakerLogSetting() {
-        KafkaMirrorMakerResource.kafkaMirrorMaker(MM_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
+        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(MM_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -315,7 +315,7 @@ class LogSettingST extends AbstractST {
                     .withGcLoggingEnabled(true)
                 .endJvmOptions()
             .endSpec()
-            .done();
+            .build());
 
         String mmDepName = KafkaMirrorMakerResources.deploymentName(MM_NAME);
         Map<String, String> mmPods = DeploymentUtils.depSnapshot(mmDepName);
@@ -334,7 +334,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testMirrorMaker2LogSetting() {
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(MM2_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(MM2_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -343,7 +343,7 @@ class LogSettingST extends AbstractST {
                     .withGcLoggingEnabled(true)
                 .endJvmOptions()
             .endSpec()
-            .done();
+            .build());
 
         String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(MM2_NAME);
         Map<String, String> mm2Pods = DeploymentUtils.depSnapshot(mm2DepName);
@@ -362,7 +362,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testBridgeLogSetting() {
-        KafkaBridgeResource.kafkaBridge(BRIDGE_NAME, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(BRIDGE_NAME, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(BRIDGE_LOGGERS)
@@ -371,7 +371,7 @@ class LogSettingST extends AbstractST {
                     .withGcLoggingEnabled(true)
                 .endJvmOptions()
             .endSpec()
-            .done();
+            .build());
 
         String bridgeDepName = KafkaBridgeResources.deploymentName(BRIDGE_NAME);
         Map<String, String> bridgePods = DeploymentUtils.depSnapshot(bridgeDepName);
@@ -483,13 +483,13 @@ class LogSettingST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
         timeMeasuringSystem.setOperationID(startDeploymentMeasuring());
 
-        KafkaResource.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -530,10 +530,10 @@ class LogSettingST extends AbstractST {
                 .withNewKafkaExporter()
                 .endKafkaExporter()
             .endSpec()
-            .done();
+            .build());
 
         // deploying second Kafka here because of MM and MM2 tests
-        KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -554,9 +554,9 @@ class LogSettingST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
     }
 
     private String startDeploymentMeasuring() {

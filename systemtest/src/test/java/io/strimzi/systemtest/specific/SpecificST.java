@@ -22,6 +22,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -83,14 +84,15 @@ public class SpecificST extends AbstractST {
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String rackKey = "rack-key";
-        KafkaResource.kafkaEphemeral(clusterName, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewRack()
                         .withTopologyKey(rackKey)
                     .endRack()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         Affinity kafkaPodSpecAffinity = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getSpec().getTemplate().getSpec().getAffinity();
         NodeSelectorRequirement kafkaPodNodeSelectorRequirement = kafkaPodSpecAffinity.getNodeAffinity()
@@ -124,8 +126,8 @@ public class SpecificST extends AbstractST {
             .withDelayMs(0)
             .build();
 
-        kafkaBasicClientJob.producerStrimzi().done();
-        kafkaBasicClientJob.consumerStrimzi().done();
+        kafkaBasicClientJob.create(kafkaBasicClientJob.producerStrimzi().build());
+        kafkaBasicClientJob.create(kafkaBasicClientJob.consumerStrimzi().build());
     }
 
     @Test
@@ -138,7 +140,7 @@ public class SpecificST extends AbstractST {
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         ResourceManager.setClassResources();
-        BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).done();
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
         // Now we set pointer stack to method again
         ResourceManager.setMethodResources();
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
@@ -146,7 +148,7 @@ public class SpecificST extends AbstractST {
         String wrongRackKey = "wrong-key";
         String rackKey = "rack-key";
 
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewRack()
@@ -154,13 +156,14 @@ public class SpecificST extends AbstractST {
                         .endRack()
                         .addToConfig("replica.selector.class", "org.apache.kafka.common.replica.RackAwareReplicaSelector")
                     .endKafka()
-                .endSpec().done();
+                .endSpec()
+                .build());
 
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with wrong rack-aware topology key: {}", wrongRackKey);
-        KafkaConnect kc = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(clusterName, clusterName, 1)
+        KafkaConnect kc = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, clusterName, 1)
                 .editSpec()
                     .withNewRack()
                         .withTopologyKey(wrongRackKey)
@@ -170,7 +173,8 @@ public class SpecificST extends AbstractST {
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().build());
-        KafkaConnectResource.allowNetworkPolicyForKafkaConnect(kc);
+
+        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(CLUSTER_NAME));
 
         PodUtils.waitForPendingPod(clusterName + "-connect");
         List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
@@ -178,7 +182,6 @@ public class SpecificST extends AbstractST {
         LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrectly set up KafkaConnect");
         KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", NAMESPACE, clusterName);
 
-        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get();
         PodStatus kcWrongStatus = kubeClient().getPod(connectWrongPodName).getStatus();
         assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
         assertThat("PodScheduled", is(kcWrongStatus.getConditions().get(0).getType()));
@@ -197,7 +200,7 @@ public class SpecificST extends AbstractST {
 
         // Revert changes for CO deployment
         ResourceManager.setClassResources();
-        BundleResource.clusterOperator(NAMESPACE).done();
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
         ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
@@ -212,13 +215,13 @@ public class SpecificST extends AbstractST {
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         ResourceManager.setClassResources();
-        BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).done();
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
         // Now we set pointer stack to method again
         ResourceManager.setMethodResources();
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String rackKey = "rack-key";
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewRack()
@@ -226,13 +229,14 @@ public class SpecificST extends AbstractST {
                         .endRack()
                         .addToConfig("replica.selector.class", "org.apache.kafka.common.replica.RackAwareReplicaSelector")
                     .endKafka()
-                .endSpec().done();
+                .endSpec()
+                .build());
 
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with correct rack-aware topology key: {}", rackKey);
-        KafkaConnect kc = KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnect kc = KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1)
                 .editSpec()
                     .withNewRack()
                         .withTopologyKey(rackKey)
@@ -241,11 +245,13 @@ public class SpecificST extends AbstractST {
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .endSpec().done();
-        KafkaConnectResource.allowNetworkPolicyForKafkaConnect(kc);
+                .endSpec()
+                .build());
+
+        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(CLUSTER_NAME));
 
         String topicName = "topic-test-rack-aware";
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         for (String connectPodName : connectPods) {
@@ -264,7 +270,7 @@ public class SpecificST extends AbstractST {
 
         // Revert changes for CO deployment
         ResourceManager.setClassResources();
-        BundleResource.clusterOperator(NAMESPACE).done();
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
         ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
@@ -276,7 +282,7 @@ public class SpecificST extends AbstractST {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -298,7 +304,7 @@ public class SpecificST extends AbstractST {
                     .endListeners()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         assertThat("Kafka External bootstrap doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.externalBootstrapServiceName(clusterName)).getSpec().getLoadBalancerIP(), is(bootstrapOverrideIP));
         assertThat("Kafka Broker-0 service doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.brokerSpecificService(clusterName, 0)).getSpec().getLoadBalancerIP(), is(brokerOverrideIP));
@@ -323,7 +329,7 @@ public class SpecificST extends AbstractST {
         String nonExistingVersion = "6.6.6";
         String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported. Supported versions are.*";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion(nonExistingVersion)
@@ -356,7 +362,7 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Network address of machine with associated prefix is {}", ipWithPrefix);
 
-        KafkaResource.kafkaPersistent(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -372,7 +378,7 @@ public class SpecificST extends AbstractST {
                     .endListeners()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -417,6 +423,6 @@ public class SpecificST extends AbstractST {
 
         applyBindings(NAMESPACE);
         // 060-Deployment
-        BundleResource.clusterOperator(NAMESPACE).done();
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
     }
 }

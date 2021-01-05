@@ -57,13 +57,13 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @Test
     void testAutoCreationOfCruiseControlTopics() {
-        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         KafkaTopicSpec metricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE)
             .withName(CRUISE_CONTROL_METRICS_TOPIC).get().getSpec();
@@ -88,8 +88,8 @@ public class CruiseControlIsolatedST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testCruiseControlWithRebalanceResource() {
-        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).done();
-        KafkaRebalanceResource.kafkaRebalance(clusterName).done();
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        KafkaRebalanceResource.create(KafkaRebalanceResource.kafkaRebalance(clusterName).build());
 
         LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
@@ -142,16 +142,16 @@ public class CruiseControlIsolatedST extends AbstractST {
         String excludedTopic2 = "excluded-topic-2";
         String includedTopic = "included-topic";
 
-        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).done();
-        KafkaTopicResource.topic(clusterName, excludedTopic1).done();
-        KafkaTopicResource.topic(clusterName, excludedTopic2).done();
-        KafkaTopicResource.topic(clusterName, includedTopic).done();
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, excludedTopic1).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, excludedTopic2).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, includedTopic).build());
 
-        KafkaRebalanceResource.kafkaRebalance(clusterName)
+        KafkaRebalanceResource.create(KafkaRebalanceResource.kafkaRebalance(clusterName)
             .editOrNewSpec()
                 .withExcludedTopics("excluded-.*")
             .endSpec()
-            .done();
+            .build());
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
 
@@ -172,8 +172,8 @@ public class CruiseControlIsolatedST extends AbstractST {
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
 
-        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).done();
-        KafkaClientsResource.deployKafkaClients(kafkaClientsName).done();
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(kafkaClientsName).build());
 
         String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
 
@@ -210,7 +210,7 @@ public class CruiseControlIsolatedST extends AbstractST {
             .withHostnames(aliasHostname)
             .build();
 
-        KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editSpec()
                 .editCruiseControl()
                     .withNewTemplate()
@@ -220,7 +220,7 @@ public class CruiseControlIsolatedST extends AbstractST {
                     .endTemplate()
                 .endCruiseControl()
             .endSpec()
-            .done();
+            .build());
 
         String ccPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, clusterName + "-cruise-control").get(0).getMetadata().getName();
 
@@ -230,7 +230,7 @@ public class CruiseControlIsolatedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }

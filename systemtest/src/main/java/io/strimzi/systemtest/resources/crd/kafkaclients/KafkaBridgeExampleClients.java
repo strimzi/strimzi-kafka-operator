@@ -4,10 +4,8 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
-import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.HashMap;
@@ -109,12 +107,12 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
     }
 
 
-    public DoneableJob producerStrimziBridge() {
+    public JobBuilder producerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
         producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
-        return KubernetesResource.deployNewJob(new JobBuilder()
+        return new JobBuilder()
             .withNewMetadata()
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withLabels(producerLabels)
@@ -155,16 +153,15 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                             .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    public DoneableJob consumerStrimziBridge() {
+    public JobBuilder consumerStrimziBridge() {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
         consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
-        return KubernetesResource.deployNewJob(new JobBuilder()
+        return new JobBuilder()
             .withNewMetadata()
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withLabels(consumerLabels)
@@ -209,7 +206,6 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                             .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 }

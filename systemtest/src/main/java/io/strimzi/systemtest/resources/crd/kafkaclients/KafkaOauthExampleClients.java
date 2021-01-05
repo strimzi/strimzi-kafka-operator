@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
-import io.fabric8.kubernetes.api.model.batch.DoneableJob;
+import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 
@@ -137,9 +137,13 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         return userName;
     }
 
-    public DoneableJob producerStrimziOauthPlain() {
+    public JobBuilder producerStrimziOauthPlain() {
+        return defaultProducerStrimziOauthPlain();
+    }
 
-        return producerStrimzi()
+    private JobBuilder defaultProducerStrimziOauthPlain() {
+
+        return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -176,9 +180,9 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
             .endSpec();
     }
 
-    public DoneableJob producerStrimziOauthTls(String clusterName) {
+    public JobBuilder producerStrimziOauthTls(String clusterName) {
 
-        return producerStrimziOauthPlain()
+        return defaultProducerStrimziOauthPlain()
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -221,9 +225,13 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
             .endSpec();
     }
 
-    public DoneableJob consumerStrimziOauthPlain() {
+    public JobBuilder consumerStrimziOauthPlain() {
+        return defaultConsumerStrimziOauth();
+    }
 
-        return consumerStrimzi()
+    private JobBuilder defaultConsumerStrimziOauth() {
+
+        return defaultConsumerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -264,9 +272,9 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
             .endSpec();
     }
 
-    public DoneableJob consumerStrimziOauthTls(String clusterName) {
+    public JobBuilder consumerStrimziOauthTls(String clusterName) {
 
-        return consumerStrimziOauthPlain()
+        return defaultConsumerStrimziOauth()
             .editSpec()
                 .editTemplate()
                     .editSpec()

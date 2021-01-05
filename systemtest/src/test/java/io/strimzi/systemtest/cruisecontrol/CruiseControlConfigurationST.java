@@ -285,10 +285,10 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
     
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithCruiseControl(CRUISE_CONTROL_CONFIGURATION_CLUSTER_NAME, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).build());
     }
 }

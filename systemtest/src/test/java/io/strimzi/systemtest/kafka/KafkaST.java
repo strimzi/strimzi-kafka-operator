@@ -143,7 +143,7 @@ class KafkaST extends AbstractST {
 
     @Test
     void testEODeletion() {
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         // Get pod name to check termination process
         Pod pod = kubeClient().listPods().stream()
@@ -210,7 +210,7 @@ class KafkaST extends AbstractST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        KafkaResource.kafkaPersistent(clusterName, 2)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 2)
             .editSpec()
                 .editKafka()
                     .withNewReadinessProbe()
@@ -313,7 +313,7 @@ class KafkaST extends AbstractST {
                     .endTlsSidecar()
                 .endEntityOperator()
                 .endSpec()
-            .done();
+            .build());
 
         Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -456,7 +456,7 @@ class KafkaST extends AbstractST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        KafkaResource.kafkaEphemeral(clusterName, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
@@ -515,7 +515,8 @@ class KafkaST extends AbstractST {
                         .endJvmOptions()
                     .endUserOperator()
                 .endEntityOperator()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
         String zkStsName = KafkaResources.zookeeperStatefulSetName(clusterName);
@@ -579,12 +580,12 @@ class KafkaST extends AbstractST {
 
     @Test
     void testForTopicOperator() throws InterruptedException {
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         String cliTopicName = "topic-from-cli";
 
         //Creating topics for testing
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
         KafkaTopicUtils.waitForKafkaTopicReady(topicName);
 
@@ -638,7 +639,7 @@ class KafkaST extends AbstractST {
     @Test
     void testRemoveTopicOperatorFromEntityOperator() {
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
         String eoPodName = kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(clusterName))
             .get(0).getMetadata().getName();
 
@@ -679,7 +680,7 @@ class KafkaST extends AbstractST {
     void testRemoveUserOperatorFromEntityOperator() {
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
         String eoPodName = kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(clusterName))
                 .get(0).getMetadata().getName();
 
@@ -727,7 +728,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
 
@@ -763,14 +764,14 @@ class KafkaST extends AbstractST {
     void testEntityOperatorWithoutTopicOperator() {
         LOGGER.info("Deploying Kafka cluster without TO in EO");
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .withNewEntityOperator()
                     .withNewUserOperator()
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
@@ -787,14 +788,14 @@ class KafkaST extends AbstractST {
     void testEntityOperatorWithoutUserOperator() {
         LOGGER.info("Deploying Kafka cluster without UO in EO");
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .withNewEntityOperator()
                     .withNewTopicOperator()
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
@@ -811,12 +812,12 @@ class KafkaST extends AbstractST {
     void testEntityOperatorWithoutUserAndTopicOperators() {
         LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT));
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .withNewEntityOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
         timeMeasuringSystem.stopOperation(timeMeasuringSystem.getOperationID());
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(testClass, testName, timeMeasuringSystem.getOperationID()));
@@ -828,7 +829,7 @@ class KafkaST extends AbstractST {
     @Test
     void testTopicWithoutLabels() {
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         // Creating topic without any label
         KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(clusterName, "topic-without-labels", 1, 1, 1)
@@ -866,7 +867,7 @@ class KafkaST extends AbstractST {
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
             new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
-        KafkaResource.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).done();
+        KafkaResource.create(KafkaResource.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(kafkaReplicas, 2, diskSizeGi);
 
@@ -889,7 +890,7 @@ class KafkaST extends AbstractST {
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
-        KafkaResource.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).done();
+        KafkaResource.create(KafkaResource.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(kafkaReplicas, 2, diskSizeGi);
 
@@ -912,7 +913,7 @@ class KafkaST extends AbstractST {
             new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
             new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
-        KafkaResource.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).done();
+        KafkaResource.create(KafkaResource.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(kafkaReplicas, 2, diskSizeGi);
 
@@ -939,7 +940,7 @@ class KafkaST extends AbstractST {
                         new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
                 ).build();
 
-        KafkaResource.kafkaPersistent(clusterName, kafkaRepl)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, kafkaRepl)
             .editSpec()
                 .editKafka()
                     .withStorage(jbodStorage)
@@ -948,11 +949,11 @@ class KafkaST extends AbstractST {
                     withReplicas(1)
                 .endZookeeper()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME).build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         List<PersistentVolumeClaim> volumes = kubeClient().listPersistentVolumeClaims();
 
@@ -981,7 +982,7 @@ class KafkaST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     void testRegenerateCertExternalAddressChange() {
         LOGGER.info("Creating kafka without external listener");
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
         String brokerSecret = "my-cluster-kafka-brokers";
 
@@ -1029,15 +1030,15 @@ class KafkaST extends AbstractST {
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1)
                 .editMetadata()
                     .withLabels(labels)
                 .endMetadata()
-                .done();
+                .build());
 
-        KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME).build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -1171,11 +1172,11 @@ class KafkaST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testAppDomainLabels() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -1259,11 +1260,11 @@ class KafkaST extends AbstractST {
         final String secondClusterName = "my-cluster-2";
         final String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
-        KafkaResource.kafkaEphemeral(firstClusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(firstClusterName, 3, 1).build());
 
-        KafkaResource.kafkaEphemeral(secondClusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(secondClusterName, 3, 1).build());
 
-        KafkaUserResource.tlsUser(firstClusterName, userName).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(firstClusterName, userName).build());
 
         LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
         String entityOperatorPodName = kubeClient().listPods(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0).getMetadata().getName();
@@ -1284,13 +1285,13 @@ class KafkaST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAreStoredInDisk() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaResource.kafkaEphemeral(clusterName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 1, 1).build());
 
         Map<String, String> kafkaPodsSnapshot = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
 
-        KafkaTopicResource.topic(clusterName, topicName, 1, 1).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 1, 1).build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -1355,17 +1356,17 @@ class KafkaST extends AbstractST {
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("offsets.topic.num.partitions", "100");
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME, 3, 1).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME, 3, 1).build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -1419,7 +1420,7 @@ class KafkaST extends AbstractST {
         statefulSetLabels.put("app.kubernetes.io/part-of", "some-app");
         statefulSetLabels.put("app.kubernetes.io/managed-by", "some-app");
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewTemplate()
@@ -1464,7 +1465,7 @@ class KafkaST extends AbstractST {
                     .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Check if Kubernetes labels are applied");
         Map<String, String> actualStatefulSetLabels = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getLabels();
@@ -1514,7 +1515,7 @@ class KafkaST extends AbstractST {
     @Test
     void testKafkaOffsetsReplicationFactorHigherThanReplicas() {
         int replicas = 3;
-        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, replicas, 1)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, replicas, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("offsets.topic.replication.factor", 4)
@@ -1535,7 +1536,7 @@ class KafkaST extends AbstractST {
             .withHostnames(aliasHostname)
             .build();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewTemplate()
@@ -1552,7 +1553,7 @@ class KafkaST extends AbstractST {
                     .endTemplate()
                 .endZookeeper()
             .endSpec()
-            .done();
+            .build());
 
         List<String> pods = kubeClient().listPodNames(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
 
@@ -1777,7 +1778,7 @@ class KafkaST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }

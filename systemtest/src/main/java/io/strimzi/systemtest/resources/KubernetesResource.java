@@ -4,26 +4,22 @@
  */
 package io.strimzi.systemtest.resources;
 
-import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -45,47 +41,43 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KubernetesResource {
     private static final Logger LOGGER = LogManager.getLogger(KubernetesResource.class);
 
-    public static DoneableDeployment deployNewDeployment(Deployment deployment) {
-        return new DoneableDeployment(deployment, co -> {
-            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        ResourceManager.kubeClient().createOrReplaceDeployment(co);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static Deployment deployNewDeployment(Deployment deployment) {
+        TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    ResourceManager.kubeClient().createOrReplaceDeployment(deployment);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return waitFor(deleteLater(co));
-        });
+            }
+        );
+        return waitFor(deleteLater(deployment));
     }
 
-    public static DoneableJob deployNewJob(Job job) {
-        return new DoneableJob(job, kubernetesJob -> {
-            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        ResourceManager.kubeClient().createJob(kubernetesJob);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static Job deployNewJob(Job job) {
+        TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    ResourceManager.kubeClient().createJob(job);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return deleteLater(kubernetesJob);
-        });
+            }
+        );
+        return deleteLater(job);
     }
 
-    public static DoneableRoleBinding roleBinding(String yamlPath, String namespace, String clientNamespace) {
+    public static RoleBinding roleBinding(String yamlPath, String namespace, String clientNamespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
         if (Environment.isNamespaceRbacScope()) {
@@ -101,13 +93,13 @@ public class KubernetesResource {
                 clientNamespace);
     }
 
-    private static DoneableRoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
+    private static RoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
         ResourceManager.kubeClient().namespace(clientNamespace).createOrReplaceRoleBinding(roleBinding);
         deleteLater(roleBinding);
-        return new DoneableRoleBinding(roleBinding);
+        return roleBinding;
     }
 
-    public static DoneableClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace) {
+    public static ClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
         ClusterRoleBinding clusterRoleBinding = getClusterRoleBindingFromYaml(yamlPath);
         return clusterRoleBinding(
@@ -118,10 +110,10 @@ public class KubernetesResource {
                     .build());
     }
 
-    public static DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+    public static ClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
         ResourceManager.kubeClient().createOrReplaceClusterRoleBinding(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
-        return new DoneableClusterRoleBinding(clusterRoleBinding);
+        return clusterRoleBinding;
     }
 
     public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
@@ -205,19 +197,19 @@ public class KubernetesResource {
             .endSpec();
     }
 
-    public static DoneableService createServiceResource(String appName, int port, String clientNamespace, String transportProtocol) {
+    public static Service createServiceResource(String appName, int port, String clientNamespace, String transportProtocol) {
         Service service = getSystemtestsServiceResource(appName, port, clientNamespace, transportProtocol).build();
         LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createService(service);
         deleteLater(service);
-        return new DoneableService(service);
+        return service;
     }
 
-    public static DoneableService createServiceResource(Service service, String clientNamespace) {
+    public static Service createServiceResource(Service service, String clientNamespace) {
         LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.kubeClient().createService(service);
         deleteLater(service);
-        return new DoneableService(service);
+        return service;
     }
 
     public static Service createKeycloakNodePortHttpService(String namespace) {
@@ -363,6 +355,12 @@ public class KubernetesResource {
         LOGGER.info("Network policy successfully set to: {}", policy);
 
         return networkPolicy;
+    }
+
+    public static <T extends HasMetadata & HasStatus> void deployNetworkPolicyForResource(T resource, String deploymentName) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            allowNetworkPolicySettingsForResource(resource, deploymentName);
+        }
     }
 
     public static Deployment getDeploymentFromYaml(String yamlPath) {

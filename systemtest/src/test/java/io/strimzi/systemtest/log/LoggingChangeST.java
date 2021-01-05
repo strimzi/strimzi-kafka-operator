@@ -154,7 +154,7 @@ class LoggingChangeST extends AbstractST {
 
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         ResourceManager.setClassResources();
-        BundleResource.clusterOperator(NAMESPACE)
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -171,11 +171,11 @@ class LoggingChangeST extends AbstractST {
                     .endSpec()
                 .endTemplate()
             .endSpec()
-            .done();
+            .build());
         // Now we set pointer stack to method again
         ResourceManager.setMethodResources();
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     .withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
@@ -192,7 +192,7 @@ class LoggingChangeST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
@@ -213,7 +213,7 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         ilOff.setLoggers(Collections.singletonMap("rootLogger.level", "OFF"));
 
-        KafkaResource.kafkaPersistent(clusterName, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 1, 1)
                 .editSpec()
                     .editEntityOperator()
                         .editTopicOperator()
@@ -224,7 +224,7 @@ class LoggingChangeST extends AbstractST {
                         .endUserOperator()
                     .endEntityOperator()
                 .endSpec()
-                .done();
+                .build());
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(eoDeploymentName);
@@ -384,15 +384,15 @@ class LoggingChangeST extends AbstractST {
         loggers.put("logger.ready.level", "OFF");
         ilOff.setLoggers(loggers);
 
-        KafkaResource.kafkaPersistent(clusterName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 1, 1).build());
 
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
-        KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
                 .editSpec()
                     .withInlineLogging(ilOff)
                 .endSpec()
-                .done();
+                .build());
 
         Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(clusterName));
 
@@ -585,17 +585,17 @@ class LoggingChangeST extends AbstractST {
         loggers.put("connect.root.logger.level", "OFF");
         ilOff.setLoggers(loggers);
 
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
-        KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1)
                 .editSpec()
                 .withInlineLogging(ilOff)
                 .endSpec()
                 .editMetadata()
                     .addToAnnotations("strimzi.io/use-connector-resources", "true")
                 .endMetadata()
-                .done();
+                .build());
 
         Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(clusterName));
 
@@ -656,7 +656,7 @@ class LoggingChangeST extends AbstractST {
 
     @Test
     void testDynamicallySetKafkaLoggingLevels() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1).build());
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
@@ -723,7 +723,7 @@ class LoggingChangeST extends AbstractST {
 
     @Test
     void testDynamicallySetUnknownKafkaLogger() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1).build());
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
@@ -743,7 +743,7 @@ class LoggingChangeST extends AbstractST {
 
     @Test
     void testDynamicallySetUnknownKafkaLoggerValue() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1).build());
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
@@ -788,13 +788,13 @@ class LoggingChangeST extends AbstractST {
         ExternalLogging el = new ExternalLogging();
         el.setName("external-cm");
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1)
                 .editOrNewSpec()
                     .editKafka()
                         .withExternalLogging(el)
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
@@ -871,10 +871,10 @@ class LoggingChangeST extends AbstractST {
         loggers.put("connect.root.logger.level", "OFF");
         ilOff.setLoggers(loggers);
 
-        KafkaResource.kafkaEphemeral(clusterName + "-source", 3).done();
-        KafkaResource.kafkaEphemeral(clusterName + "-target", 3).done();
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName + "-source", 3).build());
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName + "-target", 3).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false).build());
         String kafkaMM2PodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
         String mm2LogCheckCmd = "http://localhost:8083/admin/loggers/root";
 
@@ -934,7 +934,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }
