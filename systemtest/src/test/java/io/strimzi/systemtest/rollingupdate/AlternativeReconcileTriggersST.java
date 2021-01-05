@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.rollingupdate;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
@@ -39,6 +40,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -305,8 +307,68 @@ class AlternativeReconcileTriggersST extends AbstractST {
         }
     }
 
+    @Test
+    void testManualRollingUpdateForSinglePod() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+
+        Pod kafkaPod = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        // snapshot of one single Kafka pod
+        Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
+
+        Pod zkPod = kubeClient().getPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0));
+        // snapshot of one single ZK pod
+        Map<String, String> zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
+
+        LOGGER.info("Trying to roll just single Kafka and single ZK pod");
+        kubeClient().editPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0))
+            .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata()
+            .done();
+
+        // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
+        // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
+        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaSnapshot);
+
+        kubeClient().editPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0))
+            .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata()
+            .done();
+
+        // same as above
+        zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(zkSsName, 3, zkSnapshot);
+
+
+        LOGGER.info("Adding anno to all ZK and Kafka pods");
+        kafkaSnapshot.keySet().forEach(podName -> {
+            kubeClient().editPod(podName)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                .endMetadata()
+                .done();
+        });
+
+        LOGGER.info("Checking if the rolling update will be successful for Kafka");
+        StatefulSetUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaSnapshot);
+
+        zkSnapshot.keySet().forEach(podName -> {
+            kubeClient().editPod(podName)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                .endMetadata()
+                .done();
+        });
+
+        LOGGER.info("Checking if the rolling update will be successful for ZK");
+        StatefulSetUtils.waitTillSsHasRolled(zkSsName, 3, zkSnapshot);
+    }
+
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
