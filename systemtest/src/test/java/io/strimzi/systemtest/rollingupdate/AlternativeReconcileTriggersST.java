@@ -377,7 +377,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @Test
     void testAddingAndRemovingJbodVolumes() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        String clusterName = CLUSTER_NAME + "-jbod-changes";
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;
