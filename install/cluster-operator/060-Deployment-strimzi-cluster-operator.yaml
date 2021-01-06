@@ -94,6 +94,8 @@ spec:
               value: quay.io/strimzi/kafka-bridge:0.19.0
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: quay.io/strimzi/jmxtrans:latest
+            - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
+              value: gcr.io/kaniko-project/executor:v1.3.0
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:

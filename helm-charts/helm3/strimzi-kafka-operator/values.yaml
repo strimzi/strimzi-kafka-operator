@@ -114,6 +114,12 @@ tlsSidecarCruiseControl:
     repository: strimzi
     name: kafka
     tagPrefix: latest
+kanikoExecutor:
+  image:
+    registry: gcr.io
+    repository: kaniko-project
+    name: executor
+    tag: v1.3.0
 resources:
   limits:
     memory: 384Mi

@@ -47,6 +47,43 @@ public class VolumeUtils {
     private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 
     /**
+     * Creates a Kubernetes volume which will map to ConfigMap with specific items mounted
+     *
+     * @param name              Name of the Volume
+     * @param configMapName     Name of the ConfigMap
+     * @param items             Specific items which should be mapped from the ConfigMap
+     * @return                  The newly created Volume
+     */
+    public static Volume createConfigMapVolume(String name, String configMapName, Map<String, String> items) {
+        String validName = getValidVolumeName(name);
+
+        List<KeyToPath> keysPaths = new ArrayList<>();
+
+        for (Map.Entry<String, String> item : items.entrySet()) {
+            KeyToPath keyPath = new KeyToPathBuilder()
+                    .withNewKey(item.getKey())
+                    .withNewPath(item.getValue())
+                    .build();
+
+            keysPaths.add(keyPath);
+        }
+
+        ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
+                .withName(configMapName)
+                .withItems(keysPaths)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(validName)
+                .withConfigMap(configMapVolumeSource)
+                .build();
+
+        log.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+
+        return volume;
+    }
+
+    /**
      * Creates a Kubernetes volume which will map to ConfigMap
      *
      * @param name              Name of the Volume

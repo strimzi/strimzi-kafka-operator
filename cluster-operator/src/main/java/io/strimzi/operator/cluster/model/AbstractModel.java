@@ -27,6 +27,8 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -1042,6 +1044,53 @@ public abstract class AbstractModel {
                 .build();
 
         return statefulSet;
+    }
+
+    protected Pod createPod(
+            String name,
+            Map<String, String> podAnnotations,
+            List<Volume> volumes,
+            List<Container> initContainers,
+            List<Container> containers,
+            List<LocalObjectReference> imagePullSecrets,
+            boolean isOpenShift) {
+
+        PodSecurityContext securityContext = templateSecurityContext;
+
+        // if a persistent volume claim is requested and the running cluster is a Kubernetes one (non-openshift) and we
+        // have no user configured PodSecurityContext we set the podSecurityContext.
+        // This is to give each pod write permissions under a specific group so that if a pod changes users it does not have permission issues.
+        if (ModelUtils.containsPersistentStorage(storage) && !isOpenShift && securityContext == null) {
+            securityContext = new PodSecurityContextBuilder()
+                    .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
+                    .build();
+        }
+
+        Pod pod = new PodBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withRestartPolicy("Never")
+                    .withServiceAccountName(getServiceAccountName())
+                    .withAffinity(getUserAffinity())
+                    .withInitContainers(initContainers)
+                    .withContainers(containers)
+                    .withVolumes(volumes)
+                    .withTolerations(getTolerations())
+                    .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
+                    .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
+                    .withSecurityContext(securityContext)
+                    .withPriorityClassName(templatePodPriorityClassName)
+                    .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
+                .endSpec()
+                .build();
+
+        return pod;
     }
 
     protected Deployment createDeployment(

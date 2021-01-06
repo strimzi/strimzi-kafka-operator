@@ -69,10 +69,15 @@ import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
+import io.fabric8.openshift.api.model.Build;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigList;
+import io.fabric8.openshift.api.model.DoneableBuildConfig;
 import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -105,6 +110,7 @@ public class MockKube {
     private final Map<String, ServiceAccount> serviceAccountDb = db(emptySet(), ServiceAccount.class, DoneableServiceAccount.class);
     private final Map<String, NetworkPolicy> policyDb = db(emptySet(), NetworkPolicy.class, DoneableNetworkPolicy.class);
     private final Map<String, Route> routeDb = db(emptySet(), Route.class, DoneableRoute.class);
+    private final Map<String, BuildConfig> buildConfigDb = db(emptySet(), BuildConfig.class, DoneableBuildConfig.class);
     private final Map<String, PodDisruptionBudget> pdbDb = db(emptySet(), PodDisruptionBudget.class, DoneablePodDisruptionBudget.class);
     private final Map<String, RoleBinding> pdbRb = db(emptySet(), RoleBinding.class,
             DoneableRoleBinding.class);
@@ -122,6 +128,7 @@ public class MockKube {
     private MockBuilder<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> secretMockBuilder;
     private MockBuilder<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> serviceAccountMockBuilder;
     private MockBuilder<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> routeMockBuilder;
+    private MockBuilder<BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> buildConfigMockBuilder;
     private MockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> podDisruptionBudgedMockBuilder;
     private MockBuilder<Role, RoleList, DoneableRole, Resource<Role, DoneableRole>> roleMockBuilder;
     private MockBuilder<RoleBinding, RoleBindingList, DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> roleBindingMockBuilder;
@@ -160,6 +167,11 @@ public class MockKube {
 
     public MockKube withInitialRoute(Set<Route> initial) {
         this.routeDb.putAll(db(initial, Route.class, DoneableRoute.class));
+        return this;
+    }
+
+    public MockKube withInitialBuildConfig(Set<BuildConfig> initial) {
+        this.buildConfigDb.putAll(db(initial, BuildConfig.class, DoneableBuildConfig.class));
         return this;
     }
 
@@ -266,6 +278,7 @@ public class MockKube {
         secretMockBuilder = addMockBuilder("secrets", new MockBuilder<>(Secret.class, SecretList.class, DoneableSecret.class, MockBuilder.castClass(Resource.class), secretDb));
         serviceAccountMockBuilder = addMockBuilder("serviceaccounts", new MockBuilder<>(ServiceAccount.class, ServiceAccountList.class, DoneableServiceAccount.class, MockBuilder.castClass(Resource.class), serviceAccountDb));
         routeMockBuilder = addMockBuilder("routes", new MockBuilder<>(Route.class, RouteList.class, DoneableRoute.class, MockBuilder.castClass(Resource.class), routeDb));
+        buildConfigMockBuilder = addMockBuilder("buildConfigs", new MockBuilder<>(BuildConfig.class, BuildConfigList.class, DoneableBuildConfig.class, MockBuilder.castClass(Resource.class), buildConfigDb));
         podDisruptionBudgedMockBuilder = addMockBuilder("poddisruptionbudgets", new MockBuilder<>(PodDisruptionBudget.class, PodDisruptionBudgetList.class, DoneablePodDisruptionBudget.class, MockBuilder.castClass(Resource.class), pdbDb));
         roleBindingMockBuilder = addMockBuilder("rolebindings", new MockBuilder<>(RoleBinding.class, RoleBindingList.class, DoneableRoleBinding.class, MockBuilder.castClass(Resource.class), pdbRb));
         roleMockBuilder = addMockBuilder("roles", new MockBuilder<>(Role.class, RoleList.class, DoneableRole.class, MockBuilder.castClass(Resource.class), roleDb));
@@ -349,6 +362,7 @@ public class MockKube {
         OpenShiftClient mockOpenShiftClient = mock(OpenShiftClient.class);
         when(mockClient.adapt(OpenShiftClient.class)).thenReturn(mockOpenShiftClient);
         routeMockBuilder.build2(mockOpenShiftClient::routes);
+        buildConfigMockBuilder.build2(mockOpenShiftClient::buildConfigs);
         if (mockedCrds != null && !mockedCrds.isEmpty()) {
             when(mockOpenShiftClient.customResourceDefinitions()).thenReturn(mockCrds);
             mockCrs(mockOpenShiftClient);
