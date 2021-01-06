@@ -102,7 +102,7 @@ import static java.util.Collections.singletonList;
  *     successive reconciliations each restarting a pod which never becomes ready</li>
  * </ul>
  */
-@SuppressWarnings("checkstyle:ClassFanOutComplexity")
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ParameterNumber"})
 public class KafkaRoller {
 
     private static final Logger log = LogManager.getLogger(KafkaRoller.class);
@@ -122,21 +122,22 @@ public class KafkaRoller {
     private final String kafkaLogging;
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
+    private final boolean allowReconfiguration;
     private Admin allClient;
 
     public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
-            long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-            StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-            String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion) {
+                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
+                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
+                        String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
         this(vertx, reconciliation, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
-                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaLogging, kafkaVersion);
+                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaLogging, kafkaVersion, allowReconfiguration);
     }
 
     public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                       StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-                       AdminClientProvider adminClientProvider,
-                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion) {
+                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
+                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
+                        AdminClientProvider adminClientProvider,
+                        String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
         this.namespace = sts.getMetadata().getNamespace();
         this.cluster = Labels.cluster(sts);
         this.numPods = sts.getSpec().getReplicas();
@@ -152,6 +153,7 @@ public class KafkaRoller {
         this.kafkaLogging = kafkaLogging;
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
+        this.allowReconfiguration = allowReconfiguration;
     }
 
     /**
@@ -479,7 +481,8 @@ public class KafkaRoller {
                 throw e;
             }
         }
-        if (!needsRestart) {
+
+        if (!needsRestart && allowReconfiguration) {
             log.trace("{}: Broker {}: description {}", reconciliation, podId, brokerConfig);
             diff = new KafkaBrokerConfigurationDiff(brokerConfig, kafkaConfig, kafkaVersion, podId);
             loggingDiff = logging(podId);
@@ -492,11 +495,12 @@ public class KafkaRoller {
                     needsRestart = true;
                 }
             }
+
             if (loggingDiff.getDiffSize() > 0) {
                 log.debug("{}: Pod {} logging needs to be reconfigured.", reconciliation, podId);
                 needsReconfig = true;
             }
-        } else {
+        } else if (needsRestart) {
             log.info("{}: Pod {} needs to be restarted. Reason: {}", reconciliation, podId, reasonToRestartPod);
         }
         return new RestartPlan(needsRestart, needsReconfig, podStuck, diff, loggingDiff);

@@ -100,7 +100,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.addAll;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_METRIC_REPORTER;
@@ -1163,9 +1162,12 @@ public class KafkaCluster extends AbstractModel {
         stsAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         stsAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
 
+        Map<String, String> podAnnotations = new HashMap<>(1);
+        podAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+
         return createStatefulSet(
                 stsAnnotations,
-                emptyMap(),
+                podAnnotations,
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),

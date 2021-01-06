@@ -97,6 +97,10 @@ public class KafkaResource {
                 .endKafka()
                 .editZookeeper().
                     withReplicas(zookeeperReplicas)
+                    .withNewPersistentClaimStorage()
+                        .withNewSize("100")
+                        .withDeleteClaim(true)
+                    .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec()
             .build());

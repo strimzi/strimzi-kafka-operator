@@ -585,7 +585,7 @@ public class KafkaRollerTest {
                                   int... controllers) {
             super(KafkaRollerTest.vertx, new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), podOps, 500, 1000,
                 () -> new BackOff(10L, 2, 4),
-                sts, clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion());
+                sts, clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion(), true);
             this.controllers = controllers;
             this.controllerCall = 0;
             Objects.requireNonNull(acOpenException);
