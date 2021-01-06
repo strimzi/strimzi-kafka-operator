@@ -191,7 +191,7 @@ class UserST extends AbstractST {
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
-        ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", command);
+        ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
         assertThat(result.out().contains("Quota configs for user-principal '" + userName + "' are"), is(true));
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
