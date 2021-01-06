@@ -1056,10 +1056,4 @@ public class TracingST extends AbstractST {
             .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
             .build();
     }
-
-    @BeforeAll
-    void setup() throws Exception {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
-    }
 }

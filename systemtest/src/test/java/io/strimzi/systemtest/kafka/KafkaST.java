@@ -1099,7 +1099,7 @@ class KafkaST extends AbstractST {
         verifyPresentLabels(labels, configMap);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StatefulSetUtils.waitForStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), labels);
+        StatefulSetUtils.waitForStatefulSetLabelsChange(KafkaResources.kafkaStatefulSetName(clusterName), labels);
 
         LOGGER.info("Verifying kafka labels via stateful set");
         statefulSet = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName));
@@ -1569,7 +1569,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testReadOnlyRootFileSystem() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaPersistent(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1618,19 +1618,19 @@ class KafkaST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(clusterName);
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME).done();
+        KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME).done();
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
                 .withUsingPodName(kafkaClientsPodName)
                 .withTopicName(TEST_TOPIC_NAME)
                 .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
+                .withClusterName(clusterName)
                 .withMessageCount(MESSAGE_COUNT)
                 .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                 .build();
