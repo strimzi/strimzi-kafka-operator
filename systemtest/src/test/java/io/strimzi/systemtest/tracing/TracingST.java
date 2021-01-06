@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
@@ -71,6 +72,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @Tag(TRACING)
@@ -111,6 +113,9 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -153,6 +158,9 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testConnectService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
                 .editSpec()
                     .editKafka()
@@ -240,6 +248,9 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerWithStreamsService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -296,6 +307,9 @@ public class TracingST extends AbstractST {
 
     @Test
     void testProducerConsumerService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -342,6 +356,9 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         Map<String, Object> configOfSourceKafka = new HashMap<>();
         configOfSourceKafka.put("offsets.topic.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
@@ -404,6 +421,9 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2Service() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
@@ -512,6 +532,9 @@ public class TracingST extends AbstractST {
     @Test
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
@@ -624,6 +647,9 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
@@ -784,6 +810,8 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_S2I)
     @Tag(CONNECT_COMPONENTS)
     void testConnectS2IService() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
 
         KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
 
@@ -937,13 +965,21 @@ public class TracingST extends AbstractST {
     private void deployJaeger() {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles())
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
+        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles()))
+                .collect(Collectors.toMap(
+                    file -> file,
+                    f -> TestUtils.getContent(f, TestUtils::toYamlString),
+                    (x, y) -> x,
+                    LinkedHashMap::new));
 
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
-            jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
+            String fileContents = entry.getValue();
+            if (Environment.isNamespaceRbacScope()) {
+                fileContents = switchClusterRolesToRoles(fileContents);
+            }
+            jaegerConfigs.push(fileContents);
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
 
         installJaegerInstance();
@@ -980,8 +1016,12 @@ public class TracingST extends AbstractST {
 
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
-            jaegerConfigs.push(entry.getValue());
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(entry.getValue());
+            String fileContents = entry.getValue();
+            if (Environment.isNamespaceRbacScope()) {
+                fileContents = switchClusterRolesToRoles(fileContents);
+            }
+            jaegerConfigs.push(fileContents);
+            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
     }
 
@@ -1001,7 +1041,7 @@ public class TracingST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 

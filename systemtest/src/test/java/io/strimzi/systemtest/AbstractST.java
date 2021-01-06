@@ -43,14 +43,17 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
@@ -93,6 +96,9 @@ public abstract class AbstractST implements TestSeparator {
     protected String testClass;
     protected String testName;
 
+    private Stack<String> clusterOperatorConfigs = new Stack<>();
+    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../install/cluster-operator";
+
     public static Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
@@ -129,7 +135,12 @@ public abstract class AbstractST implements TestSeparator {
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
             prepareEnvForOperator(namespace, bindingsNamespaces);
-            applyRoleBindings(namespace, bindingsNamespaces);
+            if (Environment.isNamespaceRbacScope()) {
+                // if roles only, only deploy the rolebindings
+                applyRoleBindings(namespace, namespace);
+            } else {
+                applyBindings(namespace, bindingsNamespaces);
+            }
             // 060-Deployment
             BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
         }
@@ -148,6 +159,55 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     /**
+     * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
+     * Configuration files are loaded from install/cluster-operator directory.
+     */
+    public void applyClusterOperatorInstallFiles(String namespace) {
+        clusterOperatorConfigs.clear();
+        Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
+                .filter(file ->
+                        !file.getName().matches(".*(Binding|Deployment)-.*"))
+                .collect(Collectors.toMap(
+                    file -> file,
+                    f -> TestUtils.getContent(f, TestUtils::toYamlString),
+                    (x, y) -> x,
+                    LinkedHashMap::new));
+        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
+            LOGGER.info("Applying configuration file: {}", entry.getKey());
+            String fileContents = entry.getValue();
+            if (Environment.isNamespaceRbacScope()) {
+                fileContents = switchClusterRolesToRoles(fileContents);
+
+            }
+            clusterOperatorConfigs.push(entry.getKey().getPath());
+            cmdKubeClient().clientWithAdmin().namespace(namespace).applyContent(fileContents);
+        }
+    }
+
+    /**
+     * Replace all references to ClusterRole to Role.
+     * This includes ClusterRoles themselves as well as RoleBindings that reference them.
+     */
+    public static String switchClusterRolesToRoles(String fileContents) {
+        String newContents = fileContents.replace("ClusterRole", "Role");
+        if (!newContents.equals(fileContents)) {
+            LOGGER.info("Replaced ClusterRole for Role");
+        }
+        return newContents;
+    }
+
+    /**
+     * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
+     */
+    public void deleteClusterOperatorInstallFiles() {
+        while (!clusterOperatorConfigs.empty()) {
+            String clusterOperatorConfig = clusterOperatorConfigs.pop();
+            LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
+            cmdKubeClient().clientWithAdmin().delete(clusterOperatorConfig);
+        }
+    }
+
+    /**
      * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client
@@ -158,7 +218,7 @@ public abstract class AbstractST implements TestSeparator {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         cluster.createNamespaces(clientNamespace, namespaces);
         cluster.createCustomResources(resources);
-        cluster.applyClusterOperatorInstallFiles();
+        applyClusterOperatorInstallFiles(clientNamespace);
         KubernetesResource.applyDefaultNetworkPolicySettings(namespaces);
 
         if (cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift) {
@@ -193,30 +253,20 @@ public abstract class AbstractST implements TestSeparator {
      * Clear cluster from all created namespaces and configurations files for cluster operator.
      */
     protected void teardownEnvForOperator() {
-        cluster.deleteClusterOperatorInstallFiles();
+        deleteClusterOperatorInstallFiles();
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();
     }
 
     /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * Method to apply Strimzi cluster operator specific RoleBindings and ClusterRoleBindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
      */
-    public static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
+    public static void applyBindings(String namespace, List<String> bindingsNamespaces) {
         for (String bindingsNamespace : bindingsNamespaces) {
-            // 020-RoleBinding
-            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
-            // 021-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
-            // 030-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
-            // 031-RoleBinding
-            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
-            // 032-RoleBinding
-            KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
-            // 033-ClusterRoleBinding
-            KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace, bindingsNamespace);
+            applyClusterRoleBindings(namespace);
+            applyRoleBindings(namespace, bindingsNamespace);
         }
     }
 
@@ -224,8 +274,8 @@ public abstract class AbstractST implements TestSeparator {
      * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
      */
-    public static void applyRoleBindings(String namespace) {
-        applyRoleBindings(namespace, Collections.singletonList(namespace));
+    public static void applyBindings(String namespace) {
+        applyBindings(namespace, Collections.singletonList(namespace));
     }
 
     /**
@@ -233,8 +283,26 @@ public abstract class AbstractST implements TestSeparator {
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
      */
-    public static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
-        applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
+    public static void applyBindings(String namespace, String... bindingsNamespaces) {
+        applyBindings(namespace, Arrays.asList(bindingsNamespaces));
+    }
+
+    private static void applyClusterRoleBindings(String namespace) {
+        // 021-ClusterRoleBinding
+        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
+        // 030-ClusterRoleBinding
+        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
+        // 033-ClusterRoleBinding
+        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
+    }
+
+    private static void applyRoleBindings(String namespace, String bindingsNamespace) {
+        // 020-RoleBinding
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+        // 031-RoleBinding
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+        // 032-RoleBinding
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {

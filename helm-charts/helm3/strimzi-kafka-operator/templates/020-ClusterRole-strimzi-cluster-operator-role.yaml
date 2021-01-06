@@ -24,6 +24,19 @@ rules:
   - patch
   - update
 - apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+    # The cluster operator needs to access and manage roles to grant the entity operator permissions
+  - roles
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
   - ""
   resources:
     # The cluster operator needs to access and delete pods, this is to allow it to monitor pod health and coordinate rolling updates

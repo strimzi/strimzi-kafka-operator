@@ -61,7 +61,17 @@ public class ClusterOperatorConfigTest {
 
     @Test
     public void testReconciliationInterval() {
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()), null, null, null, null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(
+                singleton("namespace"),
+                60_000,
+                30_000,
+                false,
+                new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()),
+                null,
+                null,
+                null,
+                null,
+                ClusterOperatorConfig.RbacScope.CLUSTER);
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
@@ -286,5 +296,11 @@ public class ClusterOperatorConfigTest {
         assertThrows(InvalidConfigurationException.class, () -> {
             ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
         });
+    }
+
+    @Test
+    public void testRbacScopeValueOf() {
+        assertThat(ClusterOperatorConfig.RbacScope.valueOf("NAMESPACE"), is(ClusterOperatorConfig.RbacScope.NAMESPACE));
+        assertThat(ClusterOperatorConfig.RbacScope.valueOf("CLUSTER"), is(ClusterOperatorConfig.RbacScope.CLUSTER));
     }
 }

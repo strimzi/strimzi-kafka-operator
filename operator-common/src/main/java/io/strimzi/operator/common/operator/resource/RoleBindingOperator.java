@@ -13,10 +13,12 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
 
-public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, RoleBinding,
-        RoleBindingList, DoneableRoleBinding, Resource<RoleBinding,
-        DoneableRoleBinding>> {
-
+public class RoleBindingOperator extends AbstractResourceOperator<
+        KubernetesClient,
+        RoleBinding,
+        RoleBindingList,
+        DoneableRoleBinding,
+        Resource<RoleBinding, DoneableRoleBinding>> {
     /**
      * Constructor
      * @param vertx The Vertx instance

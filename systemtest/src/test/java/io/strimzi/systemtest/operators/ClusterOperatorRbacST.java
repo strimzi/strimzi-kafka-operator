@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators;
 
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -28,6 +29,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 public class ClusterOperatorRbacST extends AbstractST {
@@ -37,6 +39,7 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Test
     @Tag(CONNECT)
     void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled() {
+        assumeFalse(Environment.isNamespaceRbacScope());
         applyRoleBindingsWithoutCRBs();
         // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
@@ -60,6 +63,7 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Test
     @Tag(CONNECT)
     void testCRBDeletionErrorsWhenRackAwarenessIsEnabled() {
+        assumeFalse(Environment.isNamespaceRbacScope());
         applyRoleBindingsWithoutCRBs();
         // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();

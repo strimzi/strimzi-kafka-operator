@@ -262,13 +262,13 @@ public class NetworkPoliciesST extends AbstractST {
 
         prepareEnvForOperator(NAMESPACE, Arrays.asList(NAMESPACE, secondNamespace));
 
-        // Apply role bindings in CO namespace
-        applyRoleBindings(NAMESPACE);
+        // Apply rolebindings in CO namespace
+        applyBindings(NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
         List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-            KubernetesResource.clusterRoleBinding(clusterRoleBinding, NAMESPACE));
+            KubernetesResource.clusterRoleBinding(clusterRoleBinding));
         // 060-Deployment
         BundleResource.clusterOperator("*", Constants.CO_OPERATION_TIMEOUT_DEFAULT)
             .editOrNewSpec()

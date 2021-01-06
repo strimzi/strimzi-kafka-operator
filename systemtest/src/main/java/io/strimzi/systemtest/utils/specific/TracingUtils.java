@@ -37,7 +37,7 @@ public class TracingUtils {
     }
 
     private static void verifyThatServiceIsPresent(String jaegerServiceName, String clientPodName) {
-        TestUtils.waitFor("Service" + jaegerServiceName + " is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Service " + jaegerServiceName + " is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             JsonObject jaegerServices = new JsonObject(cmdKubeClient().execInPod(clientPodName, "/bin/bash", "-c", "curl " + JAEGER_QUERY_SERVICE + ":" + JAEGER_QUERY_PORT + JAEGER_QUERY_SERVICE_ENDPOINT).out());
 
             if (jaegerServices.getJsonArray("data").contains(jaegerServiceName)) {

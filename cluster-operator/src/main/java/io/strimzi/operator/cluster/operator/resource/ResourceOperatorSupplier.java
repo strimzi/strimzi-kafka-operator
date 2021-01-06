@@ -50,6 +50,7 @@ import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RoleOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
@@ -71,6 +72,7 @@ public class ResourceOperatorSupplier {
     public final DeploymentOperator deploymentOperations;
     public final ServiceAccountOperator serviceAccountOperations;
     public final RoleBindingOperator roleBindingOperations;
+    public final RoleOperator roleOperations;
     public final ClusterRoleBindingOperator clusterRoleBindingOperator;
     public final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator;
     public final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperator;
@@ -117,6 +119,7 @@ public class ResourceOperatorSupplier {
                 new DeploymentOperator(vertx, client),
                 new ServiceAccountOperator(vertx, client),
                 new RoleBindingOperator(vertx, client),
+                new RoleOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
@@ -150,6 +153,7 @@ public class ResourceOperatorSupplier {
                                     DeploymentOperator deploymentOperations,
                                     ServiceAccountOperator serviceAccountOperations,
                                     RoleBindingOperator roleBindingOperations,
+                                    RoleOperator roleOperations,
                                     ClusterRoleBindingOperator clusterRoleBindingOperator,
                                     NetworkPolicyOperator networkPolicyOperator,
                                     PodDisruptionBudgetOperator podDisruptionBudgetOperator,
@@ -181,6 +185,7 @@ public class ResourceOperatorSupplier {
         this.deploymentOperations = deploymentOperations;
         this.serviceAccountOperations = serviceAccountOperations;
         this.roleBindingOperations = roleBindingOperations;
+        this.roleOperations = roleOperations;
         this.clusterRoleBindingOperator = clusterRoleBindingOperator;
         this.networkPolicyOperator = networkPolicyOperator;
         this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;

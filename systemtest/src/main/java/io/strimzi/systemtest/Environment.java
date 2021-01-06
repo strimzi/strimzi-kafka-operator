@@ -86,6 +86,14 @@ public class Environment {
      */
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     /**
+     * CO Roles only mode.
+     */
+    private static final String STRIMZI_RBAC_SCOPE_ENV = "STRIMZI_RBAC_SCOPE";
+    private static final String STRIMZI_RBAC_SCOPE_CLUSTER = "CLUSTER";
+    private static final String STRIMZI_RBAC_SCOPE_NAMESPACE = "NAMESPACE";
+    private static final String STRIMZI_RBAC_SCOPE_DEFAULT = STRIMZI_RBAC_SCOPE_CLUSTER;
+
+    /**
      * OLM env variables
      */
     private static final String OLM_OPERATOR_NAME_ENV = "OLM_OPERATOR_NAME";
@@ -135,6 +143,7 @@ public class Environment {
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
     public static final String KUBERNETES_DOMAIN = getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
+    public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     // variables for test-client image
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
@@ -171,6 +180,10 @@ public class Environment {
 
     public static boolean isHelmInstall() {
         return CLUSTER_OPERATOR_INSTALL_TYPE.equals(ClusterOperatorInstallType.HELM);
+    }
+
+    public static boolean isNamespaceRbacScope() {
+        return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
     }
 
     public static boolean useLatestReleasedBridge() {

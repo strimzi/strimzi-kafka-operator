@@ -299,19 +299,26 @@ public class EntityUserOperatorTest {
 
     @Test
     public void testRoleBindingInOtherNamespace()   {
-        RoleBinding binding = entityUserOperator.generateRoleBinding(namespace, uoWatchedNamespace);
+        RoleBinding binding = entityUserOperator.generateRoleBindingForRole(namespace, uoWatchedNamespace);
 
         assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
         assertThat(binding.getMetadata().getNamespace(), is(uoWatchedNamespace));
         assertThat(binding.getMetadata().getOwnerReferences().size(), is(0));
+
+        assertThat(binding.getRoleRef().getKind(), is("Role"));
+        assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
 
     @Test
-    public void testRoleBindingInTheSameNamespace()   {
-        RoleBinding binding = entityUserOperator.generateRoleBinding(namespace, namespace);
+    public void testRoleBindingInTheSameNamespace() {
+        RoleBinding binding = entityUserOperator.generateRoleBindingForRole(namespace, namespace);
 
         assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
         assertThat(binding.getMetadata().getNamespace(), is(namespace));
         assertThat(binding.getMetadata().getOwnerReferences().size(), is(1));
+
+        assertThat(binding.getRoleRef().getKind(), is("Role"));
+        assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
+
 }

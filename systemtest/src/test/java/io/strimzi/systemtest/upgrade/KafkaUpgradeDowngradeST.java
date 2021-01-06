@@ -274,7 +274,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         ResourceManager.setClassResources();
         prepareEnvForOperator(NAMESPACE);
 
-        applyRoleBindings(NAMESPACE);
+        applyBindings(NAMESPACE);
         // 060-Deployment
         BundleResource.clusterOperator(NAMESPACE).done();
     }

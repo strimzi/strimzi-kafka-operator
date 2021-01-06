@@ -71,9 +71,9 @@ public class MultipleListenersST extends AbstractST {
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
         List<GenericKafkaListener> internalListeners = testCases.get(KafkaListenerType.INTERNAL);
-        List<GenericKafkaListener> nodeportListeners = testCases.get(KafkaListenerType.NODEPORT);
-
         multipleDifferentListeners.addAll(internalListeners);
+
+        List<GenericKafkaListener> nodeportListeners = testCases.get(KafkaListenerType.NODEPORT);
         multipleDifferentListeners.addAll(nodeportListeners);
 
         // run INTERNAL + NODEPORT listeners

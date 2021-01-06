@@ -53,6 +53,11 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -722,6 +727,13 @@ public abstract class AbstractModel {
     }
 
     /**
+     * @return the name of the role used by the service account for the deployed cluster for Kubernetes API operations.
+     */
+    protected String getRoleName() {
+        throw new RuntimeException("Unsupported method: this method should be overridden");
+    }
+
+    /**
      * @return the cluster name.
      */
     public String getCluster() {
@@ -1368,6 +1380,45 @@ public abstract class AbstractModel {
     }
 
     /**
+     * @param namespace The namespace the role will be deployed into
+     * @param rules the list of rules associated with this role
+     *
+     * @return The role for the component.
+     */
+    public Role generateRole(String namespace, List<PolicyRule> rules) {
+        return new RoleBuilder()
+                .withNewMetadata()
+                    .withName(getRoleName())
+                    .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .addToLabels(labels.toMap())
+                .endMetadata()
+                .withRules(rules)
+                .build();
+    }
+
+    /**
+     * @param name The name of the rolebinding
+     * @param namespace The namespace the rolebinding will be deployed into
+     * @param roleRef a reference to a Role to bind to
+     * @param subjects a list of subject ServiceAccounts to bind the role to
+     *
+     * @return The RoleBinding for the component with thee given name and namespace.
+     */
+    public RoleBinding generateRoleBinding(String name, String namespace, RoleRef roleRef, List<Subject> subjects) {
+        return new RoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(subjects)
+                .build();
+    }
+
+    /**
      * Adds the supplied list of user configured container environment variables {@see io.strimzi.api.kafka.model.ContainerEnvVar} to the
      * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar},
      * checking first if the environment variable key has already been set in the existing list and then converts them.
@@ -1427,7 +1478,7 @@ public abstract class AbstractModel {
         return warningConditions;
     }
 
-    public DeploymentStrategy getDeploymentStrategy()   {
+    public DeploymentStrategy getDeploymentStrategy() {
         if (templateDeploymentStrategy == io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE) {
             return new DeploymentStrategyBuilder()
                     .withType("RollingUpdate")

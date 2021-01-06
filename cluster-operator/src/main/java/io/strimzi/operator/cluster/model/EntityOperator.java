@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -19,6 +21,9 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.JvmOptions;
@@ -29,11 +34,17 @@ import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.Main;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents the Entity Operator deployment
@@ -50,7 +61,6 @@ public class EntityOperator extends AbstractModel {
 
     // Entity Operator configuration keys
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-    public static final String EO_CLUSTER_ROLE_NAME = "strimzi-entity-operator";
 
     private String zookeeperConnect;
     private EntityTopicOperator topicOperator;
@@ -346,6 +356,49 @@ public class EntityOperator extends AbstractModel {
             return null;
         }
         return super.generateServiceAccount();
+    }
+
+    @Override
+    protected String getRoleName() {
+        return getRoleName(cluster);
+    }
+
+    /**
+     * Get the name of the Entity Operator Role given the name of the {@code cluster}.
+     * @param cluster The cluster name
+     * @return The name of the EO role.
+     */
+    public static String getRoleName(String cluster) {
+        return entityOperatorName(cluster);
+    }
+
+    /**
+     * Read the entity operator ClusterRole, and use the rules to create a new Role.
+     * This is done to avoid duplication of the rules set defined in source code.
+     *
+     * @param namespace the namespace this role will be located
+     *
+     * @return role for the entity operator
+     */
+    public Role generateRole(String namespace) {
+        List<PolicyRule> rules;
+
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(
+                    Main.class.getResourceAsStream("/cluster-roles/031-ClusterRole-strimzi-entity-operator.yaml"),
+                    StandardCharsets.UTF_8)
+            )
+        ) {
+            String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
+            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+            ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
+            rules = cr.getRules();
+        } catch (IOException e) {
+            log.error("Failed to read entity-operator ClusterRole.", e);
+            throw new RuntimeException(e);
+        }
+
+        return super.generateRole(namespace, rules);
     }
 
     protected static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {

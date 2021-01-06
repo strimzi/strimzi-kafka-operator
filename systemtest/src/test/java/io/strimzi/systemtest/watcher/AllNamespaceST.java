@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -46,6 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 class AllNamespaceST extends AbstractNamespaceST {
@@ -59,6 +61,9 @@ class AllNamespaceST extends AbstractNamespaceST {
      */
     @Test
     void testTopicOperatorWatchingOtherNamespace() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(CLUSTER_NAME, 0);
@@ -75,6 +80,9 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(ACCEPTANCE)
     void testKafkaInDifferentNsThanClusterOperator() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO(SECOND_CLUSTER_NAME, SECOND_NAMESPACE);
     }
@@ -85,6 +93,9 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(SECOND_CLUSTER_NAME);
     }
@@ -94,6 +105,9 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
@@ -113,6 +127,9 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
         // Deploy Kafka Connect in other namespace than CO
@@ -128,6 +145,9 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Test
     void testUOWatchingOtherNamespace() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
@@ -137,6 +157,9 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @Test
     void testUserInDifferentNamespace() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
@@ -199,12 +222,12 @@ class AllNamespaceST extends AbstractNamespaceST {
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
 
         // Apply role bindings in CO namespace
-        applyRoleBindings(CO_NAMESPACE);
+        applyBindings(CO_NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
         List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-                KubernetesResource.clusterRoleBinding(clusterRoleBinding, CO_NAMESPACE));
+                KubernetesResource.clusterRoleBinding(clusterRoleBinding));
         // 060-Deployment
         BundleResource.clusterOperator("*").done();
 
@@ -232,6 +255,9 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment() {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         deployTestSpecificResources();
     }
 }

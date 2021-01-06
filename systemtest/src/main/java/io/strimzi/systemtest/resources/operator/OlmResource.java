@@ -240,7 +240,9 @@ public class OlmResource {
                     .replace("${OLM_OPERATOR_VERSION}", version)
                     .replace("${OLM_INSTALL_PLAN_APPROVAL}", installationStrategy.toString())
                     .replace("${STRIMZI_FULL_RECONCILIATION_INTERVAL_MS}", Long.toString(reconciliationInterval))
-                    .replace("${STRIMZI_OPERATION_TIMEOUT_MS}", Long.toString(operationTimeout)));
+                    .replace("${STRIMZI_OPERATION_TIMEOUT_MS}", Long.toString(operationTimeout))
+                    .replace("${STRIMZI_RBAC_SCOPE}", Environment.STRIMZI_RBAC_SCOPE));
+
 
             ResourceManager.cmdKubeClient().apply(subscriptionFile);
         }  catch (IOException e) {

@@ -214,6 +214,7 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | OPERATOR_IMAGE_PULL_POLICY             | Image Pull Policy for Operator image                                                     | Always                                           |
 | COMPONENTS_IMAGE_PULL_POLICY           | Image Pull Policy for Kafka, Bridge, etc.                                                | IfNotPresent                                     |
 | STRIMZI_TEST_LOG_LEVEL                 | Log level for system tests                                                               | INFO                                             |
+| STRIMZI_RBAC_SCOPE                     | Set to 'CLUSTER' or 'NAMESPACE' to deploy the operator with ClusterRole or Roles respectively | cluster                                     |
 | OLM_OPERATOR_NAME                      | Operator name in manifests CSV                                                           | strimzi                                          |
 | OLM_SOURCE_NAME                        | CatalogSource name which contains desired operator                                       | strimzi-source                                   |
 | OLM_APP_BUNDLE_PREFIX                  | CSV bundle name                                                                          | strimzi                                          |

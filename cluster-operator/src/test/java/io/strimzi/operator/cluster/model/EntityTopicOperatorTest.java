@@ -224,19 +224,25 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testRoleBindingInOtherNamespace()   {
-        RoleBinding binding = entityTopicOperator.generateRoleBinding(namespace, toWatchedNamespace);
+        RoleBinding binding = entityTopicOperator.generateRoleBindingForRole(namespace, toWatchedNamespace);
 
         assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
         assertThat(binding.getMetadata().getNamespace(), is(toWatchedNamespace));
         assertThat(binding.getMetadata().getOwnerReferences().size(), is(0));
+
+        assertThat(binding.getRoleRef().getKind(), is("Role"));
+        assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
 
     @Test
     public void testRoleBindingInTheSameNamespace()   {
-        RoleBinding binding = entityTopicOperator.generateRoleBinding(namespace, namespace);
+        RoleBinding binding = entityTopicOperator.generateRoleBindingForRole(namespace, namespace);
 
         assertThat(binding.getSubjects().get(0).getNamespace(), is(namespace));
         assertThat(binding.getMetadata().getNamespace(), is(namespace));
         assertThat(binding.getMetadata().getOwnerReferences().size(), is(1));
+
+        assertThat(binding.getRoleRef().getKind(), is("Role"));
+        assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
 }
