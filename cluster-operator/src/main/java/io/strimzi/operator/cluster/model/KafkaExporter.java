@@ -193,7 +193,8 @@ public class KafkaExporter extends AbstractModel {
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, METRICS_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, METRICS_PORT_NAME))
                 .withResources(getResources())
-                .withVolumeMounts(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
+                .withVolumeMounts(createTempDirVolumeMount(),
+                        VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
@@ -224,7 +225,9 @@ public class KafkaExporter extends AbstractModel {
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>();
+        List<Volume> volumeList = new ArrayList<>(3);
+
+        volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporter.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 

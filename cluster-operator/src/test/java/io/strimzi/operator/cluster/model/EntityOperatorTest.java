@@ -127,6 +127,7 @@ public class EntityOperatorTest {
         assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(EntityOperator.defaultZookeeperConnect(cluster)));
         assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL), is(TlsSidecarLogLevel.NOTICE.toValue()));
         assertThat(EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()), is(map(
+                        EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                         EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
                         EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT)));
         assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));

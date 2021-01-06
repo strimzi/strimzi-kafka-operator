@@ -324,8 +324,13 @@ public class KafkaConnectCluster extends AbstractModel {
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(1);
+    protected List<Volume> getVolumes(boolean isOpenShift, boolean isS2I) {
+        List<Volume> volumeList = new ArrayList<>(2);
+
+        if (!isS2I) {
+            volumeList.add(createTempDirVolume());
+        }
+
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (rack != null) {
@@ -395,8 +400,13 @@ public class KafkaConnectCluster extends AbstractModel {
         return volumeList;
     }
 
-    protected List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(1);
+    protected List<VolumeMount> getVolumeMounts(boolean isS2I) {
+        List<VolumeMount> volumeMountList = new ArrayList<>(2);
+
+        if (!isS2I) {
+            volumeMountList.add(createTempDirVolumeMount());
+        }
+
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (rack != null) {
@@ -468,7 +478,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
+                getVolumes(isOpenShift, false),
                 imagePullSecrets);
     }
 
@@ -485,7 +495,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
-                .withVolumeMounts(getVolumeMounts())
+                .withVolumeMounts(getVolumeMounts(false))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)

@@ -472,12 +472,14 @@ public class KafkaClusterTest {
         assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
         assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
-        assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
-        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaCluster.BROKER_CERTS_VOLUME_MOUNT));
-        assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
-        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME_MOUNT));
-        assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME));
-        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME_MOUNT));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+        assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
+        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaCluster.BROKER_CERTS_VOLUME_MOUNT));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME_MOUNT));
+        assertThat(containers.get(0).getVolumeMounts().get(4).getName(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME));
+        assertThat(containers.get(0).getVolumeMounts().get(4).getMountPath(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME_MOUNT));
 
         if (cm.getSpec().getKafka().getRack() != null) {
 

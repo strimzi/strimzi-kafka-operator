@@ -48,6 +48,7 @@ function find_ca {
 echo "Preparing truststore for replication listener"
 # Add each certificate to the trust store
 STORE=/tmp/kafka/cluster.truststore.p12
+rm -f "$STORE"
 for CRT in /opt/kafka/cluster-ca-certs/*.crt; do
   ALIAS=$(basename "$CRT" .crt)
   echo "Adding $CRT to truststore $STORE with alias $ALIAS"
@@ -65,7 +66,9 @@ fi
 echo "Found the right CA: $CA"
 
 echo "Preparing keystore for replication and clienttls listener"
-create_keystore /tmp/kafka/cluster.keystore.p12 "$CERTS_STORE_PASSWORD" \
+STORE=/tmp/kafka/cluster.keystore.p12
+rm -f "$STORE"
+create_keystore "$STORE" "$CERTS_STORE_PASSWORD" \
     "/opt/kafka/broker-certs/$HOSTNAME.crt" \
     "/opt/kafka/broker-certs/$HOSTNAME.key" \
     "$CA" \
@@ -79,9 +82,11 @@ for CERT_DIR in /opt/kafka/certificates/*; do
     echo "Preparing store for $listener listener"
     if [[ ${BASH_REMATCH[1]} == "custom"  ]]; then
       echo "Creating keystore /tmp/kafka/$listener.keystore.p12"
+      rm -f /tmp/kafka/"$listener".keystore.p12
       create_keystore_without_ca_file /tmp/kafka/"$listener".keystore.p12 "$CERTS_STORE_PASSWORD" "${CERT_DIR}/tls.crt" "${CERT_DIR}/tls.key" custom-key
     elif [[ ${BASH_REMATCH[1]} == "oauth"  ]]; then
       OAUTH_STORE="/tmp/kafka/$listener.truststore.p12"
+      rm -f "$OAUTH_STORE"
       # Add each certificate to the trust store
       declare -i INDEX=0
       for CRT in "$CERT_DIR"/**/*; do
@@ -98,6 +103,7 @@ done
 echo "Preparing truststore for client authentication"
 # Add each certificate to the trust store
 STORE=/tmp/kafka/clients.truststore.p12
+rm -f "$STORE"
 for CRT in /opt/kafka/client-ca-certs/*.crt; do
   ALIAS=$(basename "$CRT" .crt)
   echo "Adding $CRT to truststore $STORE with alias $ALIAS"
@@ -107,6 +113,7 @@ echo "Preparing truststore for client authentication is complete"
 
 AUTHZ_KEYCLOAK_DIR="/opt/kafka/certificates/authz-keycloak-certs"
 AUTHZ_KEYCLOAK_STORE="/tmp/kafka/authz-keycloak.truststore.p12"
+rm -f "$AUTHZ_KEYCLOAK_STORE"
 if [ -d "$AUTHZ_KEYCLOAK_DIR" ]; then
   echo "Preparing truststore for Authorization with Keycloak"
 

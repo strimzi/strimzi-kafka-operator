@@ -26,6 +26,9 @@ spec:
         - name: {{ .Values.image.imagePullSecrets }}
       {{- end }}
       volumes:
+        - name: strimzi-tmp
+          emptyDir:
+            medium: Memory
         - name: {{ .Values.logVolume }}
           configMap:
             name: {{ .Values.logConfigMap }}
@@ -41,6 +44,8 @@ spec:
           args:
             - /opt/strimzi/bin/cluster_operator_run.sh
           volumeMounts:
+            - name: strimzi-tmp
+              mountPath: /tmp
             - name: {{ .Values.logVolume }}
               mountPath: /opt/strimzi/custom-config/
           env:

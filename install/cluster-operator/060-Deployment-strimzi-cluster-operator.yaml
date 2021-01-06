@@ -18,6 +18,9 @@ spec:
     spec:
       serviceAccountName: strimzi-cluster-operator
       volumes:
+        - name: strimzi-tmp
+          emptyDir:
+            medium: Memory
         - name: co-config-volume
           configMap:
             name: strimzi-cluster-operator
@@ -30,6 +33,8 @@ spec:
           args:
             - /opt/strimzi/bin/cluster_operator_run.sh
           volumeMounts:
+            - name: strimzi-tmp
+              mountPath: /tmp
             - name: co-config-volume
               mountPath: /opt/strimzi/custom-config/
           env:

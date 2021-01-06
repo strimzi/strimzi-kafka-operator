@@ -41,6 +41,8 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -134,6 +136,12 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_JAVA_OPTS = "STRIMZI_JAVA_OPTS";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
+
+    /*
+     * Default values for the Strimzi temporary directory
+     */
+    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tmp";
+    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
 
     /**
      * Annotation on PVCs storing the original configuration
@@ -1492,5 +1500,26 @@ public abstract class AbstractModel {
                     .withType("Recreate")
                     .build();
         }
+    }
+
+    protected Volume createTempDirVolume() {
+        return createTempDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
+    }
+
+    protected Volume createTempDirVolume(String volumeName) {
+        return new VolumeBuilder()
+                .withName(volumeName)
+                .withNewEmptyDir()
+                    .withMedium("Memory")
+                .endEmptyDir()
+                .build();
+    }
+
+    protected VolumeMount createTempDirVolumeMount() {
+        return createTempDirVolumeMount(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
+    }
+
+    protected VolumeMount createTempDirVolumeMount(String volumeName) {
+        return VolumeUtils.createVolumeMount(volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
     }
 }

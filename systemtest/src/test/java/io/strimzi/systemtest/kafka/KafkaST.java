@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
@@ -1565,6 +1566,83 @@ class KafkaST extends AbstractST {
                 assertThat(output, containsString(etcHostsData));
             }
         }
+    }
+
+    @Test
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testReadOnlyRootFileSystem() {
+        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewKafkaContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endKafkaContainer()
+                        .endTemplate()
+                    .endKafka()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewZookeeperContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endZookeeperContainer()
+                        .endTemplate()
+                    .endZookeeper()
+                    .editEntityOperator()
+                        .withNewTemplate()
+                            .withNewTlsSidecarContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endTlsSidecarContainer()
+                            .withNewTopicOperatorContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endTopicOperatorContainer()
+                            .withNewUserOperatorContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endUserOperatorContainer()
+                        .endTemplate()
+                    .endEntityOperator()
+                    .editOrNewKafkaExporter()
+                        .withNewTemplate()
+                            .withNewContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endContainer()
+                        .endTemplate()
+                    .endKafkaExporter()
+                    .editOrNewCruiseControl()
+                        .withNewTemplate()
+                            .withNewTlsSidecarContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endTlsSidecarContainer()
+                            .withNewCruiseControlContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endCruiseControlContainer()
+                        .endTemplate()
+                    .endCruiseControl()
+                .endSpec()
+                .done();
+
+        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+
+        KafkaTopicResource.topic(CLUSTER_NAME, TEST_TOPIC_NAME).done();
+
+        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+                .withUsingPodName(kafkaClientsPodName)
+                .withTopicName(TEST_TOPIC_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                .build();
+
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesPlain(),
+                internalKafkaClient.receiveMessagesPlain()
+        );
     }
 
     protected void checkKafkaConfiguration(String podNamePrefix, Map<String, Object> config, String clusterName) {
