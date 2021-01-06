@@ -312,35 +312,35 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @Test
     void testManualRollingUpdateForSinglePod() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(clusterName, 3).done();
 
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
+        String zkSsName = KafkaResources.zookeeperStatefulSetName(clusterName);
 
-        Pod kafkaPod = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        Pod kafkaPod = kubeClient().getPod(KafkaResources.kafkaPodName(clusterName, 0));
         // snapshot of one single Kafka pod
         Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
 
-        Pod zkPod = kubeClient().getPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0));
+        Pod zkPod = kubeClient().getPod(KafkaResources.zookeeperPodName(clusterName, 0));
         // snapshot of one single ZK pod
         Map<String, String> zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
 
         LOGGER.info("Trying to roll just single Kafka and single ZK pod");
-        kubeClient().editPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0))
-                .editMetadata()
+        kubeClient().editPod(KafkaResources.kafkaPodName(clusterName, 0))
+            .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .done();
+            .endMetadata()
+            .done();
 
         // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaSnapshot);
 
-        kubeClient().editPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0))
-                .editMetadata()
+        kubeClient().editPod(KafkaResources.zookeeperPodName(clusterName, 0))
+            .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .done();
+            .endMetadata()
+            .done();
 
         // same as above
         zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(zkSsName, 3, zkSnapshot);
@@ -349,10 +349,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Adding anno to all ZK and Kafka pods");
         kafkaSnapshot.keySet().forEach(podName -> {
             kubeClient().editPod(podName)
-                    .editMetadata()
+                .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .done();
+                .endMetadata()
+                .done();
         });
 
         LOGGER.info("Checking if the rolling update will be successful for Kafka");
@@ -360,10 +360,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         zkSnapshot.keySet().forEach(podName -> {
             kubeClient().editPod(podName)
-                    .editMetadata()
+                .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .done();
+                .endMetadata()
+                .done();
         });
 
         LOGGER.info("Checking if the rolling update will be successful for ZK");
