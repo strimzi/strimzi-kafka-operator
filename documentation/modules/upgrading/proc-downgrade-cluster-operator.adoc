@@ -1,0 +1,52 @@
+// Module included in the following assemblies:
+//
+// assembly-downgrade.adoc
+
+[id='proc-downgrade-cluster-operator-{context}']
+= Downgrading the Cluster Operator to a previous version
+
+If you are encountering issues with Strimzi,
+you can revert your installation.
+
+This procedure describes how to downgrade a Cluster Operator deployment to a previous version.
+
+.Prerequisites
+
+* An existing Cluster Operator deployment is available.
+* You have xref:downloads-{context}[downloaded the installation files for the previous version].
+
+.Procedure
+
+. Take note of any configuration changes made to the existing Cluster Operator resources (in the `/install/cluster-operator` directory).
+Any changes will be *overwritten* by the previous version of the Cluster Operator.
++
+. Revert your custom resources to reflect the supported configuration options available for the version of Strimzi you are downgrading to.
+
+. Update the Cluster Operator.
+
+.. Modify the installation files for the previous version according to the namespace the Cluster Operator is running in.
++
+include::snip-cluster-operator-namespace-sed.adoc[]
++
+.. If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit the
+`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to use those environment variables.
+
+. When you have an updated configuration, deploy it along with the rest of the installation resources:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl apply -f install/cluster-operator
+----
++
+Wait for the rolling updates to complete.
+
+. Get the image for the Kafka pod to ensure the downgrade was successful:
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl get pod my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+----
++
+The image tag shows the new Strimzi version followed by the Kafka version. For example, `_NEW-STRIMZI-VERSION_-kafka-_CURRENT-KAFKA-VERSION_`.
+
+Your Cluster Operator was downgraded to the previous version.

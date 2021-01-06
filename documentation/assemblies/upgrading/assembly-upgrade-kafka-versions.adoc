@@ -10,7 +10,7 @@ After you have upgraded your Cluster Operator, you can upgrade your brokers to a
 
 Kafka upgrades are performed using the Cluster Operator. How the Cluster Operator performs an upgrade depends on the differences between versions of:
 
-* Interbroker protocol
+* Inter-broker protocol
 * Log message format
 * ZooKeeper
 
