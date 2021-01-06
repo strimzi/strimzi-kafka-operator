@@ -22,9 +22,9 @@ m¦FileStreamSinkConnector
 
 |===
 
-The Cluster Operator can also use images that you have created to deploy a Kafka Connect cluster to your Kubernetes cluster.
-
 The procedures in this section show how to add your own connector classes to connector images by:
+
+* xref:creating-new-image-using-kafka-connect-build-{context}[Creating new container image automatically using Strimzi]
 
 * xref:creating-new-image-from-base-{context}[Creating a container image from the Kafka Connect base image (manually or using continuous integration)]
 
@@ -32,6 +32,8 @@ The procedures in this section show how to add your own connector classes to con
 
 IMPORTANT: You create the configuration for connectors directly xref:con-creating-managing-connectors-{context}[using the Kafka Connect REST API or KafkaConnector custom resources].
 
+//Procedure to create a container images using Strimzi and Kafka Connect build
+include::modules/proc-deploy-kafka-connect-using-kafka-connect-build.adoc[leveloffset=+1]
 //Procedure to create a container images from base image
 include::modules/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]
 //Procedure to create a base images from OpenShift builds and S2I
