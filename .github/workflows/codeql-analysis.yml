@@ -40,7 +40,7 @@ jobs:
     # Install yq
     - name: Install yq
       run: |
-          curl -L https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 > yq && chmod +x yq
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.2.1/yq_linux_amd64 > yq && chmod +x yq
           sudo cp -v yq /usr/bin/
 
     # Setup OpenJDK 11

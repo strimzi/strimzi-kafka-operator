@@ -75,9 +75,9 @@
                 <configuration>
                     <executable>yq</executable>
                     <arguments>
-                        <argument>r</argument>
+                        <argument>eval</argument>
+                        <argument>.[].version</argument>
                         <argument>../kafka-versions.yaml</argument>
-                        <argument>.version</argument>
                     </arguments>
                     <outputFile>./src/main/resources/kafka-versions.txt</outputFile>
                 </configuration>

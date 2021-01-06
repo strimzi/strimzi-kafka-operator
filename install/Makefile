@@ -18,16 +18,16 @@ crd_install_helm3:
 	$(CP) ./cluster-operator/047-Crd-kafkaconnector.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml
 	$(CP) ./cluster-operator/048-Crd-kafkamirrormaker2.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml
 	$(CP) ./cluster-operator/049-Crd-kafkarebalance.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/040-Crd-kafka.yaml metadata.labels.component "kafkas.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/041-Crd-kafkaconnect.yaml metadata.labels.component "kafkaconnects.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-kafkaconnects2i.yaml metadata.labels.component "kafkaconnects2is.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/043-Crd-kafkatopic.yaml metadata.labels.component "kafkatopics.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml metadata.labels.component "kafkausers.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml metadata.labels.component "kafkamirrormakers.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/046-Crd-kafkabridge.yaml metadata.labels.component "kafkabridges.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml metadata.labels.component "kafkaconnectors.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml metadata.labels.component "kafkamirrormaker2.kafka.strimzi.io-crd"
-	yq write -i ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml metadata.labels.component "kafkarebalances.kafka.strimzi.io-crd"
+	yq eval -i '.metadata.labels.component="kafkas.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/040-Crd-kafka.yaml
+	yq eval -i '.metadata.labels.component="kafkaconnects.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/041-Crd-kafkaconnect.yaml 
+	yq eval -i '.metadata.labels.component="kafkaconnects2is.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-kafkaconnects2i.yaml 
+	yq eval -i '.metadata.labels.component="kafkatopics.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/043-Crd-kafkatopic.yaml 
+	yq eval -i '.metadata.labels.component="kafkausers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml 
+	yq eval -i '.metadata.labels.component="kafkamirrormakers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml 
+	yq eval -i '.metadata.labels.component="kafkabridges.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/046-Crd-kafkabridge.yaml 
+	yq eval -i '.metadata.labels.component="kafkaconnectors.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml 
+	yq eval -i '.metadata.labels.component="kafkamirrormaker2.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml 
+	yq eval -i '.metadata.labels.component="kafkarebalances.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml 
 
 crd_install: crd_install_helm3
 
