@@ -27,7 +27,7 @@ Each Kafka Connect deployment must use a separate image, which can mean differen
 
 If the registry requires authentication, use the `pushSecret` to set a name of the Secret with the registry credentials.
 For the Secret, use the `kubernetes.io/dockerconfigjson` type and a `.dockerconfigjson` file to contain the Docker credentials.
-For more information on pulling an image from a private registry, see link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials[Create a Secret based on existing Docker credentials^].
+For more information on pulling an image from a private registry, see {K8sDockerSecret}.
 
 [source,yaml,subs=attributes+,options="nowrap"]
 .Example `output` configuration
@@ -68,7 +68,7 @@ spec:
   build:
     output:
       type: imagestream # <1>
-      imageStream: image-stream-name # <2>
+      image: my-connect-build:latest # <2>
   #...
 ----
 <1> (Required) Type of output used by Strimzi. 
@@ -76,6 +76,7 @@ spec:
 
 === `plugins`
 
+Connector plugins are a set of files that define the implementation required to connect to certain types of external system.
 The connector plugins required for a container image must be configured using the `.spec.build.plugins` property of the `KafkaConnect` custom resource.
 Each connector plugin must have a name which is unique within the Kafka Connect deployment.
 Additionally, the plugin artifacts must be listed.
