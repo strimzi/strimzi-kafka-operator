@@ -5,19 +5,22 @@
 [id='creating-new-image-using-kafka-connect-build-{context}']
 = Creating new container image automatically using Strimzi
 
-This procedure shows how to have Strimzi automatically build a new container image with additional connectors.
-You can define the connector plugins as part of the `KafkaConnect` custom resource in the `.spec.build.plugins`.
-Strimzi will automatically download them, add them into a new container image.
-The container will be pushed into the container repository specified in `.spec.build.output` and autoamtically used in the Kafka Connect deployment.
+This procedure shows how to configure Kafka Connect so that Strimzi automatically builds a new container image with additional connectors.
+You define the connector plugins using the `.spec.build.plugins` property of the `KafkaConnect` custom resource.
+Strimzi will automatically download and add the connector plugins into a new container image.
+The container is pushed into the container repository specified in `.spec.build.output` and automatically used in the Kafka Connect deployment.
 
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
-* Container registry where the newly built container can be pushed
+* A container registry
+
+You need to provide your own container registry where images can be pushed to, stored, and pulled from.
+Strimzi supports private container registries as well as public registries such as link:https://quay.io/[Quay^] or link:https://hub.docker.com//[Docker Hub^].
 
 .Procedure
 
-. Prepare the `KafkaConnect` custom resource with the container registry configured in `.spec.build.output` and additional connectors configured in `.spec.build.plugins`:
+. Configure the `KafkaConnect` custom resource by specifying the container registry in `.spec.build.output`, and additional connectors in `.spec.build.plugins`:
 +
 [source,yaml,subs=attributes+,options="nowrap"]
 ----
@@ -46,22 +49,22 @@ spec: # <1>
   #...
 ----
 <1> link:{BookURLUsing}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster^].
-<2> Configuration of the container registry where the new image should be pushed.
-<3> List of connector plugins which should be added to the container image and their artifacts.
+<2> (Required) Configuration of the container registry where the new image are pushed.
+<3> (Required) List of connector plugins and their artifacts to add to the new container image. Each plugin must be configured with at least one `artifact`.
 
-. Create the `KafkaConnect` custom resource from the YAML file:
+. Create or update the resource:
 +
 [source,subs="+quotes"]
 ----
-$ kubectl apply -f <YAMLfile>
+$ kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
 ----
 
-. Wait for the new container image to be built and for the Kafka Connect cluster to be deployed.
+. Wait for the new container image to build, and for the Kafka Connect cluster to be deployed.
 
-. Use the Kafka Connect REST API or the KafkaConnector custom resources to use the connector plugins you added.
+. Use the Kafka Connect REST API or the `KafkaConnector` custom resources to use the connector plugins you added.
 
 .Additional resources
 
 See the _Using Strimzi_ guide for more information on:
 
-* link:{BookURLUsing}#type-Build-reference[Kafka Connect Build reference^]
+* link:{BookURLUsing}#type-Build-reference[Kafka Connect `Build` schema reference^]

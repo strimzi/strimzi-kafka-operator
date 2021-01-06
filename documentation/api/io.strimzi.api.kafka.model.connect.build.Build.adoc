@@ -2,33 +2,32 @@ Configures additional connectors for Kafka Connect deployments.
 
 === `output`
 
-In order to build new container images with additional connector plugins, Strimzi requires a container registry where the images can be pushed to, stored and pulled from.
-Strimzi does not run its own container registry, so users need to provide their own registry.
-Strimzi is able to use private container registries as well as public registries such as link:https://quay.io/[Quay^] or link:https://hub.docker.com//[Docker Hub^].
+To build new container images with additional connector plugins, Strimzi requires a container registry where the images can be pushed to, stored, and pulled from.
+Strimzi does not run its own container registry, so a registry must be provided.
+Strimzi supports private container registries as well as public registries such as link:https://quay.io/[Quay^] or link:https://hub.docker.com//[Docker Hub^].
 The container registry is configured in the `.spec.build.output` section of the `KafkaConnect` custom resource.
-The `output` configuration supports two types: `docker` and `imagestream`.
-The `output` section is required.
+The `output` configuration, which is required, supports two types: `docker` and `imagestream`.
 
 .Using Docker registry
 
 To use a Docker registry, you have to specify the `type` as `docker`, and the `image` field with the full name of the new container image.
-The full name has to include:
+The full name must include:
 
-* The address of the registry.
-* Port number if it is listening on non-standard port
+* The address of the registry
+* Port number (if listening on a non-standard port)
 * The tag of the new container image
 
-Examples of valid image names are:
+Example valid container image names:
 
 * `docker.io/my-org/my-image/my-tag`
 * `quay.io/my-org/my-image/my-tag`
 * `image-registry.image-registry.svc:5000/myproject/kafka-connect-build:latest`
 
-Different Kafka Connect deployments should use a different image (for example at least with different tags).
+Each Kafka Connect deployment must use a separate image, which can mean different tags at the most basic level.
 
-If the registry requires authentication, the field `pushSecret` can be used to set a name of the Secret with the registry credentials.
-The Secret should use the `kubernetes.io/dockerconfigjson` type and contain the `.dockerconfigjson` file with the Docker credentials.
-For more details see link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials[Create a Secret based on existing Docker credentials^]
+If the registry requires authentication, use the `pushSecret` to set a name of the Secret with the registry credentials.
+For the Secret, use the `kubernetes.io/dockerconfigjson` type and a `.dockerconfigjson` file to contain the Docker credentials.
+For more information on pulling an image from a private registry, see link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials[Create a Secret based on existing Docker credentials^].
 
 [source,yaml,subs=attributes+,options="nowrap"]
 .Example `output` configuration
@@ -46,16 +45,16 @@ spec:
       pushSecret: my-registry-credentials # <3>
   #...
 ----
-<1> The type of the output which should be used by Strimzi. (Required)
-<2> The full name of the image which will be used including the repository and tag. (Required)
-<3> Name of the secret with the container registry credentials. (Optional)
+<1> (Required) Type of output used by Strimzi. 
+<2> (Required) Full name of the image used, including the repository and tag. 
+<3> (Optional) Name of the secret with the container registry credentials. 
 
 .Using OpenShift ImageStream
 
-Alternatively, you can also use OpenShift ImageStream to store the new container image.
-The ImageStream has to be created manually before deploying the Kafka Connect.
-To use OpenShift ImageStream, you have to set the `type` to `imagestream`, and the `image` field should contain the name of the ImageStream and the tag which should be used.
-For example `my-connect-image-stream:latest`.
+Instead of Docker, you can use OpenShift ImageStream to store a new container image.
+The ImageStream has to be created manually before deploying Kafka Connect.
+To use ImageStream, set the `type` to `imagestream`, and use the `image` property to specify the name of the ImageStream and the tag used.
+For example, `my-connect-image-stream:latest`.
 
 [source,yaml,subs=attributes+,options="nowrap"]
 .Example `output` configuration
@@ -72,19 +71,18 @@ spec:
       imageStream: image-stream-name # <2>
   #...
 ----
-<1> The type of the output which should be used by Strimzi. (Required)
-<2> The name of the ImageStream and tag. (Required)
+<1> (Required) Type of output used by Strimzi. 
+<2> (Required) Name of the ImageStream and tag. 
 
 === `plugins`
 
-The connector plugins which will be added to the container image are configured in the `.spec.build.plugins` section of the `KafkaConnect` custom resource.
-Each connector plugin needs to have a name which is unique within the Kafka Connect deployment.
-Additionally, it contains a list of artifacts which it consists of.
-These artifacts will be downloaded by Strimzi, added to the new container image, and used in the Kafka Connect deployment.
-The connector plugin artifacts can also include additional components such as (de)serializers and so on.
-Each connector plugin will be downloaded into a separate directory so that the different connectors and their dependencies are properly sand-boxed.
-The `plugins` section is required.
-Each plugin has to be configured with at least one `artifact`.
+The connector plugins required for a container image must be configured using the `.spec.build.plugins` property of the `KafkaConnect` custom resource.
+Each connector plugin must have a name which is unique within the Kafka Connect deployment.
+Additionally, the plugin artifacts must be listed.
+These artifacts are downloaded by Strimzi, added to the new container image, and used in the Kafka Connect deployment.
+The connector plugin artifacts can also include additional components, such as (de)serializers.
+Each connector plugin is downloaded into a separate directory so that the different connectors and their dependencies are properly _sandboxed_.
+Each plugin must be configured with at least one `artifact`.
 
 [source,yaml,subs=attributes+,options="nowrap"]
 .Example `plugins` configuration with two connector plugins
@@ -111,27 +109,26 @@ spec:
             sha512sum: a9b1ac63e3284bea7836d7d24d84208c49cdf5600070e6bd1535de654f6920b74ad950d51733e8020bf4187870699819f54ef5859c7846ee4081507f48873479
   #...
 ----
-<1> List of connector plugins and their artifacts which should be downloaded. (Required)
+<1> (Required) List of connector plugins and their artifacts. 
 
-Currently, Strimzi supports two types of artifacts:
-* Downloading JAR files and using them directly
-* Downloading TGZ archives and unpacking them
+Strimzi supports two types of artifacts:
+* JAR files, which are downloaded and used directly
+* TGZ archives, which are downloaded and unpacked
 
-IMPORTANT: Strimzi does not do any security scanning of the downloaded artifacts.
-For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build and in the Kafka Connect deployment.
+IMPORTANT: Strimzi does not perform any security scanning of the downloaded artifacts.
+For security reasons, you should first verify the artifacts manually, and configure the checksum verification to make sure the same artifact is used in the automated build and in the Kafka Connect deployment.
 
 .Using JAR artifacts
 
-The JAR artifacts represent a resource which will be downloaded and added to the container image.
-It is intended to be mainly used for downloading JAR files.
-It can be also used to download other file types.
-To use a JAR artifacts, you have to set the `type` field to `jar` and use the `url` to specify the URL from which it should be downloaded.
+JAR artifacts represent a resource which is downloaded and added to a container image.
+JAR artifacts are mainly used for downloading JAR files, but they can also used to download other file types.
+To use a JAR artifacts, set the `type` property to `jar`, and specify the download location using the `url` property.
 
-Additionally, you can specify SHA-512 checksum of the file which will be downloaded.
+Additionally, you can specify a SHA-512 checksum of the artifact.
 If specified, Strimzi will verify the checksum of the artifact while building the new container image.
 
 [source,yaml,subs=attributes+,options="nowrap"]
-.Example of a JAR artifact
+.Example JAR artifact
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
@@ -152,22 +149,22 @@ spec:
             url: https://my-domain.tld/my-jar2.jar
   #...
 ----
-<1> Type of the artifact. (Required)
-<2> The URL from which the artifact will be downloaded. (Required)
-<3> The SHA-512 checksum to verify the artifact. (Optional)
+<1> (Required) Type of artifact. 
+<2> (Required) URL from which the artifact is downloaded. 
+<3> (Optional) SHA-512 checksum to verify the artifact. 
 
 .Using TGZ artifacts
 
-The TGZ artifacts can be used to download TAR archives compressed using the Gzip compression.
-The TGZ archive can contain the whole Kafka Connect connector even if it consists of multiple different files.
-It will be automatically downloaded and unpacked by Strimzi while building the new container image.
-To use a TGZ artifacts, you have to set the `type` field to `tgz` and use the `url` to specify the URL from which the TGZ archive should be downloaded.
+TGZ artifacts are used to download TAR archives that have been compressed using Gzip compression.
+The TGZ artifact can contain the whole Kafka Connect connector, even when comprising multiple different files.
+The TGZ artifact is automatically downloaded and unpacked by Strimzi while building the new container image.
+To use TGZ artifacts, set the `type` property to `tgz`, and specify the download location using the `url` property.
 
-Additionally, you can specify SHA-512 checksum of the archive which will be downloaded.
+Additionally, you can specify a SHA-512 checksum of the artifact.
 If specified, Strimzi will verify the checksum before unpacking it and building the new container image.
 
 [source,yaml,subs=attributes+,options="nowrap"]
-.Example of a JAR artifact
+.Example TGZ artifact
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
@@ -186,6 +183,6 @@ spec:
             sha512sum: 158...jg10 # <3>
   #...
 ----
-<1> Type of the artifact. (Required)
-<2> The URL from which the archive will be downloaded. (Required)
-<3> The SHA-512 checksum to verify the archive. (Optional)
+<1> (Required) Type of artifact. 
+<2> (Required) URL from which the archive is downloaded. 
+<3> (Optional) SHA-512 checksum to verify the artifact.  
