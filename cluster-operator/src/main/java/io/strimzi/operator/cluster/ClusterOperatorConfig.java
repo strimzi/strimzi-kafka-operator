@@ -37,6 +37,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
+    public static final String STRIMZI_CONNECT_BUILD_TIMEOUT_MS = "STRIMZI_CONNECT_BUILD_TIMEOUT_MS";
     public static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
     public static final String STRIMZI_IMAGE_PULL_SECRETS = "STRIMZI_IMAGE_PULL_SECRETS";
     public static final String STRIMZI_OPERATOR_NAMESPACE = "STRIMZI_OPERATOR_NAMESPACE";
@@ -67,10 +68,12 @@ public class ClusterOperatorConfig {
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
+    public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
     private final long operationTimeoutMs;
+    private final long connectBuildTimeoutMs;
     private final boolean createClusterRoles;
     private final KafkaVersion.Lookup versions;
     private final ImagePullPolicy imagePullPolicy;
@@ -85,6 +88,7 @@ public class ClusterOperatorConfig {
      * @param namespaces namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
+     * @param connectBuildTimeoutMs timeout used to wait for a Kafka Connect builds to finish
      * @param createClusterRoles true to create the ClusterRoles
      * @param versions The configured Kafka versions
      * @param imagePullPolicy Image pull policy configured by the user
@@ -97,6 +101,7 @@ public class ClusterOperatorConfig {
             Set<String> namespaces,
             long reconciliationIntervalMs,
             long operationTimeoutMs,
+            long connectBuildTimeoutMs,
             boolean createClusterRoles,
             KafkaVersion.Lookup versions,
             ImagePullPolicy imagePullPolicy,
@@ -108,6 +113,7 @@ public class ClusterOperatorConfig {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
+        this.connectBuildTimeoutMs = connectBuildTimeoutMs;
         this.createClusterRoles = createClusterRoles;
         this.versions = versions;
         this.imagePullPolicy = imagePullPolicy;
@@ -152,7 +158,8 @@ public class ClusterOperatorConfig {
     public static ClusterOperatorConfig fromMap(Map<String, String> map, KafkaVersion.Lookup lookup) {
         Set<String> namespaces = parseNamespaceList(map.get(STRIMZI_NAMESPACE));
         long reconciliationInterval = parseReconciliationInterval(map.get(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS));
-        long operationTimeout = parseOperationTimeout(map.get(STRIMZI_OPERATION_TIMEOUT_MS));
+        long operationTimeout = parseTimeout(map.get(STRIMZI_OPERATION_TIMEOUT_MS), DEFAULT_OPERATION_TIMEOUT_MS);
+        long connectBuildTimeout = parseTimeout(map.get(STRIMZI_CONNECT_BUILD_TIMEOUT_MS), DEFAULT_CONNECT_BUILD_TIMEOUT_MS);
         boolean createClusterRoles = parseCreateClusterRoles(map.get(STRIMZI_CREATE_CLUSTER_ROLES));
         ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(STRIMZI_IMAGE_PULL_POLICY));
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(STRIMZI_IMAGE_PULL_SECRETS));
@@ -164,6 +171,7 @@ public class ClusterOperatorConfig {
                 namespaces,
                 reconciliationInterval,
                 operationTimeout,
+                connectBuildTimeout,
                 createClusterRoles,
                 lookup,
                 imagePullPolicy,
@@ -202,14 +210,14 @@ public class ClusterOperatorConfig {
         return reconciliationInterval;
     }
 
-    private static long parseOperationTimeout(String operationTimeoutEnvVar) {
-        long operationTimeout = DEFAULT_OPERATION_TIMEOUT_MS;
+    private static long parseTimeout(String timeoutEnvVar, long defaultTimeout) {
+        long timeout = defaultTimeout;
 
-        if (operationTimeoutEnvVar != null) {
-            operationTimeout = Long.parseLong(operationTimeoutEnvVar);
+        if (timeoutEnvVar != null) {
+            timeout = Long.parseLong(timeoutEnvVar);
         }
 
-        return operationTimeout;
+        return timeout;
     }
 
     private static boolean parseCreateClusterRoles(String createClusterRolesEnvVar) {
@@ -365,6 +373,13 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * @return  How many milliseconds should we wait for Kafka Connect build to complete
+     */
+    public long getConnectBuildTimeoutMs() {
+        return connectBuildTimeoutMs;
+    }
+
+    /**
      * @return  Indicates whether Cluster Roles should be created
      */
     public boolean isCreateClusterRoles() {
@@ -416,6 +431,7 @@ public class ClusterOperatorConfig {
                 "namespaces=" + namespaces +
                 ",reconciliationIntervalMs=" + reconciliationIntervalMs +
                 ",operationTimeoutMs=" + operationTimeoutMs +
+                ",connectBuildTimeoutMs=" + connectBuildTimeoutMs +
                 ",createClusterRoles=" + createClusterRoles +
                 ",versions=" + versions +
                 ",imagePullPolicy=" + imagePullPolicy +
