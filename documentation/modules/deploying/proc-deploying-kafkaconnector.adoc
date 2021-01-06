@@ -3,16 +3,21 @@
 // assembly-kafka-connect.adoc
 
 [id='proc-deploying-kafkaconnector-{context}']
-= Deploying a `KafkaConnector` resource to Kafka Connect
+= Deploying a `KafkaConnector` resource
 
-This procedure describes how to deploy the example `KafkaConnector` to a Kafka Connect cluster.
+You can configure and deploy a `KafkaConnector` resource to a Kafka Connect cluster. 
+This creates a new connector instance with the specified configuration. 
 
-The example YAML will create a `FileStreamSourceConnector` to send each line of the license file to Kafka as a message in a topic named `my-topic`.
+This procedure creates a basic `FileStreamSourceConnector` that sends each line of the Kafka license file to a Kafka topic. 
+You can also create a `FileStreamSinkConnector`.
+
+The file connectors provided with Strimzi are intended to be used as examples only. 
 
 .Prerequisites
 
-* A Kafka Connect deployment in which link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[`KafkaConnectors` are enabled^]
-* A running Cluster Operator
+* A Kafka Connect deployment
+* link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[`KafkaConnectors` are enabled^]
+* The Cluster Operator is running
 
 .Procedure
 
@@ -30,16 +35,63 @@ spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
   tasksMax: 2 <4>
   config: <5>
+    tasks.max: 1500
     file: "/opt/kafka/LICENSE"
     topic: my-topic
     # ...
 ----
 +
-<1> Enter a name for the `KafkaConnector` resource. This will be used as the name of the connector within Kafka Connect. You can choose any name that is valid for a Kubernetes resource.
-<2> Enter the name of the Kafka Connect cluster in which to create the connector.
-<3> The name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
-<4> The maximum number of tasks that the connector can create.
-<5> Configuration settings for the connector. Available configuration options depend on the connector class.
+<1> Name of the `KafkaConnector` resource, which is used as the name of the connector. Use any name that is valid for a Kubernetes resource.
+<2> Name of the Kafka Connect cluster to create the connector in.
+<3> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
+<4> Maximum number of Kafka Connect `Tasks` that the connector can create.
+<5> Connector configuration as key-value pairs.
++
+The `FileStreamSourceConnector` class accepts the following configuration options:
++
+[cols="4*",options="header",stripes="none",separator=¦]
+|===
+
+¦Name
+¦Type
+¦Default value
+¦Description
+
+m¦tasks.max
+¦Integer
+¦The default task batch size (2000)
+¦Maximum number of messages read by the `SourceTask` from the source file at a time.
+
+m¦file
+¦String
+¦Null
+¦Source file name. If not specified, the standard input is used.
+
+m¦topic
+¦List
+¦Null
+¦The Kafka topic to publish data to.
+
+|===
++
+The `FileStreamSinkConnector` class accepts the following configuration options
++
+[cols="4*",options="header",stripes="none",separator=¦]
+|===
+
+¦Name
+¦Type
+¦Default value
+¦Description
+
+m¦file
+¦String
+¦Null
+¦Destination file name. If not specified, the standard output is used.
+
+|===
++
+Both classes of connectors support the same configuration options as the Kafka Connect REST API.
 
 . Create the `KafkaConnector` in your Kubernetes cluster:
 +
