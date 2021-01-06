@@ -2285,6 +2285,11 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
 Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
+include::../api/io.strimzi.api.kafka.model.connect.build.Build.adoc[leveloffset=+1]
+
+[id='type-Build-schema-{context}']
+==== Schema reference
+
 
 [options="header"]
 |====
