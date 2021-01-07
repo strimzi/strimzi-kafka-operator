@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.openshift.api.model.BuildConfig;
+import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -366,5 +367,65 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getSpec().getStrategy().getDockerStrategy(), is(notNullValue()));
         assertThat(bc.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(bc.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
+    }
+
+    @Test
+    public void testTemplate()   {
+        Map<String, String> buildPodLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> buildPodAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> buildConfigLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> buildConfigAnnos = TestUtils.map("a3", "v3", "a4", "v4");
+
+        KafkaConnect kc = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withName(cluster)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                    .withBootstrapServers("my-kafka:9092")
+                    .withNewBuild()
+                        .withNewDockerOutput()
+                            .withImage("my-image:latest")
+                            .withNewPushSecret("my-docker-credentials")
+                        .endDockerOutput()
+                        .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                                new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                    .endBuild()
+                    .withNewTemplate()
+                        .withNewBuildPod()
+                            .withNewMetadata()
+                                .withLabels(buildPodLabels)
+                                .withAnnotations(buildPodAnnos)
+                            .endMetadata()
+                            .withNewPriorityClassName("top-priority")
+                            .withNewSchedulerName("my-scheduler")
+                        .endBuildPod()
+                        .withNewBuildContainer()
+                            .withEnv(new ContainerEnvVarBuilder().withName("TEST_ENV_VAR").withValue("testValue").build())
+                        .endBuildContainer()
+                        .withNewBuildConfig()
+                            .withNewMetadata()
+                                .withLabels(buildConfigLabels)
+                                .withAnnotations(buildConfigAnnos)
+                            .endMetadata()
+                        .endBuildConfig()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+
+        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null);
+        assertThat(pod.getMetadata().getLabels().entrySet().containsAll(buildPodLabels.entrySet()), is(true));
+        assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(buildPodAnnos.entrySet()), is(true));
+        assertThat(pod.getSpec().getPriorityClassName(), is("top-priority"));
+        assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(env -> "TEST_ENV_VAR".equals(env.getName())).findFirst().get().getValue(), is("testValue"));
+
+        KafkaConnectDockerfile dockerfile = new KafkaConnectDockerfile("my-image:latest", kc.getSpec().getBuild());
+        BuildConfig bc = build.generateBuildConfig(dockerfile);
+        assertThat(bc.getMetadata().getLabels().entrySet().containsAll(buildConfigLabels.entrySet()), is(true));
+        assertThat(bc.getMetadata().getAnnotations().entrySet().containsAll(buildConfigAnnos.entrySet()), is(true));
     }
 }
