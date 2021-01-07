@@ -394,7 +394,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @Test
     void testKafkaTopicDecreaseStatus() throws InterruptedException {
-        KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME, 5).done();
+        KafkaTopicResource.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TEST_TOPIC_NAME, 5).done();
         int decreaseTo = 1;
 
         LOGGER.info("Decreasing number of partitions to {}", decreaseTo);
