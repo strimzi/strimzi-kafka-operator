@@ -100,13 +100,13 @@ public class KafkaConnectBuild extends AbstractModel {
                 build.templateBuildContainerSecurityContext = template.getBuildContainer().getSecurityContext();
             }
 
-            if (template.getBuildConfig() != null)  {
-                if (template.getBuildConfig().getLabels() != null)  {
-                    build.templateBuildConfigLabels = template.getBuildConfig().getLabels();
+            if (template.getBuildConfig() != null && template.getBuildConfig().getMetadata() != null)  {
+                if (template.getBuildConfig().getMetadata().getLabels() != null)  {
+                    build.templateBuildConfigLabels = template.getBuildConfig().getMetadata().getLabels();
                 }
 
-                if (template.getBuildConfig().getAnnotations() != null)  {
-                    build.templateBuildConfigAnnotations = template.getBuildConfig().getAnnotations();
+                if (template.getBuildConfig().getMetadata().getAnnotations() != null)  {
+                    build.templateBuildConfigAnnotations = template.getBuildConfig().getMetadata().getAnnotations();
                 }
             }
         }
