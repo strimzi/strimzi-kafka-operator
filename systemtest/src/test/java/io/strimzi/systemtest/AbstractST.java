@@ -716,9 +716,9 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.info("Executing the first test case, using {} as a cluster name", clusterName);
             previousClusterName = clusterName;
         } else {
-            LOGGER.info("Current test case is not the first one, generating new cluster name");
             clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
             kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
+            LOGGER.info("Current test case is not the first one, generated new cluster name - {}", clusterName);
         }
     }
 

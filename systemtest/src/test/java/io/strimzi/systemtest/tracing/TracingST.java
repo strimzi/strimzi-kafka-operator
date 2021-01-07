@@ -1038,12 +1038,6 @@ public class TracingST extends AbstractST {
         KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
 
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
-    }
-
-    @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
 
         kafkaTracingClient = new KafkaTracingExampleClients.Builder()
             .withProducerName(PRODUCER_JOB_NAME)
@@ -1055,5 +1049,11 @@ public class TracingST extends AbstractST {
             .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
             .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
             .build();
+    }
+
+    @BeforeAll
+    void setup() {
+        ResourceManager.setClassResources();
+        installClusterOperator(NAMESPACE);
     }
 }

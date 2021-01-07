@@ -54,7 +54,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
-    private static final String SECOND_CLUSTER_NAME = MAIN_NAMESPACE + "-second";
+    private static final String SECOND_CLUSTER_NAME = MAIN_NAMESPACE_CLUSTER_NAME + "-second";
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
@@ -66,7 +66,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, EXAMPLE_TOPIC_NAME);
@@ -150,7 +150,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
-        KafkaUserResource.tlsUser(MAIN_NAMESPACE, USER_NAME).done();
+        KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).done();
 
         cluster.setNamespace(previousNamespace);
     }
@@ -161,7 +161,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaUser user = KafkaUserResource.tlsUser(MAIN_NAMESPACE, USER_NAME).done();
+        KafkaUser user = KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).done();
 
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
@@ -181,16 +181,16 @@ class AllNamespaceST extends AbstractNamespaceST {
             }
         }
 
-        KafkaClientsResource.deployKafkaClients(true, MAIN_NAMESPACE + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.deployKafkaClients(true, MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
 
         final String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(MAIN_NAMESPACE + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(THIRD_NAMESPACE)
-            .withClusterName(MAIN_NAMESPACE)
+            .withClusterName(MAIN_NAMESPACE_CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
@@ -233,7 +233,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
-        KafkaResource.kafkaEphemeral(MAIN_NAMESPACE, 1, 1)
+        KafkaResource.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()

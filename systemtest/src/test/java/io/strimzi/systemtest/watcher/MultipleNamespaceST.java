@@ -40,7 +40,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         cluster.setNamespace(SECOND_NAMESPACE);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(EXAMPLE_TOPIC_NAME)));
 
         deployNewTopic(CO_NAMESPACE, SECOND_NAMESPACE, EXAMPLE_TOPIC_NAME);
@@ -57,7 +57,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
-        checkKafkaInDiffNamespaceThanCO(MAIN_NAMESPACE, SECOND_NAMESPACE);
+        checkKafkaInDiffNamespaceThanCO(MAIN_NAMESPACE_CLUSTER_NAME, SECOND_NAMESPACE);
     }
 
     /**
@@ -70,7 +70,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
-        checkMirrorMakerForKafkaInDifNamespaceThanCO(MAIN_NAMESPACE);
+        checkMirrorMakerForKafkaInDifNamespaceThanCO(MAIN_NAMESPACE_CLUSTER_NAME);
     }
 
     @BeforeAll
@@ -92,7 +92,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         cluster.setNamespace(SECOND_NAMESPACE);
 
-        KafkaResource.kafkaEphemeral(MAIN_NAMESPACE, 3)
+        KafkaResource.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
