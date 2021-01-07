@@ -36,6 +36,7 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");
+        envVars.put(ClusterOperatorConfig.STRIMZI_CONNECT_BUILD_TIMEOUT_MS, "40000");
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
@@ -49,12 +50,14 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.remove(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
         envVars.remove(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
+        envVars.remove(ClusterOperatorConfig.STRIMZI_CONNECT_BUILD_TIMEOUT_MS);
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(ClusterOperatorConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
         assertThat(config.getOperationTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS));
+        assertThat(config.getConnectBuildTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_CONNECT_BUILD_TIMEOUT_MS));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
     }
@@ -65,6 +68,7 @@ public class ClusterOperatorConfigTest {
                 singleton("namespace"),
                 60_000,
                 30_000,
+                120_000,
                 false,
                 new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()),
                 null,
@@ -76,6 +80,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
+        assertThat(config.getConnectBuildTimeoutMs(), is(120_000L));
     }
 
     @Test
@@ -85,6 +90,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(30_000L));
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
+        assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
     }
 

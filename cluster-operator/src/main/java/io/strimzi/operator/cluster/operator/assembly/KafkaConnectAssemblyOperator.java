@@ -70,6 +70,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final KafkaVersion.Lookup versions;
     private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2IOperations;
     private final ClusterOperatorConfig.RbacScope rbacScope;
+    protected final long connectBuildTimeoutMs;
 
     /**
      * @param vertx The Vertx instance
@@ -103,6 +104,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         this.versions = config.versions();
         this.rbacScope = config.getRbacScope();
+        this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
     }
 
     @Override
@@ -309,7 +311,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
                 .compose(ignore -> configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap))
                 .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                .compose(ignore -> podOperator.waitFor(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, operationTimeoutMs, (ignore1, ignore2) -> {
+                .compose(ignore -> podOperator.waitFor(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> {
                     Pod buildPod = podOperator.get(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()));
 
                     // Check if build is complete now (either with success or failure)
@@ -355,7 +357,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(ignore -> buildConfigOperator.startBuild(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildRequest()))
                 .compose(build -> {
                     buildState.currentBuildName = build.getMetadata().getName();
-                    return buildOperator.waitFor(namespace, buildState.currentBuildName, "complete", 1_000, operationTimeoutMs, (ignore1, ignore2) -> {
+                    return buildOperator.waitFor(namespace, buildState.currentBuildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> {
                         Build runningBuild = buildOperator.get(namespace, buildState.currentBuildName);
 
                         // Check if build is complete now (either with success or failure)
