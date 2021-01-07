@@ -171,7 +171,7 @@ public class TopicST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @Test
-    void testCreateDeleteCreate() {
+    void testCreateDeleteCreate() throws InterruptedException {
         String clusterName = CLUSTER_NAME + "-sdkvnsdkjn";
 
         KafkaResource.kafkaEphemeral(clusterName, 3, 3)
@@ -217,6 +217,7 @@ public class TopicST extends AbstractST {
             adminClient.describeTopics(singletonList(topicName)).values().get(topicName);
 
             for (int i = 0; i < 10; i++) {
+                Thread.sleep(2_000);
                 LOGGER.info("Iteration {}: Deleting {}", i, topicName);
                 cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
                 KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
@@ -227,7 +228,7 @@ public class TopicST extends AbstractST {
                         return false;
                     }
                 });
-
+                Thread.sleep(2_000);
                 long t0 = System.currentTimeMillis();
                 LOGGER.info("Iteration {}: Recreating {}", i, topicName);
                 KafkaTopicResource.topic(clusterName, topicName)
