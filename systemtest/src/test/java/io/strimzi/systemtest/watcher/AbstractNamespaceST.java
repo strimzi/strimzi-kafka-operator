@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.watcher;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
