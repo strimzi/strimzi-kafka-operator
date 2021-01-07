@@ -711,11 +711,12 @@ public abstract class AbstractST implements TestSeparator {
         }
         ResourceManager.setMethodResources();
 
+        // This is needed to distinguish created Kafka cluster in ResourceManager and don't delete cluster which are still in use by parallel test cases
         if (previousClusterName == null) {
-            LOGGER.info("First test case we are not gonna generate another cluster name");
+            LOGGER.info("Executing the first test case, using {} as a cluster name", clusterName);
             previousClusterName = clusterName;
         } else {
-            LOGGER.info("Not first test we are gonna generate cluster name");
+            LOGGER.info("Current test case is not the first one, generating new cluster name");
             clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
             kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         }
@@ -727,7 +728,7 @@ public abstract class AbstractST implements TestSeparator {
         if (testContext.getTestClass().isPresent()) {
             testClass = testContext.getTestClass().get().getName();
         }
-        //  first test case
+        // Name for the first test case, other test cases will need different name
         previousClusterName = null;
         clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
         kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
