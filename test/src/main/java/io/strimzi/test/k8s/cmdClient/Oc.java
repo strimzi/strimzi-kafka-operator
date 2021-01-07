@@ -30,8 +30,14 @@ public class Oc extends BaseCmdKubeClient<Oc> {
     protected Context adminContext() {
         String previous = Exec.exec(Oc.OC, "whoami").out().trim();
         String admin = System.getenv().getOrDefault("TEST_CLUSTER_ADMIN", "developer");
-        LOGGER.trace("Switching from login {} to {}", previous, admin);
-        Exec.exec(Oc.OC, "login", "-u", admin);
+
+        boolean isCurrentUserAdmin = !Exec.exec(OC, "get", "clusterrolebinding.rbac", "cluster-admin", "-o=jsonpath='{.subjects[?(@.name==\"" + previous + "\")]}'").out().isEmpty();
+
+        if (!isCurrentUserAdmin && !previous.equals(admin)) {
+            LOGGER.info("Switching from login {} to {}", previous, admin);
+            Exec.exec(Oc.OC, "login", "-u", admin);
+        }
+
         return new Context() {
             @Override
             public void close() {
