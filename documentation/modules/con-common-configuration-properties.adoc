@@ -411,7 +411,7 @@ The following Strimzi components run inside a Virtual Machine (VM):
 * Apache Kafka MirrorMaker
 * Strimzi Kafka Bridge
 
-To optimize their performance on different platforms and architectures, you configure the `jvmOptions` property in following resources:
+To optimize their performance on different platforms and architectures, you configure the `jvmOptions` property in the following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
@@ -431,23 +431,23 @@ You can specify the following options in your configuration:
 
 The full schema of `jvmOptions` is described in xref:type-JvmOptions-reference[`JvmOptions` schema reference].
 
-NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
-Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
-This is in contrast to the units used for xref:con-common-configuration-resources-reference[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+NOTE: The units accepted by JVM settings, such as `-Xmx` and `-Xms`, are the same units accepted by the JDK `java` binary in the corresponding image.
+Therefore, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
+This is different from the units used for xref:con-common-configuration-resources-reference[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
 
 .`-Xms` and `-Xmx` options
 
 The default values used for `-Xms` and `-Xmx` depend on whether there is a xref:con-common-configuration-resources-reference[memory request] limit configured for the container.
 
 * If there is a memory limit, the JVM's minimum and maximum memory is set to a value corresponding to the limit.
-* If there is no memory limit, the JVM's minimum memory is set to `128M`. The JVM's maximum memory is not defined to allow the memory to grow as needed, which is ideal for single node environments in test and development.
+* If there is no memory limit, the JVM's minimum memory is set to `128M`. The JVM's maximum memory is not defined to allow the memory to increase as needed. This is ideal for single node environments in test and development.
 
 Before setting `-Xmx` explicitly consider the following:
 
 * The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
 * If `-Xmx` is set without also setting an appropriate Kubernetes memory limit, it is possible that the container will be killed should the Kubernetes node experience memory pressure from other Pods running on it.
 * If `-Xmx` is set without also setting an appropriate Kubernetes memory request, it is possible that the container will be scheduled to a node with insufficient memory.
-In this case, the container will not start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
+In this case, the container will not start but crash immediately if `-Xms` is set to `-Xmx`, or at a later time if not.
 
 It is _recommended_ to:
 
@@ -470,7 +470,7 @@ jvmOptions:
 
 Setting the same value for initial (`-Xms`) and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
 For Kafka and ZooKeeper pods, such allocation could cause unwanted latency.
-For Kafka Connect, avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation is multiplied by the number of consumers.
+For Kafka Connect, avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation are multiplied by the number of consumers.
 
 IMPORTANT: Containers performing lots of disk I/O, such as Kafka broker containers, require available memory for use as an operating system page cache.
 On such containers, the requested memory should be significantly higher than the memory used by the JVM.
