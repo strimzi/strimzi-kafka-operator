@@ -207,7 +207,7 @@ public class TopicST extends AbstractST {
 
             KafkaTopicResource.topic(clusterName, topicName)
                     .editSpec()
-                    .withReplicas(3)
+                        .withReplicas(3)
                     .endSpec()
                     .done();
             KafkaTopicUtils.waitForKafkaTopicReady(topicName);
@@ -231,7 +231,7 @@ public class TopicST extends AbstractST {
                 LOGGER.info("Iteration {}: Recreating {}", i, topicName);
                 KafkaTopicResource.topic(clusterName, topicName)
                         .editSpec()
-                        .withReplicas(3)
+                            .withReplicas(3)
                         .endSpec()
                         .done();
                 ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), "KafkaTopic", NAMESPACE, topicName, Ready, 15_000);
