@@ -46,9 +46,11 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 public class TopicST extends AbstractST {
@@ -164,6 +166,88 @@ public class TopicST extends AbstractST {
         assertThat(kafkaTopic.getSpec().getReplicas(), is(1));
     }
 
+    @Tag(NODEPORT_SUPPORTED)
+    @Test
+    void testCreateDeleteCreate() throws InterruptedException {
+        String clusterName = CLUSTER_NAME + "-sdkvnsdkjn";
+
+        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(false)
+                            .endGenericKafkaListener()
+                        .endListeners()
+                    .endKafka()
+                    .editEntityOperator()
+                        .editTopicOperator()
+                            .withReconciliationIntervalSeconds(120)
+                        .endTopicOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .done();
+
+        Properties properties = new Properties();
+
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaResource.kafkaClient().inNamespace(NAMESPACE)
+                .withName(clusterName).get().getStatus().getListeners().stream()
+                .filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
+                .findFirst()
+                .orElseThrow(RuntimeException::new)
+                .getBootstrapServers());
+
+        try (AdminClient adminClient = AdminClient.create(properties)) {
+
+            String topicName = "topic-create-delete-create";
+
+            KafkaTopicResource.topic(clusterName, topicName)
+                    .editSpec()
+                        .withReplicas(3)
+                    .endSpec()
+                    .done();
+            KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+
+            adminClient.describeTopics(singletonList(topicName)).values().get(topicName);
+
+            for (int i = 0; i < 10; i++) {
+                Thread.sleep(2_000);
+                LOGGER.info("Iteration {}: Deleting {}", i, topicName);
+                cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
+                KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
+                TestUtils.waitFor("Deletion of topic " + topicName, 1000, 15_000, () -> {
+                    try {
+                        return !adminClient.listTopics().names().get().contains(topicName);
+                    } catch (ExecutionException | InterruptedException e) {
+                        return false;
+                    }
+                });
+                Thread.sleep(2_000);
+                long t0 = System.currentTimeMillis();
+                LOGGER.info("Iteration {}: Recreating {}", i, topicName);
+                KafkaTopicResource.topic(clusterName, topicName)
+                        .editSpec()
+                            .withReplicas(3)
+                        .endSpec()
+                        .done();
+                ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), "KafkaTopic", NAMESPACE, topicName, Ready, 15_000);
+                TestUtils.waitFor("Recreation of topic " + topicName, 1000, 2_000, () -> {
+                    try {
+                        return adminClient.listTopics().names().get().contains(topicName);
+                    } catch (ExecutionException | InterruptedException e) {
+                        return false;
+                    }
+                });
+                if (System.currentTimeMillis() - t0 > 10_000) {
+                    fail("Took too long to recreate");
+                }
+            }
+        }
+    }
+
     @Test
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
@@ -221,6 +305,8 @@ public class TopicST extends AbstractST {
             }
         }
 
+        assertThat(sent, greaterThan(0));
+
         internalKafkaClient.assertSentAndReceivedMessages(
                 sent,
                 internalKafkaClient.receiveMessagesPlain()
@@ -231,9 +317,13 @@ public class TopicST extends AbstractST {
         assertThat(created, is(true));
 
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        assertThat(kafkaTopic, notNullValue());
         ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
 
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get().getStatus().getConditions().get(0).getType(), is(Ready.toString()));
+        assertThat(kafkaTopic.getStatus(), notNullValue());
+        assertThat(kafkaTopic.getStatus().getConditions(), notNullValue());
+        assertThat(kafkaTopic.getStatus().getConditions().isEmpty(), is(false));
+        assertThat(kafkaTopic.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
         LOGGER.info("Topic successfully created");
     }
 

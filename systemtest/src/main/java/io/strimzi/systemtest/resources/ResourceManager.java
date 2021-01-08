@@ -436,19 +436,23 @@ public class ResourceManager {
      * @return returns CR
      */
     public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Enum<?> status, long resourceTimeout) {
-        LOGGER.info("Wait for {}: {} will have desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
+        waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), status, resourceTimeout);
+        return resource;
+    }
 
-        TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", resource.getKind(), resource.getMetadata().getName(), status),
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeout,
-            () -> operation.inNamespace(resource.getMetadata().getNamespace())
-                    .withName(resource.getMetadata().getName())
+    public static <T extends HasMetadata & HasStatus> void waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, String kind, String namespace, String name, Enum<?> status, long resourceTimeoutMs) {
+        LOGGER.info("Wait for {}: {} will have desired state: {}", kind, name, status);
+
+        TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", kind, name, status),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
+            () -> operation.inNamespace(namespace)
+                    .withName(name)
                     .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status.toString())),
-            () -> logCurrentResourceStatus(operation.inNamespace(resource.getMetadata().getNamespace())
-                    .withName(resource.getMetadata().getName())
+            () -> logCurrentResourceStatus(operation.inNamespace(namespace)
+                    .withName(name)
                     .get()));
 
-        LOGGER.info("{}: {} is in desired state: {}", resource.getKind(), resource.getMetadata().getName(), status);
-        return resource;
+        LOGGER.info("{}: {} is in desired state: {}", kind, name, status);
     }
 
     public static <T extends HasMetadata & HasStatus> T waitForResourceStatus(MixedOperation<T, ?, ?, ?> operation, T resource, Enum<?> status) {
