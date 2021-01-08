@@ -169,8 +169,6 @@ public class TopicST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Test
     void testCreateDeleteCreate() throws InterruptedException {
-        String clusterName = CLUSTER_NAME + "-sdkvnsdkjn";
-
         KafkaResource.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
