@@ -80,12 +80,6 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                 || !Objects.equals(metadata.getGeneration(), kafkaTopic.getStatus().getObservedGeneration()); // KT has changed
     }
 
-    private boolean includesNotReadyCondition(KafkaTopicStatus status) {
-        return status.getConditions().stream().anyMatch(kt ->
-                "NotReady".equals(kt.getType())
-                    && "True".equals(kt.getStatus()));
-    }
-
     @Override
     public void onClose(KubernetesClientException exception) {
         LOGGER.debug("Closing {}", this);
