@@ -403,7 +403,7 @@ For more information about setting up and deploying Prometheus and Grafana, see 
 [id='con-common-configuration-jvm-{context}']
 === `jvmOptions`
 
-The following Strimzi components run inside a Virtual Machine (VM):
+The following Strimzi components run inside a Java Virtual Machine (JVM):
 
 * Apache Kafka
 * Apache ZooKeeper
