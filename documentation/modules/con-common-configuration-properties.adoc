@@ -30,7 +30,7 @@ The bootstrap server lists can refer to Kafka clusters that are not deployed in 
 They can also refer to a Kafka cluster not deployed by Strimzi.
 
 If on the same Kubernetes cluster, each list must ideally contain the Kafka cluster bootstrap service which is named `_CLUSTER-NAME_-kafka-bootstrap` and a port number.
-If deployed by Strimzi but on different Kubernetes clusters, the list content depends on the approach used for exposing the clusters (routes, nodeports or loadbalancers).
+If deployed by Strimzi but on different Kubernetes clusters, the list content depends on the approach used for exposing the clusters (routes, ingress, nodeports or loadbalancers).
 
 When using Kafka with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the given cluster.
 
@@ -286,9 +286,9 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 * For Kafka broker initializer:
 . Container image specified in the `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerKafkaInit}` container image.
-* For Kafka broker initializer:
+* For Kafka jmxTrans:
 . Container image specified in the `STRIMZI_DEFAULT_JMXTRANS_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerKafkaInit}` container image.
+. `{DockerJmxtrans}` container image.
 
 .Example of container image configuration
 [source,yaml,subs=attributes+]

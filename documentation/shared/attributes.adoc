@@ -116,6 +116,7 @@
 :DockerKafkaConnectS2I: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerClusterOperator: quay.io/strimzi/operator:{DockerTag}
 :DockerKafkaInit: quay.io/strimzi/operator:{DockerTag}
+:DockerJmxtrans: quay.io/strimzi/jmxtrans:{DockerTag}
 :DockerTopicOperator: quay.io/strimzi/operator:{DockerTag}
 :DockerUserOperator: quay.io/strimzi/operator:{DockerTag}
 :DockerEntityOperatorStunnel: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
