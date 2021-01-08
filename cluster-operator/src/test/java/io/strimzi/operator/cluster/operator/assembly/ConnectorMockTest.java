@@ -130,6 +130,7 @@ public class ConnectorMockTest {
         return connectorState != null ? Future.succeededFuture(statusNode) : Future.failedFuture("No such connector " + connectorName);
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @BeforeEach
     public void setup(VertxTestContext testContext) {
         vertx = Vertx.vertx();
