@@ -940,6 +940,9 @@ class TopicOperator {
                 });
             }
         };
+        if (topicName.toString().startsWith("__")) {
+            return Future.succeededFuture();
+        }
         return executeWithTopicLockHeld(logContext, topicName, action);
     }
 

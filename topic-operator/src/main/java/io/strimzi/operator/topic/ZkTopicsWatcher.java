@@ -146,13 +146,17 @@ class ZkTopicsWatcher {
                     tcw.addChild(topicName);
                     tw.addChild(topicName);
                     LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":+" + topicName);
-                    topicOperator.onTopicCreated(logContext, new TopicName(topicName)).onComplete(ar -> {
-                        if (ar.succeeded()) {
-                            LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);
-                        } else {
-                            LOGGER.warn("{}: Error responding to creation of topic {}", logContext, topicName, ar.cause());
-                        }
-                    });
+                    if ("__consumer_offsets".equals(topicName) || "__transaction_state".equals(topicName)) {
+                        LOGGER.debug("{}: Cannot create internal topic {}", logContext, topicName);
+                    } else {
+                        topicOperator.onTopicCreated(logContext, new TopicName(topicName)).onComplete(ar -> {
+                            if (ar.succeeded()) {
+                                LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);
+                            } else {
+                                LOGGER.warn("{}: Error responding to creation of topic {}", logContext, topicName, ar.cause());
+                            }
+                        });
+                    }
                 }
             }
         }
