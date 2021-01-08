@@ -3,15 +3,20 @@
 // assembly-kafka-connect.adoc
 
 [id='proc-deploying-kafkaconnector-{context}']
-= Deploying a `KafkaConnector` resource
+= Deploying the example `KafkaConnector` resource
 
-You can configure and deploy a `KafkaConnector` resource to a Kafka Connect cluster. 
-This creates a new connector instance with the specified configuration. 
+Strimzi includes an example `KafkaConnector` in `examples/connect/source-connector.yaml`. 
+This creates a basic `FileStreamSourceConnector` instance that sends each line of the Kafka license file (an example file source) to a single Kafka topic. 
 
-This procedure creates a basic `FileStreamSourceConnector` that sends each line of the Kafka license file to a Kafka topic. 
-You can also create a `FileStreamSinkConnector`.
+You can create a `FileStreamSinkConnector` by changing the configuration of the example `KafkaConnector`.
 
-The file connectors provided with Strimzi are intended to be used as examples only. 
+The following procedure illustrates how to configure Kafka Connect connectors by using the `source-connector.yaml` file as an example. 
+
+[NOTE]
+====
+The `FileStreamSourceConnector` and `FileStreamSinkConnector` are not intended to be run in containers. 
+In a production environment, you should prepare container images containing the Kafka Connect connectors that you want to use.
+====
 
 .Prerequisites
 
@@ -35,7 +40,6 @@ spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
   tasksMax: 2 <4>
   config: <5>
-    tasks.max: 1500
     file: "/opt/kafka/LICENSE"
     topic: my-topic
     # ...
@@ -56,11 +60,6 @@ The `FileStreamSourceConnector` class accepts the following configuration option
 ¦Type
 ¦Default value
 ¦Description
-
-m¦tasks.max
-¦Integer
-¦The default task batch size (2000)
-¦Maximum number of messages read by the `SourceTask` from the source file at a time.
 
 m¦file
 ¦String
@@ -89,9 +88,20 @@ m¦file
 ¦Null
 ¦Destination file name. If not specified, the standard output is used.
 
+m¦topics
+¦List
+¦Null
+¦One or more Kafka topics to read data from.
+
+m¦topics.regex
+¦String
+¦Null
+¦A regular expression matching one or more Kafka topics to read data from.
+
 |===
 +
-Both classes of connectors support the same configuration options as the Kafka Connect REST API.
+The `FileStreamSourceConnector` and `FileStreamSinkConnector` classes support the same configuration options as the Kafka Connect REST API. 
+Other connectors will support different configuration options.
 
 . Create the `KafkaConnector` in your Kubernetes cluster:
 +
@@ -106,3 +116,7 @@ kubectl apply -f examples/connect/source-connector.yaml
 ----
 kubectl get kctr --selector strimzi.io/cluster=my-connect-cluster -o name
 ----
+
+.Additional resources
+
+* xref:con-creating-managing-connectors-{context}[]
