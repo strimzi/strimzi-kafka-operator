@@ -6,7 +6,6 @@ package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;

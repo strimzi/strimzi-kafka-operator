@@ -153,7 +153,7 @@ public class ListenersST extends AbstractST {
 
         KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUser).build());
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUser).build());
 
         KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 

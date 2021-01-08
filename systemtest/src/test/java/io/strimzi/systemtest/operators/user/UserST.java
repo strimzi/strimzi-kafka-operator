@@ -352,15 +352,11 @@ class UserST extends AbstractST {
         }
     }
 
-    private void deployTestSpecificResources() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).build());
-    }
-
     @BeforeAll
     void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaEphemeral(userClusterName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(userClusterName, 1, 1).build());
     }
 }

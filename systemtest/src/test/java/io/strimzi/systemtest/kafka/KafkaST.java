@@ -1570,7 +1570,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testReadOnlyRootFileSystem() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1617,13 +1617,13 @@ class KafkaST extends AbstractST {
                         .endTemplate()
                     .endCruiseControl()
                 .endSpec()
-                .done();
+                .build());
 
         KafkaUtils.waitForKafkaReady(clusterName);
 
-        KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TEST_TOPIC_NAME).build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 

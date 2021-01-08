@@ -169,7 +169,7 @@ public class TopicST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Test
     void testCreateDeleteCreate() throws InterruptedException {
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -187,7 +187,7 @@ public class TopicST extends AbstractST {
                         .endTopicOperator()
                     .endEntityOperator()
                 .endSpec()
-                .done();
+                .build());
 
         Properties properties = new Properties();
 
@@ -202,11 +202,11 @@ public class TopicST extends AbstractST {
 
             String topicName = "topic-create-delete-create";
 
-            KafkaTopicResource.topic(clusterName, topicName)
+            KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName)
                     .editSpec()
                         .withReplicas(3)
                     .endSpec()
-                    .done();
+                    .build());
             KafkaTopicUtils.waitForKafkaTopicReady(topicName);
 
             adminClient.describeTopics(singletonList(topicName)).values().get(topicName);
@@ -226,11 +226,11 @@ public class TopicST extends AbstractST {
                 Thread.sleep(2_000);
                 long t0 = System.currentTimeMillis();
                 LOGGER.info("Iteration {}: Recreating {}", i, topicName);
-                KafkaTopicResource.topic(clusterName, topicName)
+                KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName)
                         .editSpec()
                             .withReplicas(3)
                         .endSpec()
-                        .done();
+                        .build());
                 ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), "KafkaTopic", NAMESPACE, topicName, Ready, 15_000);
                 TestUtils.waitFor("Recreation of topic " + topicName, 1000, 2_000, () -> {
                     try {
@@ -411,6 +411,6 @@ public class TopicST extends AbstractST {
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
-        KafkaResource.create(KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).build());
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
     }
 }

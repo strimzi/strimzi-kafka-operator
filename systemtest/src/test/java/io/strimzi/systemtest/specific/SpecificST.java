@@ -174,7 +174,7 @@ public class SpecificST extends AbstractST {
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec().build());
 
-        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(clusterName));
 
         PodUtils.waitForPendingPod(clusterName + "-connect");
         List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
@@ -248,7 +248,7 @@ public class SpecificST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(CLUSTER_NAME));
+        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(clusterName));
 
         String topicName = "topic-test-rack-aware";
         KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
