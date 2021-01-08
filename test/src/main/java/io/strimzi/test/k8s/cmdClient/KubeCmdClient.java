@@ -57,10 +57,6 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     /** Replaces the resources in the given files. */
     K replace(File... files);
 
-
-    /** Returns an equivalent client, but logged in as cluster admin. */
-    K clientWithAdmin();
-
     K applyContent(String yamlContent);
 
     K deleteContent(String yamlContent);
