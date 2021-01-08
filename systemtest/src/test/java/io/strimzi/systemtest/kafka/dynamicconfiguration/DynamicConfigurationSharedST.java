@@ -44,6 +44,7 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfigurationSharedST.class);
     private static final String NAMESPACE = "kafka-configuration-shared-cluster-test";
+    private final String dynamicConfigurationSharedClusterName = "dynamic-configuration-shared-cluster-name";
 
     @TestFactory
     Iterator<DynamicTest> testDynConfiguration() {
@@ -54,11 +55,11 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
         testCases.forEach((key, value) -> dynamicTests.add(DynamicTest.dynamicTest("Test " + key + "->" + value, () -> {
             // exercise phase
-            KafkaUtils.updateConfigurationWithStabilityWait(CLUSTER_NAME, key, value);
+            KafkaUtils.updateConfigurationWithStabilityWait(dynamicConfigurationSharedClusterName, key, value);
 
             // verify phase
-            assertThat(KafkaUtils.verifyCrDynamicConfiguration(CLUSTER_NAME, key, value), is(true));
-            assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), key, value), is(true));
+            assertThat(KafkaUtils.verifyCrDynamicConfiguration(dynamicConfigurationSharedClusterName, key, value), is(true));
+            assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
         })));
         return dynamicTests.iterator();
     }
@@ -183,6 +184,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaResource.kafkaPersistent(dynamicConfigurationSharedClusterName, 3).done();
     }
 }

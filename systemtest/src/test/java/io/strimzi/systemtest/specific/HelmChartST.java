@@ -24,14 +24,13 @@ class HelmChartST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
 
     static final String NAMESPACE = "helm-chart-cluster-test";
-    private static final String CLUSTER_NAME = "my-cluster";
 
     @Test
     void testDeployKafkaClusterViaHelmChart() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+        KafkaResource.kafkaEphemeral(clusterName, 3).done();
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
     }
 
     @BeforeAll

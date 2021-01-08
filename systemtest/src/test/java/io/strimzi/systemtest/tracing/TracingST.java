@@ -121,7 +121,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -138,7 +138,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(1)
                     .withPartitions(12)
@@ -161,7 +161,7 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -187,12 +187,12 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(clusterName, 1)
                 .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
                     .endJaegerTracing()
-                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(clusterName))
                     .withReplicas(1)
                     .withNewTemplate()
                         .withNewConnectContainer()
@@ -229,7 +229,7 @@ public class TracingST extends AbstractST {
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(TEST_TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
@@ -256,7 +256,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -274,14 +274,14 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_TARGET_NAME)
+        KafkaTopicResource.topic(clusterName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -315,7 +315,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -333,7 +333,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -364,7 +364,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -382,7 +382,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME)
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -390,7 +390,7 @@ public class TracingST extends AbstractST {
                 .done();
 
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_TARGET_NAME)
+        KafkaTopicResource.topic(clusterName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -424,8 +424,8 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
-        final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
+        final String kafkaClusterSourceName = clusterName + "-source";
+        final String kafkaClusterTargetName = clusterName + "-target";
 
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
@@ -493,7 +493,7 @@ public class TracingST extends AbstractST {
 
         targetKafkaTracingClient.consumerWithTracing().done();
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker2")
                 .endMetadata()
@@ -535,8 +535,8 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
-        final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
+        final String kafkaClusterSourceName = clusterName + "-source";
+        final String kafkaClusterTargetName = clusterName + "-target";
 
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
@@ -604,7 +604,7 @@ public class TracingST extends AbstractST {
 
         targetKafkaTracingClient.consumerWithTracing().done();
 
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
+        KafkaMirrorMakerResource.kafkaMirrorMaker(clusterName, kafkaClusterSourceName, kafkaClusterTargetName,
             ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
@@ -650,8 +650,8 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        final String kafkaClusterSourceName = CLUSTER_NAME + "-source";
-        final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
+        final String kafkaClusterSourceName = clusterName + "-source";
+        final String kafkaClusterTargetName = clusterName + "-target";
 
         KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).done();
         KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).done();
@@ -710,7 +710,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        KafkaConnectResource.kafkaConnect(CLUSTER_NAME, 1)
+        KafkaConnectResource.kafkaConnect(clusterName, 1)
                 .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
@@ -749,7 +749,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
+        KafkaMirrorMakerResource.kafkaMirrorMaker(clusterName, kafkaClusterSourceName, kafkaClusterTargetName,
             ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
@@ -813,14 +813,14 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1).done();
 
         kafkaTracingClient.producerWithTracing().done();
         kafkaTracingClient.consumerWithTracing().done();
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
 
         Map<String, Object> configOfKafkaConnectS2I = new HashMap<>();
         configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
@@ -829,7 +829,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnectS2I.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
 
-        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
                 .editSpec()
                     .withConfig(configOfKafkaConnectS2I)
                     .withNewJaegerTracing()
@@ -858,7 +858,7 @@ public class TracingST extends AbstractST {
                 .done();
 
         String kafkaConnectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
-        String execPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        String execPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Creating FileSink connect via Pod:{}", execPodName);
         KafkaConnectorUtils.createFileSinkConnector(execPodName, TEST_TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH,
@@ -868,7 +868,7 @@ public class TracingST extends AbstractST {
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(TEST_TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
@@ -893,10 +893,10 @@ public class TracingST extends AbstractST {
     @Tag(BRIDGE)
     @Test
     void testKafkaBridgeService() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.kafkaEphemeral(clusterName, 3, 1).done();
 
         // Deploy http bridge
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1)
             .editSpec()
                 .withNewJaegerTracing()
                 .endJaegerTracing()
@@ -924,7 +924,7 @@ public class TracingST extends AbstractST {
             .done();
 
         String bridgeProducer = "bridge-producer";
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
 
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(bridgeProducer)
@@ -943,7 +943,7 @@ public class TracingST extends AbstractST {
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
@@ -1035,25 +1035,25 @@ public class TracingST extends AbstractST {
         // deployment of the jaeger
         deployJaeger();
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
 
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
-    }
-
-    @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         kafkaTracingClient = new KafkaTracingExampleClients.Builder()
             .withProducerName(PRODUCER_JOB_NAME)
             .withConsumerName(CONSUMER_JOB_NAME)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
             .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
             .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
             .build();
+    }
+
+    @BeforeAll
+    void setup() {
+        ResourceManager.setClassResources();
+        installClusterOperator(NAMESPACE);
     }
 }

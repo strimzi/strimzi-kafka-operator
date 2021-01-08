@@ -19,6 +19,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
@@ -36,10 +38,15 @@ public class KafkaRebalanceResource {
     }
 
     private static KafkaRebalance defaultKafkaRebalance(KafkaRebalance kafkaRebalance, String name) {
+
+        Map<String, String> kafkaRebalanceLabels = new HashMap<>();
+        kafkaRebalanceLabels.put("strimzi.io/cluster", name);
+
         return new KafkaRebalanceBuilder(kafkaRebalance)
             .editMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withLabels(kafkaRebalanceLabels)
             .endMetadata()
             .build();
     }
