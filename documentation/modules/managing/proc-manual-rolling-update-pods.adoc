@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// managing/assembly-rolling-updates.adoc
+
+[id='proc-manual-rolling-update-pods-{context}']
+= Performing a rolling update using a Pod annotation
+
+This procedure describes how to manually trigger a rolling update of an existing Kafka cluster or ZooKeeper cluster using a Kubernetes `Pod` annotation.
+When multiple pods from the same `StatefulSet` are annotated, consecutive rolling updates are performed within the same reconciliation run.
+
+.Procedure
+
+. Find the name of the Kafka or ZooKeeper `Pod` you want to manually update.
++
+For example, if your Kafka cluster is named _my-cluster_, the corresponding `Pod` names are _my-cluster-Kafka-index or_ and _my-cluster-zookeeper-index_.
+The _index_ starts at zero and ends at the total number of replicas.
+
+. Annotate the `Pod` resource in Kubernetes.
++
+Use `kubectl annotate`:
++
+[source,shell,subs=+quotes]
+----
+kubectl annotate pod _cluster-name_-kafka-_index_ strimzi.io/manual-rolling-update=true
+
+kubectl annotate pod _cluster-name_-zookeeper-_index_ strimzi.io/manual-rolling-update=true
+----
+
+. Wait for the next reconciliation to occur (every two minutes by default).
+A rolling update of all pods within the annotated `Pod` is triggered, as long as the annotation was detected by the reconciliation process.
+When the rolling update of all the pods is complete, the annotation is removed from the `Pod`.
