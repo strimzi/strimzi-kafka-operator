@@ -20,6 +20,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.InvalidRequestException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.net.HttpURLConnection;
@@ -239,6 +240,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     }
 
     @Test
+    @Disabled
     public void testCreateTwoResourcesManagingOneTopic() throws InterruptedException, ExecutionException, TimeoutException {
         String topicName = "two-resources-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
