@@ -49,8 +49,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -102,7 +101,7 @@ public class ConnectorMockTest {
         }
     }
 
-    private static Vertx vertx;
+    private Vertx vertx;
     private KubernetesClient client;
     private KafkaConnectApi api;
     private HashMap<String, ConnectorState> runningConnectors;
@@ -131,18 +130,11 @@ public class ConnectorMockTest {
         return connectorState != null ? Future.succeededFuture(statusNode) : Future.failedFuture("No such connector " + connectorName);
     }
 
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
-
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @BeforeEach
     public void setup(VertxTestContext testContext) {
+        vertx = Vertx.vertx();
+
         client = new MockKube()
                 .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class,
                         KafkaConnect::getStatus, KafkaConnect::setStatus).end()
@@ -290,6 +282,11 @@ public class ConnectorMockTest {
             .onComplete(testContext.succeeding())
             .compose(watch -> AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, kafkaConnectS2iOperator, NAMESPACE))
             .onComplete(testContext.succeeding(v -> async.flag()));
+    }
+
+    @AfterEach
+    public void teardown() {
+        vertx.close();
     }
 
     private static <T extends HasMetadata & HasStatus<?>> Predicate<T> statusIsForCurrentGeneration() {
@@ -580,7 +577,7 @@ public class ConnectorMockTest {
         verify(api, times(2)).list(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         // triggered three times (Connect creation, Connector Status update, Connect Status update)
-        verify(api, times(4)).createOrUpdatePutRequest(
+        verify(api, times(3)).createOrUpdatePutRequest(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertThat(runningConnectors.keySet(), is(Collections.singleton(key("cluster-connect-api.ns.svc", connectorName))));
