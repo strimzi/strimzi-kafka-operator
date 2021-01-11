@@ -140,7 +140,7 @@ the documentation for more details.
 | `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `0.21.0-rc1`                                       |
 | `kafkaBridge.image.registry`         | Kafka Bridge image registry               | `quay.io`                                            |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
-| `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
+| `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                       |
 | `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.19.0`                                             |
 | `kanikoExecutor.image.registry`      | Kaniko Executor image registry            | `gcr.io`                                             |
 | `kanikoExecutor.image.repository`    | Kaniko Executor image repository          | `kaniko-project`                                     |
