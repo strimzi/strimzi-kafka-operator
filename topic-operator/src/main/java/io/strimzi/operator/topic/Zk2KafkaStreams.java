@@ -10,6 +10,7 @@ import io.vertx.core.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -44,7 +45,13 @@ public class Zk2KafkaStreams {
                     list.forEach(topicName -> {
                         TopicName tn = new TopicName(topicName);
                         Future<Topic> ft = zkTopicStore.read(tn);
-                        results.add(ft.compose(ksTopicStore::create).compose(v -> zkTopicStore.delete(tn)));
+                        results.add(
+                                // check if the topic already exists in the new KSTS
+                                // only create if it doesn't, and do not update it with an old value
+                                ft.compose(t -> ksTopicStore.read(tn).map(et -> new AbstractMap.SimpleImmutableEntry<>(t, et)))
+                                        .compose(e -> e.getValue() == null ? ksTopicStore.create(e.getKey()) : Future.succeededFuture())
+                                        .compose(v -> zkTopicStore.delete(tn))
+                        );
                     });
                     CompletableFuture<Void> result = new CompletableFuture<>();
                     CompositeFuture cf = CompositeFuture.all(results);
