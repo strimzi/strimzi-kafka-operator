@@ -24,13 +24,16 @@ function create_keystore {
 
 echo "Preparing certificates for internal communication"
 STORE=/tmp/topic-operator/replication.truststore.p12
+rm -f "$STORE"
 for CRT in /etc/tls-sidecar/cluster-ca-certs/*.crt; do
   ALIAS=$(basename "$CRT" .crt)
   echo "Adding $CRT to truststore $STORE with alias $ALIAS"
   create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
 done
 
-create_keystore /tmp/topic-operator/replication.keystore.p12 "$CERTS_STORE_PASSWORD" \
+STORE=/tmp/topic-operator/replication.keystore.p12
+rm -f "$STORE"
+create_keystore "$STORE" "$CERTS_STORE_PASSWORD" \
     /etc/tls-sidecar/eo-certs/entity-operator.crt \
     /etc/tls-sidecar/eo-certs/entity-operator.key \
     /etc/tls-sidecar/cluster-ca-certs/ca.crt \
