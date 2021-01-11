@@ -411,6 +411,6 @@ public class TopicST extends AbstractST {
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaResource.create(KafkaResource.kafkaEphemeral(TOPIC_CLUSTER_NAME, 3, 1).build());
     }
 }
