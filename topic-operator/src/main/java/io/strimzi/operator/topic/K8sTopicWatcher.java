@@ -46,7 +46,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             if (action.equals(Action.ERROR)) {
                 LOGGER.error("{}: Watch received action=ERROR for {} {} {}", logContext, kind, name, kafkaTopic);
             } else {
-                if (shouldReconcile(kafkaTopic, metadata)) {
+                if (action.equals(Action.DELETED) || shouldReconcile(kafkaTopic, metadata)) {
                     LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
                             metadata.getGeneration(), labels);
                     Handler<AsyncResult<Void>> resultHandler = ar -> {
