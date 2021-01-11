@@ -32,7 +32,6 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaMirrorMaker2Resource {
     public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = TestUtils.USER_PATH + "/../examples/mirror-maker/kafka-mirror-maker-2.yaml";
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, DoneableKafkaMirrorMaker2, Resource<KafkaMirrorMaker2, DoneableKafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
@@ -44,9 +43,9 @@ public class KafkaMirrorMaker2Resource {
     }
 
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
 
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
+        ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
 
         return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false);

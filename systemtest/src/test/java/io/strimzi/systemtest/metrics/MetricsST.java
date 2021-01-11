@@ -420,7 +420,10 @@ public class MetricsST extends AbstractST {
     void testKafkaMetricsSettingsDeprecatedMetrics() {
         AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
 
-        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        String metricsYaml =
+            TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics").getData().get("kafka-metrics-config.yml").replaceAll("#.*\n", "");
+        String metricsConfigJson = TestUtils.fromYamlToJson(metricsYaml);
+
         // update metrics
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             previousMetrics.set(k.getSpec().getKafka().getMetricsConfig());
@@ -429,23 +432,37 @@ public class MetricsST extends AbstractST {
         });
 
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
+
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(SECOND_CLUSTER);
+
+        Pattern metricsPattern = Pattern.compile("kafka_server_replicamanager_leadercount ([\\d.][^\\n]+)");
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(metricsPattern, kafkaMetricsData);
+        assertThat("Broker count doesn't match expected value", values.size(), is(1));
+
+        metricsPattern = Pattern.compile("kafka_controller_kafkacontroller_activecontrollercount ([\\d.][^\\n]+)");
+        values = MetricsUtils.collectSpecificMetric(metricsPattern, kafkaMetricsData);
+        assertThat("Kafka active controllers count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 1));
+
         ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             k.getSpec().getKafka().setMetricsConfig(null);
             k.getSpec().getKafka().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
         });
+
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
 
         // revert metrics changes
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             k.getSpec().getKafka().setMetricsConfig(previousMetrics.get());
             k.getSpec().getKafka().setMetrics(null);
         });
+
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(metricsClusterName);
     }
 
     @Deprecated
@@ -453,7 +470,10 @@ public class MetricsST extends AbstractST {
     void testKafkaConnectMetricsSettingsDeprecatedMetrics() {
         AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
 
-        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        String metricsYaml =
+            TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics").getData().get(Constants.METRICS_CONFIG_YAML_NAME).replaceAll("#.*\n", "");
+        String metricsConfigJson = TestUtils.fromYamlToJson(metricsYaml);
+
         // update metrics
         KafkaConnectResource.replaceKafkaConnectResource(metricsClusterName, k -> {
             previousMetrics.set(k.getSpec().getMetricsConfig());
@@ -462,23 +482,34 @@ public class MetricsST extends AbstractST {
         });
 
         PodUtils.verifyThatRunningPodsAreStable(metricsClusterName);
+
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(metricsClusterName);
+
+        testKafkaConnectIoNetwork();
+        testKafkaConnectRequests();
+        testKafkaConnectResponse();
+
         ConfigMap actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(metricsClusterName));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         KafkaConnectResource.replaceKafkaConnectResource(metricsClusterName, k -> {
             k.getSpec().setMetricsConfig(null);
             k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
         });
+
         PodUtils.verifyThatRunningPodsAreStable(metricsClusterName);
+
         actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(metricsClusterName));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
 
         // revert metrics changes
         KafkaConnectResource.replaceKafkaConnectResource(metricsClusterName, k -> {
             k.getSpec().setMetricsConfig(previousMetrics.get());
             k.getSpec().setMetrics(null);
         });
+
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(metricsClusterName);
     }
 
     @Deprecated
@@ -486,7 +517,10 @@ public class MetricsST extends AbstractST {
     void testKafkaMM2MetricsSettingsDeprecatedMetrics() {
         AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
 
-        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        String metricsYaml =
+            TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics").getData().get(Constants.METRICS_CONFIG_YAML_NAME).replaceAll("#.*\n", "");
+        String metricsConfigJson = TestUtils.fromYamlToJson(metricsYaml);
+
         // update metrics
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
             previousMetrics.set(k.getSpec().getMetricsConfig());
@@ -495,23 +529,30 @@ public class MetricsST extends AbstractST {
         });
 
         PodUtils.verifyThatRunningPodsAreStable(MIRROR_MAKER_CLUSTER);
+
+        testMirrorMaker2Metrics();
+
         ConfigMap actualCm = kubeClient().getConfigMap(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MIRROR_MAKER_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
             k.getSpec().setMetricsConfig(null);
             k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
         });
+
         PodUtils.verifyThatRunningPodsAreStable(MIRROR_MAKER_CLUSTER);
+
         actualCm = kubeClient().getConfigMap(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MIRROR_MAKER_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
 
         // revert metrics changes
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
             k.getSpec().setMetricsConfig(previousMetrics.get());
             k.getSpec().setMetrics(null);
         });
+
+        kafkaMirrorMaker2MetricsData = MetricsUtils.collectKafkaMirrorMaker2PodsMetrics(MIRROR_MAKER_CLUSTER);
     }
 
     /**
@@ -532,7 +573,7 @@ public class MetricsST extends AbstractST {
         );
 
         ConfigMap externalMetricsCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap("metrics-config.yml", metricsConfigYaml))
+                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(NAMESPACE)
@@ -544,7 +585,7 @@ public class MetricsST extends AbstractST {
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
                 .withName("external-metrics-cm")
-                .withKey("metrics-config.yml")
+                .withKey(Constants.METRICS_CONFIG_YAML_NAME)
                 .build();
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -559,11 +600,11 @@ public class MetricsST extends AbstractST {
 
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         ConfigMap externalMetricsUpdatedCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap("metrics-config.yml", metricsConfigYaml.replace("true", "false")))
+                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml.replace("true", "false")))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(NAMESPACE)
@@ -573,7 +614,7 @@ public class MetricsST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {

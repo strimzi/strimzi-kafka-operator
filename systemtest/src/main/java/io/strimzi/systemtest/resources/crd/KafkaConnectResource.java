@@ -32,7 +32,6 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaConnectResource {
     public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect.yaml";
-    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-connect-metrics.yaml";
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectClient() {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
@@ -47,14 +46,14 @@ public class KafkaConnectResource {
         return defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas);
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
+    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
         return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas);
     }
 
     public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
-        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
 
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
+        ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
 
         return defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas);
