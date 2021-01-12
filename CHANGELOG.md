@@ -5,6 +5,10 @@
 
 * Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
 
+### Deprecations and removals
+
+* Removed support for Helm2 charts as that version is now unsupported. There is no longer the need for separate `helm2` and `helm3` binaries, only `helm` (version 3) is required.
+
 ## 0.21.0
 
 * Add support for declarative management of connector plugins in Kafka Connect CR 
