@@ -8,14 +8,14 @@
 Strimzi includes an example `KafkaConnector` in `examples/connect/source-connector.yaml`. 
 This creates a basic `FileStreamSourceConnector` instance that sends each line of the Kafka license file (an example file source) to a single Kafka topic. 
 
-You can create a `FileStreamSinkConnector` by changing the configuration of the example `KafkaConnector`.
-
-The following procedure illustrates how to configure Kafka Connect connectors by using the `source-connector.yaml` file as an example. 
+You can create a `FileStreamSinkConnector` by copying the example file and then changing the class and configuration. 
+The `FileStreamSinkConnector` reads messages from a specified topic and then writes them to a file.
 
 [NOTE]
 ====
-The `FileStreamSourceConnector` and `FileStreamSinkConnector` are not intended to be run in containers. 
-In a production environment, you should prepare container images containing the Kafka Connect connectors that you want to use.
+In a production environment, you prepare container images containing the Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
+
+The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as examples. Running these connectors in containers as described here is unlikely to be suitable for production use cases.
 ====
 
 .Prerequisites
@@ -53,6 +53,7 @@ spec:
 +
 The `FileStreamSourceConnector` class accepts the following configuration options:
 +
+.Configuration options for the source connector
 [cols="4*",options="header",stripes="none",separator=¦]
 |===
 
@@ -64,7 +65,7 @@ The `FileStreamSourceConnector` class accepts the following configuration option
 m¦file
 ¦String
 ¦Null
-¦Source file name. If not specified, the standard input is used.
+¦Source file to write messages to. If not specified, the standard input is used.
 
 m¦topic
 ¦List
@@ -75,6 +76,7 @@ m¦topic
 +
 The `FileStreamSinkConnector` class accepts the following configuration options
 +
+.Configuration options for the sync connector
 [cols="4*",options="header",stripes="none",separator=¦]
 |===
 
@@ -86,7 +88,7 @@ The `FileStreamSinkConnector` class accepts the following configuration options
 m¦file
 ¦String
 ¦Null
-¦Destination file name. If not specified, the standard output is used.
+¦Destination file to write messages to. If not specified, the standard output is used.
 
 m¦topics
 ¦List
@@ -114,8 +116,10 @@ kubectl apply -f examples/connect/source-connector.yaml
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kctr --selector strimzi.io/cluster=my-connect-cluster -o name
+kubectl get kctr --selector strimzi.io/cluster=_MY-CONNECT-CLUSTER_ -o name
 ----
++
+Replace _MY-CONNECT-CLUSTER_ with the Kafka Connect cluster that the connector was created in.
 
 .Additional resources
 
