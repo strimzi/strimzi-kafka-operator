@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.22.0
+
+* Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
+
 ## 0.21.0
 
 * Add support for declarative management of connector plugins in Kafka Connect CR 
