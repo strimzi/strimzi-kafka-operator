@@ -181,7 +181,7 @@ public abstract class AbstractST implements TestSeparator {
 
             }
             clusterOperatorConfigs.push(entry.getKey().getPath());
-            cmdKubeClient().clientWithAdmin().namespace(namespace).applyContent(fileContents);
+            cmdKubeClient().namespace(namespace).applyContent(fileContents);
         }
     }
 
@@ -204,7 +204,7 @@ public abstract class AbstractST implements TestSeparator {
         while (!clusterOperatorConfigs.empty()) {
             String clusterOperatorConfig = clusterOperatorConfigs.pop();
             LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
-            cmdKubeClient().clientWithAdmin().delete(clusterOperatorConfig);
+            cmdKubeClient().delete(clusterOperatorConfig);
         }
     }
 
