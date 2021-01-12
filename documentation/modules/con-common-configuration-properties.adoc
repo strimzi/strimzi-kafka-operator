@@ -468,9 +468,9 @@ jvmOptions:
 # ...
 ----
 
+Over allocation of memory can cause unwanted latency.
 Setting the same value for initial (`-Xms`) and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
-For Kafka and ZooKeeper pods, such allocation could cause unwanted latency.
-For Kafka Connect, avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation are multiplied by the number of consumers.
+
 
 IMPORTANT: Containers performing lots of disk I/O, such as Kafka broker containers, require available memory for use as an operating system page cache.
 On such containers, the requested memory should be significantly higher than the memory used by the JVM.
