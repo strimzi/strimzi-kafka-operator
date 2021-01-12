@@ -958,7 +958,7 @@ public class TracingST extends AbstractST {
      */
     void deleteJaeger() {
         while (!jaegerConfigs.empty()) {
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).deleteContent(jaegerConfigs.pop());
+            cmdKubeClient().namespace(cluster.getNamespace()).deleteContent(jaegerConfigs.pop());
         }
     }
 
@@ -979,7 +979,7 @@ public class TracingST extends AbstractST {
                 fileContents = switchClusterRolesToRoles(fileContents);
             }
             jaegerConfigs.push(fileContents);
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(fileContents);
+            cmdKubeClient().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
 
         installJaegerInstance();
@@ -1021,7 +1021,7 @@ public class TracingST extends AbstractST {
                 fileContents = switchClusterRolesToRoles(fileContents);
             }
             jaegerConfigs.push(fileContents);
-            cmdKubeClient().clientWithAdmin().namespace(cluster.getNamespace()).applyContent(fileContents);
+            cmdKubeClient().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
     }
 

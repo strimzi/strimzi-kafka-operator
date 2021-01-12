@@ -63,13 +63,12 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     private static final Context NOOP = new Context();
 
-    @Override
-    public abstract K clientWithAdmin();
-
     protected Context defaultContext() {
         return NOOP;
     }
 
+    // Admin contex tis not implemented now, because it's not needed
+    // In case it will be neded in future, we should change the kubeconfig and apply it for both oc and kubectl
     protected Context adminContext() {
         return defaultContext();
     }
