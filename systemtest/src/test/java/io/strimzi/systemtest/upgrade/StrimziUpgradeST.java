@@ -65,17 +65,16 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
 
     public static final String NAMESPACE = "strimzi-upgrade-test";
-    private final String strimziUpgradeClusterName = "strimzi-upgrade-cluster-name";
 
-    private String zkStsName = KafkaResources.zookeeperStatefulSetName(strimziUpgradeClusterName);
-    private String kafkaStsName = KafkaResources.kafkaStatefulSetName(strimziUpgradeClusterName);
-    private String eoDepName = KafkaResources.entityOperatorDeploymentName(strimziUpgradeClusterName);
+    private final String kafkaClusterName = "my-cluster";
+    private String zkStsName = KafkaResources.zookeeperStatefulSetName(kafkaClusterName);
+    private String kafkaStsName = KafkaResources.kafkaStatefulSetName(kafkaClusterName);
+    private String eoDepName = KafkaResources.entityOperatorDeploymentName(kafkaClusterName);
 
     private File coDir = null;
     private File kafkaTopicYaml = null;
     private File kafkaUserYaml = null;
 
-    private final String kafkaClusterName = "my-cluster";
     private final String topicName = "my-topic";
     private final String userName = "my-user";
     private final int upgradeTopicCount = 40;
@@ -180,7 +179,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Modify + apply installation files
         copyModifyApply(coDir);
         // Apply Kafka Persistent without version
-        KafkaResource.kafkaFromYaml(previousKafkaPersistent, strimziUpgradeClusterName, 3, 3)
+        KafkaResource.kafkaFromYaml(previousKafkaPersistent, kafkaClusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withVersion(null)
@@ -190,12 +189,12 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             .endSpec()
             .done();
 
-        assertNull(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(strimziUpgradeClusterName).get().getSpec().getKafka().getVersion());
+        assertNull(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(kafkaClusterName).get().getSpec().getKafka().getVersion());
 
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        Map<String, String> zooSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(strimziUpgradeClusterName));
-        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(strimziUpgradeClusterName));
-        Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(strimziUpgradeClusterName));
+        Map<String, String> zooSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(kafkaClusterName));
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(kafkaClusterName));
+        Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(kafkaClusterName));
 
         // Update CRDs, CRB, etc.
         applyClusterOperatorInstallFiles(NAMESPACE);
@@ -205,11 +204,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(BundleResource.defaultClusterOperator(NAMESPACE).build());
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(strimziUpgradeClusterName), 3, zooSnapshot);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(strimziUpgradeClusterName), 3, kafkaSnapshot);
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(strimziUpgradeClusterName), 1, eoSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(kafkaClusterName), 3, zooSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(kafkaClusterName), 3, kafkaSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(kafkaClusterName), 1, eoSnapshot);
 
-        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(strimziUpgradeClusterName, 0)), containsString(latestKafkaVersion));
+        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(kafkaClusterName, 0)), containsString(latestKafkaVersion));
     }
 
     String getValueForLastKafkaVersionInFile(File kafkaVersions, String field) throws IOException {
@@ -250,7 +249,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
             cmdKubeClient().create(kafkaYaml);
             // Wait for readiness
-            waitForReadinessOfKafkaCluster(strimziUpgradeClusterName);
+            waitForReadinessOfKafkaCluster(kafkaClusterName);
         }
         // We don't need to update KafkaUser during chain upgrade this way
         if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
@@ -267,7 +266,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Create bunch of topics for upgrade if it's specified in configuration
         if (testParameters.getBoolean("generateTopics")) {
             for (int x = 0; x < upgradeTopicCount; x++) {
-                KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(strimziUpgradeClusterName, topicName + "-" + x, 1, 1, 1)
+                KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(kafkaClusterName, topicName + "-" + x, 1, 1, 1)
                     .editSpec()
                         .withTopicName(topicName + "-" + x)
                     .endSpec()
@@ -281,7 +280,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
-                KafkaTopicResource.topic(strimziUpgradeClusterName, continuousTopicName, 3, 3, 2).done();
+                KafkaTopicResource.topic(kafkaClusterName, continuousTopicName, 3, 3, 2).done();
             }
 
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
@@ -289,7 +288,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(strimziUpgradeClusterName))
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterName))
                 .withTopicName(continuousTopicName)
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)
@@ -333,10 +332,10 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(consumeMessagesCount));
 
-        makeSnapshots(strimziUpgradeClusterName);
-        logPodImages(strimziUpgradeClusterName);
+        makeSnapshots(kafkaClusterName);
+        logPodImages(kafkaClusterName);
         // Execution of required procedures before upgrading CO
-        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresBefore"), strimziUpgradeClusterName);
+        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresBefore"), kafkaClusterName);
 
         // Upgrade the CO
         // Modify + apply installation files
@@ -351,11 +350,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         upgradeClusterOperator(coDir, testParameters.getJsonObject("imagesBeforeKafkaUpdate"));
 
         // Make snapshots of all pods
-        makeSnapshots(strimziUpgradeClusterName);
-        logPodImages(strimziUpgradeClusterName);
+        makeSnapshots(kafkaClusterName);
+        logPodImages(kafkaClusterName);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfter"), strimziUpgradeClusterName);
-        logPodImages(strimziUpgradeClusterName);
+        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfter"), kafkaClusterName);
+        logPodImages(kafkaClusterName);
         checkAllImages(testParameters.getJsonObject("imagesAfterKafkaUpdate"));
 
         // Delete old clients
@@ -408,12 +407,12 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coPods);
         LOGGER.info("Waiting for ZK StatefulSet roll");
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(strimziUpgradeClusterName), 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(kafkaClusterName), 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(strimziUpgradeClusterName), 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(kafkaClusterName), 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(strimziUpgradeClusterName), 1, eoPods);
+        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(kafkaClusterName), 1, eoPods);
         checkAllImages(images);
     }
 
@@ -494,7 +493,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         LOGGER.info("Deploying Kafka clients with image {}", image);
 
         // Deploy new clients
-        KafkaClientsResource.deployKafkaClients(true, strimziUpgradeClusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
+        KafkaClientsResource.deployKafkaClients(true, kafkaClusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
             .editSpec()
                 .editTemplate()
                     .editSpec()
