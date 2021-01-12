@@ -44,11 +44,11 @@ spec:
       # ...
     resources: <3>
       requests:
-        cpu: 500m
+        cpu: 1
         memory: 512Mi
       limits:
         cpu: 2
-        memory: 1Gi
+        memory: 2Gi
     logging: <4>
         type: inline
         loggers:
