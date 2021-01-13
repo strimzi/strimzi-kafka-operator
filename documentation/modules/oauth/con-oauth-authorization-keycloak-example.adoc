@@ -24,11 +24,11 @@ Grants are cached and enforced locally on the Kafka broker for each user session
 
 == Starting the pods
 
-For this example, we use the kubernetes deployment scripts available at https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/kubernetes:
+For this example, we use the kubernetes deployment scripts available at {oauth-kubernetes-examples-link}:
 
-[source,yaml]
+[source,yaml,subs="attributes"]
 ----
-export ROOT=https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master
+export ROOT=https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-artifact-version}
 ----
 
 .Deploy the Postgres database for Keycloak
@@ -148,9 +148,9 @@ With the configuration in place, we can check access to Kafka by using a produce
 
 First, a new interactive pod container is run using a Strimzi Kafka image to connect to a running Kafka broker.
 
-[source,shell]
+[source,shell,subs="attributes"]
 ----
-kubectl run -ti --rm --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-2.6.0 kafka-cli -- /bin/sh
+kubectl run -ti --rm --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-{DefaultKafkaVersion} kafka-cli -- /bin/sh
 ----
 
 NOTE: If `kubectl` times out waiting on the image download, subsequent attempts may result in an _AlreadyExists_ error. 
@@ -339,12 +339,12 @@ Helper scripts are used to authenticate to the `keycloak` instance.
 
 The following scripts are downloaded to `/tmp` dir and made executable:
 
-[source,shell]
+[source,shell,subs="attributes"]
 ----
-curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-artifact-version}/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
    chmod +x /tmp/oauth.sh
 
-curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/master/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-artifact-version}/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
    chmod +x /tmp/jwt.sh
 ----
 
