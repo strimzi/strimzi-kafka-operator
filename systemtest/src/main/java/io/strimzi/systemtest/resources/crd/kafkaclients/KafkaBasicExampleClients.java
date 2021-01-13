@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
-import io.fabric8.kubernetes.api.model.batch.DoneableJob;
+import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -157,14 +157,22 @@ public class KafkaBasicExampleClients {
         return updateBuilder(newBuilder());
     }
 
-    public DoneableJob producerStrimzi() {
+    public JobBuilder producerStrimzi() {
+        return defaultProducerStrimzi();
+    }
+
+    public JobBuilder consumerStrimzi() {
+        return defaultConsumerStrimzi();
+    }
+
+    public JobBuilder defaultProducerStrimzi() {
         if (producerName == null || producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
 
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
         producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
 
-        return KubernetesResource.deployNewJob(new JobBuilder()
+        return new JobBuilder()
             .withNewMetadata()
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withLabels(producerLabels)
@@ -173,7 +181,7 @@ public class KafkaBasicExampleClients {
             .withNewSpec()
                 .withNewTemplate()
                     .withNewMetadata()
-                        .withLabels(producerLabels)
+                    .withLabels(producerLabels)
                     .endMetadata()
                     .withNewSpec()
                         .withRestartPolicy("Never")
@@ -221,67 +229,69 @@ public class KafkaBasicExampleClients {
                             .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    public DoneableJob consumerStrimzi() {
+    public JobBuilder defaultConsumerStrimzi() {
         if (consumerName == null || consumerName.isEmpty()) throw new InvalidParameterException("Consumer name is not set.");
 
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
         consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
 
-        return KubernetesResource.deployNewJob(new JobBuilder()
+        return new JobBuilder()
             .withNewMetadata()
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withLabels(consumerLabels)
                 .withName(consumerName)
             .endMetadata()
             .withNewSpec()
-            .withNewTemplate()
-                .withNewMetadata()
-                    .withLabels(consumerLabels)
-                .endMetadata()
-                .withNewSpec()
-                    .withRestartPolicy("Never")
-                    .withContainers()
-                        .addNewContainer()
-                            .withName(consumerName)
-                            .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                            .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_CONSUMER_NAME + ":latest")
-                            .addNewEnv()
-                                .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrapAddress)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("TOPIC")
-                                .withValue(topicName)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("DELAY_MS")
-                                .withValue(String.valueOf(delayMs))
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("LOG_LEVEL")
-                                .withValue("DEBUG")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("MESSAGE_COUNT")
-                                .withValue(String.valueOf(messageCount))
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("GROUP_ID")
-                                .withValue(consumerGroup)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("ADDITIONAL_CONFIG")
-                                .withValue(additionalConfig)
-                            .endEnv()
-                        .endContainer()
-                .endSpec()
-            .endTemplate()
-            .endSpec()
-            .build());
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withLabels(consumerLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRestartPolicy("Never")
+                            .withContainers()
+                                .addNewContainer()
+                                    .withName(consumerName)
+                                    .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
+                                    .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_CONSUMER_NAME + ":latest")
+                                    .addNewEnv()
+                                        .withName("BOOTSTRAP_SERVERS")
+                                        .withValue(bootstrapAddress)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("TOPIC")
+                                        .withValue(topicName)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("DELAY_MS")
+                                        .withValue(String.valueOf(delayMs))
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("LOG_LEVEL")
+                                        .withValue("DEBUG")
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MESSAGE_COUNT")
+                                        .withValue(String.valueOf(messageCount))
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("GROUP_ID")
+                                        .withValue(consumerGroup)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("ADDITIONAL_CONFIG")
+                                        .withValue(additionalConfig)
+                                    .endEnv()
+                                .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
+    public Job create(Job job) {
+        return KubernetesResource.deployNewJob(job);
     }
 }

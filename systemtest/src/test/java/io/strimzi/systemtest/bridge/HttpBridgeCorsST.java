@@ -112,15 +112,15 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     @BeforeAll
     void beforeAll() throws Exception {
         deployClusterOperator(NAMESPACE);
-        KafkaResource.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1).build());
+
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeCorsClusterName)).build();
 
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
-
-        KafkaBridgeResource.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
-            1, ALLOWED_ORIGIN, null).done();
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
+            1, ALLOWED_ORIGIN, null).build());
 
         KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(httpBridgeCorsClusterName).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());

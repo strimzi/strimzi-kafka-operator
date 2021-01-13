@@ -111,10 +111,10 @@ public class CruiseControlApiST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }

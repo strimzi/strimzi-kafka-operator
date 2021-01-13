@@ -29,7 +29,7 @@ public class HttpBridgeAbstractST extends AbstractST {
     protected WebClient client;
     protected static KafkaBridgeExampleClients kafkaBridgeClientJob;
 
-    void deployClusterOperator(String namespace) throws Exception {
+    void deployClusterOperator(String namespace) {
         ResourceManager.setClassResources();
         installClusterOperator(namespace);
     }

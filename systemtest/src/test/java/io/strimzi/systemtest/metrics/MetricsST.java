@@ -188,7 +188,7 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange() {
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
@@ -245,7 +245,7 @@ public class MetricsST extends AbstractST {
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnectS2I", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2", "KafkaRebalance");
 
         // Create some resource which will have state 0. S2I will not be ready, because there is KafkaConnect cluster with same name.
-        KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(metricsClusterName, metricsClusterName, 1).build());
+        KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.kafkaConnectS2I(metricsClusterName, metricsClusterName, 1).build());
 
         for (String resource : resourcesList) {
             assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource, clusterOperatorMetricsData);
@@ -357,8 +357,8 @@ public class MetricsST extends AbstractST {
             .build();
 
 
-        kafkaBridgeClientJob.producerStrimziBridge().done();
-        kafkaBridgeClientJob.consumerStrimziBridge().done();
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.producerStrimziBridge().build());
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");
@@ -626,7 +626,7 @@ public class MetricsST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
             .editOrNewSpec()
                 .editEntityOperator()
                     .editUserOperator()
@@ -634,18 +634,18 @@ public class MetricsST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
-        KafkaConnectResource.kafkaConnectWithMetrics(metricsClusterName, 1).done();
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).done();
-        KafkaBridgeResource.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).done();
-        KafkaTopicResource.topic(metricsClusterName, TOPIC_NAME, 7, 2).done();
-        KafkaTopicResource.topic(metricsClusterName, bridgeTopic).done();
+        KafkaResource.create(KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaConnectResource.create(KafkaConnectResource.kafkaConnectWithMetrics(metricsClusterName, 1).build());
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build());
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(metricsClusterName, TOPIC_NAME, 7, 2).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(metricsClusterName, bridgeTopic).build());
 
-        KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
-        KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);

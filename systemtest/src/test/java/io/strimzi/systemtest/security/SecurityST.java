@@ -104,13 +104,13 @@ class SecurityST extends AbstractST {
     @Test
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", clusterName);
-        KafkaResource.kafkaEphemeral(clusterName, 2)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 2)
                 .editSpec()
                     .editZookeeper()
                         .withReplicas(2)
                     .endZookeeper()
                 .endSpec()
-                .done();
+                .build());
 
         LOGGER.info("Check Kafka bootstrap certificate");
         String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.tlsBootstrapAddress(clusterName), KafkaResources.bootstrapServiceName(clusterName),
@@ -163,9 +163,9 @@ class SecurityST extends AbstractST {
 
         createKafkaCluster();
 
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, USER_NAME).done();
-        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -243,9 +243,9 @@ class SecurityST extends AbstractST {
 
         // Check a new client (signed by new client key) can consume
         String bobUserName = "bob";
-        user = KafkaUserResource.tlsUser(clusterName, bobUserName).done();
+        user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, bobUserName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -320,12 +320,12 @@ class SecurityST extends AbstractST {
                                             boolean eoShouldRoll) {
         createKafkaCluster();
 
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -417,8 +417,8 @@ class SecurityST extends AbstractST {
         );
 
         // Finally check a new client (signed by new client key) can consume
-        user = KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -482,7 +482,7 @@ class SecurityST extends AbstractST {
 
     private void createKafkaCluster() {
         LOGGER.info("Creating a cluster");
-        KafkaResource.kafkaPersistent(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -514,7 +514,7 @@ class SecurityST extends AbstractST {
                         .endPersistentClaimStorage()
                     .endZookeeper()
                 .endSpec()
-                .done();
+                .build());
     }
 
     @Test
@@ -527,10 +527,10 @@ class SecurityST extends AbstractST {
 
         // 2. Now create a cluster
         createKafkaCluster();
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
-        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -577,16 +577,17 @@ class SecurityST extends AbstractST {
 
         String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Maintenance window is: {}", maintenanceWindowCron);
-        KafkaResource.kafkaPersistent(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1)
                 .editSpec()
                     .addNewMaintenanceTimeWindow(maintenanceWindowCron)
-                .endSpec().done();
+                .endSpec()
+                .build());
 
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -637,17 +638,17 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRegeneratedAfterInternalCAisDeleted() {
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 1).build());
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -701,14 +702,14 @@ class SecurityST extends AbstractST {
 
     @Test
     void testTlsHostnameVerificationWithKafkaConnect() {
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
         LOGGER.info("Getting IP of the bootstrap service");
 
         String ipOfBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(clusterName)).getSpec().getClusterIP();
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(clusterName, clusterName, 1)
+        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, clusterName, 1)
             .editSpec()
                 .withNewTls()
                     .addNewTrustedCertificate()
@@ -746,8 +747,8 @@ class SecurityST extends AbstractST {
         String sourceKafkaCluster = clusterName + "-source";
         String targetKafkaCluster = clusterName + "-target";
 
-        KafkaResource.kafkaEphemeral(sourceKafkaCluster, 1, 1).done();
-        KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(sourceKafkaCluster, 1, 1).build());
+        KafkaResource.create(KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1).build());
 
         LOGGER.info("Getting IP of the source bootstrap service for consumer");
         String ipOfSourceBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(sourceKafkaCluster)).getSpec().getClusterIP();
@@ -758,7 +759,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
-        KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.defaultKafkaMirrorMaker(clusterName, sourceKafkaCluster, targetKafkaCluster,
+        KafkaMirrorMakerResource.kafkaMirrorMakerWithoutWait(KafkaMirrorMakerResource.kafkaMirrorMaker(clusterName, sourceKafkaCluster, targetKafkaCluster,
             ClientUtils.generateRandomConsumerGroup(), 1, true)
             .editSpec()
                 .editConsumer()
@@ -816,7 +817,7 @@ class SecurityST extends AbstractST {
         final int numberOfMessages = 500;
         final String consumerGroupName = "consumer-group-name-1";
 
-        KafkaResource.kafkaEphemeral(clusterName,  3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName,  3, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -832,11 +833,11 @@ class SecurityST extends AbstractST {
                     .endListeners()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaUserResource.tlsUser(clusterName, kafkaUserWrite)
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -853,7 +854,7 @@ class SecurityST extends AbstractST {
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
 
@@ -871,7 +872,7 @@ class SecurityST extends AbstractST {
 
         assertThrows(WaitException.class, basicExternalKafkaClient::receiveMessagesTls);
 
-        KafkaUserResource.tlsUser(clusterName, kafkaUserRead)
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -894,7 +895,7 @@ class SecurityST extends AbstractST {
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
-            .done();
+            .build());
 
         BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
             .withKafkaUsername(kafkaUserRead)
@@ -911,7 +912,7 @@ class SecurityST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclWithSuperUser() {
-        KafkaResource.kafkaEphemeral(clusterName,  3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName,  3, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -928,11 +929,11 @@ class SecurityST extends AbstractST {
                     .endListeners()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
 
-        KafkaUserResource.tlsUser(clusterName, USER_NAME)
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -949,7 +950,7 @@ class SecurityST extends AbstractST {
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", USER_NAME, TOPIC_NAME);
 
@@ -972,7 +973,7 @@ class SecurityST extends AbstractST {
 
         String nonSuperuserName = USER_NAME + "-non-super-user";
 
-        KafkaUserResource.tlsUser(clusterName, nonSuperuserName)
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, nonSuperuserName)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -989,7 +990,7 @@ class SecurityST extends AbstractST {
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", nonSuperuserName, TOPIC_NAME);
 
@@ -1012,18 +1013,19 @@ class SecurityST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testCaRenewalBreakInMiddle() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .withNewClusterCa()
                     .withRenewalDays(1)
                     .withValidityDays(3)
                 .endClusterCa()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, USER_NAME).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
-        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -1113,7 +1115,7 @@ class SecurityST extends AbstractST {
 
         // Try to send and receive messages with new certificates
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
@@ -1138,13 +1140,13 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster with the support {} TLS",  tlsVersion12);
 
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withConfig(configWithNewestVersionOfTls)
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
         Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig();
 
@@ -1164,9 +1166,9 @@ class SecurityST extends AbstractST {
         configWithLowestVersionOfTls.put(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion1);
         configWithLowestVersionOfTls.put(SslConfigs.SSL_PROTOCOL_CONFIG, tlsVersion1);
 
-        KafkaClientsResource.deployKafkaClients(kafkaClientsName).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(kafkaClientsName).build());
 
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(clusterName, clusterName, 1)
+        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, clusterName, 1)
                 .editSpec()
                     .withConfig(configWithLowestVersionOfTls)
                 .endSpec()
@@ -1212,13 +1214,13 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster with the support {} cipher algorithms",  cipherSuitesSha384);
 
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withConfig(configWithCipherSuitesSha384)
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
         Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig();
 
@@ -1231,9 +1233,9 @@ class SecurityST extends AbstractST {
 
         configWithCipherSuitesSha256.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha256);
 
-        KafkaClientsResource.deployKafkaClients(kafkaClientsName).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(kafkaClientsName).build());
 
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.defaultKafkaConnect(clusterName, clusterName, 1)
+        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, clusterName, 1)
                 .editSpec()
                     .withConfig(configWithCipherSuitesSha256)
                 .endSpec()
@@ -1270,7 +1272,7 @@ class SecurityST extends AbstractST {
          for 5 minutes -> this will prevent the waiting. */
         String secondClusterName = "my-second-cluster";
 
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editOrNewSpec()
                 .withNewClusterCa()
                     .withGenerateSecretOwnerReference(false)
@@ -1279,7 +1281,7 @@ class SecurityST extends AbstractST {
                     .withGenerateSecretOwnerReference(false)
                 .endClientsCa()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Listing all cluster CAs for {}", clusterName);
         List<Secret> caSecrets = kubeClient().listSecrets().stream()
@@ -1300,7 +1302,7 @@ class SecurityST extends AbstractST {
         });
 
         LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
-        KafkaResource.kafkaEphemeral(secondClusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(secondClusterName, 3)
             .editOrNewSpec()
                 .editOrNewClusterCa()
                     .withGenerateSecretOwnerReference(true)
@@ -1309,7 +1311,7 @@ class SecurityST extends AbstractST {
                     .withGenerateSecretOwnerReference(true)
                 .endClientsCa()
             .endSpec()
-            .done();
+            .build());
 
         caSecrets = kubeClient().listSecrets().stream()
             .filter(secret -> secret.getMetadata().getName().contains(secondClusterName + "-cluster-ca") || secret.getMetadata().getName().contains(secondClusterName + "-clients-ca")).collect(Collectors.toList());
@@ -1327,7 +1329,7 @@ class SecurityST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }

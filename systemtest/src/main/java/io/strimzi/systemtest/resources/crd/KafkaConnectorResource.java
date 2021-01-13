@@ -30,20 +30,11 @@ public class KafkaConnectorResource {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaConnector kafkaConnector(String name) {
+    public static KafkaConnectorBuilder kafkaConnector(String name) {
         return kafkaConnector(name, name, 2);
     }
 
-    public static DoneableKafkaConnector kafkaConnector(String name, int maxTasks) {
-        return kafkaConnector(name, name, maxTasks);
-    }
-
-    public static DoneableKafkaConnector kafkaConnector(String name, String clusterName, int maxTasks) {
-        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(PATH_TO_KAFKA_CONNECTOR_CONFIG);
-        return deployKafkaConnector(defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks).build());
-    }
-
-    public static KafkaConnectorBuilder defaultKafkaConnector(String name, String clusterName, int maxTasks) {
+    public static KafkaConnectorBuilder kafkaConnector(String name, String clusterName, int maxTasks) {
         KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(PATH_TO_KAFKA_CONNECTOR_CONFIG);
         return defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks);
     }
@@ -69,24 +60,22 @@ public class KafkaConnectorResource {
         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
-    private static DoneableKafkaConnector deployKafkaConnector(KafkaConnector kafkaConnector) {
-        return new DoneableKafkaConnector(kafkaConnector, kC -> {
-            TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static KafkaConnector create(KafkaConnector kafkaConnector) {
+        TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return waitFor(deleteLater(kC));
-        });
+            }
+        );
+        return waitFor(deleteLater(kafkaConnector));
     }
 
     private static KafkaConnector getKafkaConnectorFromYaml(String yamlPath) {

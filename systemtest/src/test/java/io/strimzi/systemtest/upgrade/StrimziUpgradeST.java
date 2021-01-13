@@ -179,7 +179,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Modify + apply installation files
         copyModifyApply(coDir);
         // Apply Kafka Persistent without version
-        KafkaResource.kafkaFromYaml(previousKafkaPersistent, kafkaClusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaFromYaml(previousKafkaPersistent, kafkaClusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withVersion(null)
@@ -187,7 +187,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
                     .addToConfig("inter.broker.protocol.version", getValueForLastKafkaVersionInFile(previousKafkaVersionsYaml, "protocol"))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         assertNull(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(kafkaClusterName).get().getSpec().getKafka().getVersion());
 
@@ -280,7 +280,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
-                KafkaTopicResource.topic(kafkaClusterName, continuousTopicName, 3, 3, 2).done();
+                KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterName, continuousTopicName, 3, 3, 2).build());
             }
 
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
@@ -296,8 +296,8 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
                 .withDelayMs(1000)
                 .build();
 
-            kafkaBasicClientJob.producerStrimzi().done();
-            kafkaBasicClientJob.consumerStrimzi().done();
+            kafkaBasicClientJob.create(kafkaBasicClientJob.producerStrimzi().build());
+            kafkaBasicClientJob.create(kafkaBasicClientJob.consumerStrimzi().build());
             // ##############################
         }
 
@@ -493,7 +493,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         LOGGER.info("Deploying Kafka clients with image {}", image);
 
         // Deploy new clients
-        KafkaClientsResource.deployKafkaClients(true, kafkaClusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, kafkaClusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser)
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -502,7 +502,8 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec().done();
+            .endSpec()
+            .build());
     }
 
     @BeforeEach

@@ -38,21 +38,18 @@ public class KafkaMirrorMaker2Resource {
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaMirrorMaker2 kafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG);
-        return deployKafkaMirrorMaker2(defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, tlsListener).build());
-    }
-
-    public static DoneableKafkaMirrorMaker2 kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
-        return deployKafkaMirrorMaker2(defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false).build());
-    }
-
-    public static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
+    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG);
         return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, tlsListener);
+    }
+
+    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
+
+        ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
+
+        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false);
     }
 
     private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
@@ -107,24 +104,22 @@ public class KafkaMirrorMaker2Resource {
             .endSpec();
     }
 
-    private static DoneableKafkaMirrorMaker2 deployKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2) {
-        return new DoneableKafkaMirrorMaker2(kafkaMirrorMaker2, kC -> {
-            TestUtils.waitFor("KafkaMirrorMaker2 creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        kafkaMirrorMaker2Client().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static KafkaMirrorMaker2 create(KafkaMirrorMaker2 kafkaMirrorMaker2) {
+        TestUtils.waitFor("KafkaMirrorMaker2 creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    kafkaMirrorMaker2Client().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaMirrorMaker2);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return waitFor(deleteLater(kC));
-        });
+            }
+        );
+        return waitFor(deleteLater(kafkaMirrorMaker2));
     }
 
     public static KafkaMirrorMaker2 kafkaMirrorMaker2WithoutWait(KafkaMirrorMaker2 kafkaMirrorMaker2) {
