@@ -638,12 +638,10 @@ public class KafkaConnectAssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-<<<<<<< HEAD
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
-=======
         SecretOperator mockSecretOps = supplier.secretOperations;
->>>>>>> fix test
+
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
@@ -778,12 +776,9 @@ public class KafkaConnectAssemblyOperatorTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-<<<<<<< HEAD
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
-=======
         SecretOperator mockSecretOps = supplier.secretOperations;
->>>>>>> fix test
 
         String kcName = "foo";
         String kcNamespace = "test";
