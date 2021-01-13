@@ -1,3 +1,5 @@
+xref:type-KafkaMirrorMakerProducerSpec-schema-{context}[Full list of `KafkaMirrorMakerProducerSpec` schema properties]
+
 Configures a MirrorMaker producer.
 
 [id='property-producer-abort-on-send-{context}']

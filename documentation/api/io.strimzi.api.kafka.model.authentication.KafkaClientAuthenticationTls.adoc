@@ -1,4 +1,6 @@
-To use TLS client authentication, set the `type` property to the value `tls`.
+xref:type-KafkaClientAuthenticationTls-schema-{context}[Full list of `KafkaClientAuthenticationTls` schema properties]
+
+To configure TLS client authentication, set the `type` property to the value `tls`.
 TLS client authentication uses a TLS certificate to authenticate.
 
 === `certificateAndKey`

@@ -1,3 +1,5 @@
+xref:type-KafkaClientAuthenticationScramSha512-schema-{context}[Full list of `KafkaClientAuthenticationScramSha512` schema properties]
+
 To configure SASL-based SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
 The SCRAM-SHA-512 authentication mechanism requires a username and password.
 

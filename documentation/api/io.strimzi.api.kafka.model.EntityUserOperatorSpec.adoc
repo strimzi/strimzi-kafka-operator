@@ -1,3 +1,5 @@
+xref:type-EntityUserOperatorSpec-schema-{context}[Full list of `EntityUserOperatorSpec` schema properties]
+
 Configures the User Operator.
 
 [id='property-user-operator-logging-{context}']

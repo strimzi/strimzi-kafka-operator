@@ -1,3 +1,5 @@
+xref:type-GenericKafkaListener-schema-{context}[Full list of `GenericKafkaListener` schema properties]
+
 Configures listeners to connect to Kafka brokers within and outside Kubernetes.
 
 You configure the listeners in the `Kafka` resource.

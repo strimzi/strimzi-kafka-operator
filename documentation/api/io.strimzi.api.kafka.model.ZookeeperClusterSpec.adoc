@@ -1,3 +1,5 @@
+xref:type-ZookeeperClusterSpec-schema-{context}[Full list of `ZookeeperClusterSpec` schema properties]
+
 Configures a ZooKeeper cluster.
 
 [id='property-zookeeper-config-{context}']

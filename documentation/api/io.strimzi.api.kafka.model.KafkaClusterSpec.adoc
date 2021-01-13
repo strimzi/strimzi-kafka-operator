@@ -1,3 +1,5 @@
+xref:type-KafkaClusterSpec-schema-{context}[Full list of `KafkaClusterSpec` schema properties]
+
 Configures a Kafka cluster.
 
 [id='property-kafka-listeners-{context}']

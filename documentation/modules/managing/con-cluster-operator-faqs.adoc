@@ -1,8 +1,8 @@
 // This assembly is included in the following assemblies:
 //
-// master.adoc
+// managing/assembly-management-tasks.adoc
 
-[id='appendix-faq_{context}']
+[id='con-cluster-operator-faqs-{context}']
 = Frequently asked questions
 
 == Questions related to the Cluster Operator

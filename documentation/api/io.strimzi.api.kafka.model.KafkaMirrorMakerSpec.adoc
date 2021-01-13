@@ -1,3 +1,5 @@
+xref:type-KafkaMirrorMakerSpec-schema-{context}[Full list of `KafkaMirrorMakerSpec` schema properties]
+
 Configures Kafka MirrorMaker.
 
 [id='property-mm-whitelist-{context}']

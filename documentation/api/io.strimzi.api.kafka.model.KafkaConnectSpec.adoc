@@ -1,3 +1,5 @@
+xref:type-KafkaConnectSpec-schema-{context}[Full list of `KafkaConnectSpec` schema properties]
+
 Configures a Kafka Connect cluster.
 
 [id='property-kafka-connect-config-{context}']

@@ -80,7 +80,6 @@ public class DocGenerator {
         appendRepeated('#', headerDepth);
         out.append(' ');
         out.append(name);
-        out.append(" schema reference");
 
         out.append(NL);
         out.append(NL);
@@ -419,7 +418,7 @@ public class DocGenerator {
             out.append("include::../" + filename + "[leveloffset=+1]").append(NL);
             out.append(NL);
             out.append("[id='type-").append(cls.getSimpleName()).append("-schema-{context}']").append(NL);
-            out.append("==== Schema reference").append(NL);
+            out.append("==== `").append(cls.getSimpleName()).append("` schema properties").append(NL);
             out.append(NL);
 
         } else if (description != null) {

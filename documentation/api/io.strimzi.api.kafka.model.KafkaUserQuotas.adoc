@@ -1,3 +1,5 @@
+xref:type-KafkaUserQuotas-schema-{context}[Full list of `KafkaUserQuotas` schema properties]
+
 Kafka allows a user to set `quotas` to control the use of resources by clients.
 
 === `quotas`

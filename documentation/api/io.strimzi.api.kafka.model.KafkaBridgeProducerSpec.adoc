@@ -1,3 +1,5 @@
+xref:type-KafkaBridgeProducerSpec-schema-{context}[Full list of `KafkaBridgeProducerSpec` schema properties]
+
 Configures producer options for the Kafka Bridge as keys.
 
 The values can be one of the following JSON types:

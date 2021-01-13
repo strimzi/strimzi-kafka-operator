@@ -1,3 +1,5 @@
+xref:type-KafkaConnectS2ISpec-schema-{context}[Full list of `KafkaConnectS2ISpec` schema properties]
+
 Configures a Kafka Connect cluster with Source-to-Image (S2I) support.
 
 When extending Kafka Connect with connector plugins on OpenShift (only),

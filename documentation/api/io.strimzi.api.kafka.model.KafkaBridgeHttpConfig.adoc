@@ -1,3 +1,5 @@
+xref:type-KafkaBridgeHttpConfig-schema-{context}[Full list of `KafkaBridgeHttpConfig` schema properties]
+
 Configures HTTP access to a Kafka cluster for the Kafka Bridge.
 
 The default HTTP configuration is for the Kafka Bridge to listen on port 8080.

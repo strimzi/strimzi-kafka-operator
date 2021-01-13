@@ -1,3 +1,5 @@
+xref:type-GenericKafkaListenerConfigurationBroker-schema-{context}[Full list of `GenericKafkaListenerConfigurationBroker` schema properties]
+
 Configures broker service overrides for external listeners.
 
 You can see example configuration for the `nodePort`, `host`, `loadBalancerIP` and `annotations` properties in the xref:type-GenericKafkaListenerConfigurationBootstrap-reference[`GenericKafkaListenerConfigurationBootstrap` schema],

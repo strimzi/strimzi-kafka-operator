@@ -1,3 +1,5 @@
+xref:type-KafkaConnectTls-schema-{context}[Full list of `KafkaConnectTls` schema properties]
+
 Configures TLS trusted certificates for connecting Kafka Connect to the cluster.
 
 === `trustedCertificates`

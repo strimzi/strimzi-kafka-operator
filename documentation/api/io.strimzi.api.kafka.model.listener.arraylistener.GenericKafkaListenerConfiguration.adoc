@@ -1,3 +1,5 @@
+xref:type-GenericKafkaListenerConfiguration-schema-{context}[Full list of `GenericKafkaListenerConfiguration` schema properties]
+
 Configuration for Kafka listeners.
 
 [id='property-listener-config-brokerCertChainAndKey-{context}']

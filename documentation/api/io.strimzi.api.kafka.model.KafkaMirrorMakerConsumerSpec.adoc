@@ -1,3 +1,5 @@
+xref:type-KafkaMirrorMakerConsumerSpec-schema-{context}[Full list of `KafkaMirrorMakerConsumerSpec` schema properties]
+
 Configures a MirrorMaker consumer.
 
 [id='property-consumer-streams-{context}']
