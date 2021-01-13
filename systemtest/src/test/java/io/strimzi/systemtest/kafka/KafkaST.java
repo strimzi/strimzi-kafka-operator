@@ -115,7 +115,7 @@ class KafkaST extends AbstractST {
     void testDeployKafkaClusterViaTemplate() {
         cluster.createCustomResources(TEMPLATE_PATH);
         String templateName = "strimzi-ephemeral";
-        cmdKubeClient().createResourceAndApply(templateName, map("clusterName", OPENSHIFT_CLUSTER_NAME));
+        cmdKubeClient().createResourceAndApply(templateName, map("CLUSTER_NAME", OPENSHIFT_CLUSTER_NAME));
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(OPENSHIFT_CLUSTER_NAME), 3);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(OPENSHIFT_CLUSTER_NAME), 3);
@@ -984,7 +984,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Creating kafka without external listener");
         KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
-        String brokerSecret = "my-cluster-kafka-brokers";
+        String brokerSecret = clusterName + "-kafka-brokers";
 
         Secret secretsWithoutExt = kubeClient().getSecret(brokerSecret);
 
@@ -1012,12 +1012,11 @@ class KafkaST extends AbstractST {
         Secret secretsWithExt = kubeClient().getSecret(brokerSecret);
 
         LOGGER.info("Checking secrets");
-        assertThat(secretsWithExt.getData().get("my-cluster-kafka-0.crt"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-0.crt"))));
-        assertThat(secretsWithExt.getData().get("my-cluster-kafka-0.key"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-0.key"))));
-        assertThat(secretsWithExt.getData().get("my-cluster-kafka-1.crt"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-1.crt"))));
-        assertThat(secretsWithExt.getData().get("my-cluster-kafka-1.key"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-1.key"))));
-        assertThat(secretsWithExt.getData().get("my-cluster-kafka-2.crt"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-2.crt"))));
-        assertThat(secretsWithExt.getData().get("my-cluster-kafka-2.key"), is(not(secretsWithoutExt.getData().get("my-cluster-kafka-2.key"))));
+        kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(clusterName)).forEach(kafkaPod -> {
+            String kafkaPodName = kafkaPod.getMetadata().getName();
+            assertThat(secretsWithExt.getData().get(kafkaPodName + ".crt"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".crt"))));
+            assertThat(secretsWithExt.getData().get(kafkaPodName + ".key"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".key"))));
+        });
     }
 
     @Test
