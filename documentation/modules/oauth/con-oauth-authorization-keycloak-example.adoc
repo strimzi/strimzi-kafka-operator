@@ -11,6 +11,11 @@ We deploy the Kafka cluster configured to use one of the pre-configured realms.
 We then connect to the Keycloak Admin Console and demonstrate the sections of the user interface where authorizations rules are configured.
 We use Kafka CLI client tools with different personal and service accounts to demonstrate limited access based on the permissions granted to different accounts.
 
+[CAUTION]
+====
+This example is focused on explaining how to use Keycloak Authorization Services.
+To simplify the example, the communication between components is not properly secured with TLS, and the components themselves are not configured with security in mind.
+====
 
 == Token-based authorization with Keycloak Authorization Services
 
@@ -91,9 +96,10 @@ In Keycloak, users can be stored in an LDAP identity provider.
 
 Under *Roles*, you can view the realm roles to mark users or clients as having some permissions.
 Roles are a concept analogous to groups. They are usually used to _tag_ users with organizational roles and have the requisite permissions.
-Roles cannot be stored in an LDAP identity provider. If LDAP is a requirement, you could use groups instead.
+Roles cannot be stored in an LDAP identity provider.
+If LDAP is a requirement, you can use groups instead, and add Keycloak roles to the groups so that when users are assigned a group, they also get a corresponding role.
 
-Under *Clients*, you can view the additional client configurations. For this eaxmple,  `kafka`, `kafka-cli`, `team-a-client`, `team-b-client` are configured.
+Under *Clients*, you can view the additional client configurations. For this example,  `kafka`, `kafka-cli`, `team-a-client`, `team-b-client` are configured.
 The client with client id `kafka` is used by Kafka Brokers to perform the necessary OAuth 2.0 communication for access token validation,
 and to authenticate to other Kafka Broker instances using OAuth 2.0 client authentication.
 This client also contains the Authorization Services resource definitions, policies and authorization scopes used to perform authorization on the Kafka Brokers.
