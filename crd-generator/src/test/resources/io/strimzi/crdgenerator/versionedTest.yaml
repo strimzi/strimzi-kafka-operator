@@ -33,6 +33,12 @@ spec:
       openAPIV3Schema:
         type: "object"
         properties:
+          spec:
+            type: "object"
+            properties: {}
+          status:
+            type: "object"
+            properties: {}
           ignored:
             type: "string"
             pattern: "v1Pattern"
@@ -74,6 +80,12 @@ spec:
       openAPIV3Schema:
         type: "object"
         properties:
+          spec:
+            type: "object"
+            properties: {}
+          status:
+            type: "object"
+            properties: {}
           added:
             type: "string"
           ignored:

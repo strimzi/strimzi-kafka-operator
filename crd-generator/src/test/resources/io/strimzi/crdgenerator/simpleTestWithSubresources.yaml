@@ -38,3 +38,9 @@ spec:
       properties:
         replicas:
           type: "string"
+        spec:
+          type: "object"
+          properties: {}
+        status:
+          type: "object"
+          properties: {}

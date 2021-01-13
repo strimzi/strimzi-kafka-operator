@@ -73,6 +73,10 @@
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
 |rawList                 1.2+<.<|
 |object array
+|spec                    1.2+<.<|
+|object
+|status                  1.2+<.<|
+|object
 |stringProperty          1.2+<.<|
 |string
 |typedAlternatives       1.2+<.<|
