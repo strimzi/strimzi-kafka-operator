@@ -13,7 +13,7 @@ The `FileStreamSinkConnector` reads messages from a specified topic and then wri
 
 [NOTE]
 ====
-In a production environment, you prepare container images containing the Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
+In a production environment, you prepare container images containing your desired Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
 
 The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as examples. Running these connectors in containers as described here is unlikely to be suitable for production use cases.
 ====
