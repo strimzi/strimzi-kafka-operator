@@ -35,7 +35,7 @@ public class JobUtils {
      * @param name name of the job
      */
     public static void deleteJobWithWait(String namespace, String name) {
-        kubeClient().deleteJob(name);
+        kubeClient(namespace).deleteJob(name);
         waitForJobDeletion(name);
     }
 

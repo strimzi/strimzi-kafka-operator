@@ -128,7 +128,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get() == null) {
             LOGGER.info("Deploying initial Kafka version {} with logMessageFormat={} and interBrokerProtocol={}", initialVersion.version(), initLogMsgFormat, initInterBrokerProtocol);
-            KafkaResource.kafkaPersistent(clusterName, kafkaReplicas, zkReplicas)
+            KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, kafkaReplicas, zkReplicas)
                 .editSpec()
                     .editKafka()
                         .withVersion(initialVersion.version())
@@ -136,13 +136,13 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
                         .addToConfig("inter.broker.protocol.version", initInterBrokerProtocol)
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
             // ##############################
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).done();
+            KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
@@ -155,8 +155,8 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            kafkaBasicClientJob.producerStrimzi().done();
-            kafkaBasicClientJob.consumerStrimzi().done();
+            kafkaBasicClientJob.create(kafkaBasicClientJob.producerStrimzi().build());
+            kafkaBasicClientJob.create(kafkaBasicClientJob.consumerStrimzi().build());
             // ##############################
 
         } else {
@@ -276,6 +276,6 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         applyBindings(NAMESPACE);
         // 060-Deployment
-        BundleResource.clusterOperator(NAMESPACE).done();
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
     }
 }

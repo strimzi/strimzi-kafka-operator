@@ -72,13 +72,13 @@ public class KafkaRollerST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        KafkaResource.kafkaPersistent(clusterName, 4)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 4)
             .editSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getStatus().getReplicas();
@@ -86,7 +86,7 @@ public class KafkaRollerST extends AbstractST {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
-        KafkaTopicResource.topic(clusterName, topicName, 4, 4, 4).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 4, 4, 4).build());
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(clusterName,  3));
@@ -119,8 +119,8 @@ public class KafkaRollerST extends AbstractST {
 
     @Test
     void testKafkaTopicRFLowerThanMinInSyncReplicas() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 3).done();
-        KafkaTopicResource.topic(clusterName, TOPIC_NAME, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME, 1, 1).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
@@ -144,7 +144,7 @@ public class KafkaRollerST extends AbstractST {
 
     @Test
     void testKafkaPodCrashLooping() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -152,7 +152,7 @@ public class KafkaRollerST extends AbstractST {
                     .endJvmOptions()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")));
@@ -170,7 +170,7 @@ public class KafkaRollerST extends AbstractST {
 
     @Test
     void testKafkaPodImagePullBackOff() {
-        KafkaResource.kafkaPersistent(clusterName, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
@@ -194,13 +194,13 @@ public class KafkaRollerST extends AbstractST {
         ResourceRequirements rr = new ResourceRequirementsBuilder()
                 .withRequests(Collections.emptyMap())
                 .build();
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withResources(rr)
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("123456"));
@@ -256,7 +256,7 @@ public class KafkaRollerST extends AbstractST {
                 .withPod(pt)
                 .build();
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 3, 3)
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withTemplate(kct)
@@ -283,7 +283,7 @@ public class KafkaRollerST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_MEDIUM);
     }

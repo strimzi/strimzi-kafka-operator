@@ -87,7 +87,7 @@ public class TopicST extends AbstractST {
 
         final String newTopicName = "topic-example-new";
 
-        kafkaTopic = KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).done();
+        kafkaTopic = KafkaTopicResource.create(KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor).build());
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, TOPIC_CLUSTER_NAME));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
@@ -117,7 +117,7 @@ public class TopicST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Test
     void testCreateTopicViaAdminClient() throws ExecutionException, InterruptedException, TimeoutException {
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -130,7 +130,7 @@ public class TopicST extends AbstractST {
                     .endListeners()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         Properties properties = new Properties();
 
@@ -169,7 +169,7 @@ public class TopicST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Test
     void testCreateDeleteCreate() throws InterruptedException {
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -187,7 +187,7 @@ public class TopicST extends AbstractST {
                         .endTopicOperator()
                     .endEntityOperator()
                 .endSpec()
-                .done();
+                .build());
 
         Properties properties = new Properties();
 
@@ -202,11 +202,11 @@ public class TopicST extends AbstractST {
 
             String topicName = "topic-create-delete-create";
 
-            KafkaTopicResource.topic(clusterName, topicName)
+            KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName)
                     .editSpec()
                         .withReplicas(3)
                     .endSpec()
-                    .done();
+                    .build());
             KafkaTopicUtils.waitForKafkaTopicReady(topicName);
 
             adminClient.describeTopics(singletonList(topicName)).values().get(topicName);
@@ -226,11 +226,11 @@ public class TopicST extends AbstractST {
                 Thread.sleep(2_000);
                 long t0 = System.currentTimeMillis();
                 LOGGER.info("Iteration {}: Recreating {}", i, topicName);
-                KafkaTopicResource.topic(clusterName, topicName)
+                KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName)
                         .editSpec()
                             .withReplicas(3)
                         .endSpec()
-                        .done();
+                        .build());
                 ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), "KafkaTopic", NAMESPACE, topicName, Ready, 15_000);
                 TestUtils.waitFor("Recreation of topic " + topicName, 1000, 2_000, () -> {
                     try {
@@ -250,11 +250,11 @@ public class TopicST extends AbstractST {
     void testTopicModificationOfReplicationFactor() {
         String topicName = "topic-with-changed-replication";
 
-        KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, topicName)
+        KafkaTopicResource.create(KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, topicName)
                 .editSpec()
                     .withReplicas(3)
                 .endSpec()
-                .done();
+                .build());
 
         KafkaTopicResource.replaceTopicResource(topicName, t -> t.getSpec().setReplicas(1));
         KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
@@ -275,7 +275,7 @@ public class TopicST extends AbstractST {
     void testSendingMessagesToNonExistingTopic() {
         int sent = 0;
 
-        KafkaClientsResource.deployKafkaClients(false, TOPIC_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, TOPIC_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(TOPIC_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -331,17 +331,17 @@ public class TopicST extends AbstractST {
         String topicName = "my-deleted-topic";
         String isolatedKafkaCluster = clusterName + "-isolated";
 
-        KafkaResource.kafkaEphemeral(isolatedKafkaCluster, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(isolatedKafkaCluster, 1, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("delete.topic.enable", false)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaClientsResource.deployKafkaClients(false, isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).build());
 
-        KafkaTopicResource.topic(isolatedKafkaCluster, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(isolatedKafkaCluster, topicName).build());
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(isolatedKafkaCluster + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -406,11 +406,11 @@ public class TopicST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
-        KafkaResource.kafkaEphemeral(TOPIC_CLUSTER_NAME, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(TOPIC_CLUSTER_NAME, 3, 1).build());
     }
 }

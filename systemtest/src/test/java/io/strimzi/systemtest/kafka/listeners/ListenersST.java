@@ -88,10 +88,10 @@ public class ListenersST extends AbstractST {
     void testSendMessagesPlainAnonymous() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3).done();
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -128,7 +128,7 @@ public class ListenersST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -148,12 +148,14 @@ public class ListenersST extends AbstractST {
                             .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
-                .endSpec().done();
-        KafkaTopicResource.topic(clusterName, topicName).done();
+                .endSpec()
+                .build());
 
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, kafkaUser).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUser).build());
+
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -192,7 +194,7 @@ public class ListenersST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -206,11 +208,12 @@ public class ListenersST extends AbstractST {
                             .endGenericKafkaListener()
                         .endListeners()
                     .endKafka()
-                .endSpec().done();
+                .endSpec()
+                .build());
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(clusterName, kafkaUsername).done();
+        KafkaUser kafkaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, kafkaUsername).build());
 
         String brokerPodLog = kubeClient().logs(clusterName + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUsername) + ".*$", Pattern.MULTILINE);
@@ -225,7 +228,7 @@ public class ListenersST extends AbstractST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
 
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -265,7 +268,7 @@ public class ListenersST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -280,13 +283,13 @@ public class ListenersST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(clusterName, kafkaUsername).done();
+        KafkaUser kafkaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, kafkaUsername).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
 
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -319,7 +322,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort() {
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -339,7 +342,7 @@ public class ListenersST extends AbstractST {
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -388,7 +391,7 @@ public class ListenersST extends AbstractST {
                 nodePortListenerBrokerOverride.getBroker());
 
         int clusterBootstrapNodePort = 32100;
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -416,7 +419,7 @@ public class ListenersST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
         LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
                 KafkaResources.externalBootstrapServiceName(clusterName));
@@ -446,7 +449,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls() {
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -461,9 +464,9 @@ public class ListenersST extends AbstractST {
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaUserResource.tlsUser(clusterName, USER_NAME).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
@@ -485,7 +488,7 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancer() {
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -499,7 +502,7 @@ public class ListenersST extends AbstractST {
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
@@ -522,7 +525,7 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls() {
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -537,9 +540,9 @@ public class ListenersST extends AbstractST {
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaUserResource.tlsUser(clusterName, USER_NAME).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
         ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
@@ -570,7 +573,7 @@ public class ListenersST extends AbstractST {
     void testCustomSoloCertificatesForNodePort() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -602,9 +605,10 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -623,7 +627,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -652,7 +656,7 @@ public class ListenersST extends AbstractST {
     void testCustomChainCertificatesForNodePort() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -684,9 +688,10 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -705,7 +710,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, customListenerName, null, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, customListenerName, null, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -734,7 +739,7 @@ public class ListenersST extends AbstractST {
     void testCustomSoloCertificatesForLoadBalancer() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -766,9 +771,10 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -787,7 +793,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -816,7 +822,7 @@ public class ListenersST extends AbstractST {
     void testCustomChainCertificatesForLoadBalancer() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -848,12 +854,13 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
         KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix(topicName);
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
         KafkaUserUtils.waitForKafkaUserCreation(userName);
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
@@ -873,7 +880,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -903,7 +910,7 @@ public class ListenersST extends AbstractST {
     void testCustomSoloCertificatesForRoute() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -935,9 +942,10 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -956,7 +964,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -985,7 +993,7 @@ public class ListenersST extends AbstractST {
     void testCustomChainCertificatesForRoute() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -1017,9 +1025,10 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -1038,7 +1047,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -1069,7 +1078,7 @@ public class ListenersST extends AbstractST {
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -1087,9 +1096,10 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
         String externalSecretCerts = getKafkaSecretCertificates(clusterName + "-cluster-ca-cert", "ca.crt");
@@ -1177,7 +1187,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -1311,7 +1321,7 @@ public class ListenersST extends AbstractST {
     void testCustomCertNodePortAndTlsRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -1330,9 +1340,9 @@ public class ListenersST extends AbstractST {
                     .endListeners()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
         String externalSecretCerts = getKafkaSecretCertificates(clusterName + "-cluster-ca-cert", "ca.crt");
@@ -1419,7 +1429,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -1542,7 +1552,7 @@ public class ListenersST extends AbstractST {
     void testCustomCertRouteAndTlsRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -1560,9 +1570,10 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaUser aliceUser = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser aliceUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
         String externalSecretCerts = getKafkaSecretCertificates(clusterName + "-cluster-ca-cert", "ca.crt");
@@ -1651,7 +1662,7 @@ public class ListenersST extends AbstractST {
         );
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
@@ -1773,7 +1784,7 @@ public class ListenersST extends AbstractST {
         String nonExistingCertName = "non-existing-certificate";
         String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -1792,7 +1803,8 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().build());
+            .endSpec()
+            .build());
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
@@ -1806,7 +1818,7 @@ public class ListenersST extends AbstractST {
         String nonExistingCertName = "non-existing-crt";
         String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -1825,7 +1837,8 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().build());
+            .endSpec()
+            .build());
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
@@ -1840,7 +1853,7 @@ public class ListenersST extends AbstractST {
         String nonExistingCertKey = "non-existing-key";
         String clusterName = "broken-cluster";
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 1, 1)
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -1859,7 +1872,8 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().build());
+            .endSpec()
+            .build());
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
@@ -1904,7 +1918,7 @@ public class ListenersST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }

@@ -70,7 +70,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).createOrReplace(kafkaTopic);
         }
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -84,9 +84,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -120,7 +121,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         recreateClusterOperator();
 
         // Recreate Kafka Cluster
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -136,7 +137,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .endZookeeper()
                 .withNewEntityOperator()
                 .endEntityOperator()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         // Wait some time after kafka is ready before delete topics files
         Thread.sleep(60000);
@@ -155,7 +157,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -178,8 +180,9 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         prepareEnvForOperator(NAMESPACE);
         applyBindings(NAMESPACE);
         // 060-Deployment
-        BundleResource.clusterOperator(NAMESPACE).done();
-        KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
+
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -193,10 +196,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
-            .endSpec().done();
-        KafkaTopicResource.topic(clusterName, topicName).done();
+            .endSpec()
+            .build());
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -232,7 +237,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         applyClusterOperatorInstallFiles(NAMESPACE);
         applyBindings(NAMESPACE);
         // 060-Deployment
-        BundleResource.clusterOperator(NAMESPACE).done();
+        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
     }
 
     private void deleteAndRecreateNamespace() {

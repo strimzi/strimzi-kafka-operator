@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -125,13 +125,13 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
         jaegerServiceStreamsName = builder.jaegerServiceStreamsName;
     }
 
-    public DoneableDeployment consumerWithTracing() {
+    public DeploymentBuilder consumerWithTracing() {
         String consumerName = "hello-world-consumer";
 
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
 
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
+        return new DeploymentBuilder()
                     .withNewMetadata()
                         .withNamespace(ResourceManager.kubeClient().getNamespace())
                         .withLabels(consumerLabels)
@@ -194,17 +194,16 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                                 .endContainer()
                             .endSpec()
                         .endTemplate()
-                    .endSpec()
-                    .build());
+                    .endSpec();
     }
 
-    public DoneableDeployment producerWithTracing() {
+    public DeploymentBuilder producerWithTracing() {
         String producerName = "hello-world-producer";
 
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
 
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
+        return new DeploymentBuilder()
             .withNewMetadata()
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withLabels(producerLabels)
@@ -263,17 +262,16 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    public DoneableDeployment kafkaStreamsWithTracing() {
+    public DeploymentBuilder kafkaStreamsWithTracing() {
         String kafkaStreamsName = "hello-world-streams";
 
         Map<String, String> kafkaStreamLabels = new HashMap<>();
         kafkaStreamLabels.put("app", kafkaStreamsName);
 
-        return KubernetesResource.deployNewDeployment(new DeploymentBuilder()
+        return new DeploymentBuilder()
             .withNewMetadata()
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
                 .withLabels(kafkaStreamLabels)
@@ -332,7 +330,10 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build());
+            .endSpec();
+    }
+
+    public Deployment create(Deployment deployment) {
+        return KubernetesResource.deployNewDeployment(deployment);
     }
 }

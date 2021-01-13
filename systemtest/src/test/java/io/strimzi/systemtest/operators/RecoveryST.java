@@ -260,7 +260,7 @@ class RecoveryST extends AbstractST {
             .withRequests(requests)
             .build();
 
-        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(clusterName, 3, 3)
+        Kafka kafka = KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withResources(resourceReq)
@@ -286,7 +286,7 @@ class RecoveryST extends AbstractST {
     }
 
     @BeforeEach
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setMethodResources();
         installClusterOperator(NAMESPACE);
         deployTestSpecificResources();
@@ -296,8 +296,8 @@ class RecoveryST extends AbstractST {
         clusterName = generateRandomNameOfKafka("recovery-cluster");
         kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + clusterName;
 
-        KafkaResource.kafkaEphemeral(clusterName, 3, 1).done();
-        KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).done();
-        KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1).build());
     }
 }

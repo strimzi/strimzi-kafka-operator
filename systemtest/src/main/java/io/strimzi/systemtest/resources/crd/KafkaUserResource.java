@@ -27,22 +27,20 @@ public class KafkaUserResource {
         return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaUser tlsUser(String clusterName, String name) {
-        return user(defaultUser(clusterName, name)
+    public static KafkaUserBuilder tlsUser(String clusterName, String name) {
+        return defaultUser(clusterName, name)
             .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    public static DoneableKafkaUser scramShaUser(String clusterName, String name) {
-        return user(defaultUser(clusterName, name)
+    public static KafkaUserBuilder scramShaUser(String clusterName, String name) {
+        return defaultUser(clusterName, name)
             .withNewSpec()
                 .withNewKafkaUserScramSha512ClientAuthentication()
                 .endKafkaUserScramSha512ClientAuthentication()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
     public static KafkaUserBuilder defaultUser(String clusterName, String name) {
@@ -55,12 +53,10 @@ public class KafkaUserResource {
             .endMetadata();
     }
 
-    static DoneableKafkaUser user(KafkaUser user) {
-        return new DoneableKafkaUser(user, ku -> {
-            kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(ku);
-            LOGGER.info("Created KafkaUser {}", ku.getMetadata().getName());
-            return waitFor(deleteLater(ku));
-        });
+    public static KafkaUser create(KafkaUser user) {
+        kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(user);
+        LOGGER.info("Created KafkaUser {}", user.getMetadata().getName());
+        return waitFor(deleteLater(user));
     }
 
     public static KafkaUser kafkaUserWithoutWait(KafkaUser user) {
@@ -76,16 +72,15 @@ public class KafkaUserResource {
         return ResourceManager.deleteLater(kafkaUserClient(), kafkaUser);
     }
 
-    public static DoneableKafkaUser userWithQuota(KafkaUser user, Integer prodRate, Integer consRate, Integer requestPerc) {
-        return user(new KafkaUserBuilder(user)
+    public static KafkaUserBuilder userWithQuota(KafkaUser user, Integer prodRate, Integer consRate, Integer requestPerc) {
+        return new KafkaUserBuilder(user)
                 .editSpec()
                     .withNewQuotas()
                         .withConsumerByteRate(consRate)
                         .withProducerByteRate(prodRate)
                         .withRequestPercentage(requestPerc)
                     .endQuotas()
-                .endSpec()
-                .build());
+                .endSpec();
     }
 
     public static void replaceUserResource(String resourceName, Consumer<KafkaUser> editor) {

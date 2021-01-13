@@ -7,32 +7,27 @@ package io.strimzi.systemtest.resources.operator;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
 public class BundleResource {
-    private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
-
     public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
-    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build());
+    public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout) {
+        return defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public static DoneableDeployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, operationTimeout, reconciliationInterval).build());
+    public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+        return defaultClusterOperator(namespace, operationTimeout, reconciliationInterval);
     }
 
-    public static DoneableDeployment clusterOperator(String namespace) {
-        return KubernetesResource.deployNewDeployment(defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
+    public static DeploymentBuilder clusterOperator(String namespace) {
+        return defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     public static DeploymentBuilder defaultClusterOperator(String namespace) {
@@ -94,4 +89,7 @@ public class BundleResource {
             .endSpec();
     }
 
+    public static Deployment create(Deployment co) {
+        return KubernetesResource.deployNewDeployment(co);
+    }
 }

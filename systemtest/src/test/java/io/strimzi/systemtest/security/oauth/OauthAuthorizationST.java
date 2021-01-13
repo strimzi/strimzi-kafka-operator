@@ -80,9 +80,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Test
     @Order(1)
     void smokeTestForClients() {
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
-        teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -99,7 +99,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(TOPIC_NAME)
             .build();
 
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(TEAM_A_PRODUCER_NAME, NAMESPACE, 30_000));
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
@@ -111,13 +111,13 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(topicXName)
             .build();
 
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(TEAM_A_PRODUCER_NAME, NAMESPACE, 30_000));
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
         // Team A can not create topic starting with 'x-' only write to existing on
-        KafkaTopicResource.topic(oauthClusterName, topicXName).done();
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(oauthClusterName, topicXName).build());
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
@@ -128,7 +128,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(TOPIC_A)
             .build();
 
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -137,7 +137,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Order(3)
     void testTeamAReadFromTopic() {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_A);
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
@@ -148,7 +148,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(TOPIC_A)
             .build();
 
-        teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(TEAM_A_CONSUMER_NAME, NAMESPACE, 30_000));
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
@@ -159,7 +159,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(TOPIC_A)
             .build();
 
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -169,7 +169,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     void testTeamBWriteToTopic() {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_NAME);
         // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
-        teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamBOauthClientJob.create(teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(TEAM_B_PRODUCER_NAME, NAMESPACE, 30_000));
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_B_PRODUCER_NAME);
 
@@ -180,8 +180,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(TOPIC_B)
             .build();
 
-        teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
-        teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName).done();
+        teamBOauthClientJob.create(teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        teamBOauthClientJob.create(teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitTillContinuousClientsFinish(TEAM_B_PRODUCER_NAME, TEAM_B_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -192,14 +192,14 @@ public class OauthAuthorizationST extends OauthAbstractST {
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX() {
         // only write means that Team A can not create new topic 'x-.*'
         String topicName = TOPIC_X + "-example";
-        KafkaTopicResource.topic(oauthClusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(oauthClusterName, topicName).build());
 
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
             .withConsumerGroup("a-consumer_group")
             .withTopicName(topicName)
             .build();
 
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
         teamBOauthClientJob = teamBOauthClientJob.toBuilder()
@@ -207,7 +207,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(topicName)
             .build();
 
-        teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName).done();
+        teamBOauthClientJob.create(teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_B_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -219,7 +219,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         LOGGER.info("Verifying that team B is not able write to topic starting with 'x-' because in kafka cluster" +
                 "does not have super-users to break authorization rules");
 
-        KafkaUserResource.tlsUser(oauthClusterName, USER_NAME).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(oauthClusterName, USER_NAME).build());
 
         teamBOauthClientJob = teamBOauthClientJob.toBuilder()
             .withConsumerGroup("x-consumer_group_b")
@@ -227,7 +227,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withUserName(USER_NAME)
             .build();
 
-        teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamBOauthClientJob.create(teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(TEAM_B_PRODUCER_NAME, NAMESPACE, 30_000));
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_B_PRODUCER_NAME);
 
@@ -240,7 +240,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withUserName(USER_NAME)
             .build();
 
-        teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(TEAM_A_CONSUMER_NAME, NAMESPACE, 30_000));
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_CONSUMER_NAME);
 
@@ -259,7 +259,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
 
-        teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamBOauthClientJob.create(teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_B_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
         LOGGER.info("Verifying that team A is able to write to topic starting with 'x-' and break authorization rule");
@@ -269,7 +269,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withTopicName(TOPIC_X)
             .build();
 
-        teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -296,8 +296,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         LOGGER.info("Verifying that team A producer is able to send messages to the {} topic -> the topic starting with 'x'", topicXName);
 
-        KafkaTopicResource.topic(oauthClusterName, topicXName).done();
-        KafkaTopicResource.topic(oauthClusterName, topicAName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(oauthClusterName, topicXName).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(oauthClusterName, topicAName).build());
 
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
             .withUserName(TEAM_A_CLIENT)
@@ -305,7 +305,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
@@ -396,7 +396,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
             .withTopicName(topicAName)
             .build();
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
@@ -411,7 +411,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withDelayMs(1000)
             .build();
 
-        teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).done();
+        teamAOauthClientJob.create(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(TEAM_A_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, TEAM_A_PRODUCER_NAME);
 
@@ -461,7 +461,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     void setUp()  {
         keycloakInstance.setRealm(TEST_REALM, true);
 
-        KafkaResource.kafkaEphemeral(oauthClusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(oauthClusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -500,12 +500,12 @@ public class OauthAuthorizationST extends OauthAbstractST {
                     .endKafkaAuthorizationKeycloak()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Setting producer and consumer properties");
 
-        KafkaUserResource.tlsUser(oauthClusterName, TEAM_A_CLIENT).done();
-        KafkaUserResource.tlsUser(oauthClusterName, TEAM_B_CLIENT).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(oauthClusterName, TEAM_A_CLIENT).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(oauthClusterName, TEAM_B_CLIENT).build());
 
         teamAOauthClientJob = new KafkaOauthExampleClients.Builder()
             .withProducerName(TEAM_A_PRODUCER_NAME)

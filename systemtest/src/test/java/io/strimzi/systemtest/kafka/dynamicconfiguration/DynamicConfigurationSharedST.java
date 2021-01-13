@@ -179,11 +179,11 @@ public class DynamicConfigurationSharedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        KafkaResource.kafkaPersistent(dynamicConfigurationSharedClusterName, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(dynamicConfigurationSharedClusterName, 3).build());
     }
 }

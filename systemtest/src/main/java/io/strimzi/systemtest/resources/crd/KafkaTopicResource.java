@@ -30,20 +30,20 @@ public class KafkaTopicResource {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaTopic topic(String clusterName, String topicName) {
-        return topic(defaultTopic(clusterName, topicName, 1, 1, 1).build());
+    public static KafkaTopicBuilder topic(String clusterName, String topicName) {
+        return defaultTopic(clusterName, topicName, 1, 1, 1);
     }
 
-    public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
-        return topic(defaultTopic(clusterName, topicName, partitions, 1, 1).build());
+    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions) {
+        return defaultTopic(clusterName, topicName, partitions, 1, 1);
     }
 
-    public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
-        return topic(defaultTopic(clusterName, topicName, partitions, replicas, replicas).build());
+    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions, int replicas) {
+        return defaultTopic(clusterName, topicName, partitions, replicas, replicas);
     }
 
-    public static DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
-        return topic(defaultTopic(clusterName, topicName, partitions, replicas, minIsr).build());
+    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
+        return defaultTopic(clusterName, topicName, partitions, replicas, minIsr);
     }
 
     public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
@@ -61,12 +61,10 @@ public class KafkaTopicResource {
             .endSpec();
     }
 
-    static DoneableKafkaTopic topic(KafkaTopic topic) {
-        return new DoneableKafkaTopic(topic, kt -> {
-            kafkaTopicClient().inNamespace(topic.getMetadata().getNamespace()).createOrReplace(kt);
-            LOGGER.info("Created KafkaTopic {}", kt.getMetadata().getName());
-            return waitFor(deleteLater(kt));
-        });
+    public static KafkaTopic create(KafkaTopic topic) {
+        kafkaTopicClient().inNamespace(topic.getMetadata().getNamespace()).createOrReplace(topic);
+        LOGGER.info("Created KafkaTopic {}", topic.getMetadata().getName());
+        return waitFor(deleteLater(topic));
     }
 
     public static KafkaTopic topicWithoutWait(KafkaTopic kafkaTopic) {

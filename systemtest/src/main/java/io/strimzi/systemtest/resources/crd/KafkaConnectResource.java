@@ -38,34 +38,26 @@ public class KafkaConnectResource {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
-        return kafkaConnect(name, name, kafkaConnectReplicas, true);
+    public static KafkaConnectBuilder kafkaConnect(String name, int kafkaConnectReplicas) {
+        return kafkaConnect(name, name, kafkaConnectReplicas);
     }
 
-    public static DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas, boolean allowNP) {
-        return kafkaConnect(name, name, kafkaConnectReplicas, allowNP);
-    }
-
-    public static DoneableKafkaConnect kafkaConnect(String name, String clusterName, int kafkaConnectReplicas, boolean allowNP) {
+    public static KafkaConnectBuilder kafkaConnect(String name, String clusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
-        kafkaConnect = defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build();
-        return allowNP ? deployKafkaConnectWithNetworkPolicy(kafkaConnect) : deployKafkaConnect(kafkaConnect);
+        return defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas);
     }
 
-    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
+    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
         return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas);
     }
 
-    public static DoneableKafkaConnect kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
+    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+
         ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
-        return deployKafkaConnectWithNetworkPolicy(defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build());
-    }
 
-    public static KafkaConnectBuilder defaultKafkaConnect(String name, String kafkaClusterName, int kafkaConnectReplicas) {
-        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(PATH_TO_KAFKA_CONNECT_CONFIG);
-        return defaultKafkaConnect(kafkaConnect, name, kafkaClusterName, kafkaConnectReplicas);
+        return defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas);
     }
 
     private static KafkaConnectBuilder defaultKafkaConnect(KafkaConnect kafkaConnect, String name, String kafkaClusterName, int kafkaConnectReplicas) {
@@ -92,43 +84,35 @@ public class KafkaConnectResource {
             .endSpec();
     }
 
-    private static DoneableKafkaConnect deployKafkaConnectWithNetworkPolicy(KafkaConnect kafkaConnect) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
-        }
-        return deployKafkaConnect(kafkaConnect);
+    public static KafkaConnect create(KafkaConnect kafkaConnect) {
+        return create(kafkaConnect, true);
     }
 
-    private static DoneableKafkaConnect deployKafkaConnect(KafkaConnect kafkaConnect) {
-        return new DoneableKafkaConnect(kafkaConnect, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static KafkaConnect create(KafkaConnect kafkaConnect, boolean allowNP) {
+        if (allowNP) {
+            KubernetesResource.deployNetworkPolicyForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
+        }
+
+        TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnect);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return waitFor(deleteLater(kC));
-        });
+            }
+        );
+        return waitFor(deleteLater(kafkaConnect));
     }
 
     public static KafkaConnect kafkaConnectWithoutWait(KafkaConnect kafkaConnect) {
         kafkaConnectClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnect);
         return kafkaConnect;
-    }
-
-
-    public static void allowNetworkPolicyForKafkaConnect(KafkaConnect kafkaConnect) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
-        }
     }
 
     public static void deleteKafkaConnectWithoutWait(String resourceName) {

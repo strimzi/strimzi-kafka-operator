@@ -52,22 +52,20 @@ public class KafkaResource {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
-        return kafkaEphemeral(name, kafkaReplicas, Math.min(kafkaReplicas, 3));
+    public static KafkaBuilder kafkaEphemeral(String clusterName, int kafkaReplicas) {
+        return kafkaEphemeral(clusterName, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
 
-    public static DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_EPHEMERAL_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+    public static KafkaBuilder kafkaEphemeral(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafka(getKafkaFromYaml(PATH_TO_KAFKA_EPHEMERAL_CONFIG), clusterName, kafkaReplicas, zookeeperReplicas);
     }
 
-    public static DoneableKafka kafkaPersistent(String name, int kafkaReplicas) {
+    public static KafkaBuilder kafkaPersistent(String name, int kafkaReplicas) {
         return kafkaPersistent(name, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
 
-    public static DoneableKafka kafkaPersistent(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+    public static KafkaBuilder kafkaPersistent(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafka(getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG), clusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -81,67 +79,51 @@ public class KafkaResource {
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endZookeeper()
-            .endSpec().build());
+            .endSpec();
     }
 
-    public static DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
-        return kafkaJBOD(name, kafkaReplicas, 3, jbodStorage);
+    public static KafkaBuilder kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
+        return kafkaJBOD(name, kafkaReplicas, Math.min(kafkaReplicas, 3), jbodStorage);
     }
 
-    public static DoneableKafka kafkaJBOD(String name, int kafkaReplicas, int zookeeperReplicas, JbodStorage jbodStorage) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_PERSISTENT_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+    public static KafkaBuilder kafkaJBOD(String name, int kafkaReplicas, int zookeeperReplicas, JbodStorage jbodStorage) {
+        return kafkaPersistent(name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
                     .withStorage(jbodStorage)
                 .endKafka()
-                .editZookeeper().
-                    withReplicas(zookeeperReplicas)
-                    .withNewPersistentClaimStorage()
-                        .withNewSize("100")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    public static DoneableKafka kafkaWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
 
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+        deployMetricsConfigMaps();
+
+        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    public static DoneableKafka kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
     }
 
-    public static DoneableKafka kafkaAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG);
-        ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(kafkaMetricsCm);
-        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(zkMetricsCm);
+
+        deployMetricsConfigMaps();
+
         ConfigMap ccMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG, "cruise-control-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(ccMetricsCm);
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build());
+
+        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
     }
 
-    public static DoneableKafka kafkaWithMetricsAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
-        ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(kafkaMetricsCm);
-        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(zkMetricsCm);
-
+    public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
         ConfigMap ccCm = new ConfigMapBuilder()
                 .withApiVersion("v1")
                 .withNewMetadata()
@@ -155,32 +137,31 @@ public class KafkaResource {
                         "  name: kafka_cruisecontrol_$1_$2\n" +
                         "  type: GAUGE"))
                 .build();
+
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(ccCm);
 
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
                 .withName("cruise-control-metrics-test")
                 .withKey("metrics-config.yml")
                 .build();
+
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
                     .withConfigMapKeyRef(cmks)
                 .endValueFrom()
                 .build();
 
-        return deployKafka(defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+        return kafkaWithMetrics(name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
-                .withNewKafkaExporter()
-                .endKafkaExporter()
                 .withNewCruiseControl()
                     .withMetricsConfig(jmxPrometheusExporterMetrics)
                 .endCruiseControl()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    public static KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_EPHEMERAL_CONFIG);
-        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
+    private static void deployMetricsConfigMaps() {
+        ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
     }
 
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
@@ -237,9 +218,9 @@ public class KafkaResource {
             .endSpec();
     }
 
-    public static DoneableKafka kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(yamlFile);
-        return deployKafka(new KafkaBuilder(kafka)
+        return new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
                 .withNamespace(kubeClient().getNamespace())
@@ -251,27 +232,24 @@ public class KafkaResource {
                 .editZookeeper()
                     .withReplicas(zookeeperReplicas)
                 .endZookeeper()
-            .endSpec()
-            .build());
+            .endSpec();
     }
 
-    static DoneableKafka deployKafka(Kafka kafka) {
-        return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(k);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static Kafka create(Kafka kafka) {
+        TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
-                });
-            return waitFor(deleteLater(k));
-        });
+                }
+            });
+        return waitFor(deleteLater(kafka));
     }
 
     /**
@@ -286,10 +264,8 @@ public class KafkaResource {
     }
 
     public static Kafka kafkaWithCruiseControlWithoutWait(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
-        kafka = defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build();
-
-        return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
+        return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace())
+            .createOrReplace(kafkaWithCruiseControl(name, kafkaReplicas, zookeeperReplicas).build());
     }
 
     /**

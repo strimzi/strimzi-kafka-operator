@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
@@ -38,28 +37,28 @@ public class KafkaClientsResource {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientsResource.class);
 
-    public static DoneableDeployment deployKafkaClients(String kafkaClusterName) {
+    public static DeploymentBuilder deployKafkaClients(String kafkaClusterName) {
         return deployKafkaClients(false, kafkaClusterName, null);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
+    public static DeploymentBuilder deployKafkaClients(boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
         return deployKafkaClients(tlsListener, kafkaClientsName, true,  null, null, kafkaUsers);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, String listenerName,
+    public static DeploymentBuilder deployKafkaClients(boolean tlsListener, String kafkaClientsName, String listenerName,
                                                         KafkaUser... kafkaUsers) {
         return deployKafkaClients(tlsListener, kafkaClientsName, true, listenerName, null, kafkaUsers);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
+    public static DeploymentBuilder deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                                         KafkaUser... kafkaUsers) {
         return deployKafkaClients(tlsListener, kafkaClientsName, hostnameVerification, null, null, kafkaUsers);
     }
 
-    public static DoneableDeployment deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
+    public static DeploymentBuilder deployKafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                                         String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
         Map<String, String> label = Collections.singletonMap(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
-        Deployment kafkaClient = new DeploymentBuilder()
+        return new DeploymentBuilder()
             .withNewMetadata()
                 .withName(kafkaClientsName)
                 .withLabels(label)
@@ -77,10 +76,7 @@ public class KafkaClientsResource {
                     .endMetadata()
                     .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, listenerName, secretPrefix, kafkaUsers))
                 .endTemplate()
-            .endSpec()
-            .build();
-
-        return KubernetesResource.deployNewDeployment(kafkaClient);
+            .endSpec();
     }
 
     private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
@@ -240,5 +236,9 @@ public class KafkaClientsResource {
             "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
             "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
             "password=\"" + password + "\";\n";
+    }
+
+    public static Deployment create(Deployment deployment) {
+        return KubernetesResource.deployNewDeployment(deployment);
     }
 }
