@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.test.TestUtils;
+
 import java.time.Duration;
 
 /**
@@ -112,6 +114,17 @@ public interface Constants {
     int HTTP_JAEGER_DEFAULT_NODE_PORT = 32480;
     int HTTPS_KEYCLOAK_DEFAULT_NODE_PORT = 32481;
     int HTTP_KEYCLOAK_DEFAULT_NODE_PORT = 32482;
+
+    /**
+     * File paths for metrics YAMLs
+     */
+    String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-metrics.yaml";
+    String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-cruise-control-metrics.yaml";
+    String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-connect-metrics.yaml";
+    String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect-s2i.yaml";
+    String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-mirror-maker-2-metrics.yaml";
+
+    String METRICS_CONFIG_YAML_NAME = "metrics-config.yml";
 
     /**
      * Default value which allows execution of tests with any tags
