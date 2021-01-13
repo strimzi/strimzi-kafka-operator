@@ -45,28 +45,7 @@ if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
     export KAFKA_OPTS
 fi
 
-if [ "$KAFKA_CONNECT_JMX_ENABLED" = "true" ]; then
-  KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote=true -Djava.rmi.server.hostname=$(hostname -i) -Djava.net.preferIPv4Stack=true"
-
-  if [ -n "$KAFKA_CONNECT_JMX_USERNAME" ]; then
-    # Secure JMX port on 9999 with username and password
-    JMX_ACCESS_FILE="/tmp/access.file"
-    JMX_PASSWORD_FILE="/tmp/password.file"
-
-    cat << EOF > "${JMX_ACCESS_FILE}"
-${KAFKA_CONNECT_JMX_USERNAME} readonly
-EOF
-
-    cat << EOF > "${JMX_PASSWORD_FILE}"
-$KAFKA_CONNECT_JMX_USERNAME $KAFKA_CONNECT_JMX_PASSWORD
-EOF
-    chmod 400 "${JMX_PASSWORD_FILE}"
-    KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.access.file=${JMX_ACCESS_FILE} -Dcom.sun.management.jmxremote.password.file=${JMX_PASSWORD_FILE}  -Dcom.sun.management.jmxremote.authenticate=true"
-  else
-    # expose the port insecurely
-    KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.authenticate=false"
-  fi
-fi
+. ./set_kafka_jmx_options.sh ${KAFKA_CONNECT_JMX_ENABLED} ${KAFKA_CONNECT_JMX_USERNAME} ${KAFKA_CONNECT_JMX_PASSWORD}
 
 # enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
