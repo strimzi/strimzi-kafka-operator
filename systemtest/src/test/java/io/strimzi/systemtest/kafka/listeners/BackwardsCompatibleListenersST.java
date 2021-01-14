@@ -52,7 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 public class BackwardsCompatibleListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(BackwardsCompatibleListenersST.class);
-    public static final String NAMESPACE = "kafka-listeners-bc-cluster-test";
+    public static final String NAMESPACE = "bc-listeners";
 
     /**
      * Test sending messages over tls transport using mutual tls auth
