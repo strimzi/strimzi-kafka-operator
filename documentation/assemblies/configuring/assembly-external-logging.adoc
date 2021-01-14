@@ -28,11 +28,13 @@ spec:
     valueFrom:
       configMapKeyRef:
         name: _customConfigMap_
-        key: key
+        key: _keyInConfigMap_
 ----
 
 With external logging, logging properties are defined in a ConfigMap.
 The name of the ConfigMap is referenced in the `spec.logging.valueFrom.configMapKeyRef.name` property.
+The `spec.logging.valueFrom.configMapKeyRef.name` and `spec.logging.valueFrom.configMapKeyRef.key` properties are mandatory.
+Default logging will be used if one of `name` or `key` is not set.
 
 The advantages of using a ConfigMap are that the logging properties are maintained in one place and are accessible to more than one resource.
 

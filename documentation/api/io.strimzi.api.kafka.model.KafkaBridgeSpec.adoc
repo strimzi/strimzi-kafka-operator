@@ -59,6 +59,8 @@ Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
 If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration.
+The `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory.
+Default logging will be used if one of `name` or `key` is not set.
 Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
 For more information about log levels, see {ApacheLoggers}.
 
@@ -93,7 +95,7 @@ spec:
     valueFrom:
       configMapKeyRef:
         name: customConfigMap
-        key: key
+        key: bridge-logj42.properties
   # ...
 ----
 

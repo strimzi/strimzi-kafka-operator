@@ -6,6 +6,21 @@
 * Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
 * Add support for JMX options configuration of all Kafka Connect (KC, KC2SI, MM2)
 * Configure extenal logging `ConfigMap` name and key.
+  * from
+  ```
+  logging:
+    type: external
+      name: my-config-map
+  ```
+  * to
+  ```
+  logging:
+    type: external
+    valueFrom:
+      configMapKeyRef:
+        name: my-config-map
+        key: my-key
+  ``` 
 
 ### Deprecations and removals
 
