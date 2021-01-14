@@ -1506,7 +1506,6 @@ spec:
                       description: 'ConfigMap where the Log4j(2) configuration is stored. '
                   required:
                     - type
-                    - valueFrom
                   description: Logging configuration for Kafka.
                 tlsSidecar:
                   type: object
@@ -2792,7 +2791,6 @@ spec:
                       description: 'ConfigMap where the Log4j(2) configuration is stored. '
                   required:
                     - type
-                    - valueFrom
                   description: Logging configuration for ZooKeeper.
                 template:
                   type: object
@@ -3798,7 +3796,6 @@ spec:
                       description: 'ConfigMap where the Log4j(2) configuration is stored. '
                   required:
                     - type
-                    - valueFrom
                   description: Logging configuration.
                 jvmOptions:
                   type: object
@@ -3990,7 +3987,6 @@ spec:
                           description: 'ConfigMap where the Log4j(2) configuration is stored. '
                       required:
                         - type
-                        - valueFrom
                       description: Logging configuration.
                     jvmOptions:
                       type: object
@@ -4130,7 +4126,6 @@ spec:
                           description: 'ConfigMap where the Log4j(2) configuration is stored. '
                       required:
                         - type
-                        - valueFrom
                       description: Logging configuration.
                     jvmOptions:
                       type: object
@@ -5297,7 +5292,6 @@ spec:
                       description: 'ConfigMap where the Log4j(2) configuration is stored. '
                   required:
                     - type
-                    - valueFrom
                   description: Logging configuration (log4j1) for Cruise Control.
                 template:
                   type: object
