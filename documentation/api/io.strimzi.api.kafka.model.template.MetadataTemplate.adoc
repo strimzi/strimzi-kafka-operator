@@ -1,5 +1,3 @@
-xref:type-MetadataTemplate-schema-{context}[Full list of `MetadataTemplate` schema properties]
-
 `Labels` and `Annotations` are used to identify and organize resources, and are configured in the `metadata` property.
 
 For example:

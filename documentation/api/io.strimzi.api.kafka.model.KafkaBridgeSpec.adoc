@@ -1,5 +1,3 @@
-xref:type-KafkaBridgeSpec-schema-{context}[Full list of `KafkaBridgeSpec` schema properties]
-
 Configures a Kafka Bridge cluster.
 
 Configuration options relate to:

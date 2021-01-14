@@ -1,5 +1,3 @@
-xref:type-ExternalConfiguration-schema-{context}[Full list of `ExternalConfiguration` schema properties]
-
 Configures external storage properties that define configuration options for Kafka Connect connectors.
 
 You can mount ConfigMaps or Secrets into a Kafka Connect pod as environment variables or volumes.

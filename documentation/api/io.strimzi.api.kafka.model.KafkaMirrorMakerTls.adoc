@@ -1,5 +1,3 @@
-xref:type-KafkaMirrorMakerTls-schema-{context}[Full list of `KafkaMirrorMakerTls` schema properties]
-
 Configures TLS trusted certificates for connecting MirrorMaker to the cluster.
 
 === `trustedCertificates`

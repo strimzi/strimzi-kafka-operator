@@ -1,5 +1,3 @@
-xref:type-AclRule-schema-{context}[Full list of `AclRule` schema properties]
-
 Configures access control rule for a `KafkaUser` when brokers are using the `AclAuthorizer`.
 
 .Example `KafkaUser` configuration with authorization

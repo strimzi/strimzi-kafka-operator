@@ -1,5 +1,3 @@
-xref:type-PodTemplate-schema-{context}[Full list of `PodTemplate` schema properties]
-
 Configures the template for Kafka pods.
 
 .Example `PodTemplate` configuration

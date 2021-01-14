@@ -1,5 +1,3 @@
-xref:type-KafkaUserTemplate-schema-{context}[Full list of `KafkaUserTemplate` schema properties]
-
 Specify additional labels and annotations for the secret created by the User Operator.
 
 .An example showing the `KafkaUserTemplate`

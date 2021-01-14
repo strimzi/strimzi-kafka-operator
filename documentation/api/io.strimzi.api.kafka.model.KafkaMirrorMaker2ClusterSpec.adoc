@@ -1,5 +1,3 @@
-xref:type-KafkaMirrorMaker2ClusterSpec-schema-{context}[Full list of `KafkaMirrorMaker2ClusterSpec` schema properties]
-
 Configures Kafka clusters for mirroring.
 
 [id='property-mirrormaker2-config-{context}']

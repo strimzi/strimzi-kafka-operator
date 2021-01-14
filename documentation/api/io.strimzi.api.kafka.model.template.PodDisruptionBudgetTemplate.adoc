@@ -1,5 +1,3 @@
-xref:type-PodDisruptionBudgetTemplate-schema-{context}[Full list of `PodDisruptionBudgetTemplate` schema properties]
-
 Strimzi creates a `PodDisruptionBudget` for every new `StatefulSet` or `Deployment`.
 By default, pod disruption budgets only allow a single pod to be unavailable at a given time.
 You can increase the amount of unavailable pods allowed by changing the default value of the `maxUnavailable` property in the `PodDisruptionBudget.spec` resource.

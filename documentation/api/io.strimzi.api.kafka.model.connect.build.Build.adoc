@@ -1,5 +1,3 @@
-xref:type-Build-schema-{context}[Full list of `Build` schema properties]
-
 Configures additional connectors for Kafka Connect deployments.
 
 === `output`

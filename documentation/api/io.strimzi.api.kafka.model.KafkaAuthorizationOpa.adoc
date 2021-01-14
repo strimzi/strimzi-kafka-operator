@@ -1,5 +1,3 @@
-xref:type-KafkaAuthorizationOpa-schema-{context}[Full list of `KafkaAuthorizationOpa` schema properties]
-
 To use link:https://www.openpolicyagent.org/[Open Policy Agent^] authorization, set the `type` property in the `authorization` section to the value `opa`,
 and configure OPA properties as required.
 

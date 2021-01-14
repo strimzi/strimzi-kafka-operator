@@ -1,5 +1,3 @@
-xref:type-EntityTopicOperatorSpec-schema-{context}[Full list of `EntityTopicOperatorSpec` schema properties]
-
 Configures the Topic Operator.
 
 [id='property-topic-operator-logging-{context}']

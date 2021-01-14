@@ -1,5 +1,3 @@
-xref:type-KafkaClientAuthenticationOAuth-schema-{context}[Full list of `KafkaClientAuthenticationOAuth` schema properties]
-
 To configure OAuth client authentication, set the `type` property to `oauth`.
 
 OAuth authentication can be configured using one of the following options:

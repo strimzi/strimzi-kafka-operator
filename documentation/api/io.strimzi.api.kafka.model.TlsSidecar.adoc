@@ -1,5 +1,3 @@
-xref:type-TlsSidecar-schema-{context}[Full list of `TlsSidecar` schema properties]
-
 Configures a TLS sidecar, which is a container that runs in a pod, but serves a supporting purpose.
 In Strimzi, the TLS sidecar uses TLS to encrypt and decrypt communication between components and ZooKeeper.
 
