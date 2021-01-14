@@ -10,6 +10,9 @@ This chapter covers tasks to maintain a deployment of Strimzi.
 //using kubectl commands and status
 include::assembly-working-with-resources.adoc[leveloffset=+1]
 
+//performing manual rolling updates
+include::assembly-rolling-updates.adoc[leveloffset=+1]
+
 //Discover internal bootstrap service and HTTP Bridge
 include::modules/con-service-discovery.adoc[leveloffset=+1]
 

@@ -42,5 +42,5 @@ kubectl apply -f _KAFKA-CONFIG-FILE_
 
 Performing rolling updates:
 
-* xref:proc-manual-rolling-update-kafka-{context}[]
-* xref:proc-manual-rolling-update-zookeeper-{context}[]
+* xref:proc-manual-rolling-update-statefulset-{context}[]
+* xref:proc-manual-rolling-update-pods-{context}[]

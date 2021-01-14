@@ -48,9 +48,6 @@ endif::Metrics[]
 include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
 //connecting to ZooKeeper from terminal
 include::../../modules/configuring/proc-connecting-to-zookeeper.adoc[leveloffset=+1]
-//steps for manual rolling updates
-include::../../modules/configuring/proc-manual-rolling-update-kafka.adoc[leveloffset=+1]
-include::../../modules/configuring/proc-manual-rolling-update-zookeeper.adoc[leveloffset=+1]
 //steps to delete kafka, zookeeper nodes
 include::../../modules/configuring/proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
 include::../../modules/configuring/proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+1]
