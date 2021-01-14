@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.Spec;
@@ -348,7 +350,7 @@ public class OperatorMetricsTest {
         return metrics;
     }
 
-    private abstract class MyResource extends CustomResource {
+    private abstract static class MyResource extends CustomResource {
     }
 
     private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
@@ -365,7 +367,9 @@ public class OperatorMetricsTest {
 
             @Override
             public CustomResource get(String namespace, String name) {
-                return new MyResource() {
+                @Version("v1")
+                @Group("test.strimzi.io")
+                class Foo extends MyResource {
                     @Override
                     public ObjectMeta getMetadata() {
                         return null;
@@ -409,7 +413,8 @@ public class OperatorMetricsTest {
                     public void setStatus(Object status) {
 
                     }
-                };
+                }
+                return new Foo();
             }
         };
     }
