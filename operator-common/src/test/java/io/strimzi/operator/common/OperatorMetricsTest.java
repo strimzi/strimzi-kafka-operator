@@ -42,6 +42,8 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
+@Group("strimzi")
+@Version("v1")
 public class OperatorMetricsTest {
     private static Vertx vertx;
 
@@ -367,8 +369,8 @@ public class OperatorMetricsTest {
 
             @Override
             public CustomResource get(String namespace, String name) {
+                @Group("strimzi")
                 @Version("v1")
-                @Group("test.strimzi.io")
                 class Foo extends MyResource {
                     @Override
                     public ObjectMeta getMetadata() {
