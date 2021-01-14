@@ -46,6 +46,7 @@ import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -132,6 +133,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -275,6 +277,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -299,6 +302,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -420,6 +424,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -443,6 +448,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
@@ -539,6 +545,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -562,6 +569,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
@@ -672,6 +680,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -700,6 +709,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
@@ -820,6 +830,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -848,6 +859,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
@@ -948,6 +960,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -977,6 +990,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
@@ -1112,6 +1126,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -1140,6 +1155,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
@@ -1264,6 +1280,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -1292,6 +1309,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
@@ -1387,6 +1405,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -1416,6 +1435,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
