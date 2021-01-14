@@ -8,6 +8,11 @@
 ### Deprecations and removals
 
 * Removed support for Helm2 charts as that version is now unsupported. There is no longer the need for separate `helm2` and `helm3` binaries, only `helm` (version 3) is required.
+* The following annotations are deprecated for a long time and will be removed in 0.23.0:
+  * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
+  * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
+  * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
+  * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
 
 ## 0.21.0
 
