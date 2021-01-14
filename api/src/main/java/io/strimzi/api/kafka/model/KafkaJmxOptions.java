@@ -25,7 +25,7 @@ public class KafkaJmxOptions implements UnknownPropertyPreserving, Serializable 
     private KafkaJmxAuthentication authentication;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Authentication configuration for connecting to the Kafka JMX port")
+    @Description("Authentication configuration for connecting to the JMX port")
     @JsonProperty("authentication")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaJmxAuthentication getAuthentication() {

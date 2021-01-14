@@ -4,6 +4,7 @@
 ## 0.22.0
 
 * Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
+* Add support for JMX options configuration of all Kafka Connect (KC, KC2SI, MM2)
 
 ### Deprecations and removals
 

@@ -1035,13 +1035,13 @@ Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
 [id='type-KafkaJmxOptions-{context}']
 ### `KafkaJmxOptions` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 [options="header"]
 |====
 |Property               |Description
-|authentication  1.2+<.<|Authentication configuration for connecting to the Kafka JMX port. The type depends on the value of the `authentication.type` property within the given object, which must be one of [password].
+|authentication  1.2+<.<|Authentication configuration for connecting to the JMX port. The type depends on the value of the `authentication.type` property within the given object, which must be one of [password].
 |xref:type-KafkaJmxAuthenticationPassword-{context}[`KafkaJmxAuthenticationPassword`]
 |====
 
@@ -1975,6 +1975,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions             1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
+|jmxOptions             1.2+<.<|JMX Options.
+|xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
@@ -2470,6 +2472,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions                1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
+|jmxOptions                1.2+<.<|JMX Options.
+|xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |affinity                  1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
@@ -3285,6 +3289,8 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions             1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
+|jmxOptions             1.2+<.<|JMX Options.
+|xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 

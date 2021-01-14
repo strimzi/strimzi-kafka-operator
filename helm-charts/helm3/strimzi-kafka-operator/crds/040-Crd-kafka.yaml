@@ -1436,7 +1436,7 @@ spec:
                           description: Authentication type. Currently the only supported types are `password`.`password` type creates a username and protected port with no TLS.
                       required:
                         - type
-                      description: Authentication configuration for connecting to the Kafka JMX port.
+                      description: Authentication configuration for connecting to the JMX port.
                   description: JMX Options for Kafka brokers.
                 resources:
                   type: object

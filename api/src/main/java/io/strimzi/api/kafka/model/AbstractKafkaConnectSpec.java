@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -29,7 +30,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "version", "image", "resources", 
-        "livenessProbe", "readinessProbe", "jvmOptions",
+        "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
         "affinity", "tolerations", "logging", "metrics", "metricsConfig", "tracing",
         "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
@@ -44,6 +45,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
     private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
+    private KafkaJmxOptions jmxOptions;
     private JvmOptions jvmOptions;
     private MetricsConfig metricsConfig;
     private Map<String, Object> metrics;
@@ -132,6 +134,17 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
 
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("JMX Options")
+    @JsonProperty("jmxOptions")
+    public KafkaJmxOptions getJmxOptions() {
+        return jmxOptions;
+    }
+
+    public void setJmxOptions(KafkaJmxOptions jmxOptions) {
+        this.jmxOptions = jmxOptions;
     }
 
     @Description("Metrics configuration.")
