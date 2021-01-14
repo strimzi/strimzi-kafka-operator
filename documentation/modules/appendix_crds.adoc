@@ -1119,11 +1119,28 @@ The `type` property is a discriminator that distinguishes use of the `ExternalLo
 It must have the value `external` for the type `ExternalLogging`.
 [options="header"]
 |====
-|Property     |Description
-|type  1.2+<.<|Must be `external`.
+|Property          |Description
+|type       1.2+<.<|Must be `external`.
 |string
-|name  1.2+<.<|The name of the `ConfigMap` from which to get the logging configuration.
+|name       1.2+<.<|*The property `name` has been deprecated. This feature should now be configured at path `logging.valueFrom.configMapKeyRef.name`.* The name of the `ConfigMap` from which to get the logging configuration.
 |string
+|valueFrom  1.2+<.<|ConfigMap where the Log4j(2) configuration is stored. 
+|xref:type-ExternalConfigurationLogging-{context}[`ExternalConfigurationLogging`]
+|====
+
+[id='type-ExternalConfigurationLogging-{context}']
+### `ExternalConfigurationLogging` schema reference
+
+Used in: xref:type-ExternalLogging-{context}[`ExternalLogging`]
+
+
+[options="header"]
+|====
+|Property                |Description
+|configMapKeyRef  1.2+<.<|Reference to the key in the ConfigMap containing the logging configuration. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[external documentation for core/v1 configmapkeyselector].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[ConfigMapKeySelector]
 |====
 
 [id='type-TlsSidecar-{context}']

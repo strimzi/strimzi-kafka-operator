@@ -822,6 +822,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return updateStatusPromise.future();
     }
 
+    @SuppressWarnings("deprecation")
     protected Future<MetricsAndLoggingCm> connectMetricsAndLoggingConfigMap(String namespace, KafkaConnectCluster connect) {
         final Future<ConfigMap> metricsCmFut;
         if (connect.isMetricsConfigured()) {
@@ -835,9 +836,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             metricsCmFut = Future.succeededFuture(null);
         }
 
-        Future<ConfigMap> loggingCmFut = connect.getLogging() instanceof ExternalLogging ?
-                configMapOperations.getAsync(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
-                Future.succeededFuture(null);
+        Future<ConfigMap> loggingCmFut = connect.getLogging() instanceof ExternalLogging ? ((ExternalLogging) connect.getLogging()).getValueFrom() == null ?
+                configMapOperations.getAsync(namespace, ((ExternalLogging) connect.getLogging()).getName())
+                : configMapOperations.getAsync(namespace, ((ExternalLogging) connect.getLogging()).getValueFrom().getConfigMapKeyRef().getName())
+                : Future.succeededFuture(null);
+
         return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 

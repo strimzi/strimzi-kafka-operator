@@ -1485,6 +1485,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
         }
 
+        @SuppressWarnings("deprecation")
         Future<ReconciliationState> getZookeeperDescription() {
             return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                     .compose(sts -> {
@@ -1512,7 +1513,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         List<Future> configMaps = new ArrayList<>(2);
                         if (zkCluster.getLogging() instanceof ExternalLogging) {
-                            configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName()));
+                            configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(),
+                                    ((ExternalLogging) zkCluster.getLogging()).getValueFrom() == null ? ((ExternalLogging) zkCluster.getLogging()).getName()
+                                            : ((ExternalLogging) zkCluster.getLogging()).getValueFrom().getConfigMapKeyRef().getName()));
                         } else {
                             configMaps.add(Future.succeededFuture(null));
                         }
@@ -2573,6 +2576,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
+        @SuppressWarnings("deprecation")
         Future<ConfigMap> getKafkaAncillaryCm() {
             final Future<ConfigMap> metricsCmFut;
 
@@ -2589,7 +2593,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             Future<ConfigMap> loggingCmFut;
             if (kafkaCluster.getLogging() instanceof ExternalLogging) {
-                loggingCmFut = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName());
+                loggingCmFut = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(),
+                        ((ExternalLogging) kafkaCluster.getLogging()).getValueFrom() == null ? ((ExternalLogging) kafkaCluster.getLogging()).getName()
+                        : ((ExternalLogging) kafkaCluster.getLogging()).getValueFrom().getConfigMapKeyRef().getName());
             } else {
                 loggingCmFut = Future.succeededFuture(null);
             }
@@ -3222,6 +3228,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.succeededFuture(this);
         }
 
+        @SuppressWarnings("deprecation")
         final Future<ReconciliationState> getEntityOperatorDescription() {
             this.entityOperator = EntityOperator.fromCrd(kafkaAssembly, versions);
 
@@ -3231,14 +3238,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 final Future<ConfigMap> futToLogConfigMap;
                 if (topicOperator != null && topicOperator.getLogging() instanceof ExternalLogging)  {
-                    futToLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName());
+                    futToLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(),
+                            ((ExternalLogging) topicOperator.getLogging()).getValueFrom() == null ?
+                                    ((ExternalLogging) topicOperator.getLogging()).getName()
+                                    : ((ExternalLogging) topicOperator.getLogging()).getValueFrom().getConfigMapKeyRef().getName());
                 } else {
                     futToLogConfigMap = Future.succeededFuture(null);
                 }
 
                 final Future<ConfigMap> futUoLogConfigMap;
                 if (userOperator != null && userOperator.getLogging() instanceof ExternalLogging)  {
-                    futUoLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName());
+                    futUoLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(),
+                            ((ExternalLogging) userOperator.getLogging()).getValueFrom() == null ?
+                            ((ExternalLogging) userOperator.getLogging()).getName()
+                            : ((ExternalLogging) userOperator.getLogging()).getValueFrom().getConfigMapKeyRef().getName());
                 } else {
                     futUoLogConfigMap = Future.succeededFuture(null);
                 }
@@ -3502,12 +3515,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return stsGeneration == podGeneration;
         }
 
+        @SuppressWarnings("deprecation")
         private final Future<ReconciliationState> getCruiseControlDescription() {
             CruiseControl cruiseControl = CruiseControl.fromCrd(kafkaAssembly, versions);
             if (cruiseControl != null) {
                 final Future<ConfigMap> loggingCmFut = cruiseControl.getLogging() instanceof ExternalLogging ?
-                        configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) cruiseControl.getLogging()).getName()) :
-                        Future.succeededFuture(null);
+                        configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(),
+                                ((ExternalLogging) cruiseControl.getLogging()).getValueFrom() == null ?
+                                ((ExternalLogging) cruiseControl.getLogging()).getName() :
+                                ((ExternalLogging) cruiseControl.getLogging()).getValueFrom().getConfigMapKeyRef().getName())
+                        : Future.succeededFuture(null);
+
 
                 final Future<ConfigMap> metricsCm;
                 if (cruiseControl.isMetricsConfigured()) {

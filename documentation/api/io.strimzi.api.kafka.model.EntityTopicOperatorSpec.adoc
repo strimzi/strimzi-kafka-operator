@@ -12,7 +12,7 @@ The Topic Operator uses the Apache `log4j2` logger implementation.
 Use the `logging` property in the `entityOperator.topicOperator` field of the Kafka resource `Kafka` resource to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j2.properties`.
+If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j2.properties`.
 For more information about log levels, see {ApacheLoggers}.
 
 Here we see examples of `inline` and `external` logging.
@@ -60,7 +60,10 @@ spec:
       reconciliationIntervalSeconds: 60
       logging:
         type: external
-        name: customConfigMap
+        valueFrom:
+          configMapKeyRef:
+            name: customConfigMap
+            key: key
   # ...
 ----
 

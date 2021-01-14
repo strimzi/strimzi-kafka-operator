@@ -6,6 +6,8 @@ package io.strimzi.systemtest.log;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.ExternalLogging;
@@ -122,6 +124,11 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j.properties", loggersConfigKafka)
             .build();
 
+        ConfigMapKeySelector kafkaLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapKafkaName)
+                .withKey("log4j.properties")
+                .build();
+
         ConfigMap configMapOperators = new ConfigMapBuilder()
             .withNewMetadata()
                 .withNewName(configMapOpName)
@@ -130,13 +137,23 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j2.properties", loggersConfigOperators)
             .build();
 
+        ConfigMapKeySelector operatorsLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapOpName)
+                .withKey("log4j2.properties")
+                .build();
+
         ConfigMap configMapZookeeper = new ConfigMapBuilder()
             .withNewMetadata()
                 .withNewName(configMapZookeeperName)
                 .withNamespace(NAMESPACE)
             .endMetadata()
-            .addToData("log4j.properties", loggersConfigZookeeper)
+            .addToData("log4j-custom.properties", loggersConfigZookeeper)
             .build();
+
+        ConfigMapKeySelector zkLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapZookeeperName)
+                .withKey("log4j-custom.properties")
+                .build();
 
         ConfigMap configMapCO = new ConfigMapBuilder()
             .withNewMetadata()
@@ -178,17 +195,34 @@ class LoggingChangeST extends AbstractST {
         KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
-                    .withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
+                    //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
+                    .withLogging(new ExternalLoggingBuilder()
+                            .withNewValueFrom()
+                                .withConfigMapKeyRef(kafkaLoggimgCMselector)
+                            .endValueFrom()
+                            .build())
                 .endKafka()
                 .editZookeeper()
-                    .withLogging(new ExternalLoggingBuilder().withName(configMapZookeeperName).build())
+                    .withLogging(new ExternalLoggingBuilder()
+                            .withNewValueFrom()
+                                .withConfigMapKeyRef(zkLoggimgCMselector)
+                            .endValueFrom()
+                            .build())
                 .endZookeeper()
                 .editEntityOperator()
                     .editTopicOperator()
-                        .withLogging(new ExternalLoggingBuilder().withName(configMapOpName).build())
+                        .withLogging(new ExternalLoggingBuilder()
+                                .withNewValueFrom()
+                                    .withConfigMapKeyRef(operatorsLoggimgCMselector)
+                                .endValueFrom()
+                                .build())
                     .endTopicOperator()
                     .editUserOperator()
-                        .withLogging(new ExternalLoggingBuilder().withName(configMapOpName).build())
+                        .withLogging(new ExternalLoggingBuilder()
+                                .withNewValueFrom()
+                                    .withConfigMapKeyRef(operatorsLoggimgCMselector)
+                                .endValueFrom()
+                                .build())
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()

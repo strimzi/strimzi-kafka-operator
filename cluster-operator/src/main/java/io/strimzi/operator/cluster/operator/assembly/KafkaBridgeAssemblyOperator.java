@@ -127,9 +127,12 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 bridge.generateServiceAccount());
     }
 
+    @SuppressWarnings("deprecation")
     public static Future<ConfigMap> getLoggingCmAsync(ConfigMapOperator configMapOperations, String namespace, KafkaBridgeCluster model) {
         return model.getLogging() instanceof ExternalLogging ?
-                configMapOperations.getAsync(namespace, ((ExternalLogging) model.getLogging()).getName()) :
-                Future.succeededFuture(null);
+                configMapOperations.getAsync(namespace, ((ExternalLogging) model.getLogging()).getValueFrom() == null ?
+                        ((ExternalLogging) model.getLogging()).getName()
+                        : ((ExternalLogging) model.getLogging()).getValueFrom().getConfigMapKeyRef().getName())
+                        : Future.succeededFuture(null);
     }
 }

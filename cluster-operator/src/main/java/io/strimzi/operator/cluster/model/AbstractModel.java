@@ -460,6 +460,7 @@ public abstract class AbstractModel {
      * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
      * @return The logging properties as a String in log4j/2 properties file format.
      */
+    @SuppressWarnings("deprecation")
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             InlineLogging inlineLogging = (InlineLogging) logging;
@@ -485,7 +486,17 @@ public abstract class AbstractModel {
 
             return createLog4jProperties(newSettings);
         } else if (logging instanceof ExternalLogging) {
-            if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
+            if (((ExternalLogging) logging).getValueFrom() != null) {
+                if (externalCm.getData().containsKey(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey())) {
+                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey()));
+                } else {
+                    log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
+                            ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getName(),
+                            ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey());
+                    return createLog4jProperties(getDefaultLogConfig());
+                }
+            } else if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(getAncillaryConfigMapKeyLogConfig())) {
+                //deprecated way
                 return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(getAncillaryConfigMapKeyLogConfig()));
             } else {
                 log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",

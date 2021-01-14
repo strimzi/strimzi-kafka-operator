@@ -131,6 +131,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 mirror.generateServiceAccount());
     }
 
+    @SuppressWarnings("deprecation")
     private Future<MetricsAndLoggingCm> mirrorMetricsAndLoggingConfigMap(String namespace, KafkaMirrorMakerCluster mirror) {
         final Future<ConfigMap> metricsCmFut;
         if (mirror.isMetricsConfigured()) {
@@ -145,7 +146,9 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         }
 
         Future<ConfigMap> loggingCmFut = mirror.getLogging() instanceof ExternalLogging ?
-                configMapOperations.getAsync(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
+                configMapOperations.getAsync(namespace, ((ExternalLogging) mirror.getLogging()).getValueFrom() == null ?
+                        ((ExternalLogging) mirror.getLogging()).getName() :
+                        ((ExternalLogging) mirror.getLogging()).getValueFrom().getConfigMapKeyRef().getName()) :
                 Future.succeededFuture(null);
 
         return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));

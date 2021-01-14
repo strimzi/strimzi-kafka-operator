@@ -129,7 +129,7 @@ Cruise Control uses the Apache `log4j` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
+If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
 
 Here we see examples of `inline` and `external` logging.
 
@@ -160,6 +160,9 @@ spec:
     # ...
     logging:
       type: external
-      name: customConfigMap
+      valueFrom:
+        configMapKeyRef:
+          name: customConfigMap
+          key: key
     # ...
 ----
