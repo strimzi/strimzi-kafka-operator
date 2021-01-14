@@ -17,7 +17,7 @@ rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
 KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
 export KAFKA_OPTS
 
-. ./set_kafka_jmx_options.sh ${KAFKA_JMX_ENABLED} ${KAFKA_JMX_USERNAME} ${KAFKA_JMX_PASSWORD}
+. ./set_kafka_jmx_options.sh "${KAFKA_JMX_ENABLED}" "${KAFKA_JMX_USERNAME}" "${KAFKA_JMX_PASSWORD}"
 
 if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
