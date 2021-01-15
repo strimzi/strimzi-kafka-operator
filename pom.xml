@@ -705,6 +705,12 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>kafka-oauth-common</artifactId>
                 <version>${strimzi-oauth.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.jayway.jsonpath</groupId>
+                        <artifactId>json-path</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
