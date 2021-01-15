@@ -57,6 +57,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
@@ -233,11 +234,11 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
 
-        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(eoPods, "user-operator"), is(true));
+        assertTrue(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()));
+        assertTrue(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"));
+        assertTrue(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "user-operator"));
     }
 
     @Test
@@ -377,11 +378,11 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
 
-        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(eoPods, "user-operator"), is(true));
+        assertTrue(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()));
+        assertTrue(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"));
+        assertTrue(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "user-operator"));
     }
     
     @Test

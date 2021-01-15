@@ -548,7 +548,6 @@ class RollingUpdateST extends AbstractST {
                 .withName(configMapLoggersName)
             .endMetadata()
             .addToData("log4j.properties", loggersConfig)
-            .addToData("log4j2.properties", loggersConfig)
             .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
@@ -566,7 +565,6 @@ class RollingUpdateST extends AbstractST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
 
         configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
-        configMapLoggers.getData().put("log4j2.properties", loggersConfig.replace("INFO", "DEBUG"));
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
@@ -603,7 +601,7 @@ class RollingUpdateST extends AbstractST {
         String configMapLoggersName = "loggers-config-map";
         ConfigMap configMapLoggers = new ConfigMapBuilder()
                 .withNewMetadata()
-                .withName(configMapLoggersName)
+                    .withName(configMapLoggersName)
                 .endMetadata()
                 .addToData("log4j-custom.properties", loggersConfig)
                 .build();
