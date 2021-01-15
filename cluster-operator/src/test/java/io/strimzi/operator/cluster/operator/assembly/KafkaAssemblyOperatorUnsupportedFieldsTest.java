@@ -212,7 +212,7 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
                             .filter(condition -> "Warning".equals(condition.getType()) && "TopicOperator".equals(condition.getReason()))
                             .findFirst().orElse(null);
                     assertThat(toWarning, is(notNullValue()));
-                    assertThat(toWarning.getMessage(), containsString("Kafka.spec.topicOperator is not supported anymore. Topic operator should be configured at path spec.entityOperator.topicOperator."));
+                    assertThat(toWarning.getMessage(), containsString("Kafka.spec.topicOperator is not supported anymore. Topic operator should be configured using spec.entityOperator.topicOperator."));
 
                     async.flag();
                 })));
