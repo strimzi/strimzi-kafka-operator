@@ -37,7 +37,7 @@ public class ExternalLogging extends Logging {
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @DeprecatedProperty(movedToPath = "logging.valueFrom.configMapKeyRef.name")
-    @Description("The name of the `ConfigMap` from which to get the logging configuration.")
+    @Description("The name is the `ConfigMap` from which to get the logging configuration.")
     public String getName() {
         return name;
     }

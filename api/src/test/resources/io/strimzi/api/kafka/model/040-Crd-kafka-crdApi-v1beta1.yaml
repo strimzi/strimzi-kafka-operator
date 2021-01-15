@@ -8017,7 +8017,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
@@ -9482,7 +9482,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
@@ -10585,7 +10585,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
@@ -10811,7 +10811,7 @@ spec:
                             description: A Map from logger name to logger level.
                           name:
                             type: string
-                            description: The name of the `ConfigMap` from which to
+                            description: The name is the `ConfigMap` from which to
                               get the logging configuration.
                           type:
                             type: string
@@ -10973,7 +10973,7 @@ spec:
                             description: A Map from logger name to logger level.
                           name:
                             type: string
-                            description: The name of the `ConfigMap` from which to
+                            description: The name is the `ConfigMap` from which to
                               get the logging configuration.
                           type:
                             type: string
@@ -12261,7 +12261,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
@@ -16168,7 +16168,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
@@ -17633,7 +17633,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
@@ -18736,7 +18736,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
@@ -18962,7 +18962,7 @@ spec:
                             description: A Map from logger name to logger level.
                           name:
                             type: string
-                            description: The name of the `ConfigMap` from which to
+                            description: The name is the `ConfigMap` from which to
                               get the logging configuration.
                           type:
                             type: string
@@ -19124,7 +19124,7 @@ spec:
                             description: A Map from logger name to logger level.
                           name:
                             type: string
-                            description: The name of the `ConfigMap` from which to
+                            description: The name is the `ConfigMap` from which to
                               get the logging configuration.
                           type:
                             type: string
@@ -20412,7 +20412,7 @@ spec:
                         description: A Map from logger name to logger level.
                       name:
                         type: string
-                        description: The name of the `ConfigMap` from which to get
+                        description: The name is the `ConfigMap` from which to get
                           the logging configuration.
                       type:
                         type: string
