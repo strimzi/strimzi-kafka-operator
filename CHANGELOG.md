@@ -6,6 +6,16 @@
 * Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
 * Add support for JMX options configuration of all Kafka Connect (KC, KC2SI, MM2)
 * Configure extenal logging `ConfigMap` name and key.
+
+### Deprecations and removals
+
+* Removed support for Helm2 charts as that version is now unsupported. There is no longer the need for separate `helm2` and `helm3` binaries, only `helm` (version 3) is required.
+* The following annotations are deprecated for a long time and will be removed in 0.23.0:
+  * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
+  * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
+  * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
+  * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
+* External logging configuration has changed. `spec.logging.name` is deprecated. Moved to `spec.logging.valueFrom.configMapKeyRef.name`. Key in the `ConfigMap` is configurable via `spec.logging.valueFrom.configMapKeyRef.key`.
   * from
   ```
   logging:
@@ -21,16 +31,6 @@
         name: my-config-map
         key: my-key
   ``` 
-
-### Deprecations and removals
-
-* Removed support for Helm2 charts as that version is now unsupported. There is no longer the need for separate `helm2` and `helm3` binaries, only `helm` (version 3) is required.
-* The following annotations are deprecated for a long time and will be removed in 0.23.0:
-  * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
-  * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
-  * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
-  * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
-* External logging configuration has changed. `spec.logging.name` is deprecated. Moved to `spec.logging.valueFrom.configMapKeyRef.name`. Key in the `ConfigMap` is configurable via `spec.logging.valueFrom.configMapKeyRef.key`.
 
 ## 0.21.0
 
