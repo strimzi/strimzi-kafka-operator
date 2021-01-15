@@ -78,7 +78,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         DeprecatedProperty deprecated = member.getAnnotation(DeprecatedProperty.class);
         if (deprecated != null
             && isPresent(member, propertyValue)) {
-            String msg = String.format("In API version %s the property %s at path %s has been deprecated. ",
+            String msg = String.format("In API version %s the %s property at path %s has been deprecated. ",
                     resource.getApiVersion(),
                     propertyName,
                     path(path, propertyName));
