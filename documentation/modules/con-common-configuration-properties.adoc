@@ -426,8 +426,8 @@ You can specify the following options in your configuration:
 `-Xms`:: Minimum initial allocation heap size when the JVM starts.
 `-Xmx`:: Maximum heap size.
 `-XX`:: Advanced runtime options for the JVM.
-`gcLoggingEnabled`:: xref:con-common-configuration-garbage-collection-{context}[Enables garbage collector logging].
 `javaSystemProperties`:: Additional system properties.
+`gcLoggingEnabled`:: xref:con-common-configuration-garbage-collection-{context}[Enables garbage collector logging].
 
 The full schema of `jvmOptions` is described in xref:type-JvmOptions-reference[`JvmOptions` schema reference].
 
@@ -497,6 +497,20 @@ jvmOptions:
 ----
 
 NOTE: When no `-XX` options are specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` is used.
+
+.`javaSystemProperties`
+
+`javaSystemProperties` are used to configure additional Java system properties, such as debugging utilities.
+
+.Example `javaSystemProperties` configuration
+[source,yaml,subs=attributes+]
+----
+jvmOptions:
+  javaSystemProperties:
+    - name: javax.net.debug
+      value: ssl
+----
+
 
 [id='con-common-configuration-garbage-collection-{context}']
 === Garbage collector logging
