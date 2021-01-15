@@ -10,9 +10,9 @@ This creates a basic `FileStreamSourceConnector` instance that sends each line o
 
 This procedure describes how to create: 
 
-* A `FileStreamSourceConnector` that reads messages from a temporary file (the source) and then publishes them to a Kafka topic.
+* A `FileStreamSourceConnector` that reads data from the Kafka license file (the source) and writes the data as messages to a Kafka topic.
 
-* A `FileStreamSinkConnector` that publishes messages from a Kafka topic to a temporary file (the sink).
+* A `FileStreamSinkConnector` that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).
 
 [NOTE]
 ====
@@ -43,7 +43,7 @@ spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
   tasksMax: 2 <4>
   config: <5>
-    file: "/tmp/my-file" <6>
+    file: "/opt/kafka/LICENSE" <6>
     topic: my-topic <7>
     # ...
 ----
@@ -53,7 +53,7 @@ spec:
 <3> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
 <4> Maximum number of Kafka Connect `Tasks` that the connector can create.
 <5> xref:#kafkaconnector-configs[Connector configuration] as key-value pairs.
-<6> Replace `/opt/kafka/LICENSE` with a temporary file to read the messages from. 
+<6> The source connector reads data from the `/opt/kafka/LICENSE` file. 
 <7> Kafka topic to publish the source data to.
 
 . Create the source `KafkaConnector` in your Kubernetes cluster:
@@ -70,7 +70,7 @@ kubectl apply -f examples/connect/source-connector.yaml
 touch examples/connect/sink-connector.yaml
 ----
 
-. Paste the following example YAML into the `examples/connect/sink-connector.yaml` file:
+. Paste the following YAML into the `sink-connector.yaml` file:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -84,13 +84,14 @@ spec:
   class: org.apache.kafka.connect.file.FileStreamSinkConnector <1>
   tasksMax: 2 
   config: <2>
-    file: "/tmp/my-file" 
-    topics: my-topic <3>
+    file: "/tmp/my-file" <3>
+    topics: my-topic <4>
 ----
 +
 <1> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
 <2> xref:#kafkaconnector-configs[Connector configuration] as key-value pairs.
-<3> Kafka topic to read the source data from.
+<3> Temporary file to publish the source data to.
+<4> Kafka topic to read the source data from.
 
 . Create the sink `KafkaConnector` in your Kubernetes cluster:
 +
@@ -109,9 +110,9 @@ my-source-connector
 my-sink-connector
 ----
 +
-Replace _MY-CONNECT-CLUSTER_ with the Kafka Connect cluster that the connector was created in.
+Replace _MY-CONNECT-CLUSTER_ with your Kafka Connect cluster.
 
-. In the container, execute the `kafka-console-consumer.sh` to read the messages that were written to the topic by the source connector:
+. In the container, execute `kafka-console-consumer.sh` to read the messages that were written to the topic by the source connector:
 +
 [source,shell,subs="+quotes"]
 ----
