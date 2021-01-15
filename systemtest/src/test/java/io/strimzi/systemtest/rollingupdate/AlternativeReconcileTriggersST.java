@@ -68,26 +68,25 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @Test
     void testManualTriggeringRollingUpdate() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        String clusterName = CLUSTER_NAME + "-manual-rolling";
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
 
-        KafkaResource.kafkaPersistent(clusterName, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         String zkName = KafkaResources.zookeeperStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
         // ##############################
         // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-        KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
@@ -103,14 +102,14 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        kafkaBasicClientJob.producerStrimzi().done();
-        kafkaBasicClientJob.consumerStrimzi().done();
+        kafkaBasicClientJob.create(kafkaBasicClientJob.producerStrimzi().build());
+        kafkaBasicClientJob.create(kafkaBasicClientJob.consumerStrimzi().build());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -183,7 +182,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(newTopicName)
@@ -215,43 +214,43 @@ class AlternativeReconcileTriggersST extends AbstractST {
      */
     @Test
     void testRollingUpdateOnNextReconciliationAfterClusterCAKeyDel() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 2, 2).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 2, 2).build());
 
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
         final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
 
         int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
 
-        String zookeeperDeletedCert = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt");
-        String kafkaDeletedCert = kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt");
+        String zookeeperDeletedCert = kubeClient(NAMESPACE).getSecret(clusterName + "-zookeeper-nodes").getData().get(clusterName + "-zookeeper-0.crt");
+        String kafkaDeletedCert = kubeClient(NAMESPACE).getSecret(clusterName + "-kafka-brokers").getData().get(clusterName + "-kafka-0.crt");
 
-        kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME));
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(clusterName));
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
 
-        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-zookeeper-nodes").getData().get(CLUSTER_NAME + "-zookeeper-0.crt"), is(not(zookeeperDeletedCert)));
-        assertThat(kubeClient(NAMESPACE).getSecret(CLUSTER_NAME + "-kafka-brokers").getData().get(CLUSTER_NAME + "-kafka-0.crt"), is(not(kafkaDeletedCert)));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)), is(not(zkPods)));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(not(kafkaPods)));
+        assertThat(kubeClient(NAMESPACE).getSecret(clusterName + "-zookeeper-nodes").getData().get(clusterName + "-zookeeper-0.crt"), is(not(zookeeperDeletedCert)));
+        assertThat(kubeClient(NAMESPACE).getSecret(clusterName + "-kafka-brokers").getData().get(clusterName + "-kafka-0.crt"), is(not(kafkaDeletedCert)));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName)), is(not(zkPods)));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName)), is(not(kafkaPods)));
 
         int sentAfter = internalKafkaClient.sendMessagesTls();
         assertThat(sentAfter, is(MESSAGE_COUNT));
@@ -265,11 +264,11 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
             kafka.getSpec().getKafka()
                 .setListeners(new ArrayOrObjectKafkaListeners(asList(
@@ -293,10 +292,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 )));
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        KafkaUtils.waitForKafkaReady(clusterName);
 
-        Map<String, String> secretData = kubeClient().getSecret(KafkaResources.brokersServiceName(CLUSTER_NAME)).getData();
+        Map<String, String> secretData = kubeClient().getSecret(KafkaResources.brokersServiceName(clusterName)).getData();
 
         for (Map.Entry<String, String> item : secretData.entrySet()) {
             if (item.getKey().endsWith(".crt")) {
@@ -313,35 +312,35 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @Test
     void testManualRollingUpdateForSinglePod() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3).build());
 
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
+        String zkSsName = KafkaResources.zookeeperStatefulSetName(clusterName);
 
-        Pod kafkaPod = kubeClient().getPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0));
+        Pod kafkaPod = kubeClient().getPod(KafkaResources.kafkaPodName(clusterName, 0));
         // snapshot of one single Kafka pod
         Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
 
-        Pod zkPod = kubeClient().getPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0));
+        Pod zkPod = kubeClient().getPod(KafkaResources.zookeeperPodName(clusterName, 0));
         // snapshot of one single ZK pod
         Map<String, String> zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
 
         LOGGER.info("Trying to roll just single Kafka and single ZK pod");
-        kubeClient().editPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0))
-                .editMetadata()
+        kubeClient().editPod(KafkaResources.kafkaPodName(clusterName, 0))
+            .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .done();
+            .endMetadata()
+            .done();
 
         // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaSnapshot);
 
-        kubeClient().editPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0))
-                .editMetadata()
+        kubeClient().editPod(KafkaResources.zookeeperPodName(clusterName, 0))
+            .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .done();
+            .endMetadata()
+            .done();
 
         // same as above
         zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(zkSsName, 3, zkSnapshot);
@@ -350,10 +349,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Adding anno to all ZK and Kafka pods");
         kafkaSnapshot.keySet().forEach(podName -> {
             kubeClient().editPod(podName)
-                    .editMetadata()
+                .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .done();
+                .endMetadata()
+                .done();
         });
 
         LOGGER.info("Checking if the rolling update will be successful for Kafka");
@@ -361,10 +360,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         zkSnapshot.keySet().forEach(podName -> {
             kubeClient().editPod(podName)
-                    .editMetadata()
+                .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .done();
+                .endMetadata()
+                .done();
         });
 
         LOGGER.info("Checking if the rolling update will be successful for ZK");
@@ -378,7 +377,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @Test
     void testAddingAndRemovingJbodVolumes() {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        String clusterName = CLUSTER_NAME + "-jbod-changes";
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;
@@ -388,17 +386,17 @@ class AlternativeReconcileTriggersST extends AbstractST {
         PersistentClaimStorage vol0 = new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(true).build();
         PersistentClaimStorage vol1 = new PersistentClaimStorageBuilder().withId(1).withSize("100Gi").withDeleteClaim(true).build();
 
-        KafkaResource.kafkaJBOD(clusterName, 3, 3, new JbodStorageBuilder().addToVolumes(vol0).build()).done();
+        KafkaResource.create(KafkaResource.kafkaJBOD(clusterName, 3, 3, new JbodStorageBuilder().addToVolumes(vol0).build()).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
-        KafkaTopicResource.topic(clusterName, topicName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
         // ##############################
         // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-        KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
@@ -414,14 +412,14 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-        kafkaBasicClientJob.producerStrimzi().done();
-        kafkaBasicClientJob.consumerStrimzi().done();
+        kafkaBasicClientJob.create(kafkaBasicClientJob.producerStrimzi().build());
+        kafkaBasicClientJob.create(kafkaBasicClientJob.consumerStrimzi().build());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.tlsUser(clusterName, userName).done();
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();

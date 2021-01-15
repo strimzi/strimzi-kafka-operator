@@ -140,7 +140,7 @@ public class MultipleListenersST extends AbstractST {
         LOGGER.info("This is listeners {}, which will verified.", listeners);
 
         // exercise phase
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -148,15 +148,15 @@ public class MultipleListenersST extends AbstractST {
                     .endListeners()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
         String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser kafkaUserInstance = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
+        KafkaUser kafkaUserInstance = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
         for (GenericKafkaListener listener : listeners) {
 
             String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-            KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
+            KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
 
             boolean isTlsEnabled = listener.isTls();
 
@@ -165,7 +165,7 @@ public class MultipleListenersST extends AbstractST {
                     BasicExternalKafkaClient externalTlsKafkaClient = new BasicExternalKafkaClient.Builder()
                         .withTopicName(topicName)
                         .withNamespaceName(NAMESPACE)
-                        .withClusterName(CLUSTER_NAME)
+                        .withClusterName(clusterName)
                         .withMessageCount(MESSAGE_COUNT)
                         .withKafkaUsername(kafkaUsername)
                         .withListenerName(listener.getName())
@@ -184,7 +184,7 @@ public class MultipleListenersST extends AbstractST {
                     BasicExternalKafkaClient externalPlainKafkaClient = new BasicExternalKafkaClient.Builder()
                         .withTopicName(topicName)
                         .withNamespaceName(NAMESPACE)
-                        .withClusterName(CLUSTER_NAME)
+                        .withClusterName(clusterName)
                         .withMessageCount(MESSAGE_COUNT)
                         .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                         .withListenerName(listener.getName())
@@ -201,18 +201,18 @@ public class MultipleListenersST extends AbstractST {
             } else {
                 // using internal clients
                 if (isTlsEnabled) {
-                    KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME + "-tls",
-                        listener.getName(), kafkaUserInstance).done();
+                    KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-tls",
+                        listener.getName(), kafkaUserInstance).build());
 
                     final String kafkaClientsTlsPodName =
-                        ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-tls").get(0).getMetadata().getName();
+                        ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-tls").get(0).getMetadata().getName();
 
                     InternalKafkaClient internalTlsKafkaClient = new InternalKafkaClient.Builder()
                         .withUsingPodName(kafkaClientsTlsPodName)
                         .withListenerName(listener.getName())
                         .withTopicName(topicName)
                         .withNamespaceName(NAMESPACE)
-                        .withClusterName(CLUSTER_NAME)
+                        .withClusterName(clusterName)
                         .withKafkaUsername(kafkaUsername)
                         .withMessageCount(MESSAGE_COUNT)
                         .build();
@@ -225,17 +225,17 @@ public class MultipleListenersST extends AbstractST {
                         internalTlsKafkaClient.receiveMessagesTls()
                     );
                 } else {
-                    KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME + "-plain").done();
+                    KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName + "-plain").build());
 
                     final String kafkaClientsPlainPodName =
-                        ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME + "-plain").get(0).getMetadata().getName();
+                        ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-plain").get(0).getMetadata().getName();
 
                     InternalKafkaClient internalPlainKafkaClient = new InternalKafkaClient.Builder()
                         .withUsingPodName(kafkaClientsPlainPodName)
                         .withListenerName(listener.getName())
                         .withTopicName(topicName)
                         .withNamespaceName(NAMESPACE)
-                        .withClusterName(CLUSTER_NAME)
+                        .withClusterName(clusterName)
                         .withMessageCount(MESSAGE_COUNT)
                         .build();
 
@@ -334,7 +334,7 @@ public class MultipleListenersST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 

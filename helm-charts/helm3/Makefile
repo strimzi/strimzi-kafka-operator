@@ -9,7 +9,7 @@ CHART_PATH ?= ../helm3/strimzi-kafka-operator/
 CHART_RENDERED_TEMPLATES_TMP=../../target/charts
 CHART_RENDERED_TEMPLATES_CLUSTERROLES=../../cluster-operator/src/main/resources/cluster-roles/
 CHART_RENDERED_TEMPLATES_INSTALL=../../install/cluster-operator/
-HELM_CLI=helm3
+HELM_CLI=helm
 
 helm_clean:
 	rm -rf $(CHART_RENDERED_TEMPLATES_TMP)

@@ -41,11 +41,4 @@ public class Kubectl extends BaseCmdKubeClient<Kubectl> {
     public String cmd() {
         return KUBECTL;
     }
-
-    @Override
-    public Kubectl clientWithAdmin() {
-        return this;
-    }
-
-
 }

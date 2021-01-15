@@ -72,24 +72,24 @@ public class KafkaRollerST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 4)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 4)
             .editSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-        final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).getStatus().getReplicas();
+        LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
+        final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getStatus().getReplicas();
         assertEquals(4, initialReplicas);
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 4, 4, 4).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 4, 4, 4).build());
 
         //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(CLUSTER_NAME,  3));
+        String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(clusterName,  3));
         List<Event> events = kubeClient().listEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
@@ -101,28 +101,28 @@ public class KafkaRollerST extends AbstractST {
         int scaledDownReplicas = 3;
         LOGGER.info("Scaling down to {}", scaledDownReplicas);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN));
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas));
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), scaledDownReplicas);
+        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas));
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), scaledDownReplicas);
 
-        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
-        kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        PodUtils.verifyThatRunningPodsAreStable(clusterName);
+        kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
         // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).withPropagationPolicy(DeletionPropagation.ORPHAN).edit()
+        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).withPropagationPolicy(DeletionPropagation.ORPHAN).edit()
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()
             .done();
 
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
     }
 
     @Test
     void testKafkaTopicRFLowerThanMinInSyncReplicas() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME, 1, 1).build());
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
         LOGGER.info("Setting KafkaTopic's min.insync.replicas to be higher than replication factor");
@@ -144,7 +144,7 @@ public class KafkaRollerST extends AbstractST {
 
     @Test
     void testKafkaPodCrashLooping() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -152,41 +152,41 @@ public class KafkaRollerST extends AbstractST {
                     .endJvmOptions()
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+        KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")));
 
-        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaNotReady(clusterName);
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+        KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()));
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
         // No additional checks are needed, because in case of wait failure, the test will not continue.
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(clusterName);
     }
 
     @Test
     void testKafkaPodImagePullBackOff() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
             kafka.getSpec().getZookeeper().setImage(StUtils.changeOrgAndTag("quay.io/strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION));
         });
 
-        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaNotReady(clusterName);
 
-        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(CLUSTER_NAME));
+        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(clusterName));
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setImage(StUtils.changeOrgAndTag("quay.io/strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION)));
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getSpec().getKafka().setImage(StUtils.changeOrgAndTag("quay.io/strimzi/kafka:latest-kafka-" + Environment.ST_KAFKA_VERSION)));
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
         // No additional checks are needed, because in case of wait failure, the test will not continue.
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(clusterName);
     }
 
     @Test
@@ -194,33 +194,33 @@ public class KafkaRollerST extends AbstractST {
         ResourceRequirements rr = new ResourceRequirementsBuilder()
                 .withRequests(Collections.emptyMap())
                 .build();
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withResources(rr)
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("123456"));
         requests.put("memory", new Quantity("512Mi"));
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+        KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
 
-        KafkaUtils.waitForKafkaNotReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaNotReady(clusterName);
 
-        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(CLUSTER_NAME));
+        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(clusterName));
 
         requests.put("cpu", new Quantity("250m"));
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+        KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
         // No additional checks are needed, because in case of wait failure, the test will not continue.
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(clusterName);
     }
 
     @Test
@@ -256,7 +256,7 @@ public class KafkaRollerST extends AbstractST {
                 .withPod(pt)
                 .build();
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.defaultKafka(CLUSTER_NAME, 3, 3)
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withTemplate(kct)
@@ -265,14 +265,14 @@ public class KafkaRollerST extends AbstractST {
                 .build());
 
         // pods are stable in the Pending state
-        PodUtils.waitUntilPodStabilityReplicasCount(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), 3);
+        PodUtils.waitUntilPodStabilityReplicasCount(KafkaResources.kafkaStatefulSetName(clusterName), 3);
 
         LOGGER.info("Removing requirement for the affinity");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka ->
+        KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null));
 
         // kafka should get back ready in some reasonable time frame
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(clusterName);
     }
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String clusterName) {
@@ -283,7 +283,7 @@ public class KafkaRollerST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_MEDIUM);
     }

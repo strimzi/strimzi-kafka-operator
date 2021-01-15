@@ -30,7 +30,6 @@ documentation/htmlnoheader/**
 documentation/**/build/**
 master.html
 
-helm-charts/helm2/strimzi-kafka-operator-*.*.*.tgz
 helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
 
 docker-images/kafka/.*.tmp

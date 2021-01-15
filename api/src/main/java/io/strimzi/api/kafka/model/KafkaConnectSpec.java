@@ -25,7 +25,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "version", "image",
         "bootstrapServers", "tls", "authentication", "config", "resources",
-        "livenessProbe", "readinessProbe", "jvmOptions",
+        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
         "affinity", "tolerations", "logging", "metrics", "tracing",
         "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)

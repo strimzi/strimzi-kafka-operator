@@ -21,7 +21,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"replicas", "version", "image", "connectCluster", 
         "clusters", "mirrors", "resources", 
-        "livenessProbe", "readinessProbe", "jvmOptions",
+        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
         "affinity", "tolerations", "logging", "metrics", "tracing", 
         "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)

@@ -24,7 +24,7 @@ m¦FileStreamSinkConnector
 
 The procedures in this section show how to add your own connector classes to connector images by:
 
-* xref:creating-new-image-using-kafka-connect-build-{context}[Creating new container image automatically using Strimzi]
+* xref:creating-new-image-using-kafka-connect-build-{context}[Creating a new container image automatically using Strimzi]
 
 * xref:creating-new-image-from-base-{context}[Creating a container image from the Kafka Connect base image (manually or using continuous integration)]
 

@@ -185,7 +185,6 @@ class TopicOperator {
         @Override
         public void handle(Void v) {
             k8s.deleteResource(resourceName).onComplete(handler);
-            statusUpdateGeneration.remove(resourceName.toString());
         }
 
         @Override
@@ -637,7 +636,10 @@ class TopicOperator {
             // they're the same => do nothing, but still create the private copy
             LOGGER.debug("{}: KafkaTopic created in k8s and topic created in kafka, but they're identical => just creating in topicStore", logContext);
             LOGGER.debug("{}: k8s and kafka versions of topic '{}' are the same", logContext, kafkaTopic.getTopicName());
-            reconciliationResultHandler = createInTopicStore(logContext, kafkaTopic, involvedObject);
+            Topic privateTopic = new Topic.Builder(kafkaTopic)
+                    .withMapName(k8sTopic.getResourceName().toString())
+                    .build();
+            reconciliationResultHandler = createInTopicStore(logContext, privateTopic, involvedObject);
         } else if (!diff.changesReplicationFactor()
                 && !diff.changesNumPartitions()
                 && diff.changesConfig()
@@ -645,7 +647,10 @@ class TopicOperator {
             LOGGER.debug("{}: KafkaTopic created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store", logContext);
             Map<String, String> mergedConfigs = new HashMap<>(kafkaTopic.getConfig());
             mergedConfigs.putAll(k8sTopic.getConfig());
-            Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
+            Topic mergedTopic = new Topic.Builder(kafkaTopic)
+                    .withConfig(mergedConfigs)
+                    .withMapName(k8sTopic.getResourceName().toString())
+                    .build();
             reconciliationResultHandler = updateResource(logContext, mergedTopic)
                     .compose(updatedResource -> {
                         reconciliation.observedTopicFuture(updatedResource);
@@ -664,7 +669,10 @@ class TopicOperator {
                     updateResource(logContext, kafkaTopic))
                 .compose(updatedResource -> {
                     reconciliation.observedTopicFuture(updatedResource);
-                    return createInTopicStore(logContext, kafkaTopic, involvedObject);
+                    Topic privateTopic = new Topic.Builder(kafkaTopic)
+                            .withMapName(k8sTopic.getResourceName().toString())
+                            .build();
+                    return createInTopicStore(logContext, privateTopic, involvedObject);
                 });
         }
         return reconciliationResultHandler;
@@ -807,8 +815,6 @@ class TopicOperator {
             });
         return voidFuture;
     }
-
-    private Map<String, Long> statusUpdateGeneration = new HashMap<>();
 
     /**
      * Called when ZK watch notifies of change to topic's config
@@ -1016,9 +1022,6 @@ class TopicOperator {
                                         metadata.getResourceVersion(),
                                         metadata.getGeneration(),
                                         ar.result().getStatus().getObservedGeneration());
-                                statusUpdateGeneration.put(
-                                        metadata.getName(),
-                                        metadata.getGeneration());
                             } else {
                                 LOGGER.error("{}: Error setting resource status", logContext, ar.cause());
                             }
@@ -1049,27 +1052,6 @@ class TopicOperator {
                             .compose(mt ->  {
                                 final Topic k8sTopic;
                                 if (mt != null) {
-
-                                    Long generation = statusUpdateGeneration.get(mt.getMetadata().getName());
-                                    LOGGER.debug("{}: last updated generation={}", logContext, generation);
-                                    if (mt.getMetadata() != null
-                                            && mt.getMetadata().getGeneration() != null) {
-                                        if (mt.getMetadata().getGeneration().equals(generation)) {
-                                            // TODO we might also need some way to avoid statusUpdateGeneration getting too big
-                                            // e.g. remove after 10 seconds, for example
-                                            // Or do we not care and maintain this map to avoid unnecessary work always
-                                            // It doesn't scale to many topics so well, but maybe that's not such a huge problem.
-                                            LOGGER.debug("{}: Ignoring modification event caused by my own status update on {}",
-                                                    logContext,
-                                                    mt.getMetadata().getName());
-                                            return Future.succeededFuture();
-                                        } else {
-                                            LOGGER.debug("{}: modifiedTopic.getMetadata().getGeneration()={}",
-                                                    logContext, mt.getMetadata().getGeneration());
-                                        }
-                                    } else {
-                                        LOGGER.debug("{}: modifiedTopic.getMetadata().getGeneration()=null", logContext);
-                                    }
                                     observedTopicFuture(mt);
                                     try {
                                         k8sTopic = TopicSerialization.fromTopicResource(mt);

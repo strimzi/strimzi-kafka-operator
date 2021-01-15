@@ -85,8 +85,8 @@ class MirrorMaker2ST extends AbstractST {
     private static final String MIRRORMAKER2_TOPIC_NAME = "mirrormaker2-topic-example";
     private final int messagesCount = 200;
 
-    private String kafkaClusterSourceName = CLUSTER_NAME + "-source";
-    private String kafkaClusterTargetName = CLUSTER_NAME + "-target";
+    private String kafkaClusterSourceName = clusterName + "-source";
+    private String kafkaClusterTargetName = clusterName + "-target";
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
@@ -109,15 +109,15 @@ class MirrorMaker2ST extends AbstractST {
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + AVAILABILITY_TOPIC_SOURCE_NAME;
 
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
         // Deploy Topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).build());
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -151,7 +151,7 @@ class MirrorMaker2ST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                 .editSpec()
                     .editFirstMirror()
                         .editSourceConnector()
@@ -159,11 +159,11 @@ class MirrorMaker2ST extends AbstractST {
                         .endSourceConnector()
                     .endMirror()
                 .endSpec()
-                .done();
+                .build());
 
         LOGGER.info("Looks like the mirrormaker2 cluster my-cluster deployed OK");
 
-        String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME));
+        String podName = PodUtils.getPodNameByPrefix(KafkaMirrorMaker2Resources.deploymentName(clusterName));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(podName));
 
         assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
@@ -171,8 +171,8 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(expectedConfig));
         testDockerImagesForKafkaMirrorMaker2();
 
-        verifyLabelsOnPods(CLUSTER_NAME, "mirrormaker2", null, "KafkaMirrorMaker2");
-        verifyLabelsForService(CLUSTER_NAME, "mirrormaker2-api", "KafkaMirrorMaker2");
+        verifyLabelsOnPods(clusterName, "mirrormaker2", null, "KafkaMirrorMaker2");
+        verifyLabelsForService(clusterName, "mirrormaker2-api", "KafkaMirrorMaker2");
 
         verifyLabelsForConfigMaps(kafkaClusterSourceName, null, kafkaClusterTargetName);
         verifyLabelsForServiceAccounts(kafkaClusterSourceName, null);
@@ -249,7 +249,7 @@ class MirrorMaker2ST extends AbstractST {
         listenerTls.setAuth(auth);
 
         // Deploy source kafka with tls listener and mutual tls auth
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -262,10 +262,11 @@ class MirrorMaker2ST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         // Deploy target kafka with tls listener and mutual tls auth
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -278,19 +279,20 @@ class MirrorMaker2ST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         // Deploy topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).build());
 
         // Create Kafka user
-        KafkaUser userSource = KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).done();
+        KafkaUser userSource = KafkaUserResource.create(KafkaUserResource.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).build());
 
-        KafkaUser userTarget = KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
+        KafkaUser userTarget = KafkaUserResource.create(KafkaUserResource.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).build());
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -370,14 +372,14 @@ class MirrorMaker2ST extends AbstractST {
                 .addToConfig("status.storage.replication.factor", 1)
                 .build();
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
             .editSpec()
                 .withClusters(sourceClusterWithTlsAuth, targetClusterWithTlsAuth)
                 .editFirstMirror()
                     .withNewTopicsPattern(MIRRORMAKER2_TOPIC_NAME + ".*")
                 .endMirror()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             topicSourceName, kafkaClusterSourceName, userSource.getMetadata().getName());
@@ -437,7 +439,7 @@ class MirrorMaker2ST extends AbstractST {
         String kafkaUserTarget = "my-user-target";
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -450,10 +452,11 @@ class MirrorMaker2ST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -466,16 +469,17 @@ class MirrorMaker2ST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         // Deploy topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceName, 3).build());
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).done();
+        KafkaUser userSource = KafkaUserResource.create(KafkaUserResource.scramShaUser(kafkaClusterSourceName, kafkaUserSource).build());
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = KafkaUserResource.scramShaUser(kafkaClusterTargetName, kafkaUserTarget).done();
+        KafkaUser userTarget = KafkaUserResource.create(KafkaUserResource.scramShaUser(kafkaClusterTargetName, kafkaUserTarget).build());
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker2 spec
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
@@ -498,9 +502,9 @@ class MirrorMaker2ST extends AbstractST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -564,13 +568,14 @@ class MirrorMaker2ST extends AbstractST {
                 .addToConfig("status.storage.replication.factor", 1)
                 .build();
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
             .editSpec()
                 .withClusters(targetClusterWithScramSha512Auth, sourceClusterWithScramSha512Auth)
                 .editFirstMirror()
                     .withTopicsBlacklistPattern("availability.*")
                 .endMirror()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             topicSourceName, kafkaClusterSourceName, userSource.getMetadata().getName());
@@ -620,7 +625,7 @@ class MirrorMaker2ST extends AbstractST {
         String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).
                 get(0).getMetadata().getName());
 
-        String mirrormaker2Version = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getVersion();
+        String mirrormaker2Version = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getVersion();
         if (mirrormaker2Version == null) {
             mirrormaker2Version = Environment.ST_KAFKA_VERSION;
         }
@@ -633,31 +638,31 @@ class MirrorMaker2ST extends AbstractST {
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2Subresource() {
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).build());
 
         int scaleTo = 4;
-        long mm2ObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
+        long mm2ObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getObservedGeneration();
         String mm2GenName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaMirrorMaker2 subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        cmdKubeClient().scaleByName(KafkaMirrorMaker2.RESOURCE_KIND, CLUSTER_NAME, scaleTo);
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME), scaleTo);
+        cmdKubeClient().scaleByName(KafkaMirrorMaker2.RESOURCE_KIND, clusterName, scaleTo);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaMirrorMaker2Resources.deploymentName(clusterName), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> mm2Pods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
         assertThat(mm2Pods.size(), is(4));
-        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getSpec().getReplicas(), is(4));
-        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getReplicas(), is(4));
+        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getReplicas(), is(4));
+        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getReplicas(), is(4));
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
         */
-        assertThat(mm2ObsGen < KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration(), is(true));
+        assertThat(mm2ObsGen < KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : mm2Pods) {
             assertThat(pod.contains(mm2GenName), is(true));
         }
@@ -671,13 +676,13 @@ class MirrorMaker2ST extends AbstractST {
         String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
 
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
         // Deploy Topic for example clients
-        KafkaTopicResource.topic(kafkaClusterSourceName, sourceExampleTopic).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, sourceExampleTopic).build());
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).done();
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).build());
 
         //deploying example clients for checking if mm2 will mirror messages with headers
 
@@ -689,7 +694,7 @@ class MirrorMaker2ST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        targetKafkaClientsJob.consumerStrimzi().done();
+        targetKafkaClientsJob.create(targetKafkaClientsJob.consumerStrimzi().build());
 
         KafkaBasicExampleClients sourceKafkaClientsJob = new KafkaBasicExampleClients.Builder()
             .withProducerName(sourceProducerName)
@@ -699,7 +704,7 @@ class MirrorMaker2ST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        sourceKafkaClientsJob.producerStrimzi()
+        sourceKafkaClientsJob.create(sourceKafkaClientsJob.producerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -712,7 +717,7 @@ class MirrorMaker2ST extends AbstractST {
                     .endSpec()
                 .endTemplate()
             .endSpec()
-            .done();
+            .build());
 
         ClientUtils.waitTillContinuousClientsFinish(sourceProducerName, targetConsumerName, NAMESPACE, MESSAGE_COUNT);
 
@@ -728,25 +733,25 @@ class MirrorMaker2ST extends AbstractST {
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2ToZero() {
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 3, false).done();
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 3, false).build());
 
-        long oldObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getObservedGeneration();
-        String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME);
+        long oldObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getObservedGeneration();
+        String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
         List<String> mm2Pods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
         assertThat(mm2Pods.size(), is(3));
 
         LOGGER.info("Scaling MirrorMaker2 to zero");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(CLUSTER_NAME, mm2 -> mm2.getSpec().setReplicas(0));
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName, mm2 -> mm2.getSpec().setReplicas(0));
 
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(mm2DepName), 0, true);
 
         mm2Pods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
-        KafkaMirrorMaker2Status mm2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus();
-        long actualObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getMetadata().getGeneration();
+        KafkaMirrorMaker2Status mm2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
+        long actualObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getMetadata().getGeneration();
 
         assertThat(mm2Pods.size(), is(0));
         assertThat(mm2Status.getConditions().get(0).getType(), is(Ready.toString()));
@@ -759,17 +764,17 @@ class MirrorMaker2ST extends AbstractST {
         String originalTopicName = "original-topic";
 
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
         // Create topic
-        KafkaTopicResource.topic(kafkaClusterSourceName, originalTopicName, 3).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, originalTopicName, 3).build());
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
                 .editMirror(0)
                     .editSourceConnector()
@@ -777,7 +782,7 @@ class MirrorMaker2ST extends AbstractST {
                     .endSourceConnector()
                 .endMirror()
             .endSpec()
-            .done();
+            .build());
 
         LOGGER.info("Sending and receiving messages via {}", kafkaClusterSourceName);
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -820,11 +825,11 @@ class MirrorMaker2ST extends AbstractST {
             .build();
 
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
                 .withNewTemplate()
                     .withNewPod()
@@ -832,7 +837,7 @@ class MirrorMaker2ST extends AbstractST {
                     .endPod()
                 .endTemplate()
             .endSpec()
-            .done();
+            .build());
 
         String mm2PodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
 
@@ -844,11 +849,11 @@ class MirrorMaker2ST extends AbstractST {
     @Test
     void testConfigureDeploymentStrategy() {
         // Deploy source kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2(CLUSTER_NAME, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
@@ -856,16 +861,16 @@ class MirrorMaker2ST extends AbstractST {
                     .endDeployment()
                 .endTemplate()
             .endSpec()
-            .done();
+            .build());
 
-        String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME);
+        String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
 
         LOGGER.info("Adding label to MirrorMaker2 resource, the CR should be recreated");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(CLUSTER_NAME,
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName,
             mm2 -> mm2.getMetadata().setLabels(Collections.singletonMap("some", "label")));
         DeploymentUtils.waitForDeploymentAndPodsReady(mm2DepName, 1);
 
-        KafkaMirrorMaker2 kmm2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        KafkaMirrorMaker2 kmm2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get();
 
         LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
         assertThat(kmm2.getStatus().getObservedGeneration(), is(1L));
@@ -873,23 +878,23 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(kmm2.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
         LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(CLUSTER_NAME,
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName,
             mm2 -> mm2.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(CLUSTER_NAME);
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(clusterName);
 
         LOGGER.info("Adding another label to MirrorMaker2 resource, pods should be rolled");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(CLUSTER_NAME, mm2 -> mm2.getMetadata().getLabels().put("another", "label"));
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName, mm2 -> mm2.getMetadata().getLabels().put("another", "label"));
         DeploymentUtils.waitForDeploymentAndPodsReady(mm2DepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        kmm2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+        kmm2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get();
         assertThat(kmm2.getStatus().getObservedGeneration(), is(2L));
         assertThat(kmm2.getMetadata().getLabels().toString(), containsString("another=label"));
         assertThat(kmm2.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
     }

@@ -46,7 +46,7 @@ public class ClusterOperationST extends AbstractST {
         List<String> continuousConsumerGroups = IntStream.range(0, size).boxed().map(i -> "continuous-consumer-group-" + i).collect(Collectors.toList());
         int continuousClientsMessageCount = 300;
 
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
                 .editOrNewSpec()
                     .editEntityOperator()
                         .editUserOperator()
@@ -54,9 +54,9 @@ public class ClusterOperationST extends AbstractST {
                         .endUserOperator()
                     .endEntityOperator()
                 .endSpec()
-                .done();
+                .build());
 
-        topicNames.forEach(topicName -> KafkaTopicResource.topic(CLUSTER_NAME, topicName, 3, 3, 2).done());
+        topicNames.forEach(topicName -> KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 3, 3, 2).build()));
 
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         KafkaBasicExampleClients kafkaBasicClientResource;
@@ -65,7 +65,7 @@ public class ClusterOperationST extends AbstractST {
             kafkaBasicClientResource = new KafkaBasicExampleClients.Builder()
                 .withProducerName(producerNames.get(i))
                 .withConsumerName(consumerNames.get(i))
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNames.get(i))
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)
@@ -73,8 +73,8 @@ public class ClusterOperationST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            kafkaBasicClientResource.producerStrimzi();
-            kafkaBasicClientResource.consumerStrimzi();
+            kafkaBasicClientResource.create(kafkaBasicClientResource.producerStrimzi().build());
+            kafkaBasicClientResource.create(kafkaBasicClientResource.consumerStrimzi().build());
         }
 
         // ##############################
@@ -91,7 +91,7 @@ public class ClusterOperationST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }

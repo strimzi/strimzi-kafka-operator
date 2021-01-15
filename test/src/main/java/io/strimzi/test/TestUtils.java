@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -272,6 +273,18 @@ public final class TestUtils {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static String fromYamlToJson(String yaml) {
+        try {
+            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+            Object obj = yamlReader.readValue(yaml, Object.class);
+
+            ObjectMapper jsonWriter = new ObjectMapper();
+            return jsonWriter.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 

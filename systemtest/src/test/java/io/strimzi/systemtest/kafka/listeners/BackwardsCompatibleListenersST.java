@@ -52,7 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 public class BackwardsCompatibleListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(BackwardsCompatibleListenersST.class);
-    public static final String NAMESPACE = "kafka-listeners-bc-cluster-test";
+    public static final String NAMESPACE = "bc-listeners";
 
     /**
      * Test sending messages over tls transport using mutual tls auth
@@ -69,27 +69,27 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endTls()
                 .build();
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(TLS_LISTENER_DEFAULT_NAME)
@@ -120,27 +120,27 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .build();
 
         // Use a Kafka with plain listener disabled
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUser kafkaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, kafkaUsername).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUser kafkaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, kafkaUsername).build());
 
-        KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, kafkaUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
 
         final String kafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -169,21 +169,21 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalNodePort()
                 .build();
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(kafkaUsername)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -209,23 +209,23 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalLoadBalancer()
                 .build();
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(CLUSTER_NAME).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(topicName)
                 .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
+                .withClusterName(clusterName)
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
@@ -251,21 +251,21 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalRoute()
                 .build();
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                     .endKafka()
                 .endSpec()
-                .done();
+                .build());
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(topicName)
                 .withNamespaceName(NAMESPACE)
-                .withClusterName(CLUSTER_NAME)
+                .withClusterName(clusterName)
                 .withMessageCount(MESSAGE_COUNT)
                 .withKafkaUsername(kafkaUsername)
                 .withSecurityProtocol(SecurityProtocol.SSL)
@@ -302,25 +302,25 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalNodePort()
                 .build();
 
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new ArrayOrObjectKafkaListeners(listeners))
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(CLUSTER_NAME, topicName, 1, 3, 2).done();
-        KafkaUser user = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUsername).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 1, 3, 2).build());
+        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
-        KafkaClientsResource.deployKafkaClients(true, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).done();
-        final String kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName("my-cluster" + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        final String kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withKafkaUsername(kafkaUsername)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
@@ -333,10 +333,10 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         );
 
         LOGGER.info("Collect the pod information before update");
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
         LOGGER.info("Update the custom resource to new format");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, kafka -> {
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             kafka.getSpec().getKafka()
                     .setListeners(new ArrayOrObjectKafkaListeners(asList(
                             new GenericKafkaListenerBuilder()
@@ -363,7 +363,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                     )));
         });
 
-        KafkaUtils.waitForKafkaStatusUpdate(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaStatusUpdate(clusterName);
 
         LOGGER.info("Checking produced and consumed messages to pod: {}", kafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
@@ -372,11 +372,11 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         );
 
         LOGGER.info("Check if Kafka pods didn't roll");
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)), is(kafkaPods));
+        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName)), is(kafkaPods));
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }

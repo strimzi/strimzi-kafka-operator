@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.bridge;
 
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -38,21 +39,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private static final String NAMESPACE = "bridge-scram-sha-cluster-test";
+    private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
 
     private String kafkaClientsPodName;
 
     @Test
     void testSendSimpleMessageTlsScramSha() {
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(httpBridgeScramShaClusterName, TOPIC_NAME).build());
 
-        kafkaBridgeClientJob.producerStrimziBridge().done();
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.producerStrimziBridge().build());
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(httpBridgeScramShaClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
@@ -65,15 +67,15 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
     @Test
     void testReceiveSimpleMessageTlsScramSha() {
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(httpBridgeScramShaClusterName, TOPIC_NAME).build());
 
-        kafkaBridgeClientJob.consumerStrimziBridge().done();
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(httpBridgeScramShaClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
@@ -92,7 +94,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -106,14 +108,15 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         // Create Kafka user
-        KafkaUser scramShaUser = KafkaUserResource.scramShaUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUser scramShaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(httpBridgeScramShaClusterName, USER_NAME).build());
 
-        KafkaClientsResource.deployKafkaClients(true, KAFKA_CLIENTS_NAME, scramShaUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName, scramShaUser).build());
 
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
@@ -123,11 +126,10 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
         certSecret.setCertificate("ca.crt");
-        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
-
+        certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(httpBridgeScramShaClusterName));
 
         // Deploy http bridge
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(httpBridgeScramShaClusterName, KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName), 1)
             .editSpec()
                 .withNewConsumer()
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
@@ -140,6 +142,8 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                     .withTrustedCertificates(certSecret)
                 .endTls()
             .endSpec()
-            .done();
+            .build());
+
+        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeScramShaClusterName)).build();
     }
 }

@@ -1,6 +1,20 @@
 
 # CHANGELOG
 
+## 0.22.0
+
+* Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
+* Add support for JMX options configuration of all Kafka Connect (KC, KC2SI, MM2)
+
+### Deprecations and removals
+
+* Removed support for Helm2 charts as that version is now unsupported. There is no longer the need for separate `helm2` and `helm3` binaries, only `helm` (version 3) is required.
+* The following annotations are deprecated for a long time and will be removed in 0.23.0:
+  * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
+  * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
+  * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
+  * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
+
 ## 0.21.0
 
 * Add support for declarative management of connector plugins in Kafka Connect CR 
@@ -19,6 +33,7 @@
 * Add support for rolling individual Kafka or ZooKeeper pods through the Cluster Operator using an annotation
 * Add support for Topology Spread Constraints in Pod templates
 * Make Kafka `cluster-id` (KIP-78) available on Kafka CRD status
+* Add support for Kafka 2.7.0
 
 ### Deprecations and removals
 * The `metrics` field in the Strimzi custom resources has been deprecated and will be removed in the future. For configuring metrics, use the new `metricsConfig` field and pass the configuration via ConfigMap.

@@ -81,8 +81,10 @@ public abstract class AbstractST implements TestSeparator {
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
-    protected static final String CLUSTER_NAME = "my-cluster";
-    protected static final String KAFKA_CLIENTS_NAME = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
+    protected static String previousClusterName;
+    protected static String clusterName;
+    protected static String kafkaClientsName;
+    protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
     protected static final String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
@@ -91,7 +93,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
-    public static final String CRUISE_CONTROL_POD_PREFIX = CLUSTER_NAME + "-cruise-control-";
 
     protected String testClass;
     protected String testName;
@@ -142,7 +143,7 @@ public abstract class AbstractST implements TestSeparator {
                 applyBindings(namespace, bindingsNamespaces);
             }
             // 060-Deployment
-            BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).done();
+            BundleResource.create(BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).build());
         }
     }
 
@@ -180,7 +181,7 @@ public abstract class AbstractST implements TestSeparator {
 
             }
             clusterOperatorConfigs.push(entry.getKey().getPath());
-            cmdKubeClient().clientWithAdmin().namespace(namespace).applyContent(fileContents);
+            cmdKubeClient().namespace(namespace).applyContent(fileContents);
         }
     }
 
@@ -203,7 +204,7 @@ public abstract class AbstractST implements TestSeparator {
         while (!clusterOperatorConfigs.empty()) {
             String clusterOperatorConfig = clusterOperatorConfigs.pop();
             LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
-            cmdKubeClient().clientWithAdmin().delete(clusterOperatorConfig);
+            cmdKubeClient().delete(clusterOperatorConfig);
         }
     }
 
@@ -709,6 +710,16 @@ public abstract class AbstractST implements TestSeparator {
             testName = testContext.getTestMethod().get().getName();
         }
         ResourceManager.setMethodResources();
+
+        // This is needed to distinguish created Kafka cluster in ResourceManager and don't delete cluster which are still in use by parallel test cases
+        if (previousClusterName == null) {
+            LOGGER.info("Executing the first test case, using {} as a cluster name", clusterName);
+            previousClusterName = clusterName;
+        } else {
+            clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+            kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
+            LOGGER.info("Current test case is not the first one, generated new cluster name - {}", clusterName);
+        }
     }
 
     @BeforeAll
@@ -717,6 +728,10 @@ public abstract class AbstractST implements TestSeparator {
         if (testContext.getTestClass().isPresent()) {
             testClass = testContext.getTestClass().get().getName();
         }
+        // Name for the first test case, other test cases will need different name
+        previousClusterName = null;
+        clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+        kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
     }
 
     @AfterEach

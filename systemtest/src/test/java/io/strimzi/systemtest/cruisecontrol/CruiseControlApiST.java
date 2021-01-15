@@ -29,8 +29,8 @@ public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
     private static final String NAMESPACE = "cruise-control-api-test";
-
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
+    private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @Test
     void testCruiseControlBasicAPIRequests()  {
@@ -111,10 +111,10 @@ public class CruiseControlApiST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithCruiseControl(CLUSTER_NAME, 3, 3).done();
+        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }

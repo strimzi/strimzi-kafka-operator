@@ -22,6 +22,8 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -64,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
@@ -116,6 +119,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -126,6 +130,9 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<DeploymentConfig> dcCaptor = ArgumentCaptor.forClass(DeploymentConfig.class);
         when(mockDcOps.reconcile(anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -272,6 +279,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcs2iName = "foo";
@@ -292,6 +300,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockIsOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateTargetImageStream());
         when(mockBcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateBuildConfig());
         when(mockPdbOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generatePodDisruptionBudget());
+        when(mockSecretOps.reconcile(eq(kcs2iNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -391,6 +400,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcs2iName = "foo";
@@ -413,6 +423,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockIsOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateTargetImageStream());
         when(mockBcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateBuildConfig());
         when(mockPdbOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generatePodDisruptionBudget());
+
+        when(mockSecretOps.reconcile(eq(kcs2iNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -549,6 +561,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcs2iName = "foo";
         String kcs2iNamespace = "test";
@@ -567,6 +580,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockBcOps.get(kcs2iNamespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()))).thenReturn(connect.generateBuildConfig());
         when(mockPdbOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generatePodDisruptionBudget());
         when(mockConnectOps.getAsync(kcs2iNamespace, kcs2iName)).thenReturn(Future.succeededFuture(null));
+
+        when(mockSecretOps.reconcile(eq(kcs2iNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -628,6 +643,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcs2iName = "foo";
@@ -650,6 +666,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockIsOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateTargetImageStream());
         when(mockBcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateBuildConfig());
         when(mockPdbOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generatePodDisruptionBudget());
+
+        when(mockSecretOps.reconcile(eq(kcs2iNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
@@ -704,6 +722,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcs2iName = "foo";
@@ -726,6 +745,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockIsOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateTargetImageStream());
         when(mockBcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateBuildConfig());
         when(mockPdbOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generatePodDisruptionBudget());
+
+        when(mockSecretOps.reconcile(eq(kcs2iNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -838,6 +859,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcs2iName = "foo";
         String kcs2iNamespace = "test";
@@ -859,6 +881,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockS2IConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnectS2I())));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockNetPolOps.reconcile(eq(kcs2i.getMetadata().getNamespace()), eq(KafkaConnectS2IResources.deploymentName(kcs2i.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+
+        when(mockSecretOps.reconcile(eq(kcs2iNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
 
@@ -892,6 +916,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         ImageStreamOperator mockIsOps = supplier.imagesStreamOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
 
@@ -908,6 +933,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<DeploymentConfig> dcCaptor = ArgumentCaptor.forClass(DeploymentConfig.class);
         when(mockDcOps.reconcile(anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -1073,4 +1099,15 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             })));
     }
 
+    @Test
+    public void testCreateClusterWithJmxEnabled(VertxTestContext context) {
+        String kcs2iName = "foo";
+        String kcs2iNamespace = "test";
+        KafkaConnectS2I kcs2i = ResourceUtils.createEmptyKafkaConnectS2I(kcs2iNamespace, kcs2iName);
+        kcs2i.getSpec().setJmxOptions(new KafkaJmxOptionsBuilder()
+                .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
+                .build());
+
+        createCluster(context, kcs2i, false);
+    }
 }

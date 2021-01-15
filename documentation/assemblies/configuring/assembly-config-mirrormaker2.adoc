@@ -41,3 +41,9 @@ include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset
 
 //Procedure to set up the configuration
 include::../../modules/configuring/proc-config-mirrormaker2-replication.adoc[leveloffset=+1]
+
+//Procedure to restart a connector
+include::../../modules/proc-manual-restart-mirrormaker2-connector.adoc[leveloffset=+1]
+
+//Procedure to restart a connector task
+include::../../modules/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+1]

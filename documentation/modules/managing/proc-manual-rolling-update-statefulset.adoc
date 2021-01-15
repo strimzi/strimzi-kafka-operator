@@ -1,0 +1,29 @@
+// Module included in the following assemblies:
+//
+// managing/assembly-rolling-updates.adoc
+
+[id='proc-manual-rolling-update-statefulset-{context}']
+= Performing a rolling update using a StatefulSet annotation
+
+This procedure describes how to manually trigger a rolling update of an existing Kafka cluster or ZooKeeper cluster using a Kubernetes `StatefulSet` annotation.
+
+.Procedure
+
+. Find the name of the `StatefulSet` that controls the Kafka or ZooKeeper pods you want to manually update.
++
+For example, if your Kafka cluster is named _my-cluster_, the corresponding `StatefulSet` names are _my-cluster-kafka_ and _my-cluster-zookeeper_.
+
+. Annotate the `StatefulSet` resource in Kubernetes.
++
+Use `kubectl annotate`:
++
+[source,shell,subs=+quotes]
+----
+kubectl annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-update=true
+
+kubectl annotate statefulset _cluster-name_-zookeeper strimzi.io/manual-rolling-update=true
+----
+
+. Wait for the next reconciliation to occur (every two minutes by default).
+A rolling update of all pods within the annotated `StatefulSet` is triggered, as long as the annotation was detected by the reconciliation process.
+When the rolling update of all the pods is complete, the annotation is removed from the `StatefulSet`.

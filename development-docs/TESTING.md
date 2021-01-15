@@ -249,9 +249,6 @@ Otherwise, it will use the context from kubeconfig with a name specified by the 
 For example, command `TEST_CLUSTER_CONTEXT=remote-cluster ./systemtest/scripts/run_tests.sh` will execute tests with cluster context `remote-cluster`.
 However, since system tests use command line `Executor` for some actions, make sure that you are using context from `TEST_CLUSTER_CONTEXT`.
 
-System tests uses admin user for some actions.
-You can specify the admin user using variable `TEST_CLUSTER_ADMIN` (by default it uses `developer` because `system:admin` cannot be used over remote connections).
-
 ## Helper script
 
 The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the Azure build.

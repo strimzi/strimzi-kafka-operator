@@ -33,7 +33,7 @@ public class TopicScalabilityST extends AbstractST {
         for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
             String currentTopic = topicName + i;
             LOGGER.debug("Creating {} topic", currentTopic);
-            KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(CLUSTER_NAME,
+            KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(clusterName,
                 currentTopic, 3, 1, 1).build());
         }
 
@@ -46,21 +46,16 @@ public class TopicScalabilityST extends AbstractST {
 
         LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
 
-        KafkaTopicUtils.waitForKafkaTopicsCount(NUMBER_OF_TOPICS, CLUSTER_NAME);
-    }
-
-    void deployTestSpecificResources() {
-        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaTopicUtils.waitForKafkaTopicsCount(NUMBER_OF_TOPICS, clusterName);
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
     }
 
 }

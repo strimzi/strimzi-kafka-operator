@@ -207,6 +207,12 @@ public class KafkaConnectApiTest {
             .compose(ignored -> client.resume("localhost", PORT, "test"))
             .onComplete(context.succeeding())
 
+            .compose(ignored -> client.restart("localhost", PORT, "test"))
+            .onComplete(context.succeeding())
+
+            .compose(ignored -> client.restartTask("localhost", PORT, "test", 0))
+            .onComplete(context.succeeding())
+
             .compose(ignored -> {
                 JsonObject o = new JsonObject()
                         .put("connector.class", "ThisConnectorDoesNotExist")

@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -28,33 +27,27 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 public class KafkaBridgeResource {
 
     public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = TestUtils.USER_PATH + "/../examples/bridge/kafka-bridge.yaml";
+    public static final String PATH_TO_KAFKA_BRIDGE_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-bridge-metrics.yaml";
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> kafkaBridgeClient() {
         return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static DoneableKafkaBridge kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas) {
+    public static KafkaBridgeBuilder kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas) {
         return kafkaBridge(name, name, bootstrap, kafkaBridgeReplicas);
     }
 
-    public static DoneableKafkaBridge kafkaBridge(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
+    public static KafkaBridgeBuilder kafkaBridge(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
         KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
-        return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas).build());
+        return defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
     }
 
-    public static DoneableKafkaBridge kafkaBridgeWithCors(String name, String bootstrap, int kafkaBridgeReplicas,
-                                                          String allowedCorsOrigin, String allowedCorsMethods) {
+    public static KafkaBridgeBuilder kafkaBridgeWithCors(String name, String bootstrap, int kafkaBridgeReplicas, String allowedCorsOrigin, String allowedCorsMethods) {
         return kafkaBridgeWithCors(name, name, bootstrap, kafkaBridgeReplicas, allowedCorsOrigin, allowedCorsMethods);
     }
 
-    public static DoneableKafkaBridge kafkaBridgeWithCors(String name, String clusterName, String bootstrap,
-                                                          int kafkaBridgeReplicas, String allowedCorsOrigin,
-                                                          String allowedCorsMethods) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
-
-        KafkaBridgeBuilder kafkaBridgeBuilder = defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
-
-        kafkaBridgeBuilder
+    public static KafkaBridgeBuilder kafkaBridgeWithCors(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas, String allowedCorsOrigin, String allowedCorsMethods) {
+        return kafkaBridge(name, clusterName, bootstrap, kafkaBridgeReplicas)
             .editSpec()
                 .editHttp()
                     .withNewCors()
@@ -63,22 +56,16 @@ public class KafkaBridgeResource {
                     .endCors()
                 .endHttp()
             .endSpec();
-
-        return deployKafkaBridge(kafkaBridgeBuilder.build());
     }
 
-    public static DoneableKafkaBridge kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap) {
+    public static KafkaBridgeBuilder kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap) {
         return kafkaBridgeWithMetrics(name, clusterName, bootstrap, 1);
     }
 
-    public static DoneableKafkaBridge kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_CONFIG);
+    public static KafkaBridgeBuilder kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(PATH_TO_KAFKA_BRIDGE_METRICS_CONFIG);
 
-        return deployKafkaBridge(defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas)
-            .editSpec()
-                .withEnableMetrics(true)
-            .endSpec()
-            .build());
+        return defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
     }
 
     private static KafkaBridgeBuilder defaultKafkaBridge(KafkaBridge kafkaBridge, String name, String kafkaClusterName, String bootstrap, int kafkaBridgeReplicas) {
@@ -97,27 +84,24 @@ public class KafkaBridgeResource {
             .endSpec();
     }
 
-    private static DoneableKafkaBridge deployKafkaBridge(KafkaBridge kafkaBridge) {
-        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-            KubernetesResource.allowNetworkPolicySettingsForResource(kafkaBridge, KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName()));
-        }
-        return new DoneableKafkaBridge(kafkaBridge, kB -> {
-            TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kB);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static KafkaBridge create(KafkaBridge kafkaBridge) {
+        KubernetesResource.deployNetworkPolicyForResource(kafkaBridge, KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName()));
+
+        TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    kafkaBridgeClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaBridge);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return waitFor(deleteLater(kB));
-        });
+            }
+        );
+        return waitFor(deleteLater(kafkaBridge));
     }
 
     public static KafkaBridge kafkaBridgeWithoutWait(KafkaBridge kafkaBridge) {

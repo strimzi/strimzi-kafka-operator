@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.watcher;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -38,11 +37,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
+    static final String MAIN_NAMESPACE_CLUSTER_NAME = "my-cluster";
     private static final String TOPIC_EXAMPLES_DIR = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = cluster.setNamespace(namespace);
-        LOGGER.info("Check if Kafka Cluster {} in namespace {}", KafkaResources.kafkaStatefulSetName(clusterName), namespace);
+        LOGGER.info("Check if Kafka Cluster {} in namespace {}", clusterName, namespace);
 
         TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
             Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
@@ -61,14 +61,14 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     void checkMirrorMakerForKafkaInDifNamespaceThanCO(String sourceClusterName) {
         String kafkaSourceName = sourceClusterName;
-        String kafkaTargetName = CLUSTER_NAME + "-target";
+        String kafkaTargetName = MAIN_NAMESPACE_CLUSTER_NAME + "-target";
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaResource.kafkaEphemeral(kafkaTargetName, 1, 1).done();
-        KafkaMirrorMakerResource.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaTargetName, 1, 1).build());
+        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(MAIN_NAMESPACE_CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).build());
 
-        LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(CLUSTER_NAME);
+        LOGGER.info("Waiting for creation {} in namespace {}", MAIN_NAMESPACE_CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(MAIN_NAMESPACE_CLUSTER_NAME);
         cluster.setNamespace(previousNamespace);
     }
 
@@ -95,17 +95,18 @@ public abstract class AbstractNamespaceST extends AbstractST {
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
-        KafkaConnectorResource.kafkaConnector(clusterName)
+        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(clusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .withConfig(connectorConfig)
-            .endSpec().done();
+            .endSpec()
+            .build());
         KafkaConnectorUtils.waitForConnectorReady(clusterName);
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, connectLabel).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 

@@ -55,6 +55,7 @@ class UserST extends AbstractST {
 
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
+    private final String userClusterName = "user-cluster-name";
 
     @Test
     void testUserWithNameMoreThan64Chars() {
@@ -63,7 +64,7 @@ class UserST extends AbstractST {
         String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
 
         // Create user with correct name
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userWithCorrectName).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, userWithCorrectName).build());
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
@@ -72,9 +73,9 @@ class UserST extends AbstractST {
         verifyCRStatusCondition(condition, "True", Ready);
 
         // Create sasl user with long name, shouldn't fail
-        KafkaUserResource.scramShaUser(CLUSTER_NAME, saslUserWithLongName).done();
+        KafkaUserResource.create(KafkaUserResource.scramShaUser(userClusterName, saslUserWithLongName).build());
 
-        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(CLUSTER_NAME, userWithLongName)
+        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(userClusterName, userWithLongName)
             .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
@@ -93,7 +94,7 @@ class UserST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testUpdateUser() {
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, USER_NAME).build());
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(USER_NAME));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -146,12 +147,12 @@ class UserST extends AbstractST {
 
     @Test
     void testTlsUserWithQuotas() {
-        testUserWithQuotas(KafkaUserResource.tlsUser(CLUSTER_NAME, "encrypted-arnost").done());
+        testUserWithQuotas(KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, "encrypted-arnost").build()));
     }
 
     @Test
     void testScramUserWithQuotas() {
-        testUserWithQuotas(KafkaUserResource.scramShaUser(CLUSTER_NAME, "scramed-arnost").done());
+        testUserWithQuotas(KafkaUserResource.create(KafkaUserResource.scramShaUser(userClusterName, "scramed-arnost").build()));
     }
 
     @Test
@@ -160,7 +161,7 @@ class UserST extends AbstractST {
         String labelValue = "test-label-value";
         String annotationKey = "test-annotation-key";
         String annotationValue = "test-annotation-value";
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME)
+        KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, USER_NAME)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewSecret()
@@ -170,7 +171,8 @@ class UserST extends AbstractST {
                         .endMetadata()
                     .endSecret()
                 .endTemplate()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         Secret userSecret = kubeClient().getSecret(USER_NAME);
         assertThat(userSecret.getMetadata().getLabels().get(labelKey), is(labelValue));
@@ -185,12 +187,12 @@ class UserST extends AbstractST {
         Integer reqPerc = 42;
 
         // Create user with correct name
-        KafkaUserResource.userWithQuota(user, prodRate, consRate, reqPerc).done();
+        KafkaUserResource.create(KafkaUserResource.userWithQuota(user, prodRate, consRate, reqPerc).build());
 
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
-        ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
+        ExecResult result = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
         assertThat(result.out().contains("Quota configs for user-principal '" + userName + "' are"), is(true));
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
@@ -199,7 +201,7 @@ class UserST extends AbstractST {
         String zkListCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:12181 <<< 'ls /config/users'";
 
         TestUtils.waitFor("user " + userName + " will be available in Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(userClusterName, 0), "/bin/bash", "-c", zkListCommand);
             try {
                 return zkResult.out().contains(URLEncoder.encode(userName, "UTF-8"));
             } catch (UnsupportedEncodingException e) {
@@ -211,11 +213,11 @@ class UserST extends AbstractST {
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(user.getMetadata().getName());
 
-        ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", command);
+        ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
         assertThat(resultAfterDelete.out(), not(containsString(userName)));
 
         TestUtils.waitFor("user " + userName + " will be deleted from Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", zkListCommand);
+            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(userClusterName, 0), "/bin/bash", "-c", zkListCommand);
             try {
                 return !zkResult.out().contains(URLEncoder.encode(userName, "UTF-8"));
             } catch (UnsupportedEncodingException e) {
@@ -226,12 +228,11 @@ class UserST extends AbstractST {
 
     @Test
     void testCreatingUsersWithSecretPrefix() {
-        String clusterName = "second-cluster";
         String secretPrefix = "top-secret-";
         String tlsUserName = "encrypted-leopold";
         String scramShaUserName = "scramed-leopold";
 
-        KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -259,18 +260,18 @@ class UserST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaTopicResource.topic(clusterName, TOPIC_NAME).done();
-        KafkaUser tlsUser = KafkaUserResource.tlsUser(clusterName, tlsUserName).done();
-        KafkaUser scramShaUser = KafkaUserResource.scramShaUser(clusterName, scramShaUserName).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaUser tlsUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, tlsUserName).build());
+        KafkaUser scramShaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, scramShaUserName).build());
 
         LOGGER.info("Deploying KafkaClients pod for TLS listener");
-        KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).build());
         String tlsKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         LOGGER.info("Deploying KafkaClients pod for PLAIN listener");
-        KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).build());
         String plainKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-plain-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
@@ -336,9 +337,9 @@ class UserST extends AbstractST {
             String userName = "alisa" + i;
 
             if (typeOfUser.equals("TLS")) {
-                KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+                KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, userName).build());
             } else {
-                KafkaUserResource.scramShaUser(CLUSTER_NAME, userName).done();
+                KafkaUserResource.create(KafkaUserResource.scramShaUser(userClusterName, userName).build());
             }
 
             LOGGER.info("Checking status of KafkaUser {}", userName);
@@ -351,15 +352,11 @@ class UserST extends AbstractST {
         }
     }
 
-    private void deployTestSpecificResources() {
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
-    }
-
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        deployTestSpecificResources();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(userClusterName, 1, 1).build());
     }
 }

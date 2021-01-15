@@ -94,6 +94,7 @@ public class MetricsST extends AbstractST {
     public static final String SECOND_CLUSTER = "second-kafka-cluster";
     public static final String MIRROR_MAKER_CLUSTER = "mm2-cluster";
     private static final String BRIDGE_CLUSTER = "my-bridge";
+    private final String metricsClusterName = "metrics-cluster-name";
     private final Object lock = new Object();
     private HashMap<String, String> kafkaMetricsData;
     private HashMap<String, String> zookeeperMetricsData;
@@ -187,16 +188,16 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange() {
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
         final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(metricsClusterName)
             .withMessageCount(5000)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
@@ -206,7 +207,7 @@ public class MetricsST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
+        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(metricsClusterName);
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
         kafkaExporterMetricsData.forEach((key, value) -> {
             assertThat("Value from collected metric should be non-empty", !value.isEmpty());
@@ -218,19 +219,19 @@ public class MetricsST extends AbstractST {
 
     @Test
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
-        LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(CLUSTER_NAME));
+        LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(metricsClusterName));
         String runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\".*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\".*\""));
 
-        Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(KafkaExporterResources.deploymentName(CLUSTER_NAME));
+        Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(KafkaExporterResources.deploymentName(metricsClusterName));
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(metricsClusterName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(TOPIC_NAME);
         });
 
-        DeploymentUtils.waitTillDepHasRolled(KafkaExporterResources.deploymentName(CLUSTER_NAME), 1, kafkaExporterSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(KafkaExporterResources.deploymentName(metricsClusterName), 1, kafkaExporterSnapshot);
 
         runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
@@ -244,7 +245,7 @@ public class MetricsST extends AbstractST {
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnectS2I", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2", "KafkaRebalance");
 
         // Create some resource which will have state 0. S2I will not be ready, because there is KafkaConnect cluster with same name.
-        KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.defaultKafkaConnectS2I(CLUSTER_NAME, CLUSTER_NAME, 1).build());
+        KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.kafkaConnectS2I(metricsClusterName, metricsClusterName, 1).build());
 
         for (String resource : resourcesList) {
             assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource, clusterOperatorMetricsData);
@@ -258,35 +259,35 @@ public class MetricsST extends AbstractST {
         }
 
         assertCoMetricResources(Kafka.RESOURCE_KIND, 2);
-        assertCoMetricResourceState(Kafka.RESOURCE_KIND, CLUSTER_NAME, 1);
+        assertCoMetricResourceState(Kafka.RESOURCE_KIND, metricsClusterName, 1);
         assertCoMetricResourceState(Kafka.RESOURCE_KIND, SECOND_CLUSTER, 1);
 
         assertCoMetricResources(KafkaBridge.RESOURCE_KIND, 1);
         assertCoMetricResourceState(KafkaBridge.RESOURCE_KIND, BRIDGE_CLUSTER, 1);
 
         assertCoMetricResources(KafkaConnect.RESOURCE_KIND, 1);
-        assertCoMetricResourceState(KafkaConnect.RESOURCE_KIND, CLUSTER_NAME, 1);
+        assertCoMetricResourceState(KafkaConnect.RESOURCE_KIND, metricsClusterName, 1);
 
         assertCoMetricResources(KafkaConnectS2I.RESOURCE_KIND, 0);
-        assertCoMetricResourceState(KafkaConnectS2I.RESOURCE_KIND, CLUSTER_NAME, 0);
+        assertCoMetricResourceState(KafkaConnectS2I.RESOURCE_KIND, metricsClusterName, 0);
 
         assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, 0);
-        AssertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, CLUSTER_NAME);
+        AssertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, metricsClusterName);
 
         assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, 1);
         assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, 1);
 
         assertCoMetricResources(KafkaConnector.RESOURCE_KIND, 0);
-        AssertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, CLUSTER_NAME);
+        AssertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, metricsClusterName);
 
         assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, 0);
-        AssertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, CLUSTER_NAME);
+        AssertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, metricsClusterName);
     }
 
     @Test
     @Tag(ACCEPTANCE)
     void testUserOperatorMetrics() {
-        userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(CLUSTER_NAME);
+        userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(metricsClusterName);
         assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaUser", userOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaUser", userOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaUser", userOperatorMetricsData);
@@ -304,7 +305,7 @@ public class MetricsST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testTopicOperatorMetrics() {
-        topicOperatorMetricsData = MetricsUtils.collectTopicOperatorPodMetrics(CLUSTER_NAME);
+        topicOperatorMetricsData = MetricsUtils.collectTopicOperatorPodMetrics(metricsClusterName);
         assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaTopic", topicOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaTopic", topicOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaTopic", topicOperatorMetricsData);
@@ -356,8 +357,8 @@ public class MetricsST extends AbstractST {
             .build();
 
 
-        kafkaBridgeClientJob.producerStrimziBridge().done();
-        kafkaBridgeClientJob.consumerStrimziBridge().done();
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.producerStrimziBridge().build());
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");
@@ -419,7 +420,10 @@ public class MetricsST extends AbstractST {
     void testKafkaMetricsSettingsDeprecatedMetrics() {
         AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
 
-        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        String metricsYaml =
+            TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics").getData().get("kafka-metrics-config.yml").replaceAll("#.*\n", "");
+        String metricsConfigJson = TestUtils.fromYamlToJson(metricsYaml);
+
         // update metrics
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             previousMetrics.set(k.getSpec().getKafka().getMetricsConfig());
@@ -428,23 +432,37 @@ public class MetricsST extends AbstractST {
         });
 
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
+
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(SECOND_CLUSTER);
+
+        Pattern metricsPattern = Pattern.compile("kafka_server_replicamanager_leadercount ([\\d.][^\\n]+)");
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(metricsPattern, kafkaMetricsData);
+        assertThat("Broker count doesn't match expected value", values.size(), is(1));
+
+        metricsPattern = Pattern.compile("kafka_controller_kafkacontroller_activecontrollercount ([\\d.][^\\n]+)");
+        values = MetricsUtils.collectSpecificMetric(metricsPattern, kafkaMetricsData);
+        assertThat("Kafka active controllers count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 1));
+
         ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             k.getSpec().getKafka().setMetricsConfig(null);
             k.getSpec().getKafka().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
         });
+
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
 
         // revert metrics changes
         KafkaResource.replaceKafkaResource(SECOND_CLUSTER, k -> {
             k.getSpec().getKafka().setMetricsConfig(previousMetrics.get());
             k.getSpec().getKafka().setMetrics(null);
         });
+
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(metricsClusterName);
     }
 
     @Deprecated
@@ -452,32 +470,46 @@ public class MetricsST extends AbstractST {
     void testKafkaConnectMetricsSettingsDeprecatedMetrics() {
         AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
 
-        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        String metricsYaml =
+            TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics").getData().get(Constants.METRICS_CONFIG_YAML_NAME).replaceAll("#.*\n", "");
+        String metricsConfigJson = TestUtils.fromYamlToJson(metricsYaml);
+
         // update metrics
-        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, k -> {
+        KafkaConnectResource.replaceKafkaConnectResource(metricsClusterName, k -> {
             previousMetrics.set(k.getSpec().getMetricsConfig());
             k.getSpec().setMetricsConfig(null);
             k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson, Map.class));
         });
 
-        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
-        ConfigMap actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        PodUtils.verifyThatRunningPodsAreStable(metricsClusterName);
+
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(metricsClusterName);
+
+        testKafkaConnectIoNetwork();
+        testKafkaConnectRequests();
+        testKafkaConnectResponse();
+
+        ConfigMap actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(metricsClusterName));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
-        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, k -> {
+        KafkaConnectResource.replaceKafkaConnectResource(metricsClusterName, k -> {
             k.getSpec().setMetricsConfig(null);
             k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
         });
-        PodUtils.verifyThatRunningPodsAreStable(CLUSTER_NAME);
-        actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+
+        PodUtils.verifyThatRunningPodsAreStable(metricsClusterName);
+
+        actualCm = kubeClient().getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(metricsClusterName));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
 
         // revert metrics changes
-        KafkaConnectResource.replaceKafkaConnectResource(CLUSTER_NAME, k -> {
+        KafkaConnectResource.replaceKafkaConnectResource(metricsClusterName, k -> {
             k.getSpec().setMetricsConfig(previousMetrics.get());
             k.getSpec().setMetrics(null);
         });
+
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(metricsClusterName);
     }
 
     @Deprecated
@@ -485,7 +517,10 @@ public class MetricsST extends AbstractST {
     void testKafkaMM2MetricsSettingsDeprecatedMetrics() {
         AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
 
-        String metricsConfigJson = "{\"lowercaseOutputName\":true}";
+        String metricsYaml =
+            TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics").getData().get(Constants.METRICS_CONFIG_YAML_NAME).replaceAll("#.*\n", "");
+        String metricsConfigJson = TestUtils.fromYamlToJson(metricsYaml);
+
         // update metrics
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
             previousMetrics.set(k.getSpec().getMetricsConfig());
@@ -494,23 +529,30 @@ public class MetricsST extends AbstractST {
         });
 
         PodUtils.verifyThatRunningPodsAreStable(MIRROR_MAKER_CLUSTER);
+
+        testMirrorMaker2Metrics();
+
         ConfigMap actualCm = kubeClient().getConfigMap(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MIRROR_MAKER_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
             k.getSpec().setMetricsConfig(null);
             k.getSpec().setMetrics((Map<String, Object>) TestUtils.fromJson(metricsConfigJson.replace("true", "false"), Map.class));
         });
+
         PodUtils.verifyThatRunningPodsAreStable(MIRROR_MAKER_CLUSTER);
+
         actualCm = kubeClient().getConfigMap(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MIRROR_MAKER_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
 
         // revert metrics changes
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(MIRROR_MAKER_CLUSTER, k -> {
             k.getSpec().setMetricsConfig(previousMetrics.get());
             k.getSpec().setMetrics(null);
         });
+
+        kafkaMirrorMaker2MetricsData = MetricsUtils.collectKafkaMirrorMaker2PodsMetrics(MIRROR_MAKER_CLUSTER);
     }
 
     /**
@@ -531,7 +573,7 @@ public class MetricsST extends AbstractST {
         );
 
         ConfigMap externalMetricsCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap("metrics-config.yml", metricsConfigYaml))
+                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(NAMESPACE)
@@ -543,7 +585,7 @@ public class MetricsST extends AbstractST {
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
                 .withName("external-metrics-cm")
-                .withKey("metrics-config.yml")
+                .withKey(Constants.METRICS_CONFIG_YAML_NAME)
                 .build();
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -558,11 +600,11 @@ public class MetricsST extends AbstractST {
 
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         ConfigMap actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         ConfigMap externalMetricsUpdatedCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap("metrics-config.yml", metricsConfigYaml.replace("true", "false")))
+                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml.replace("true", "false")))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(NAMESPACE)
@@ -572,7 +614,7 @@ public class MetricsST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(SECOND_CLUSTER);
         actualCm = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get("metrics-config.yml"), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {
@@ -625,7 +667,7 @@ public class MetricsST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.kafkaWithMetricsAndCruiseControlWithMetrics(CLUSTER_NAME, 3, 3)
+        KafkaResource.create(KafkaResource.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
             .editOrNewSpec()
                 .editEntityOperator()
                     .editUserOperator()
@@ -633,25 +675,25 @@ public class MetricsST extends AbstractST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .done();
+            .build());
 
-        KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).done();
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
-        KafkaConnectResource.kafkaConnectWithMetrics(CLUSTER_NAME, 1).done();
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, CLUSTER_NAME, SECOND_CLUSTER, 1).done();
-        KafkaBridgeResource.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME, 7, 2).done();
-        KafkaTopicResource.topic(CLUSTER_NAME, bridgeTopic).done();
+        KafkaResource.create(KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).build());
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaConnectResource.create(KafkaConnectResource.kafkaConnectWithMetrics(metricsClusterName, 1).build());
+        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build());
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(metricsClusterName, TOPIC_NAME, 7, 2).build());
+        KafkaTopicResource.create(KafkaTopicResource.topic(metricsClusterName, bridgeTopic).build());
 
-        KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, KafkaUserUtils.generateRandomNameOfKafkaUser()).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);
-        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(CLUSTER_NAME);
-        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(CLUSTER_NAME);
-        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(CLUSTER_NAME);
-        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(CLUSTER_NAME);
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(metricsClusterName);
+        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(metricsClusterName);
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(metricsClusterName);
+        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(metricsClusterName);
         kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
     }
     

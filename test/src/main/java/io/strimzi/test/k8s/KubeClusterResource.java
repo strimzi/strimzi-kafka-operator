@@ -196,7 +196,7 @@ public class KubeClusterResource {
         for (String resource : resources) {
             LOGGER.info("Creating resources {} in Namespace {}", resource, getNamespace());
             deploymentResources.add(resource);
-            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).create(resource);
+            cmdKubeClient().namespace(getNamespace()).create(resource);
         }
     }
 

@@ -64,31 +64,31 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     @Test
     void testSimpleDynamicConfiguration() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        String kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).getData().get("server.config");
+        String kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
         assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
 
-        String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         kafkaConfig.put("unclean.leader.election.enable", true);
 
         updateAndVerifyDynConf(kafkaConfig);
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         LOGGER.info("Verify values after update");
-        kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(CLUSTER_NAME)).getData().get("server.config");
+        kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
         assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
@@ -99,7 +99,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Test
     void testUpdateToExternalListenerCausesRollingRestart() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -113,23 +113,23 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         kafkaConfig.put("unclean.leader.election.enable", true);
 
         updateAndVerifyDynConf(kafkaConfig);
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         // Edit listeners - this should cause RU (because of new crts)
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
         LOGGER.info("Updating listeners of Kafka cluster");
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(clusterName, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -152,35 +152,35 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             )));
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);
+        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(clusterName), kafkaPods), is(true));
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         kafkaConfig.put("compression.type", "snappy");
 
         updateAndVerifyDynConf(kafkaConfig);
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("compression.type=snappy"));
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         kafkaConfig.put("unclean.leader.election.enable", true);
 
         updateAndVerifyDynConf(kafkaConfig);
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         // Remove external listeners (node port) - this should cause RU (we need to update advertised.listeners)
         // Other external listeners cases are rolling because of crts
-        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
         LOGGER.info("Updating listeners of Kafka cluster");
 
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(clusterName, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -197,17 +197,17 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             )));
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(true));
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);
+        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(clusterName), kafkaPods), is(true));
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         kafkaConfig.put("unclean.leader.election.enable", false);
 
         updateAndVerifyDynConf(kafkaConfig);
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + false));
     }
 
@@ -216,7 +216,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
-        KafkaResource.kafkaPersistent(CLUSTER_NAME, KAFKA_REPLICAS, 1)
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -230,20 +230,20 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec()
-            .done();
+            .build());
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
 
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, USER_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUserResource.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClientTls = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -253,7 +253,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         BasicExternalKafkaClient basicExternalKafkaClientPlain = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -271,7 +271,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         });
 
         LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(clusterName, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
@@ -291,7 +291,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         });
 
         // TODO: remove it ?
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);
 
         basicExternalKafkaClientTls.verifyProducedAndConsumedMessages(
                 basicExternalKafkaClientTls.sendMessagesTls(),
@@ -305,7 +305,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         });
 
         LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(clusterName, k -> {
             k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -316,7 +316,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             )));
         });
 
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), KAFKA_REPLICAS, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);
 
         assertThrows(Exception.class, () -> {
             basicExternalKafkaClientTls.sendMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT);
@@ -335,16 +335,16 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
      * @param kafkaConfig specific kafka configuration, which will be changed
      */
     private void updateAndVerifyDynConf(Map<String, Object> kafkaConfig) {
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
 
         LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResource(clusterName, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setConfig(kafkaConfig);
         });
 
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(CLUSTER_NAME), kafkaPods), is(false));
+        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
+        assertThat(StatefulSetUtils.ssHasRolled(kafkaStatefulSetName(clusterName), kafkaPods), is(false));
     }
 
     @BeforeEach
@@ -356,7 +356,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
     }

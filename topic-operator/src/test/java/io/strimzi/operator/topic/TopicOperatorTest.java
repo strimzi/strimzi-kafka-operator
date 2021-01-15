@@ -696,6 +696,56 @@ public class TopicOperatorTest {
     }
 
     /**
+     * Test reconciliation when a resource has been added both in kafka and in k8s while the operator was down, and both
+     * topics are identical.
+     */
+    @Test
+    public void testReconcile_withResource_withKafka_noPrivate_overriddenName(VertxTestContext context) throws InterruptedException {
+        TopicName topicName = new TopicName("__consumer_offsets");
+        ResourceName kubeName = new ResourceName("consumer-offsets");
+        Topic kubeTopic = new Topic.Builder(topicName, kubeName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic privateTopic = null;
+
+        CountDownLatch async0 = new CountDownLatch(2);
+        mockKafka.setCreateTopicResponse(topicName_ -> Future.succeededFuture());
+        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockK8s.setCreateResponse(kubeName, null);
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
+        LogContext logContext = LogContext.periodic(topicName.toString());
+        mockK8s.createResource(topicResource).onComplete(ar -> async0.countDown());
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        async0.await();
+
+        Checkpoint async = context.checkpoint();
+        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockTopicStore.assertExists(context, topicName);
+            mockK8s.assertExists(context, kubeName);
+            mockK8s.assertNotExists(context, topicName.asKubeName());
+            mockK8s.assertNoEvents(context);
+            mockKafka.assertExists(context, topicName);
+            mockTopicStore.read(topicName).onComplete(readResult -> {
+                context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
+                context.verify(() -> assertThat(readResult.result().getResourceName(), is(kubeName)));
+                async.flag();
+            });
+            context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
+            context.verify(() -> {
+                MeterRegistry registry = metrics.meterRegistry();
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+            });
+
+        });
+    }
+
+    /**
      * Test reconciliation when a resource has been added both in kafka and in k8s while the operator was down, and
      * the topics are irreconcilably different: Kafka wins
      */

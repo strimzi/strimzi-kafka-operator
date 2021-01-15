@@ -54,19 +54,20 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(INTERNAL_CLIENTS_USED)
 class HttpBridgeST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
+    private final String httpBridgeClusterName = "http-bridge-cluster-name";
 
     @Test
     void testSendSimpleMessage() {
         // Create topic
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(httpBridgeClusterName, TOPIC_NAME).build());
 
-        kafkaBridgeClientJob.producerStrimziBridge().done();
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.producerStrimziBridge().build());
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(httpBridgeClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
@@ -76,21 +77,21 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
 
         // Checking labels for Kafka Bridge
-        verifyLabelsOnPods(CLUSTER_NAME, "my-bridge", null, "KafkaBridge");
-        verifyLabelsForService(CLUSTER_NAME, "my-bridge", "KafkaBridge");
+        verifyLabelsOnPods(httpBridgeClusterName, "my-bridge", null, "KafkaBridge");
+        verifyLabelsForService(httpBridgeClusterName, "my-bridge", "KafkaBridge");
     }
 
     @Test
     void testReceiveSimpleMessage() {
-        KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaTopicResource.create(KafkaTopicResource.topic(httpBridgeClusterName, TOPIC_NAME).build());
 
-        kafkaBridgeClientJob.consumerStrimziBridge().done();
+        kafkaBridgeClientJob.create(kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
+            .withClusterName(httpBridgeClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
             .withUsingPodName(kafkaClientsPodName)
@@ -131,7 +132,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewBridgeContainer()
@@ -156,7 +157,8 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                     .withSuccessThreshold(successThreshold)
                     .withFailureThreshold(failureThreshold)
                 .endLivenessProbe()
-            .endSpec().done();
+            .endSpec()
+            .build());
 
         Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(bridgeName));
 
@@ -200,7 +202,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @Test
     void testDiscoveryAnnotation() {
-        Service bridgeService = kubeClient().getService(KafkaBridgeResources.serviceName(CLUSTER_NAME));
+        Service bridgeService = kubeClient().getService(KafkaBridgeResources.serviceName(httpBridgeClusterName));
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none", false)));
@@ -210,7 +212,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void testScaleBridgeToZero() {
         String bridgeName = "scaling-bridge";
 
-        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1).build());
 
         List<String> bridgePods = kubeClient().listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
         String deploymentName = KafkaBridgeResources.deploymentName(bridgeName);
@@ -220,7 +222,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         LOGGER.info("Scaling KafkaBridge to zero replicas");
         KafkaBridgeResource.replaceBridgeResource(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0));
 
-        KafkaBridgeUtils.waitForKafkaBridgeReady(CLUSTER_NAME);
+        KafkaBridgeUtils.waitForKafkaBridgeReady(httpBridgeClusterName);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), 0, true);
 
         bridgePods = kubeClient().listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
@@ -234,7 +236,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void testScaleBridgeSubresource() {
         String bridgeName = "scaling-bridge";
 
-        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1).done();
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1).build());
 
         int scaleTo = 4;
         long bridgeObsGen = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration();
@@ -269,7 +271,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .withHostnames(aliasHostname)
             .build();
 
-        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewPod()
@@ -277,7 +279,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                     .endPod()
                 .endTemplate()
             .endSpec()
-            .done();
+            .build());
 
         String bridgePodName = kubeClient().listPods(Labels.STRIMZI_CLUSTER_LABEL, bridgeName).get(0).getMetadata().getName();
 
@@ -290,7 +292,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void testConfigureDeploymentStrategy() {
         String bridgeName = "example-bridge";
 
-        KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
@@ -298,7 +300,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                     .endDeployment()
                 .endTemplate()
             .endSpec()
-            .done();
+            .build());
 
         String bridgeDepName = KafkaBridgeResources.deploymentName(bridgeName);
 
@@ -335,19 +337,21 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         deployClusterOperator(NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         // Deploy kafka
-        KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1).done();
+        KafkaResource.create(KafkaResource.kafkaEphemeral(httpBridgeClusterName, 1, 1).build());
 
-        KafkaClientsResource.deployKafkaClients(false, KAFKA_CLIENTS_NAME).done();
+        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(KAFKA_CLIENTS_NAME).get(0).getMetadata().getName();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         // Deploy http bridge
-        KafkaBridgeResource.kafkaBridge(CLUSTER_NAME, KafkaResources.plainBootstrapAddress(CLUSTER_NAME), 1)
+        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(httpBridgeClusterName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editSpec()
                 .withNewConsumer()
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .endConsumer()
             .endSpec()
-            .done();
+            .build());
+
+        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName)).build();
     }
 }
