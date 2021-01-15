@@ -2007,8 +2007,8 @@ spec:
                               type: boolean
                           description: Reference to the key in the ConfigMap containing
                             the logging configuration.
-                      description: 'ConfigMap where the Log4j(2) configuration is
-                        stored. '
+                      description: ConfigMap where the log4j/log4j2 configuration
+                        is stored.
                   required:
                   - type
                   description: Logging configuration for Kafka.
@@ -3469,8 +3469,8 @@ spec:
                               type: boolean
                           description: Reference to the key in the ConfigMap containing
                             the logging configuration.
-                      description: 'ConfigMap where the Log4j(2) configuration is
-                        stored. '
+                      description: ConfigMap where the log4j/log4j2 configuration
+                        is stored.
                   required:
                   - type
                   description: Logging configuration for ZooKeeper.
@@ -4572,8 +4572,8 @@ spec:
                               type: boolean
                           description: Reference to the key in the ConfigMap containing
                             the logging configuration.
-                      description: 'ConfigMap where the Log4j(2) configuration is
-                        stored. '
+                      description: ConfigMap where the log4j/log4j2 configuration
+                        is stored.
                   required:
                   - type
                   description: Logging configuration.
@@ -4798,8 +4798,8 @@ spec:
                                   type: boolean
                               description: Reference to the key in the ConfigMap containing
                                 the logging configuration.
-                          description: 'ConfigMap where the Log4j(2) configuration
-                            is stored. '
+                          description: ConfigMap where the log4j/log4j2 configuration
+                            is stored.
                       required:
                       - type
                       description: Logging configuration.
@@ -4959,8 +4959,8 @@ spec:
                                   type: boolean
                               description: Reference to the key in the ConfigMap containing
                                 the logging configuration.
-                          description: 'ConfigMap where the Log4j(2) configuration
-                            is stored. '
+                          description: ConfigMap where the log4j/log4j2 configuration
+                            is stored.
                       required:
                       - type
                       description: Logging configuration.
@@ -6243,8 +6243,8 @@ spec:
                               type: boolean
                           description: Reference to the key in the ConfigMap containing
                             the logging configuration.
-                      description: 'ConfigMap where the Log4j(2) configuration is
-                        stored. '
+                      description: ConfigMap where the log4j/log4j2 configuration
+                        is stored.
                   required:
                   - type
                   description: Logging configuration (log4j1) for Cruise Control.

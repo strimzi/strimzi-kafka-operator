@@ -42,7 +42,7 @@ public class ExternalLogging extends Logging {
         return name;
     }
 
-    @Description("ConfigMap where the Log4j(2) configuration is stored. ")
+    @Description("ConfigMap where the log4j/log4j2 configuration is stored.")
     public ExternalConfigurationLogging getValueFrom() {
         return valueFrom;
     }

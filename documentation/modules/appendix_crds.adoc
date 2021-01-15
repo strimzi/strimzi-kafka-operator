@@ -1124,7 +1124,7 @@ It must have the value `external` for the type `ExternalLogging`.
 |string
 |name       1.2+<.<|*The property `name` has been deprecated. This feature should now be configured at path `logging.valueFrom.configMapKeyRef.name`.* The name of the `ConfigMap` from which to get the logging configuration.
 |string
-|valueFrom  1.2+<.<|ConfigMap where the Log4j(2) configuration is stored. 
+|valueFrom  1.2+<.<|ConfigMap where the log4j/log4j2 configuration is stored.
 |xref:type-ExternalConfigurationLogging-{context}[`ExternalConfigurationLogging`]
 |====
 
