@@ -30,6 +30,10 @@
             <id>staging</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
+        <repository>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1090</url>
+        </repository>
     </repositories>
 
     <dependencies>
