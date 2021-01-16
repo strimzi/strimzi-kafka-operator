@@ -266,16 +266,16 @@
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.21.0/strimzi-0.21.0.zip",
     "generateTopics": true,
     "imagesBeforeKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.21.0-kafka-2.6.0",
-      "kafka": "strimzi/kafka:0.21.0-kafka-2.6.0",
-      "topicOperator": "strimzi/operator:0.21.0",
-      "userOperator": "strimzi/operator:0.21.0"
+      "zookeeper": "quay.io/strimzi/kafka:0.21.0-kafka-2.6.0",
+      "kafka": "quay.io/strimzi/kafka:0.21.0-kafka-2.6.0",
+      "topicOperator": "quay.io/strimzi/operator:0.21.0",
+      "userOperator": "quay.io/strimzi/operator:0.21.0"
     },
     "imagesAfterKafkaUpdate": {
-      "zookeeper": "strimzi/kafka:0.21.0-kafka-2.7.0",
-      "kafka": "strimzi/kafka:0.21.0-kafka-2.7.0",
-      "topicOperator": "strimzi/operator:0.21.0",
-      "userOperator": "strimzi/operator:0.21.0"
+      "zookeeper": "quay.io/strimzi/kafka:0.21.0-kafka-2.7.0",
+      "kafka": "quay.io/strimzi/kafka:0.21.0-kafka-2.7.0",
+      "topicOperator": "quay.io/strimzi/operator:0.21.0",
+      "userOperator": "quay.io/strimzi/operator:0.21.0"
     },
     "proceduresBefore": {
       "kafkaVersion": "",
@@ -288,8 +288,8 @@
       "interBrokerProtocolVersion": "2.7"
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.20.0-kafka-2.6.0",
-      "afterKafkaUpdate": "strimzi/test-client:0.21.0-kafka-2.7.0",
+      "beforeKafkaUpdate": "quay.io/strimzi/test-client:0.20.0-kafka-2.6.0",
+      "afterKafkaUpdate": "quay.io/strimzi/test-client:0.21.0-kafka-2.7.0",
       "continuousClientsMessages": 500
     },
     "environmentInfo": {
@@ -331,7 +331,7 @@
       "interBrokerProtocolVersion": ""
     },
     "client": {
-      "beforeKafkaUpdate": "strimzi/test-client:0.21.0-kafka-2.7.0",
+      "beforeKafkaUpdate": "quay.io/strimzi/test-client:0.21.0-kafka-2.7.0",
       "afterKafkaUpdate": "strimzi/test-client:latest-kafka-2.7.0",
       "continuousClientsMessages": 500
     },
