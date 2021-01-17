@@ -421,4 +421,9 @@ public class ModelUtilsTest {
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", nsLabels);
         assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nsLabels.toMap()));
     }
+
+    @Test
+    public void testMetricsParsing()    {
+
+    }
 }

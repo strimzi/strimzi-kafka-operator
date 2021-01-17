@@ -3521,7 +3521,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     metricsCm = Future.succeededFuture(null);
                 }
 
-                CompositeFuture.join(metricsCm, loggingCmFut).compose(metricsAndLoggingCm -> {
+                return CompositeFuture.join(metricsCm, loggingCmFut).compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLoggingCm.resultAt(1), metricsAndLoggingCm.resultAt(0));
 
                     Map<String, String> annotations = singletonMap(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));

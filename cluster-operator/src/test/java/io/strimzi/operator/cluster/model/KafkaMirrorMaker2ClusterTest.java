@@ -31,11 +31,13 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
@@ -90,6 +92,7 @@ public class KafkaMirrorMaker2ClusterTest {
     private final String bootstrapServers = "foo-kafka:9092";
     private final String targetClusterAlias = "target";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
+
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("config.storage.topic", "mirrormaker2-cluster-configs")
             .addPair("group.id", "mirrormaker2-cluster")
@@ -100,9 +103,11 @@ public class KafkaMirrorMaker2ClusterTest {
             .addPair("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
             .addPair("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
             .addPair("header.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
+
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
             .addMapPairs(defaultConfiguration.asMap())
             .addPair("foo", "bar");
+
     private final KafkaMirrorMaker2ClusterSpec targetCluster = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(targetClusterAlias)
             .withBootstrapServers(bootstrapServers)
@@ -111,7 +116,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
-                .withMetricsConfig(jmxMetricsConfig)
+                //.withMetricsConfig(jmxMetricsConfig)
                 .withImage(image)
                 .withReplicas(replicas)
                 .withReadinessProbe(new Probe(healthDelay, healthTimeout))
@@ -120,7 +125,14 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withClusters(targetCluster)
             .endSpec()
             .build();
-    private final KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
+
+    private final KafkaMirrorMaker2 resourceWithMetrics = new KafkaMirrorMaker2Builder(resource)
+            .editSpec()
+                .withMetricsConfig(jmxMetricsConfig)
+            .endSpec()
+            .build();
+
+    private final KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resourceWithMetrics, VERSIONS);
     {
         // we were setting metricsEnabled in fromCrd, which was just checking it for non-null. With metrics in CM, we have to check
         // its content, what is done in generateMetricsAndLogConfigMap
@@ -1483,7 +1495,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testNetworkPolicy() {
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resourceWithMetrics)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(null, metricsCM);
@@ -1507,7 +1519,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperatorSameNamespace() {
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resourceWithMetrics)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(null, metricsCM);
@@ -1530,7 +1542,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperatorWithNamespaceLabels() {
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resourceWithMetrics)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(null, metricsCM);
@@ -1549,5 +1561,52 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+    }
+    
+    @Test
+    public void testMetricsParsingInline() {
+        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
+
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(this.resource)
+                .editSpec()
+                    .withMetrics(dummyMetrics)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm = KafkaMirrorMaker2Cluster.fromCrd(kafkaMirrorMaker2, VERSIONS);
+
+        assertThat(kmm.isMetricsEnabled(), is(true));
+        assertThat(kmm.getMetricsConfig(), is(dummyMetrics.entrySet()));
+        assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingFromConfigMap() {
+        MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                .endValueFrom()
+                .build();
+
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(this.resource)
+                .editSpec()
+                    .withMetricsConfig(metrics)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm = KafkaMirrorMaker2Cluster.fromCrd(kafkaMirrorMaker2, VERSIONS);
+
+        assertThat(kmm.isMetricsEnabled(), is(true));
+        assertThat(kmm.getMetricsConfigInCm(), is(metrics));
+        assertThat(kmm.getMetricsConfig(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingNoMetrics() {
+        KafkaMirrorMaker2Cluster kmm = KafkaMirrorMaker2Cluster.fromCrd(this.resource, VERSIONS);
+
+        assertThat(kmm.isMetricsEnabled(), is(false));
+        assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(kmm.getMetricsConfig(), is(nullValue()));
     }
 }

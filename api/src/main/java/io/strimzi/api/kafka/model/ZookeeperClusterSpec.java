@@ -42,7 +42,7 @@ import java.util.Map;
         "jvmOptions", "resources",
          "metrics", "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
-public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializable {
+public class ZookeeperClusterSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -186,20 +186,24 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    @Override
     public Map<String, Object> getMetrics() {
         return metrics;
     }
 
+    @Override
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
     }
 
     @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
     public MetricsConfig getMetricsConfig() {
         return metricsConfig;
     }
 
+    @Override
     public void setMetricsConfig(MetricsConfig metricsConfig) {
         this.metricsConfig = metricsConfig;
     }

@@ -36,7 +36,7 @@ import java.util.Map;
         "affinity", "tolerations", "jvmOptions",
         "logging", "metrics", "metricsConfig", "tracing", "template"})
 @EqualsAndHashCode
-public class KafkaMirrorMakerSpec extends Spec {
+public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics {
     private static final long serialVersionUID = 1L;
 
     private static final int DEFAULT_REPLICAS = 3;
@@ -129,20 +129,24 @@ public class KafkaMirrorMakerSpec extends Spec {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See {JMXExporter} for details of the structure of this configuration.")
+    @Override
     public Map<String, Object> getMetrics() {
         return metrics;
     }
 
+    @Override
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
     }
 
     @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
     public MetricsConfig getMetricsConfig() {
         return metricsConfig;
     }
 
+    @Override
     public void setMetricsConfig(MetricsConfig metricsConfig) {
         this.metricsConfig = metricsConfig;
     }

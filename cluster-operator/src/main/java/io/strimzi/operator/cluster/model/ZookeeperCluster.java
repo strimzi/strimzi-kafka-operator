@@ -237,12 +237,8 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setJavaSystemProperties(zookeeperClusterSpec.getJvmOptions().getJavaSystemProperties());
         }
 
-        Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
-        if (metrics != null) {
-            zk.setMetricsEnabled(true);
-            zk.setMetricsConfig(metrics.entrySet());
-        }
-        zk.setMetricsConfigInCm(zookeeperClusterSpec.getMetricsConfig());
+        // Parse different types of metrics configurations
+        ModelUtils.parseMetrics(zk, zookeeperClusterSpec);
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();

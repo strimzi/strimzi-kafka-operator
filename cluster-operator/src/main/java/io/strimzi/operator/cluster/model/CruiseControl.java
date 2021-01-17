@@ -173,7 +173,7 @@ public class CruiseControl extends AbstractModel {
     @SuppressWarnings("deprecation")
     public static CruiseControl fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         CruiseControl cruiseControl = null;
-        CruiseControlSpec spec  = kafkaAssembly.getSpec().getCruiseControl();
+        CruiseControlSpec spec = kafkaAssembly.getSpec().getCruiseControl();
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
 
         if (spec != null) {
@@ -214,12 +214,8 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.brokerInboundNetworkKiBPerSecondCapacity = capacity.getInboundNetworkKiBPerSecond();
             cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKiBPerSecond();
 
-            Map<String, Object> metrics = spec.getMetrics();
-            if (metrics != null) {
-                cruiseControl.setMetricsEnabled(true);
-                cruiseControl.setMetricsConfig(metrics.entrySet());
-            }
-            cruiseControl.setMetricsConfigInCm(spec.getMetricsConfig());
+            // Parse different types of metrics configurations
+            ModelUtils.parseMetrics(cruiseControl, spec);
 
             if (spec.getReadinessProbe() != null) {
                 cruiseControl.setReadinessProbe(spec.getReadinessProbe());
