@@ -19,7 +19,7 @@ In this scenario, the Kafka component and the authorization server are running i
 
 For more information on the configuration of OAuth 2.0 authentication for Kafka components, see:
 
-* xref:appendix_crds#type-KafkaClientAuthenticationOAuth-reference[KafkaClientAuthenticationOAuth schema reference]
+* xref:type-KafkaClientAuthenticationOAuth-reference[KafkaClientAuthenticationOAuth schema reference]
 
 .Prerequisites
 
@@ -56,7 +56,7 @@ For OAuth 2.0 authentication, you can use:
 * TLS
 --
 +
-xref:appendix_crds#type-KafkaClientAuthenticationOAuth-reference[KafkaClientAuthenticationOAuth schema reference provides examples of each].
+xref:type-KafkaClientAuthenticationOAuth-reference[KafkaClientAuthenticationOAuth schema reference provides examples of each].
 +
 For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
 +

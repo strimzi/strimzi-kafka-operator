@@ -25,4 +25,4 @@ For more information about the re-authentication mechanism, which was added in K
 
 * xref:proc-oauth-authentication-broker-config-{context}[]
 
-* xref:appendix_crds#type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
+* xref:type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
