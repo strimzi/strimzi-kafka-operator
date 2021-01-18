@@ -40,9 +40,11 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
@@ -96,6 +98,7 @@ public class KafkaConnectS2IClusterTest {
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
+
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("offset.storage.topic", "connect-cluster-offsets")
             .addPair("value.converter", "org.apache.kafka.connect.json.JsonConverter")
@@ -103,19 +106,39 @@ public class KafkaConnectS2IClusterTest {
             .addPair("key.converter", "org.apache.kafka.connect.json.JsonConverter")
             .addPair("group.id", "connect-cluster")
             .addPair("status.storage.topic", "connect-cluster-status");
+
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
             .addMapPairs(defaultConfiguration.asMap())
             .addPair("foo", "bar");
+
     private final boolean insecureSourceRepo = false;
+
     private final ResourceRequirements buildResourceRequirements = new ResourceRequirementsBuilder()
             .withLimits(Collections.singletonMap("cpu", new Quantity("42")))
             .withRequests(Collections.singletonMap("mem", new Quantity("4Gi")))
             .build();
 
-    private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, jmxMetricsConfig, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
+    private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(
+            namespace,
+            cluster,
+            replicas,
+            image,
+            healthDelay,
+            healthTimeout,
+            null,
+            null,
+            configurationJson,
+            insecureSourceRepo,
+            bootstrapServers,
+            buildResourceRequirements);
 
-    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+    private final KafkaConnectS2I resourceWithMetrics = new KafkaConnectS2IBuilder(resource)
+            .editSpec()
+                .withMetricsConfig(jmxMetricsConfig)
+            .endSpec()
+            .build();
+
+    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resourceWithMetrics, VERSIONS);
 
     @Test
     @Deprecated
@@ -1371,7 +1394,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperator() {
-        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resourceWithMetrics)
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
@@ -1393,7 +1416,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperatorSameNamespace() {
-        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resourceWithMetrics)
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
@@ -1415,7 +1438,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperatorWithNamespaceLabels() {
-        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resourceWithMetrics)
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
@@ -1437,10 +1460,57 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testNetworkPolicyWithoutConnectorOperator() {
-        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resourceWithMetrics)
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         assertThat(kc.generateNetworkPolicy(true, false, null, null), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingInline() {
+        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
+
+        KafkaConnectS2I kafkaConnect = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withMetrics(dummyMetrics)
+                .endSpec()
+                .build();
+
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(kafkaConnect, VERSIONS);
+
+        assertThat(kc.isMetricsEnabled(), is(true));
+        assertThat(kc.getMetricsConfig(), is(dummyMetrics.entrySet()));
+        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingFromConfigMap() {
+        MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                .endValueFrom()
+                .build();
+
+        KafkaConnectS2I kafkaConnect = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withMetricsConfig(metrics)
+                .endSpec()
+                .build();
+
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(kafkaConnect, VERSIONS);
+
+        assertThat(kc.isMetricsEnabled(), is(true));
+        assertThat(kc.getMetricsConfigInCm(), is(metrics));
+        assertThat(kc.getMetricsConfig(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingNoMetrics() {
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(this.resource, VERSIONS);
+
+        assertThat(kc.isMetricsEnabled(), is(false));
+        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 }

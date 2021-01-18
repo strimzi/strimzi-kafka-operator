@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -35,8 +36,10 @@ import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -82,7 +85,10 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+@SuppressWarnings({
+        "checkstyle:ClassDataAbstractionCoupling",
+        "checkstyle:ClassFanOutComplexity"
+})
 public class CruiseControlTest {
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -92,7 +98,6 @@ public class CruiseControlTest {
     private final int healthTimeout = 30;
     private final String minInsyncReplicas = "2";
     private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
-    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
 
@@ -876,6 +881,67 @@ public class CruiseControlTest {
                 .get(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.getValue());
 
         assertThat(anomalyDetectionGoals, is(customGoals));
+    }
+
+    @Test
+    public void testMetricsParsingInline() {
+        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewCruiseControl()
+                        .withMetrics(dummyMetrics)
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        CruiseControl cc = CruiseControl.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertThat(cc.isMetricsEnabled(), is(true));
+        assertThat(cc.getMetricsConfig(), is(dummyMetrics.entrySet()));
+        assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingFromConfigMap() {
+        MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                .endValueFrom()
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewCruiseControl()
+                        .withMetricsConfig(metrics)
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        CruiseControl cc = CruiseControl.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertThat(cc.isMetricsEnabled(), is(true));
+        assertThat(cc.getMetricsConfigInCm(), is(metrics));
+        assertThat(cc.getMetricsConfig(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingNoMetrics() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                    .endSpec()
+                .build();
+
+        CruiseControl cc = CruiseControl.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertThat(cc.isMetricsEnabled(), is(false));
+        assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(cc.getMetricsConfig(), is(nullValue()));
     }
 
     @AfterAll

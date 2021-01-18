@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -31,6 +32,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -1184,5 +1187,59 @@ public class ZookeeperClusterTest {
                         hasProperty("name", equalTo(ZookeeperCluster.ZOOKEEPER_NAME)),
                         hasProperty("securityContext", equalTo(securityContext))
                 )));
+    }
+
+    @Test
+    public void testMetricsParsingInline() {
+        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editZookeeper()
+                        .withMetrics(dummyMetrics)
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertThat(zc.isMetricsEnabled(), is(true));
+        assertThat(zc.getMetricsConfig(), is(dummyMetrics.entrySet()));
+        assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingFromConfigMap() {
+        MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                .endValueFrom()
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout))
+                .editSpec()
+                    .editZookeeper()
+                        .withMetricsConfig(metrics)
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertThat(zc.isMetricsEnabled(), is(true));
+        assertThat(zc.getMetricsConfigInCm(), is(metrics));
+        assertThat(zc.getMetricsConfig(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingNoMetrics() {
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout), VERSIONS);
+
+        assertThat(zc.isMetricsEnabled(), is(false));
+        assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(zc.getMetricsConfig(), is(nullValue()));
     }
 }

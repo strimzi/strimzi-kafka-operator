@@ -477,12 +477,8 @@ public class KafkaCluster extends AbstractModel {
         }
         result.setConfiguration(configuration);
 
-        Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
-        if (metrics != null) {
-            result.setMetricsEnabled(true);
-            result.setMetricsConfig(metrics.entrySet());
-        }
-        result.setMetricsConfigInCm(kafkaClusterSpec.getMetricsConfig());
+        // Parse different types of metrics configurations
+        ModelUtils.parseMetrics(result, kafkaClusterSpec);
 
         if (oldStorage != null) {
             Storage newStorage = kafkaClusterSpec.getStorage();

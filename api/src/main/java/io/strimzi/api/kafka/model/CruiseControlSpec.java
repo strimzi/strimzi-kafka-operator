@@ -32,7 +32,7 @@ import lombok.EqualsAndHashCode;
         "template", "brokerCapacity",
         "config", "metrics", "metricsConfig"})
 @EqualsAndHashCode
-public class CruiseControlSpec implements UnknownPropertyPreserving, Serializable {
+public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
@@ -106,20 +106,24 @@ public class CruiseControlSpec implements UnknownPropertyPreserving, Serializabl
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    @Override
     public Map<String, Object> getMetrics() {
         return metrics;
     }
 
+    @Override
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
     }
 
     @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
     public MetricsConfig getMetricsConfig() {
         return metricsConfig;
     }
 
+    @Override
     public void setMetricsConfig(MetricsConfig metricsConfig) {
         this.metricsConfig = metricsConfig;
     }
