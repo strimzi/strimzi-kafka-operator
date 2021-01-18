@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation for metrics configuration
+ * Representation for a value read from a given key of a config map in the same namespace as the referrer.
  */
 @Buildable(
         editableEnabled = false,
@@ -24,14 +24,14 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
-public class ExternalConfigurationMetrics implements Serializable, UnknownPropertyPreserving {
+public class ExternalConfigurationReference implements Serializable, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
     private ConfigMapKeySelector configMapKeyRef;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Reference to the key in the ConfigMap containing the metrics configuration.")
+    @Description("Reference to the key in the ConfigMap containing the configuration.")
     @KubeLink(group = "core", version = "v1", kind = "configmapkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public ConfigMapKeySelector getConfigMapKeyRef() {
