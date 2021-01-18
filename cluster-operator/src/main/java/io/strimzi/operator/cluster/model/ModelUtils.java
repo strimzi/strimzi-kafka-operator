@@ -519,12 +519,12 @@ public class ModelUtils {
      * @param resourceWithMetrics       The section of the resource with metrics configuration
      */
     public static void parseMetrics(AbstractModel model, HasConfigurableMetrics resourceWithMetrics)   {
-        if (resourceWithMetrics.getMetrics() != null) {
-            model.setMetricsEnabled(true);
-            model.setMetricsConfig(resourceWithMetrics.getMetrics().entrySet());
-        } else if (resourceWithMetrics.getMetricsConfig() != null)    {
+        if (resourceWithMetrics.getMetricsConfig() != null)    {
             model.setMetricsEnabled(true);
             model.setMetricsConfigInCm(resourceWithMetrics.getMetricsConfig());
+        } else if (resourceWithMetrics.getMetrics() != null) {
+            model.setMetricsEnabled(true);
+            model.setMetricsConfig(resourceWithMetrics.getMetrics().entrySet());
         }
     }
 }
