@@ -47,8 +47,8 @@ public class ValidationVisitorTest {
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
         assertThat(warningMessages, hasItem("Contains object at path spec.kafka with an unknown property: foo"));
-        assertThat(warningMessages, hasItem("In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOperator.topicOperator."));
+        assertThat(warningMessages, hasItem("In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
+                "and should now be configured using spec.entityOperator.topicOperator."));
         assertThat(warningMessages, hasItem("In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
                 "This object has been replaced with GenericKafkaListener."));
         assertThat(warningMessages, hasItem("In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
@@ -59,12 +59,12 @@ public class ValidationVisitorTest {
                 "Contains object at path spec.kafka with an unknown property: foo").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOperator.topicOperator.").equals(lm.formattedMessage()));
+                "In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
+                "and should now be configured using spec.entityOperator.topicOperator.").equals(lm.formattedMessage()));
         logger.assertNotLogged(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property tolerations at path spec.zookeeper.tolerations has been deprecated. " +
-                "This feature should now be configured at path spec.zookeeper.template.pod.tolerations.").equals(lm.formattedMessage()));
+                "In API version v1alpha1 the tolerations property at path spec.zookeeper.tolerations has been deprecated, " +
+                "and should now be configured using spec.zookeeper.template.pod.tolerations.").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
@@ -94,31 +94,31 @@ public class ValidationVisitorTest {
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
-        assertThat(warningMessages, hasItem("In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOperator.topicOperator."));
+        assertThat(warningMessages, hasItem("In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
+                "and should now be configured using spec.entityOperator.topicOperator."));
         assertThat(warningMessages, hasItem("In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
                 "This object has been replaced with EntityTopicOperatorSpec."));
 
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property affinity at path spec.zookeeper.affinity has been deprecated. " +
-                "This feature should now be configured at path spec.zookeeper.template.pod.affinity.").equals(lm.formattedMessage()));
+                "In API version v1alpha1 the affinity property at path spec.zookeeper.affinity has been deprecated, " +
+                "and should now be configured using spec.zookeeper.template.pod.affinity.").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property tolerations at path spec.zookeeper.tolerations has been deprecated. " +
-                "This feature should now be configured at path spec.zookeeper.template.pod.tolerations.").equals(lm.formattedMessage()));
+                "In API version v1alpha1 the tolerations property at path spec.zookeeper.tolerations has been deprecated, " +
+                "and should now be configured using spec.zookeeper.template.pod.tolerations.").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property affinity at path spec.kafka.affinity has been deprecated. " +
-                "This feature should now be configured at path spec.kafka.template.pod.affinity.").equals(lm.formattedMessage()));
+                "In API version v1alpha1 the affinity property at path spec.kafka.affinity has been deprecated, " +
+                "and should now be configured using spec.kafka.template.pod.affinity.").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property tolerations at path spec.kafka.tolerations has been deprecated. " +
-                "This feature should now be configured at path spec.kafka.template.pod.tolerations.").equals(lm.formattedMessage()));
+                "In API version v1alpha1 the tolerations property at path spec.kafka.tolerations has been deprecated, " +
+                "and should now be configured using spec.kafka.template.pod.tolerations.").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
-                "In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
-                "This feature should now be configured at path spec.entityOperator.topicOperator.").equals(lm.formattedMessage()));
+                "In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
+                "and should now be configured using spec.entityOperator.topicOperator.").equals(lm.formattedMessage()));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && ("Kafka resource testname in namespace testnamespace: " +
                 "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +

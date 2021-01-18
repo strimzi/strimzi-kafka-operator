@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+//import io.strimzi.crdgenerator.annotations.OneOf;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -26,6 +27,10 @@ import java.util.Map;
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
+//@OneOf({ //This constraint applies to subclass
+//        @OneOf.Alternative(@OneOf.Alternative.Property(value = "name", required = false)),
+//        @OneOf.Alternative(@OneOf.Alternative.Property(value = "valueFrom", required = false))
+//})
 public abstract class Logging implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;

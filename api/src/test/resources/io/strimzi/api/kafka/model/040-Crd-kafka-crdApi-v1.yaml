@@ -906,10 +906,10 @@ spec:
                               optional:
                                 type: boolean
                             description: Reference to the key in the ConfigMap containing
-                              the metrics configuration.
-                        description: ConfigMap where the Prometheus JMX Exporter configuration
-                          is stored. For details of the structure of this configuration,
-                          see the {JMXExporter}.
+                              the configuration.
+                        description: ConfigMap entry where the Prometheus JMX Exporter
+                          configuration is stored. For details of the structure of
+                          this configuration, see the {JMXExporter}.
                     required:
                     - type
                     - valueFrom
@@ -921,16 +921,28 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A Map from logger name to logger level.
-                      name:
-                        type: string
-                        description: The name of the `ConfigMap` from which to get
-                          the logging configuration.
                       type:
                         type: string
                         enum:
                         - inline
                         - external
                         description: Logging type, must be either 'inline' or 'external'.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to the key in the ConfigMap containing
+                              the configuration.
+                        description: '`ConfigMap` entry where the logging configuration
+                          is stored. '
                     required:
                     - type
                     description: Logging configuration for Kafka.
@@ -1998,10 +2010,10 @@ spec:
                               optional:
                                 type: boolean
                             description: Reference to the key in the ConfigMap containing
-                              the metrics configuration.
-                        description: ConfigMap where the Prometheus JMX Exporter configuration
-                          is stored. For details of the structure of this configuration,
-                          see the {JMXExporter}.
+                              the configuration.
+                        description: ConfigMap entry where the Prometheus JMX Exporter
+                          configuration is stored. For details of the structure of
+                          this configuration, see the {JMXExporter}.
                     required:
                     - type
                     - valueFrom
@@ -2013,16 +2025,28 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A Map from logger name to logger level.
-                      name:
-                        type: string
-                        description: The name of the `ConfigMap` from which to get
-                          the logging configuration.
                       type:
                         type: string
                         enum:
                         - inline
                         - external
                         description: Logging type, must be either 'inline' or 'external'.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to the key in the ConfigMap containing
+                              the configuration.
+                        description: '`ConfigMap` entry where the logging configuration
+                          is stored. '
                     required:
                     - type
                     description: Logging configuration for ZooKeeper.
@@ -2750,10 +2774,6 @@ spec:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: A Map from logger name to logger level.
-                          name:
-                            type: string
-                            description: The name of the `ConfigMap` from which to
-                              get the logging configuration.
                           type:
                             type: string
                             enum:
@@ -2761,6 +2781,22 @@ spec:
                             - external
                             description: Logging type, must be either 'inline' or
                               'external'.
+                          valueFrom:
+                            type: object
+                            properties:
+                              configMapKeyRef:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                description: Reference to the key in the ConfigMap
+                                  containing the configuration.
+                            description: '`ConfigMap` entry where the logging configuration
+                              is stored. '
                         required:
                         - type
                         description: Logging configuration.
@@ -2900,10 +2936,6 @@ spec:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: A Map from logger name to logger level.
-                          name:
-                            type: string
-                            description: The name of the `ConfigMap` from which to
-                              get the logging configuration.
                           type:
                             type: string
                             enum:
@@ -2911,6 +2943,22 @@ spec:
                             - external
                             description: Logging type, must be either 'inline' or
                               'external'.
+                          valueFrom:
+                            type: object
+                            properties:
+                              configMapKeyRef:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                description: Reference to the key in the ConfigMap
+                                  containing the configuration.
+                            description: '`ConfigMap` entry where the logging configuration
+                              is stored. '
                         required:
                         - type
                         description: Logging configuration.
@@ -4194,16 +4242,28 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
                         description: A Map from logger name to logger level.
-                      name:
-                        type: string
-                        description: The name of the `ConfigMap` from which to get
-                          the logging configuration.
                       type:
                         type: string
                         enum:
                         - inline
                         - external
                         description: Logging type, must be either 'inline' or 'external'.
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Reference to the key in the ConfigMap containing
+                              the configuration.
+                        description: '`ConfigMap` entry where the logging configuration
+                          is stored. '
                     required:
                     - type
                     description: Logging configuration (log4j1) for Cruise Control.
@@ -4875,10 +4935,10 @@ spec:
                               optional:
                                 type: boolean
                             description: Reference to the key in the ConfigMap containing
-                              the metrics configuration.
-                        description: ConfigMap where the Prometheus JMX Exporter configuration
-                          is stored. For details of the structure of this configuration,
-                          see the {JMXExporter}.
+                              the configuration.
+                        description: ConfigMap entry where the Prometheus JMX Exporter
+                          configuration is stored. For details of the structure of
+                          this configuration, see the {JMXExporter}.
                     required:
                     - type
                     - valueFrom

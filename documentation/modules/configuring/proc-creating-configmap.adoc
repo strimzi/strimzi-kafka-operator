@@ -51,7 +51,7 @@ kafka.root.logger.level="INFO"
 # ...
 ----
 
-. Define _external_ logging in the `spec` of the resource, setting the `logging.name` to the name of the ConfigMap.
+. Define _external_ logging in the `spec` of the resource, setting the `logging.valueFrom.configMapKeyRef.name` to the name of the ConfigMap and `logging.valueFrom.configMapKeyRef.key` to the key in this ConfigMap.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -59,7 +59,10 @@ spec:
   # ...
   logging:
     type: external
-    name: logging-configmap
+    valueFrom:
+      configMapKeyRef:
+        name: customConfigMap
+        key: keyInConfigMap
 ----
 
 . Create or update the resource.

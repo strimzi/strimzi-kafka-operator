@@ -80,6 +80,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -465,6 +466,7 @@ public abstract class AbstractModel {
      * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
      * @return The logging properties as a String in log4j/2 properties file format.
      */
+    @SuppressWarnings("deprecation")
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             InlineLogging inlineLogging = (InlineLogging) logging;
@@ -544,15 +546,14 @@ public abstract class AbstractModel {
     /**
      * Generates a metrics and logging ConfigMap according to configured defaults.
      *
-     * @param externalLoggingConfigMap The ConfigMap used if Logging is an instance of ExternalLogging
-     * @param externalMetricsConfigMap The ConfigMap used if Metrics is an instance of ExternalMetrics
+     * @param metricsAndLogging The external CMs
      * @return The generated ConfigMap.
      */
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalLoggingConfigMap, ConfigMap externalMetricsConfigMap) {
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), externalLoggingConfigMap));
+        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), metricsAndLogging.getLoggingCm()));
         if (getMetricsConfigInCm() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
-            String parseResult = parseMetrics(externalMetricsConfigMap);
+            String parseResult = parseMetrics(metricsAndLogging.getMetricsCm());
             if (parseResult != null) {
                 this.setMetricsEnabled(true);
                 data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
@@ -617,10 +618,6 @@ public abstract class AbstractModel {
 
     public MetricsConfig getMetricsConfigInCm() {
         return metricsConfigInCm;
-    }
-
-    public boolean isMetricsConfigured() {
-        return this.metricsConfigInCm != null;
     }
 
     /**

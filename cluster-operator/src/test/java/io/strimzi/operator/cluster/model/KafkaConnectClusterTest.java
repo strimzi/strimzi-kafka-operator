@@ -57,6 +57,7 @@ import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
@@ -150,13 +151,13 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, null);
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null));
         checkMetricsConfigMap(metricsCm);
     }
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null, metricsCM);
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
     }
 
