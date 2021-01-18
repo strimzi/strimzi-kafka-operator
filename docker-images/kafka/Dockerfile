@@ -4,6 +4,7 @@ ARG KAFKA_DIST_DIR
 ARG KAFKA_VERSION
 ARG THIRD_PARTY_LIBS
 ARG strimzi_version
+ARG TARGETPLATFORM
 
 RUN yum -y install gettext nmap-ncat stunnel net-tools && yum clean all -y
 
