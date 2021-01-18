@@ -80,7 +80,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
-import io.strimzi.operator.cluster.operator.assembly.MetricsAndLoggingCm;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -544,7 +544,7 @@ public abstract class AbstractModel {
      * @param metricsAndLogging The external CMs
      * @return The generated ConfigMap.
      */
-    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLoggingCm metricsAndLogging) {
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = new HashMap<>(2);
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), metricsAndLogging.getLoggingCm()));
         if (getMetricsConfigInCm() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
@@ -613,10 +613,6 @@ public abstract class AbstractModel {
 
     public MetricsConfig getMetricsConfigInCm() {
         return metricsConfigInCm;
-    }
-
-    public boolean isMetricsConfigured() {
-        return this.metricsConfigInCm != null;
     }
 
     /**

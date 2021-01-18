@@ -7,11 +7,15 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -34,6 +38,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -492,5 +497,26 @@ public class Util {
             loggingCmFut = Future.succeededFuture(null);
         }
         return loggingCmFut;
+    }
+
+    public static Future<MetricsAndLogging> metricsAndLogging(ConfigMapOperator configMapOperations,
+                                                              String namespace,
+                                                              Logging logging, MetricsConfig metricsConfigInCm) {
+        List<Future> configMaps = new ArrayList<>(2);
+        if (metricsConfigInCm instanceof JmxPrometheusExporterMetrics) {
+            configMaps.add(configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName()));
+        } else if (metricsConfigInCm == null) {
+            configMaps.add(Future.succeededFuture(null));
+        } else {
+            LOGGER.warn("Unknown metrics type {}", metricsConfigInCm.getType());
+            throw new InvalidResourceException("Unknown metrics type " + metricsConfigInCm.getType());
+        }
+
+        if (logging instanceof ExternalLogging) {
+            configMaps.add(Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) logging));
+        } else {
+            configMaps.add(Future.succeededFuture(null));
+        }
+        return CompositeFuture.join(configMaps).map(result -> new MetricsAndLogging(result.resultAt(0), result.resultAt(1)));
     }
 }

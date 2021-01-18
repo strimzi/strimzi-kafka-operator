@@ -45,7 +45,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.operator.cluster.operator.assembly.MetricsAndLoggingCm;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -693,7 +693,7 @@ public class ZookeeperCluster extends AbstractModel {
      *
      * @return      The generated configuration ConfigMap.
      */
-    public ConfigMap generateConfigurationConfigMap(MetricsAndLoggingCm metricsAndLogging) {
+    public ConfigMap generateConfigurationConfigMap(MetricsAndLogging metricsAndLogging) {
         ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(metricsAndLogging);
         zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
         return zkConfigMap;

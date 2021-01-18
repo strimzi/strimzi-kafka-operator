@@ -142,7 +142,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                 .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnectS2I), operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
-                .compose(i -> connectMetricsAndLoggingConfigMap(namespace, connect))
+                .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,

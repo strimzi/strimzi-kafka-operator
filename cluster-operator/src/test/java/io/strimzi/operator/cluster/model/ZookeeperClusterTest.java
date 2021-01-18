@@ -45,7 +45,7 @@ import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.operator.assembly.MetricsAndLoggingCm;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -122,7 +122,7 @@ public class ZookeeperClusterTest {
         Kafka ka = ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, null, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson, null, null);
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
-        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLoggingCm(null, null));
+        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(null, null));
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(zc.createOwnerReference(), metricsCm);
     }
@@ -130,7 +130,7 @@ public class ZookeeperClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLoggingCm(metricsCM, null));
+        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(zc.createOwnerReference(), metricsCm);
     }

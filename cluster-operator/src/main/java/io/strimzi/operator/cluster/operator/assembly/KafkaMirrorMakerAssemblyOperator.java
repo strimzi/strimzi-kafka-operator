@@ -10,8 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
-import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
@@ -19,7 +17,6 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -31,7 +28,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -93,7 +89,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation);
         mirrorMakerServiceAccount(namespace, mirror)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
-                .compose(i -> mirrorMetricsAndLoggingConfigMap(namespace, mirror))
+                .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, mirror.getLogging(), mirror.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
@@ -130,29 +126,5 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return serviceAccountOperations.reconcile(namespace,
                 KafkaMirrorMakerResources.serviceAccountName(mirror.getCluster()),
                 mirror.generateServiceAccount());
-    }
-
-    @SuppressWarnings("deprecation")
-    private Future<MetricsAndLoggingCm> mirrorMetricsAndLoggingConfigMap(String namespace, KafkaMirrorMakerCluster mirror) {
-        final Future<ConfigMap> metricsCmFut;
-        if (mirror.isMetricsConfigured()) {
-            if (mirror.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                metricsCmFut = configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) mirror.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
-            } else {
-                log.warn("Unknown metrics type {}", mirror.getMetricsConfigInCm().getType());
-                throw new InvalidResourceException("Unknown metrics type " + mirror.getMetricsConfigInCm().getType());
-            }
-        } else {
-            metricsCmFut = Future.succeededFuture(null);
-        }
-
-        Future<ConfigMap> loggingCmFut;
-        if (mirror.getLogging() instanceof ExternalLogging) {
-            loggingCmFut = Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) mirror.getLogging());
-        } else {
-            loggingCmFut = Future.succeededFuture(null);
-        }
-
-        return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 }

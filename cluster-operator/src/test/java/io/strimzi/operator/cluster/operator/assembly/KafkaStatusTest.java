@@ -35,6 +35,7 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -450,7 +451,7 @@ public class KafkaStatusTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -569,7 +570,7 @@ public class KafkaStatusTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -678,7 +679,7 @@ public class KafkaStatusTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -784,7 +785,7 @@ public class KafkaStatusTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -889,7 +890,7 @@ public class KafkaStatusTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -1075,7 +1076,7 @@ public class KafkaStatusTest {
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         MockModelWarningsStatusKafkaAssemblyOperator kao = new MockModelWarningsStatusKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
