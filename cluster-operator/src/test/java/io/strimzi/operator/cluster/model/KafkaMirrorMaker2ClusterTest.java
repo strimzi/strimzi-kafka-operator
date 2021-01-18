@@ -116,7 +116,6 @@ public class KafkaMirrorMaker2ClusterTest {
 
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
             .withNewSpec()
-                //.withMetricsConfig(jmxMetricsConfig)
                 .withImage(image)
                 .withReplicas(replicas)
                 .withReadinessProbe(new Probe(healthDelay, healthTimeout))
