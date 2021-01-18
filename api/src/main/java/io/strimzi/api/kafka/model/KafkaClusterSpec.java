@@ -45,7 +45,7 @@ import java.util.Map;
         "jvmOptions", "jmxOptions", "resources",
         "metrics", "metricsConfig", "logging", "tlsSidecar", "template"})
 @EqualsAndHashCode
-public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable {
+public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -241,20 +241,24 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    @Override
     public Map<String, Object> getMetrics() {
         return metrics;
     }
 
+    @Override
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
     }
 
     @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
     public MetricsConfig getMetricsConfig() {
         return metricsConfig;
     }
 
+    @Override
     public void setMetricsConfig(MetricsConfig metricsConfig) {
         this.metricsConfig = metricsConfig;
     }

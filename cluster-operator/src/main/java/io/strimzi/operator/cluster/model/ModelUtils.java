@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -509,6 +510,21 @@ public class ModelUtils {
                 peer.setNamespaceSelector(new LabelSelector());
             }
         }
+    }
 
+    /**
+     * Checks if the section of the custom resource has any metrics configuration and sets it in the AbstractModel.
+     *
+     * @param model                     The cluster model where the metrics will be configured
+     * @param resourceWithMetrics       The section of the resource with metrics configuration
+     */
+    public static void parseMetrics(AbstractModel model, HasConfigurableMetrics resourceWithMetrics)   {
+        if (resourceWithMetrics.getMetricsConfig() != null)    {
+            model.setMetricsEnabled(true);
+            model.setMetricsConfigInCm(resourceWithMetrics.getMetricsConfig());
+        } else if (resourceWithMetrics.getMetrics() != null) {
+            model.setMetricsEnabled(true);
+            model.setMetricsConfig(resourceWithMetrics.getMetrics().entrySet());
+        }
     }
 }

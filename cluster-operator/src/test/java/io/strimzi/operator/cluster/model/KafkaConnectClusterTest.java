@@ -38,9 +38,11 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
@@ -97,10 +99,10 @@ public class KafkaConnectClusterTest {
     private final String metricsCMName = "metrics-cm";
     private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName);
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
-
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
+
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("offset.storage.topic", "connect-cluster-offsets")
             .addPair("value.converter", "org.apache.kafka.connect.json.JsonConverter")
@@ -108,22 +110,29 @@ public class KafkaConnectClusterTest {
             .addPair("key.converter", "org.apache.kafka.connect.json.JsonConverter")
             .addPair("group.id", "connect-cluster")
             .addPair("status.storage.topic", "connect-cluster-status");
+
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
             .addMapPairs(defaultConfiguration.asMap())
             .addPair("foo", "bar");
+
     private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, cluster))
             .withNewSpec()
-            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-            .withMetricsConfig(jmxMetricsConfig)
-            .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
-            .withImage(image)
-            .withReplicas(replicas)
-            .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-            .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-            .withBootstrapServers(bootstrapServers)
+                .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
+                .withImage(image)
+                .withReplicas(replicas)
+                .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                .withBootstrapServers(bootstrapServers)
             .endSpec()
             .build();
-    private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+    private final KafkaConnect resourceWithMetrics = new KafkaConnectBuilder(resource)
+            .editSpec()
+                .withMetricsConfig(jmxMetricsConfig)
+            .endSpec()
+            .build();
+
+    private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resourceWithMetrics, VERSIONS);
 
     @Deprecated
     @Test
@@ -265,7 +274,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testGenerateDeploymentWithRack() {
-        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+        KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .editOrNewSpec()
                     .withNewRack()
                         .withTopologyKey("topology-key")
@@ -1440,7 +1449,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperator() {
-        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+        KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
@@ -1462,7 +1471,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperatorSameNamespace() {
-        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+        KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
@@ -1484,7 +1493,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testNetworkPolicyWithConnectorOperatorWithNamespaceLabels() {
-        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+        KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
@@ -1600,6 +1609,52 @@ public class KafkaConnectClusterTest {
                     initContainers.stream().anyMatch(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME));
             assertThat(isInitKafkaConnect, is(true));
         }
+    }
 
+    @Test
+    public void testMetricsParsingInline() {
+        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withMetrics(dummyMetrics)
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(kafkaConnect, VERSIONS);
+
+        assertThat(kc.isMetricsEnabled(), is(true));
+        assertThat(kc.getMetricsConfig(), is(dummyMetrics.entrySet()));
+        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingFromConfigMap() {
+        MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                .endValueFrom()
+                .build();
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withMetricsConfig(metrics)
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(kafkaConnect, VERSIONS);
+
+        assertThat(kc.isMetricsEnabled(), is(true));
+        assertThat(kc.getMetricsConfigInCm(), is(metrics));
+        assertThat(kc.getMetricsConfig(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingNoMetrics() {
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(this.resource, VERSIONS);
+
+        assertThat(kc.isMetricsEnabled(), is(false));
+        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 }

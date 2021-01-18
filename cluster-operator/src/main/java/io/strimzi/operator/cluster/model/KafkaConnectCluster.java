@@ -243,12 +243,9 @@ public class KafkaConnectCluster extends AbstractModel {
         }
         kafkaConnect.setInitImage(initImage);
 
-        Map<String, Object> metrics = spec.getMetrics();
-        if (metrics != null) {
-            kafkaConnect.setMetricsEnabled(true);
-            kafkaConnect.setMetricsConfig(metrics.entrySet());
-        }
-        kafkaConnect.setMetricsConfigInCm(spec.getMetricsConfig());
+        // Parse different types of metrics configurations
+        ModelUtils.parseMetrics(kafkaConnect, spec);
+
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
         kafkaConnect.setTls(spec.getTls());

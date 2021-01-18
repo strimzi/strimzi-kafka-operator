@@ -34,7 +34,7 @@ import java.util.Map;
         "affinity", "tolerations", "logging", "metrics", "metricsConfig", "tracing",
         "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
-public abstract class AbstractKafkaConnectSpec extends Spec {
+public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics {
     private static final long serialVersionUID = 1L;
 
     private Logging logging;
@@ -149,10 +149,12 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
 
     @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
     public MetricsConfig getMetricsConfig() {
         return metricsConfig;
     }
 
+    @Override
     public void setMetricsConfig(MetricsConfig metricsConfig) {
         this.metricsConfig = metricsConfig;
     }
@@ -163,10 +165,12 @@ public abstract class AbstractKafkaConnectSpec extends Spec {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
+    @Override
     public Map<String, Object> getMetrics() {
         return metrics;
     }
 
+    @Override
     public void setMetrics(Map<String, Object> metrics) {
         this.metrics = metrics;
     }

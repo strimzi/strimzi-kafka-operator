@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -24,6 +25,7 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
@@ -31,6 +33,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
+import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
@@ -52,6 +55,7 @@ import java.util.Map;
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -90,6 +94,7 @@ public class KafkaMirrorMakerClusterTest {
             .withAbortOnSendFailure(abortOnSendFailure)
             .withConfig((Map<String, Object>) TestUtils.fromJson(producerConfigurationJson, Map.class))
             .build();
+
     private KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
             .withBootstrapServers(consumerBootstrapServers)
             .withGroupId(groupId)
@@ -100,17 +105,21 @@ public class KafkaMirrorMakerClusterTest {
 
     private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
             .withNewSpec()
-            .withImage(image)
-            .withReplicas(replicas)
-            .withProducer(producer)
-            .withConsumer(consumer)
-            .withWhitelist(whitelist)
-            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-            .withMetricsConfig(jmxMetricsConfig)
+                .withImage(image)
+                .withReplicas(replicas)
+                .withProducer(producer)
+                .withConsumer(consumer)
+                .withWhitelist(whitelist)
             .endSpec()
             .build();
 
-    private final KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+    private final KafkaMirrorMaker resourceWithMetrics = new KafkaMirrorMakerBuilder(resource)
+            .editSpec()
+                .withMetricsConfig(jmxMetricsConfig)
+            .endSpec()
+            .build();
+
+    private final KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resourceWithMetrics, VERSIONS);
 
     @Deprecated
     @Test
@@ -1449,4 +1458,50 @@ public class KafkaMirrorMakerClusterTest {
                 is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
     }
 
+    @Test
+    public void testMetricsParsingInline() {
+        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
+
+        KafkaMirrorMaker mirrorMaker = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withMetrics(dummyMetrics)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(mirrorMaker, VERSIONS);
+
+        assertThat(kmm.isMetricsEnabled(), is(true));
+        assertThat(kmm.getMetricsConfig(), is(dummyMetrics.entrySet()));
+        assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingFromConfigMap() {
+        MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                .endValueFrom()
+                .build();
+
+        KafkaMirrorMaker mirrorMaker = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withMetricsConfig(metrics)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(mirrorMaker, VERSIONS);
+
+        assertThat(kmm.isMetricsEnabled(), is(true));
+        assertThat(kmm.getMetricsConfigInCm(), is(metrics));
+        assertThat(kmm.getMetricsConfig(), is(nullValue()));
+    }
+
+    @Test
+    public void testMetricsParsingNoMetrics() {
+        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(this.resource, VERSIONS);
+
+        assertThat(kmm.isMetricsEnabled(), is(false));
+        assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(kmm.getMetricsConfig(), is(nullValue()));
+    }
 }
