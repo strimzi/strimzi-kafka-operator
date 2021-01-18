@@ -27,6 +27,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -94,7 +95,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> mirrorMetricsAndLoggingConfigMap(namespace, mirror))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm.loggingCm, metricsAndLoggingCm.metricsCm);
+                    ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
                     return configMapOperations.reconcile(namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
@@ -131,6 +132,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 mirror.generateServiceAccount());
     }
 
+    @SuppressWarnings("deprecation")
     private Future<MetricsAndLoggingCm> mirrorMetricsAndLoggingConfigMap(String namespace, KafkaMirrorMakerCluster mirror) {
         final Future<ConfigMap> metricsCmFut;
         if (mirror.isMetricsConfigured()) {
@@ -144,9 +146,12 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
             metricsCmFut = Future.succeededFuture(null);
         }
 
-        Future<ConfigMap> loggingCmFut = mirror.getLogging() instanceof ExternalLogging ?
-                configMapOperations.getAsync(namespace, ((ExternalLogging) mirror.getLogging()).getName()) :
-                Future.succeededFuture(null);
+        Future<ConfigMap> loggingCmFut;
+        if (mirror.getLogging() instanceof ExternalLogging) {
+            loggingCmFut = Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) mirror.getLogging());
+        } else {
+            loggingCmFut = Future.succeededFuture(null);
+        }
 
         return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }

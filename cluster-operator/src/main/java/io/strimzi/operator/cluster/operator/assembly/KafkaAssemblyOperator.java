@@ -1511,12 +1511,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         List<Future> configMaps = new ArrayList<>(2);
-                        if (zkCluster.getLogging() instanceof ExternalLogging) {
-                            configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName()));
-                        } else {
-                            configMaps.add(Future.succeededFuture(null));
-                        }
-
                         if (zkCluster.isMetricsConfigured()) {
                             if (zkCluster.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
                                 configMaps.add(configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((JmxPrometheusExporterMetrics) (zkCluster.getMetricsConfigInCm())).getValueFrom().getConfigMapKeyRef().getName()));
@@ -1527,10 +1521,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         } else {
                             configMaps.add(Future.succeededFuture(null));
                         }
+
+                        if (zkCluster.getLogging() instanceof ExternalLogging) {
+                            configMaps.add(Util.getExternalLoggingCm(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), (ExternalLogging) zkCluster.getLogging()));
+                        } else {
+                            configMaps.add(Future.succeededFuture(null));
+                        }
                         return CompositeFuture.join(configMaps);
                     })
                     .compose(result -> {
-                        ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(result.resultAt(0), result.resultAt(1));
+                        ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(new MetricsAndLoggingCm(result.resultAt(0), result.resultAt(1)));
                         this.zkMetricsAndLogsConfigMap = logAndMetricsConfigMap;
 
                         String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
@@ -2589,14 +2589,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             Future<ConfigMap> loggingCmFut;
             if (kafkaCluster.getLogging() instanceof ExternalLogging) {
-                loggingCmFut = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafkaCluster.getLogging()).getName());
+                loggingCmFut = Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) kafkaCluster.getLogging());
             } else {
                 loggingCmFut = Future.succeededFuture(null);
             }
 
             return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(metricsAndLoggingCm.loggingCm, metricsAndLoggingCm.metricsCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
+                    ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(metricsAndLoggingCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
                     KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration
 
                     // if BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME changes, compute a hash and put it into annotation
@@ -3231,14 +3231,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 final Future<ConfigMap> futToLogConfigMap;
                 if (topicOperator != null && topicOperator.getLogging() instanceof ExternalLogging)  {
-                    futToLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName());
+                    futToLogConfigMap = Util.getExternalLoggingCm(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), (ExternalLogging) topicOperator.getLogging());
                 } else {
                     futToLogConfigMap = Future.succeededFuture(null);
                 }
 
                 final Future<ConfigMap> futUoLogConfigMap;
                 if (userOperator != null && userOperator.getLogging() instanceof ExternalLogging)  {
-                    futUoLogConfigMap = configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName());
+                    futUoLogConfigMap = Util.getExternalLoggingCm(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), (ExternalLogging) userOperator.getLogging());
                 } else {
                     futUoLogConfigMap = Future.succeededFuture(null);
                 }
@@ -3249,11 +3249,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             ConfigMap uoLCm = res.resultAt(1);
 
                             if (topicOperator != null)  {
-                                this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(toLCm, null);
+                                this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, toLCm));
                             }
 
                             if (userOperator != null)   {
-                                this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(uoLCm, null);
+                                this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, uoLCm));
                             }
 
                             this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), emptyMap(), imagePullPolicy, imagePullSecrets);
@@ -3505,9 +3505,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final Future<ReconciliationState> getCruiseControlDescription() {
             CruiseControl cruiseControl = CruiseControl.fromCrd(kafkaAssembly, versions);
             if (cruiseControl != null) {
-                final Future<ConfigMap> loggingCmFut = cruiseControl.getLogging() instanceof ExternalLogging ?
-                        configMapOperations.getAsync(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) cruiseControl.getLogging()).getName()) :
-                        Future.succeededFuture(null);
 
                 final Future<ConfigMap> metricsCm;
                 if (cruiseControl.isMetricsConfigured()) {
@@ -3521,8 +3518,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     metricsCm = Future.succeededFuture(null);
                 }
 
+                final Future<ConfigMap> loggingCmFut;
+                if (cruiseControl.getLogging() instanceof ExternalLogging) {
+                    loggingCmFut = Util.getExternalLoggingCm(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), (ExternalLogging) cruiseControl.getLogging());
+                } else {
+                    loggingCmFut = Future.succeededFuture(null);
+                }
+
                 CompositeFuture.join(metricsCm, loggingCmFut).compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLoggingCm.resultAt(1), metricsAndLoggingCm.resultAt(0));
+                    ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(metricsAndLoggingCm.resultAt(1), metricsAndLoggingCm.resultAt(0)));
 
                     Map<String, String> annotations = singletonMap(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));
 

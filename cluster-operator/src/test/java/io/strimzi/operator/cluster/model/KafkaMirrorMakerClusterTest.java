@@ -39,6 +39,7 @@ import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.operator.assembly.MetricsAndLoggingCm;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
@@ -128,13 +129,13 @@ public class KafkaMirrorMakerClusterTest {
                 .build();
 
         KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
-        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null, null);
+        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null));
         checkMetricsConfigMap(metricsCm);
     }
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(null, metricsCM);
+        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
     }
 

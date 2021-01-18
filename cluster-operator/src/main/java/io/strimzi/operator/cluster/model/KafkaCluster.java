@@ -78,6 +78,7 @@ import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.operator.assembly.MetricsAndLoggingCm;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -1896,8 +1897,8 @@ public class KafkaCluster extends AbstractModel {
         return this.brokersConfiguration;
     }
 
-    public ConfigMap generateAncillaryConfigMap(ConfigMap externalLoggingCm, ConfigMap externalMetricsCm, Set<String> advertisedHostnames, Set<String> advertisedPorts)   {
-        ConfigMap cm = generateMetricsAndLogConfigMap(externalLoggingCm, externalMetricsCm);
+    public ConfigMap generateAncillaryConfigMap(MetricsAndLoggingCm metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts)   {
+        ConfigMap cm = generateMetricsAndLogConfigMap(metricsAndLogging);
 
         this.brokersConfiguration = generateBrokerConfiguration();
 

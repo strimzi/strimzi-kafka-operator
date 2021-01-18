@@ -49,6 +49,7 @@ import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.operator.assembly.MetricsAndLoggingCm;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
@@ -124,7 +125,7 @@ public class KafkaMirrorMaker2ClusterTest {
     {
         // we were setting metricsEnabled in fromCrd, which was just checking it for non-null. With metrics in CM, we have to check
         // its content, what is done in generateMetricsAndLogConfigMap
-        kmm2.generateMetricsAndLogConfigMap(null, metricsCM);
+        kmm2.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(metricsCM, null));
     }
 
     @Deprecated
@@ -145,13 +146,13 @@ public class KafkaMirrorMaker2ClusterTest {
 
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
 
-        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null, null);
+        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(null, null));
         checkMetricsConfigMap(metricsCm);
     }
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(null, metricsCM);
+        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
     }
 
@@ -1486,7 +1487,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
-        kc.generateMetricsAndLogConfigMap(null, metricsCM);
+        kc.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(metricsCM, null));
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", null);
 
@@ -1510,7 +1511,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
-        kc.generateMetricsAndLogConfigMap(null, metricsCM);
+        kc.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(metricsCM, null));
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, true, namespace, null);
 
@@ -1533,7 +1534,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .build();
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
-        kc.generateMetricsAndLogConfigMap(null, metricsCM);
+        kc.generateMetricsAndLogConfigMap(new MetricsAndLoggingCm(metricsCM, null));
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 

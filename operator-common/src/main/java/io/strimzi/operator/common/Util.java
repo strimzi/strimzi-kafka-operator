@@ -4,10 +4,13 @@
  */
 package io.strimzi.operator.common;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -474,5 +477,20 @@ public class Util {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to get artifact URL SHA-1 hash", e);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static Future<ConfigMap> getExternalLoggingCm(ConfigMapOperator configMapOperations, String namespace, ExternalLogging logging) {
+        Future<ConfigMap> loggingCmFut;
+        if (logging.getName() != null) {
+            loggingCmFut = configMapOperations.getAsync(namespace, logging.getName());
+        } else if (logging.getValueFrom() != null
+                && logging.getValueFrom().getConfigMapKeyRef() != null
+                && logging.getValueFrom().getConfigMapKeyRef().getName() != null) {
+            loggingCmFut = configMapOperations.getAsync(namespace, logging.getValueFrom().getConfigMapKeyRef().getName());
+        } else {
+            loggingCmFut = Future.succeededFuture(null);
+        }
+        return loggingCmFut;
     }
 }

@@ -7,10 +7,26 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 
 public class MetricsAndLoggingCm {
-    public ConfigMap metricsCm;
-    public ConfigMap loggingCm;
+    private ConfigMap metricsCm;
+    private ConfigMap loggingCm;
     public MetricsAndLoggingCm(ConfigMap metricsCm, ConfigMap loggingCm) {
+        this.setMetricsCm(metricsCm);
+        this.setLoggingCm(loggingCm);
+    }
+
+    public ConfigMap getMetricsCm() {
+        return metricsCm;
+    }
+
+    public void setMetricsCm(ConfigMap metricsCm) {
         this.metricsCm = metricsCm;
+    }
+
+    public ConfigMap getLoggingCm() {
+        return loggingCm;
+    }
+
+    public void setLoggingCm(ConfigMap loggingCm) {
         this.loggingCm = loggingCm;
     }
 }
