@@ -53,7 +53,7 @@ spec:
 <3> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
 <4> Maximum number of Kafka Connect `Tasks` that the connector can create.
 <5> xref:#kafkaconnector-configs[Connector configuration] as key-value pairs.
-<6> The source connector reads data from the `/opt/kafka/LICENSE` file. 
+<6> This example source connector configuration reads data from the `/opt/kafka/LICENSE` file. 
 <7> Kafka topic to publish the source data to.
 
 . Create the source `KafkaConnector` in your Kubernetes cluster:
