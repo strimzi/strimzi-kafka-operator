@@ -319,8 +319,7 @@ class ConnectBuilderST extends AbstractST {
 
         if (cluster.isNotKubernetes()) {
             outputRegistry = "image-registry.openshift-image-registry.svc:5000/";
-        }
-        else {
+        } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed on localhost:5000");
             outputRegistry = "localhost:5000/";
         }
