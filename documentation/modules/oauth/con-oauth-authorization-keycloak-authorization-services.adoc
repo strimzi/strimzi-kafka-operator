@@ -5,6 +5,9 @@
 [id='con-oauth-authorization-keycloak-authorization-services_{context}']
 = Managing policies and permissions in Keycloak Authorization Services
 
+This section describes the mappings between the Kafka authorization model and Keycloak Authorization Services model.
+The mappings are used in granting permissions to access Kafka.
+
 == Kafka authorization model for resources
 
 The link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] defines resource types, and the permissions available for each type.
