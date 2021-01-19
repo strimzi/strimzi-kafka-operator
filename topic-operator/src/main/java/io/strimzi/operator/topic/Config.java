@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 public class Config {
 
@@ -100,6 +101,7 @@ public class Config {
     public static final String TC_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
     public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String TC_NAMESPACE = "STRIMZI_NAMESPACE";
+    public static final String TC_CLIENT_ID = "STRIMZI_CLIENT_ID";
     public static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String TC_ZK_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String TC_ZK_CONNECTION_TIMEOUT_MS = "TC_ZK_CONNECTION_TIMEOUT_MS";
@@ -135,6 +137,9 @@ public class Config {
 
     /** The kubernetes namespace in which to operate. */
     public static final Value<String> NAMESPACE = new Value<>(TC_NAMESPACE, STRING, true);
+
+    /** Client-ID. */
+    public static final Value<String> CLIENT_ID = new Value<>(TC_CLIENT_ID, STRING, "strimzi-topic-operator-" + UUID.randomUUID());
 
     /** The zookeeper connection string. */
     public static final Value<String> ZOOKEEPER_CONNECT = new Value<>(TC_ZK_CONNECT, STRING, true);
@@ -199,6 +204,7 @@ public class Config {
         addConfigValue(configValues, LABELS);
         addConfigValue(configValues, KAFKA_BOOTSTRAP_SERVERS);
         addConfigValue(configValues, NAMESPACE);
+        addConfigValue(configValues, CLIENT_ID);
         addConfigValue(configValues, ZOOKEEPER_CONNECT);
         addConfigValue(configValues, ZOOKEEPER_SESSION_TIMEOUT_MS);
         addConfigValue(configValues, ZOOKEEPER_CONNECTION_TIMEOUT_MS);
