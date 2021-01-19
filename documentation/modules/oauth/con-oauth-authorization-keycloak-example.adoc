@@ -7,6 +7,7 @@
 
 This is an end-to-end example of using Keycloak Authorization Services to configure authorization rules for use with `keycloak` authorization in Strimzi.
 The example starts by deploying the Keycloak server with pre-configured realms, requiring no additional configuration.
+Next, we deploy the Kafka cluster configured to use one of the pre-configured realms.
 We then connect to the Keycloak Admin Console and use the user interface to check the configuration of authorization rules.
 Finally, we use Kafka CLI client tools with different personal and service accounts to demonstrate limiting access based on the permissions granted to different accounts.
 
