@@ -135,6 +135,24 @@ public interface Zk {
      */
     Zk unwatchData(String path);
 
+    /**
+     * Does the path exist.
+     *
+     * @param path The path
+     * @return Future with the result.
+     */
+    Future<Boolean> pathExists(String path);
+
+    // sync methods -- use in already async code
+
+    boolean getPathExists(String path);
+
+    List<String> getChildren(String path);
+
+    byte[] getData(String path);
+
+    void delete(String path, int version);
+
     // TODO getAcl(), setAcl(), multi()
 
 }

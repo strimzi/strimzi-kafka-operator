@@ -150,4 +150,21 @@ public class ZkImplTest {
             });
         });
     }
+
+    @Test
+    public void testPathExists(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+
+        Promise<Void> fooCreated = Promise.promise();
+
+        // Create a node
+        byte[] data1 = new byte[]{1};
+        zk.create("/foo", data1, AclBuilder.PUBLIC, CreateMode.PERSISTENT, context.succeeding(v -> fooCreated.complete()));
+
+        fooCreated
+            .future()
+            .compose(v -> zk.pathExists("/foo"))
+            .onComplete(context.succeeding(b -> context.verify(() -> assertThat("Zk path doesn't exist", b))))
+            .onComplete(context.succeeding(v -> async.flag()));
+    }
 }

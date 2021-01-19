@@ -376,8 +376,9 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         if (testParameters.getBoolean("generateTopics")) {
             // Check that topics weren't deleted/duplicated during upgrade procedures
-            assertThat("KafkaTopic list doesn't have expected size", KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems().size(), is(expectedTopicCount));
             List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
+            int additionalTopics = testParameters.getInt("additionalTopics", 0);
+            assertThat("KafkaTopic list doesn't have expected size", kafkaTopicList.size(), is(expectedTopicCount + additionalTopics));
             assertThat("KafkaTopic " + topicName + " is not in expected topic list",
                     kafkaTopicList.contains(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get()), is(true));
             for (int x = 0; x < upgradeTopicCount; x++) {

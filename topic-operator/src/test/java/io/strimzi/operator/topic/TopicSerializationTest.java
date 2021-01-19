@@ -13,6 +13,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
@@ -32,6 +33,35 @@ public class TopicSerializationTest {
 
     private final Labels labels = new Labels(
             "app", "strimzi");
+
+    @Test
+    public void testTopicCommandSerde() {
+        TopicCommandSerde serde = new TopicCommandSerde();
+
+        Topic.Builder builder = new Topic.Builder();
+        builder.withTopicName("foobar");
+        builder.withNumReplicas((short) 1);
+        builder.withNumPartitions(2);
+        builder.withConfigEntry("cleanup.policy", "bar");
+        ObjectMeta metadata = new ObjectMeta();
+        builder.withMetadata(metadata);
+        Topic topic = builder.build();
+
+        TopicCommand data = TopicCommand.create(topic);
+        byte[] bytes = serde.serialize("dummy", data);
+        data = serde.deserialize("dummy", bytes);
+        Assertions.assertEquals(TopicCommand.Type.CREATE, data.getType());
+        Assertions.assertEquals(topic, data.getTopic());
+        Assertions.assertEquals(TopicCommand.CURRENT_VERSION, data.getVersion());
+
+        TopicName tn = new TopicName("deleteme");
+        data = TopicCommand.delete(tn);
+        bytes = serde.serialize("dummy", data);
+        data = serde.deserialize("dummy", bytes);
+        Assertions.assertEquals(TopicCommand.Type.DELETE, data.getType());
+        Assertions.assertEquals(tn, data.getName());
+        Assertions.assertEquals(TopicCommand.CURRENT_VERSION, data.getVersion());
+    }
 
     @Test
     public void testResourceSerializationRoundTrip() {

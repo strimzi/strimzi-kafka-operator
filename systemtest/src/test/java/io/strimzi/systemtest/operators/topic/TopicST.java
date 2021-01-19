@@ -143,14 +143,17 @@ public class TopicST extends AbstractST {
 
         try (AdminClient adminClient = AdminClient.create(properties)) {
 
+            Set<String> topics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
+            int topicsSize = topics.size(); // new KafkaStreamsTopicStore has topology input topics
+
             LOGGER.info("Creating async topic {} via Admin client", TOPIC_NAME);
             CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(TOPIC_NAME, 1, (short) 1)));
             crt.all().get();
 
-            Set<String> topics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
+            topics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
 
-            LOGGER.info("Verify that in Kafka cluster contains {} topics", 1);
-            assertThat(topics.size(), is(1));
+            LOGGER.info("Verify that in Kafka cluster contains {} topics", topicsSize + 1);
+            assertThat(topics.size(), is(topicsSize + 1));
             assertThat(topics.contains(TOPIC_NAME), is(true));
 
             KafkaTopicUtils.waitForKafkaTopicCreation(TOPIC_NAME);

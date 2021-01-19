@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -72,19 +71,27 @@ public class KafkaRollerST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY));
 
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 4)
-            .editSpec()
-                .editKafka()
-                    .addToConfig("auto.create.topics.enable", "false")
-                .endKafka()
-            .endSpec()
-            .build());
+        // We need to start with 3 replicas / brokers,
+        // so that KafkaStreamsTopicStore topic gets set/distributed on this first 3 [0, 1, 2],
+        // since this topic has replication-factor 3 and minISR 2.
+        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3)
+                .editSpec()
+                    .editKafka()
+                        .addToConfig("auto.create.topics.enable", "false")
+                    .endKafka()
+                .endSpec()
+                .build());
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
         final int initialReplicas = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getStatus().getReplicas();
-        assertEquals(4, initialReplicas);
+        assertEquals(3, initialReplicas);
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        // Now that KafkaStreamsTopicStore topic is set on the first 3 brokers, lets spin-up another one.
+        int scaledUpReplicas = 4;
+        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledUpReplicas));
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), scaledUpReplicas);
+
+        StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
         KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 4, 4, 4).build());
 
@@ -105,7 +112,7 @@ public class KafkaRollerST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), scaledDownReplicas);
 
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
-        kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).withPropagationPolicy(DeletionPropagation.ORPHAN).edit()
@@ -277,7 +284,7 @@ public class KafkaRollerST extends AbstractST {
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String clusterName) {
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(clusterName));
-        int runningKafkaPods = kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).collect(Collectors.toList()).size();
+        int runningKafkaPods = (int) kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).count();
 
         return runningKafkaPods == (kafkaPods.size() - 1);
     }

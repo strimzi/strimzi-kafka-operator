@@ -11,6 +11,7 @@ import io.vertx.core.Handler;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.ACL;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,5 +95,29 @@ class MockZk implements Zk {
     @Override
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
         return null;
+    }
+
+    @Override
+    public Future<Boolean> pathExists(String path) {
+        return Future.succeededFuture(getPathExists(path));
+    }
+
+    @Override
+    public boolean getPathExists(String path) {
+        return false;
+    }
+
+    @Override
+    public List<String> getChildren(String path) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public byte[] getData(String path) {
+        return new byte[0];
+    }
+
+    @Override
+    public void delete(String path, int version) {
     }
 }

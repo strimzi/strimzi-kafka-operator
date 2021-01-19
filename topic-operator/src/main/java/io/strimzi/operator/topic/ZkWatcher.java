@@ -74,7 +74,7 @@ public abstract class ZkWatcher {
         Handler<AsyncResult<byte[]>> handler = dataResult -> {
             if (dataResult.succeeded()) {
                 this.children.compute(child, (k, v) -> {
-                    if (v) {
+                    if (v != null && v) {
                         this.notifyOperator(child);
                     }
                     return true;

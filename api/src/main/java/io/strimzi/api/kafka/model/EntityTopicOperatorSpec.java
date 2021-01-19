@@ -29,7 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "livenessProbe", "readinessProbe",
+        "startupProbe", "livenessProbe", "readinessProbe",
         "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
 public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Serializable {
@@ -50,6 +50,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     protected int zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+    private Probe startupProbe;
     private Probe livenessProbe;
     private Probe readinessProbe;
     protected ResourceRequirements resources;
@@ -113,6 +114,16 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
 
     public void setResources(ResourceRequirements resources) {
         this.resources = resources;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod startup checking.")
+    public Probe getStartupProbe() {
+        return startupProbe;
+    }
+
+    public void setStartupProbe(Probe startupProbe) {
+        this.startupProbe = startupProbe;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

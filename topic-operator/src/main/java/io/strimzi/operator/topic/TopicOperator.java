@@ -60,7 +60,7 @@ class TopicOperator {
     private final Vertx vertx;
     private final Labels labels;
     private final String namespace;
-    private TopicStore topicStore;
+    private final TopicStore topicStore;
     private final Config config;
     private final ConcurrentHashMap<TopicName, Integer> inflight = new ConcurrentHashMap<>();
 
