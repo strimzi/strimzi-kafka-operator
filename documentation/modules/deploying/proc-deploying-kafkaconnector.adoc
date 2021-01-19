@@ -3,16 +3,29 @@
 // assembly-kafka-connect.adoc
 
 [id='proc-deploying-kafkaconnector-{context}']
-= Deploying a `KafkaConnector` resource to Kafka Connect
+= Deploying the example `KafkaConnector` resources
 
-This procedure describes how to deploy the example `KafkaConnector` to a Kafka Connect cluster.
+Strimzi includes an example `KafkaConnector` in `examples/connect/source-connector.yaml`. 
+This creates a basic `FileStreamSourceConnector` instance that sends each line of the Kafka license file (an example file source) to a single Kafka topic. 
 
-The example YAML will create a `FileStreamSourceConnector` to send each line of the license file to Kafka as a message in a topic named `my-topic`.
+This procedure describes how to create: 
+
+* A `FileStreamSourceConnector` that reads data from the Kafka license file (the source) and writes the data as messages to a Kafka topic.
+
+* A `FileStreamSinkConnector` that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).
+
+[NOTE]
+====
+In a production environment, you prepare container images containing your desired Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
+
+The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as examples. Running these connectors in containers as described here is unlikely to be suitable for production use cases.
+====
 
 .Prerequisites
 
-* A Kafka Connect deployment in which link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[`KafkaConnectors` are enabled^]
-* A running Cluster Operator
+* A Kafka Connect deployment
+* link:{BookURLUsing}#proc-enabling-kafkaconnectors-deployment-configuration-kafka-connect[`KafkaConnectors` are enabled^]
+* The Cluster Operator is running
 
 .Procedure
 
@@ -30,27 +43,138 @@ spec:
   class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
   tasksMax: 2 <4>
   config: <5>
-    file: "/opt/kafka/LICENSE"
-    topic: my-topic
+    file: "/opt/kafka/LICENSE" <6>
+    topic: my-topic <7>
     # ...
 ----
 +
-<1> Enter a name for the `KafkaConnector` resource. This will be used as the name of the connector within Kafka Connect. You can choose any name that is valid for a Kubernetes resource.
-<2> Enter the name of the Kafka Connect cluster in which to create the connector.
-<3> The name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
-<4> The maximum number of tasks that the connector can create.
-<5> Configuration settings for the connector. Available configuration options depend on the connector class.
+<1> Name of the `KafkaConnector` resource, which is used as the name of the connector. Use any name that is valid for a Kubernetes resource.
+<2> Name of the Kafka Connect cluster to create the connector in.
+<3> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
+<4> Maximum number of Kafka Connect `Tasks` that the connector can create.
+<5> xref:#kafkaconnector-configs[Connector configuration] as key-value pairs.
+<6> This example source connector configuration reads data from the `/opt/kafka/LICENSE` file. 
+<7> Kafka topic to publish the source data to.
 
-. Create the `KafkaConnector` in your Kubernetes cluster:
+. Create the source `KafkaConnector` in your Kubernetes cluster:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl apply -f examples/connect/source-connector.yaml
 ----
 
-. Check that the resource was created:
+. Create an `examples/connect/sink-connector.yaml` file:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kctr --selector strimzi.io/cluster=my-connect-cluster -o name
+touch examples/connect/sink-connector.yaml
 ----
+
+. Paste the following YAML into the `sink-connector.yaml` file:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnector
+metadata:
+  name: my-sink-connector
+  labels:
+    strimzi.io/cluster: my-connect
+spec:
+  class: org.apache.kafka.connect.file.FileStreamSinkConnector <1>
+  tasksMax: 2 
+  config: <2>
+    file: "/tmp/my-file" <3>
+    topics: my-topic <4>
+----
++
+<1> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
+<2> xref:#kafkaconnector-configs[Connector configuration] as key-value pairs.
+<3> Temporary file to publish the source data to.
+<4> Kafka topic to read the source data from.
+
+. Create the sink `KafkaConnector` in your Kubernetes cluster:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f examples/connect/sink-connector.yaml
+----
+
+. Check that the connector resources were created:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kctr --selector strimzi.io/cluster=_MY-CONNECT-CLUSTER_ -o name
+
+my-source-connector
+my-sink-connector
+----
++
+Replace _MY-CONNECT-CLUSTER_ with your Kafka Connect cluster.
+
+. In the container, execute `kafka-console-consumer.sh` to read the messages that were written to the topic by the source connector:
++
+[source,shell,subs="+quotes"]
+----
+kubectl exec _MY-CLUSTER_-kafka-0 -i -t -- bin/kafka-console-consumer.sh --bootstrap-server _MY-CLUSTER_-kafka-bootstrap._NAMESPACE_.svc:9092 --topic my-topic --from-beginning
+----
+
+[[kafkaconnector-configs]]
+[discrete]
+== Source and sink connector configuration options
+
+The connector configuration is defined in the `spec.config` property of the `KafkaConnector` resource.
+
+The `FileStreamSourceConnector` and `FileStreamSinkConnector` classes support the same configuration options as the Kafka Connect REST API. 
+Other connectors support different configuration options.
+
+.Configuration options for the `FileStreamSource` connector class
+[cols="4*",options="header",stripes="none",separator=¦]
+|===
+
+¦Name
+¦Type
+¦Default value
+¦Description
+
+m¦file
+¦String
+¦Null
+¦Source file to write messages to. If not specified, the standard input is used.
+
+m¦topic
+¦List
+¦Null
+¦The Kafka topic to publish data to.
+
+|===
+
+.Configuration options for `FileStreamSinkConnector` class
+[cols="4*",options="header",stripes="none",separator=¦]
+|===
+
+¦Name
+¦Type
+¦Default value
+¦Description
+
+m¦file
+¦String
+¦Null
+¦Destination file to write messages to. If not specified, the standard output is used.
+
+m¦topics
+¦List
+¦Null
+¦One or more Kafka topics to read data from.
+
+m¦topics.regex
+¦String
+¦Null
+¦A regular expression matching one or more Kafka topics to read data from.
+
+|===
+
+.Additional resources
+
+* xref:con-creating-managing-connectors-{context}[]
