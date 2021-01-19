@@ -288,7 +288,7 @@
       "interBrokerProtocolVersion": "2.7"
     },
     "client": {
-      "beforeKafkaUpdate": "quay.io/strimzi/test-client:0.20.1-kafka-2.6.0",
+      "beforeKafkaUpdate": "strimzi/test-client:0.20.1-kafka-2.6.0",
       "afterKafkaUpdate": "quay.io/strimzi/test-client:0.21.1-kafka-2.7.0",
       "continuousClientsMessages": 500
     },
