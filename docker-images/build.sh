@@ -2,7 +2,7 @@
 set -e
 
 source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
-source $(dirname $(realpath $0))/../multi-platform-support.sh
+source $(dirname $(realpath $0))/../tools/multi-platform-support.sh
 
 # Image directories
 base_images="base"

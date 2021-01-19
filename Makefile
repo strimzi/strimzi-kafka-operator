@@ -179,6 +179,6 @@ systemtest_make:
 	$(MAKE) -C systemtest $(MAKECMDGOALS)
 
 prerequisites_check:
-	SED=$(SED) ./prerequisites-check.sh
+	SED=$(SED) ./tools/prerequisites-check.sh
 
 .PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check prerequisites_check

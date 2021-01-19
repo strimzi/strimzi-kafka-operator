@@ -91,8 +91,8 @@ To build this project you must first install several command line utilities and 
 - [`helm`](https://helm.sh/) (version 3) - Helm Package Management System for Kubernetes 
 - [`asciidoctor` and `asciidoctor-pdf`](https://asciidoctor.org/) - Documentation generation. 
     - Use `gem` to install latest version for your platform.
-- [`yq`](https://github.com/mikefarah/yq) - (version 3.3.1 and above) YAML manipulation tool. 
-    - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq). You need **v3** version.
+- [`yq`](https://github.com/mikefarah/yq) - (version 4.2.1 and above) YAML manipulation tool. 
+    - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq). You need version 4 or above.
 - [`docker`](https://docs.docker.com/install/) - Docker command line client
 
 In order to use `make` these all need to be available on your `$PATH`.
