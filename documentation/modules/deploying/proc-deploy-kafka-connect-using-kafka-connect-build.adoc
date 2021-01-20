@@ -61,7 +61,7 @@ $ kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
 
 . Wait for the new container image to build, and for the Kafka Connect cluster to be deployed.
 
-. Use the Kafka Connect REST API or the `KafkaConnector` custom resources to use the connector plugins you added.
+. Use the Kafka Connect REST API or the KafkaConnector custom resources to use the connector plugins you added.
 
 .Additional resources
 
