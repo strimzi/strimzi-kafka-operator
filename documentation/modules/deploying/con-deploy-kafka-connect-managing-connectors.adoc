@@ -36,7 +36,7 @@ Using the APIs, you can:
 
 KafkaConnectors allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way, so an HTTP client such as cURL is not required.
 Like other Kafka resources, you declare a connector’s desired state in a KafkaConnector YAML file that is deployed to your Kubernetes cluster to create the connector instance.
-KafkaConnector resources must be deployed to the same namespace as the Kafka connect cluster they link to.
+KafkaConnector resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
 
 You manage a running connector instance by updating its corresponding KafkaConnector resource, and then applying the updates.
 You remove a connector by deleting its corresponding KafkaConnector.

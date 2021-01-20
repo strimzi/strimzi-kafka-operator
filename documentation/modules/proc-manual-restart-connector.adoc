@@ -13,7 +13,7 @@ This procedure describes how to manually trigger a restart of a Kafka connector 
 
 .Procedure
 
-. Find the name of the `KafkaConnector` custom resource that controls the Kafka connector you want to restart:
+. Find the name of the KafkaConnector custom resource that controls the Kafka connector you want to restart:
 [source,shell,subs=+quotes]
 kubectl get KafkaConnector
 
@@ -24,4 +24,4 @@ kubectl annotate KafkaConnector _KafkaConnector-name_ strimzi.io/restart=true
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 The Kafka connector is restarted, as long as the annotation was detected by the reconciliation process.
-When Kafka Connect accepts the restart request, the annotation is removed from the `KafkaConnector` custom resource.
+When Kafka Connect accepts the restart request, the annotation is removed from the KafkaConnector custom resource.

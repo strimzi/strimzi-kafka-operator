@@ -116,7 +116,7 @@ spec:
 ----
 
 You enable KafkaConnectors by adding an annotation to the `KafkaConnect` resource.
-KafkaConnector resources must be deployed to the same namespace as the Kafka connect cluster they link to.
+KafkaConnector resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
 
 [discrete]
 == Example YAML showing annotation to enable KafkaConnector
