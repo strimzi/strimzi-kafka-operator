@@ -142,7 +142,7 @@ A policy is given a unique name, and can be reused to target multiple permission
 
 Use fine-grained permissions to pull together the policies, resources, and authorization scopes that grant access to users.
 
-The name of the each permission should clearly define what permissions it grants to which users.
+The name of each permission should clearly define what permissions it grants to which users.
 
 For more information on how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[the authorization example].
 
