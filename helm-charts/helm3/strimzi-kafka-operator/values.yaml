@@ -19,6 +19,8 @@ kubernetesServiceDnsDomain: cluster.local
 
 tolerations: []
 affinity: {}
+annotations: {}
+labels: {}
 nodeSelector: {}
 
 # Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the

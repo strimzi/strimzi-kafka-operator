@@ -159,6 +159,8 @@ the documentation for more details.
 | `createGlobalResources`              | Allow creation of cluster-scoped resources| `true`                                               |
 | `tolerations`                        | Add tolerations to Operator Pod           | `[]`                                                 |
 | `affinity`                           | Add affinities to Operator Pod            | `{}`                                                 |
+| `annotations`                        | Add annotations to Operator Pod           | `{}`                                                 |
+| `labels`                             | Add labels to Operator Pod                | `{}`                                                 |
 | `nodeSelector`                       | Add a node selector to Operator Pod       | `{}`                                                 |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
