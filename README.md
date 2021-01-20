@@ -25,6 +25,18 @@ If you encounter any issues while using Strimzi, you can get help using:
 
 - [#strimzi channel on CNCF Slack](https://slack.cncf.io/)
 - [Strimzi Users mailing list](https://lists.cncf.io/g/cncf-strimzi-users/topics)
+- [GitHub Discussions](https://github.com/strimzi/strimzi-kafka-operator/discussions)
+
+## Strimzi Community Meetings
+
+You can join our regular community meetings:
+* Thursday 8:00 AM UTC (every 4 weeks starting from 4th June 2020) - [convert to your timezone](https://www.thetimezoneconverter.com/?t=8%3A00&tz=UTC)
+* Thursday 4:00 PM UTC (every 4 weeks starting from 18th June 2020) - [convert to your timezone](https://www.thetimezoneconverter.com/?t=16%3A00&tz=UTC)
+
+Resources:
+* [Meeting minutes, agenda and Zoom link](https://docs.google.com/document/d/1V1lMeMwn6d2x1LKxyydhjo2c_IFANveelLD880A6bYc/edit#heading=h.vgkvn1hr5uor)
+* [Recordings](https://youtube.com/playlist?list=PLpI4X8PMthYfONZopcRd4X_stq1C14Rtn)
+* [Calendar](https://calendar.google.com/calendar/embed?src=c_m9pusj5ce1b4hr8c92hsq50i00%40group.calendar.google.com) ([Subscribe to the calendar](https://calendar.google.com/calendar/u/0?cid=Y19tOXB1c2o1Y2UxYjRocjhjOTJoc3E1MGkwMEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t))
 
 ## Contributing
 
