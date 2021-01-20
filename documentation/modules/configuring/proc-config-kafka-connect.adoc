@@ -11,12 +11,13 @@ Use the properties of the `KafkaConnect` or `KafkaConnectS2I` resource to config
 The example shown in this procedure is for the `KafkaConnect` resource, but the properties are the same for the `KafkaConnectS2I` resource.
 
 .Kafka connector configuration
-`KafkaConnector` resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
+KafkaConnector resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
 
-In the configuration, you enable `KafkaConnectors` for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources` annotation.
+In the configuration, you enable KafkaConnectors for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources` annotation.
 You can also specify external configuration for Kafka Connect connectors through the `externalConfiguration` property.
 
-Connectors are created, reconfigured, and deleted using the Kafka Connect HTTP REST interface, or by using `KafkaConnectors`.
+Connectors are created, reconfigured, and deleted using the Kafka Connect HTTP REST interface, or by using KafkaConnectors.
+KafkaConnector resources must be deployed to the same namespace as the Kafka connect cluster they link to.
 For more information on these methods, see link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^] in the _Deploying and Upgrading Strimzi_ guide.
 
 The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
@@ -140,7 +141,7 @@ spec:
           value: "6831"
 ----
 <1> Use `KafkaConnect` or `KafkaConnectS2I`, as required.
-<2> Enables `KafkaConnectors` for the Kafka Connect cluster.
+<2> Enables KafkaConnectors for the Kafka Connect cluster.
 <3> xref:con-common-configuration-replicas-reference[The number of replica nodes].
 <4> Authentication for the Kafka Connect cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 By default, Kafka Connect connects to Kafka brokers using a plain text connection.

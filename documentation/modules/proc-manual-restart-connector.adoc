@@ -17,7 +17,7 @@ This procedure describes how to manually trigger a restart of a Kafka connector 
 [source,shell,subs=+quotes]
 kubectl get KafkaConnector
 
-. To restart the connector, annotate the `KafkaConnector` resource in Kubernetes.
+. To restart the connector, annotate the KafkaConnector resource in Kubernetes.
 For example, using `kubectl annotate`:
 [source,shell,subs=+quotes]
 kubectl annotate KafkaConnector _KafkaConnector-name_ strimzi.io/restart=true

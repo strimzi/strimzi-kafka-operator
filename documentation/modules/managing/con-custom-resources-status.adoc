@@ -30,7 +30,7 @@ m¦KafkaConnectS2I
 
 m¦KafkaConnector
 ¦xref:type-KafkaConnectorStatus-reference[]
-¦`KafkaConnector` resources, if deployed.
+¦KafkaConnector resources, if deployed.
 
 m¦KafkaMirrorMaker
 ¦xref:type-KafkaMirrorMakerStatus-reference[]

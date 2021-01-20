@@ -22,7 +22,7 @@ Task IDs are non-negative integers, starting from 0:
 [source,shell,subs=+quotes]
 kubectl describe KafkaConnector _KafkaConnector-name_
 
-. To restart the connector task, annotate the `KafkaConnector` resource in Kubernetes.
+. To restart the connector task, annotate the KafkaConnector resource in Kubernetes.
 For example, using `kubectl annotate` to restart task 0:
 [source,shell,subs=+quotes]
 kubectl annotate KafkaConnector _KafkaConnector-name_ strimzi.io/restart-task=0
