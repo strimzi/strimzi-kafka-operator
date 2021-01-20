@@ -403,7 +403,7 @@ For more information about setting up and deploying Prometheus and Grafana, see 
 [id='con-common-configuration-jvm-{context}']
 === `jvmOptions`
 
-The following components of Strimzi run inside a Virtual Machine (VM):
+The following Strimzi components run inside a Java Virtual Machine (JVM):
 
 * Apache Kafka
 * Apache ZooKeeper
@@ -411,8 +411,7 @@ The following components of Strimzi run inside a Virtual Machine (VM):
 * Apache Kafka MirrorMaker
 * Strimzi Kafka Bridge
 
-JVM configuration options optimize the performance for different platforms and architectures,
-and can be configured using the `jvmOptions` property in following resources:
+To optimize their performance on different platforms and architectures, you configure the `jvmOptions` property in the following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
@@ -422,40 +421,44 @@ and can be configured using the `jvmOptions` property in following resources:
 * `KafkaMirrorMaker2.spec`
 * `KafkaBridge.spec`
 
-Only the following JVM options are supported:
+You can specify the following options in your configuration:
 
-`-Xms`:: Configures the minimum initial allocation heap size when the JVM starts.
-`-Xmx`:: Configures the maximum heap size.
+`-Xms`:: Minimum initial allocation heap size when the JVM starts.
+`-Xmx`:: Maximum heap size.
+`-XX`:: Advanced runtime options for the JVM.
+`javaSystemProperties`:: Additional system properties.
+`gcLoggingEnabled`:: xref:con-common-configuration-garbage-collection-{context}[Enables garbage collector logging].
 
-NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
-Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
-This is in contrast to the units used for xref:con-common-configuration-resources-reference[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+The full schema of `jvmOptions` is described in xref:type-JvmOptions-reference[`JvmOptions` schema reference].
 
-The default values used for `-Xms` and `-Xmx` depends on whether there is a xref:con-common-configuration-resources-reference[memory request] limit configured for the container.
+NOTE: The units accepted by JVM settings, such as `-Xmx` and `-Xms`, are the same units accepted by the JDK `java` binary in the corresponding image.
+Therefore, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
+This is different from the units used for xref:con-common-configuration-resources-reference[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+
+.`-Xms` and `-Xmx` options
+
+The default values used for `-Xms` and `-Xmx` depend on whether there is a xref:con-common-configuration-resources-reference[memory request] limit configured for the container.
 
 * If there is a memory limit, the JVM's minimum and maximum memory is set to a value corresponding to the limit.
-* If there is no memory limit, the JVM's minimum memory is set to `128M`. The JVM's maximum memory is not defined to allow the memory to grow as needed, which is ideal for single node environments in test and development.
+* If there is no memory limit, the JVM's minimum memory is set to `128M`. The JVM's maximum memory is not defined to allow the memory to increase as needed. This is ideal for single node environments in test and development.
 
-[IMPORTANT]
-====
-Setting `-Xmx` explicitly requires some care:
+Before setting `-Xmx` explicitly consider the following:
 
 * The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
-* If `-Xmx` is set without also setting an appropriate Kubernetes memory limit, it is possible that the container will be killed should the Kubernetes node experience memory pressure (from other Pods running on it).
+* If `-Xmx` is set without also setting an appropriate Kubernetes memory limit, it is possible that the container will be killed should the Kubernetes node experience memory pressure from other Pods running on it.
 * If `-Xmx` is set without also setting an appropriate Kubernetes memory request, it is possible that the container will be scheduled to a node with insufficient memory.
-In this case, the container will not start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
-====
+In this case, the container will not start but crash immediately if `-Xms` is set to `-Xmx`, or at a later time if not.
 
-When setting `-Xmx` explicitly, it is recommended to:
+It is _recommended_ to:
 
 * Set the memory request and the memory limit to the same value
 * Use a memory request that is at least 4.5 × the `-Xmx`
 * Consider setting `-Xms` to the same value as `-Xmx`
 
-IMPORTANT: Containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as an operating system page cache.
-On such containers, the requested memory should be significantly higher than the memory used by the JVM.
+In this example, the JVM uses 2 GiB (=2,147,483,648 bytes) for its heap.
+Its total memory usage is approximately 8GiB.
 
-.Example fragment configuring `-Xmx` and `-Xms`
+.Example `-Xmx` and `-Xms` configuration
 [source,yaml,subs=attributes+]
 ----
 # ...
@@ -465,19 +468,16 @@ jvmOptions:
 # ...
 ----
 
-In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap.
-Its total memory usage will be approximately 8GiB.
-
 Setting the same value for initial (`-Xms`) and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
-For Kafka and ZooKeeper pods such allocation could cause unwanted latency.
-For Kafka Connect avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation is multiplied by the number of consumers.
 
-*-XX*
+IMPORTANT: Containers performing lots of disk I/O, such as Kafka broker containers, require available memory for use as an operating system page cache.
+On such containers, the requested memory should be significantly higher than the memory used by the JVM.
 
-`-XX` object can be used for configuring advanced runtime options of a JVM.
-The `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE_OPTS` option of Apache Kafka.
+.-XX option
 
-.Example showing the use of the `-XX` object
+`-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE_OPTS` option of Apache Kafka.
+
+.Example `-XX` configuration
 [source,yaml,subs=attributes+]
 ----
 jvmOptions:
@@ -488,14 +488,27 @@ jvmOptions:
     "ExplicitGCInvokesConcurrent": true
 ----
 
-The example configuration above will result in the following JVM options:
-
+.JVM options resulting from the `-XX` configuration
 [source]
 ----
 -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC
 ----
 
 NOTE: When no `-XX` options are specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` is used.
+
+.`javaSystemProperties`
+
+`javaSystemProperties` are used to configure additional Java system properties, such as debugging utilities.
+
+.Example `javaSystemProperties` configuration
+[source,yaml,subs=attributes+]
+----
+jvmOptions:
+  javaSystemProperties:
+    - name: javax.net.debug
+      value: ssl
+----
+
 
 [id='con-common-configuration-garbage-collection-{context}']
 === Garbage collector logging
@@ -504,7 +517,7 @@ The `jvmOptions` property also allows you to enable and disable garbage collecto
 GC logging is disabled by default.
 To enable it, set the `gcLoggingEnabled` property as follows:
 
-.Example of enabling GC logging
+.Example GC logging configuration
 [source,yaml,subs=attributes+]
 ----
 # ...
