@@ -100,12 +100,18 @@ public class StatusUtils {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
         List<Condition> conditionList = new ArrayList<>();
-        if (status.getConditions() != null) {
-            conditionList.addAll(status.getConditions());
-        }
+        Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
         conditionList.add(condition);
+
+        if (status.getConditions() != null) {
+            status.getConditions().forEach(cond -> {
+                if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason())) {
+                    conditionList.add(cond);
+                }
+            });
+        }
+
         status.setConditions(conditionList);
     }
 
