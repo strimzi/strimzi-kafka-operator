@@ -46,6 +46,8 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -115,28 +117,36 @@ class ConnectS2IST extends AbstractST {
     private String kafkaClientsPodName;
 
     @Test
-    void testDeployS2IWithMongoDBPlugin() throws InterruptedException, IOException {
+    void testDeployS2IWithCamelTimerPlugin() throws InterruptedException, IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
+        String timerTopicName = "timer-topic";
         // Calls to Connect API are executed from kafka-0 pod
-        deployConnectS2IWithMongoDb(kafkaConnectS2IName, false);
+        deployConnectS2IWithCamelTimer(kafkaConnectS2IName, false);
 
-        String mongoDbConfig = "{" +
+        String timerConnectorConfig = "{" +
                 "\"name\": \"" + kafkaConnectS2IName + "\"," +
                 "\"config\": {" +
-                "   \"connector.class\" : \"io.debezium.connector.mongodb.MongoDbConnector\"," +
+                "   \"connector.class\" : \"org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector\"," +
                 "   \"tasks.max\" : \"1\"," +
-                "   \"mongodb.hosts\" : \"debezium/localhost:27017\"," +
-                "   \"mongodb.name\" : \"dbserver1\"," +
-                "   \"mongodb.user\" : \"debezium\"," +
-                "   \"mongodb.password\" : \"dbz\"," +
-                "   \"database.history.kafka.bootstrap.servers\" : \"localhost:9092\"}" +
+                "   \"camel.source.path.timerName\" : \"timer\"," +
+                "   \"topics\" : \"" + timerTopicName + "\"," +
+                "   \"value.converter.schemas.enable\" : \"false\"," +
+                "   \"transforms\" : \"HoistField,InsertField,ReplaceField\"," +
+                "   \"transforms.HoistField.type\" : \"org.apache.kafka.connect.transforms.HoistField$Value\"," +
+                "   \"transforms.HoistField.field\" : \"originalValue\"," +
+                "   \"transforms.InsertField.type\" : \"org.apache.kafka.connect.transforms.InsertField$Value\"," +
+                "   \"transforms.InsertField.timestamp.field\" : \"timestamp\"," +
+                "   \"transforms.InsertField.static.field\" : \"message\"," +
+                "   \"transforms.InsertField.static.value\" : \"'Hello World'\"," +
+                "   \"transforms.ReplaceField.type\" : \"org.apache.kafka.connect.transforms.ReplaceField$Value\"," +
+                "   \"transforms.ReplaceField.blacklist\" : \"originalValue\"}" +
                 "}";
 
         KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
         TestUtils.waitFor("ConnectS2I will be ready and POST will be executed", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             String createConnectorOutput = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "POST", "-H", "Accept:application/json", "-H", "Content-Type:application/json",
-                    "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", mongoDbConfig).out();
+                    "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/", "-d", timerConnectorConfig).out();
             LOGGER.info("Create Connector result: {}", createConnectorOutput);
             return !createConnectorOutput.contains("error_code");
         });
@@ -147,27 +157,39 @@ class ConnectS2IST extends AbstractST {
         String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
 
         assertThat(connectorStatus, containsString("RUNNING"));
+
+        consumerTimerMessages(timerTopicName);
     }
 
     @Test
     @Tag(CONNECTOR_OPERATOR)
-    void testDeployS2IAndKafkaConnectorWithMongoDBPlugin() throws IOException {
+    void testDeployS2IAndKafkaConnectorWithCamelTimerPlugin() throws IOException {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-11";
+        String timerTopicName1 = "timer-topic";
+        String timerTopicName2 = "timer-topic-2";
+        String consumerName = "timer-consumer";
         // Calls to Connect API are executed from kafka-0 pod
-        deployConnectS2IWithMongoDb(kafkaConnectS2IName, true);
+        deployConnectS2IWithCamelTimer(kafkaConnectS2IName, true);
 
         // Make sure that Connect API is ready
         KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
         KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
             .withNewSpec()
-                .withClassName("io.debezium.connector.mongodb.MongoDbConnector")
+                .withClassName("org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector")
                 .withTasksMax(2)
-                .addToConfig("mongodb.hosts", "debezium/localhost:27017")
-                .addToConfig("mongodb.name", "dbserver1")
-                .addToConfig("mongodb.user", "debezium")
-                .addToConfig("mongodb.password", "dbz")
-                .addToConfig("database.history.kafka.bootstrap.servers", "localhost:9092")
+                .addToConfig("camel.source.path.timerName", "timer")
+                .addToConfig("topics", timerTopicName1)
+                .addToConfig("value.converter.schemas.enable", "false")
+                .addToConfig("transforms", "HoistField,InsertField,ReplaceField")
+                .addToConfig("transforms.HoistField.type", "org.apache.kafka.connect.transforms.HoistField$Value")
+                .addToConfig("transforms.HoistField.field", "originalValue")
+                .addToConfig("transforms.InsertField.type", "org.apache.kafka.connect.transforms.InsertField$Value")
+                .addToConfig("transforms.InsertField.timestamp.field", "timestamp")
+                .addToConfig("transforms.InsertField.static.field", "message")
+                .addToConfig("transforms.InsertField.static.value", "'Hello World'")
+                .addToConfig("transforms.ReplaceField.type", "org.apache.kafka.connect.transforms.ReplaceField$Value")
+                .addToConfig("transforms.ReplaceField.blacklist", "originalValue")
             .endSpec()
             .build());
 
@@ -177,17 +199,21 @@ class ConnectS2IST extends AbstractST {
         String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + apiUrl + ":8083/connectors/" + kafkaConnectS2IName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
 
+        consumerTimerMessages(timerTopicName1);
+
         String connectorConfig = KafkaConnectorUtils.getConnectorConfig(kafkaClientsPodName, kafkaConnectS2IName, apiUrl);
         KafkaConnectorResource.replaceKafkaConnectorResource(kafkaConnectS2IName, kC -> {
             Map<String, Object> config = kC.getSpec().getConfig();
-            config.put("mongodb.user", "test-user");
+            config.put("topics", timerTopicName2);
             kC.getSpec().setConfig(config);
             kC.getSpec().setTasksMax(8);
         });
 
         connectorConfig = KafkaConnectorUtils.waitForConnectorConfigUpdate(kafkaClientsPodName, kafkaConnectS2IName, connectorConfig, apiUrl);
         assertThat(connectorConfig.contains("tasks.max\":\"8"), is(true));
-        assertThat(connectorConfig.contains("mongodb.user\":\"test-user"), is(true));
+        assertThat(connectorConfig.contains("topics\":\"timer-topic-2"), is(true));
+
+        consumerTimerMessages(timerTopicName2);
     }
 
     @Test
@@ -954,7 +980,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(kafkaConnectS2I.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
-    private void deployConnectS2IWithMongoDb(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
+    private void deployConnectS2IWithCamelTimer(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
         KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
         KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
@@ -966,7 +992,7 @@ class ConnectS2IST extends AbstractST {
         String depConfName = KafkaConnectS2IResources.deploymentName(kafkaConnectS2IName);
         Map<String, String> connectSnapshot = DeploymentConfigUtils.depConfigSnapshot(depConfName);
 
-        File dir = FileUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.7.5/debezium-connector-mongodb-0.7.5-plugin.zip");
+        File dir = FileUtils.downloadAndUnzip("https://repo1.maven.org/maven2/org/apache/camel/kafkaconnector/camel-timer-kafka-connector/0.7.0/camel-timer-kafka-connector-0.7.0-package.zip");
 
         // Start a new image build using the plugins directory
         cmdKubeClient().execInCurrentNamespace("start-build", depConfName, "--from-dir", dir.getAbsolutePath());
@@ -976,7 +1002,7 @@ class ConnectS2IST extends AbstractST {
         LOGGER.info("Collect plugins information from connect s2i pod");
         String plugins = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(kafkaConnectS2IName) + ":8083/connector-plugins").out();
 
-        assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
+        assertThat(plugins, containsString("org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector"));
     }
 
     private void checkConnectorInStatus(String namespace, String kafkaConnectS2IName) {
@@ -989,7 +1015,21 @@ class ConnectS2IST extends AbstractST {
                 "org.apache.kafka.connect.mirror.MirrorCheckpointConnector",
                 "org.apache.kafka.connect.mirror.MirrorHeartbeatConnector",
                 "org.apache.kafka.connect.mirror.MirrorSourceConnector",
-                "io.debezium.connector.mongodb.MongoDbConnector"));
+                "org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector"));
+    }
+
+    private void consumerTimerMessages(String topicName) {
+        String consumerName = "timer-consumer-" + rng.nextInt(Integer.MAX_VALUE);
+        KafkaBasicExampleClients kafkaBasicClientResource = new KafkaBasicExampleClients.Builder()
+                .withConsumerName(consumerName)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+                .withTopicName(topicName)
+                .withMessageCount(10)
+                .withDelayMs(0)
+                .build();
+
+        kafkaBasicClientResource.create(kafkaBasicClientResource.consumerStrimzi().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, 10);
     }
 
     @BeforeAll
