@@ -85,7 +85,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-@Version(Constants.V1BETA2)
+@Version(Constants.V1BETA1)
 @Group(Constants.STRIMZI_GROUP)
 public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements UnknownPropertyPreserving {
 
