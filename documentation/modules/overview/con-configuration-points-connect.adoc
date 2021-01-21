@@ -65,7 +65,8 @@ The `output` properties describe the type and name of the image, and optionally 
 The `plugins` properties describe the type of artifact and the URL from which the artifact is downloaded. Additionally, you can specify a SHA-512 checksum to verify the artifact before unpacking it.
 
 .Example Kafka Connect configuration to create a new image automatically
-[source,yaml,subs=quotes,attributes]
+[source,shell,subs="+quotes,attributes"]
+
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
