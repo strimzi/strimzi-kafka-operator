@@ -210,7 +210,8 @@ public class KafkaUserModel {
                         && userCrt != null
                         && !userCrt.isEmpty()
                         && userKey != null
-                        && !userKey.isEmpty()) {
+                        && !userKey.isEmpty()
+                        && !clientsCa.isExpiring(userSecret, "user.crt")) {
 
                     if (userKeyStore != null
                             && !userKeyStore.isEmpty()
@@ -224,7 +225,6 @@ public class KafkaUserModel {
                                 decodeFromSecret(userSecret, "user.p12"),
                                 new String(decodeFromSecret(userSecret, "user.password"), StandardCharsets.US_ASCII));
                     } else {
-
                         // coming from an older operator version, the user secret exists but without keystore and password
                         try {
                             this.userCertAndKey = clientsCa.addKeyAndCertToKeyStore(name,
