@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -1800,7 +1799,7 @@ class KafkaST extends AbstractST {
             .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
             .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
 
-        kubeClient().getClient().customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).delete();
+        kubeClient().getClient().customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class).inNamespace(NAMESPACE).delete();
         kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
 }

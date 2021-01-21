@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Constants;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Kafka;
@@ -164,7 +163,7 @@ import static java.util.Collections.emptyMap;
  * </ul>
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
-public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>, KafkaSpec, KafkaStatus> {
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, Resource<Kafka>, KafkaSpec, KafkaStatus> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
@@ -184,7 +183,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final IngressOperator ingressOperations;
     private final StorageClassOperator storageClassOperator;
     private final NodeOperator nodeOperator;
-    private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
+    private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
     private final ZookeeperScalerProvider zkScalerProvider;
     private final AdminClientProvider adminClientProvider;
 

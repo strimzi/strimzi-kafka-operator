@@ -4,13 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.certs.CertManager;
@@ -44,9 +42,9 @@ import java.util.List;
  * <p>This class manages a per-assembly locking strategy so only one operation per assembly
  * can proceed at once.</p>
  */
-public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends CustomResource & HasSpecAndStatus<P, S>,
-        L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>, P extends Spec, S extends Status>
-    extends AbstractOperator<T, P, S, AbstractWatchableStatusedResourceOperator<C, T, L, D, R>> {
+public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends CustomResource<P, S>,
+        L extends KubernetesResourceList<T>, R extends Resource<T>, P extends Spec, S extends Status>
+    extends AbstractOperator<T, P, S, AbstractWatchableStatusedResourceOperator<C, T, L, R>> {
     protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
@@ -74,7 +72,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                        CertManager certManager, PasswordGenerator passwordGenerator,
-                                       AbstractWatchableStatusedResourceOperator<C, T, L, D, R> resourceOperator,
+                                       AbstractWatchableStatusedResourceOperator<C, T, L, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
         super(vertx, kind, resourceOperator, supplier.metricsProvider);

@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -16,7 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Route}s.
  */
-public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> {
+public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -27,7 +26,7 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
     }
 
     @Override
-    protected MixedOperation<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> operation() {
+    protected MixedOperation<Route, RouteList, Resource<Route>> operation() {
         return client.routes();
     }
 
@@ -52,7 +51,7 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
      * @return Whether the address is ready.
      */
     public boolean isAddressReady(String namespace, String name) {
-        Resource<Route, DoneableRoute> resourceOp = operation().inNamespace(namespace).withName(name);
+        Resource<Route> resourceOp = operation().inNamespace(namespace).withName(name);
         Route resource = resourceOp.get();
 
         if (resource != null && resource.getStatus() != null && resource.getStatus().getIngress() != null && resource.getStatus().getIngress().size() > 0) {

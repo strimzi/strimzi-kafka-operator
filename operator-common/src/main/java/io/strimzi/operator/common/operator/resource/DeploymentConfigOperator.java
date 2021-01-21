@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.api.model.DeploymentCondition;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
-import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
 import io.fabric8.openshift.client.internal.readiness.OpenShiftReadiness;
@@ -18,7 +17,8 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code DeploymentConfigs}s.
  */
-public class DeploymentConfigOperator extends AbstractScalableResourceOperator<OpenShiftClient, DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig, DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> {
+public class DeploymentConfigOperator extends AbstractScalableResourceOperator<OpenShiftClient, DeploymentConfig,
+        DeploymentConfigList, DeployableScalableResource<DeploymentConfig>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -29,7 +29,7 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
     }
 
     @Override
-    protected MixedOperation<DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig, DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> operation() {
+    protected MixedOperation<DeploymentConfig, DeploymentConfigList, DeployableScalableResource<DeploymentConfig>> operation() {
         return client.deploymentConfigs();
     }
 
@@ -116,7 +116,7 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
      */
     @Override
     public boolean isReady(String namespace, String name) {
-        DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig> resourceOp = operation().inNamespace(namespace).withName(name);
+        DeployableScalableResource<DeploymentConfig> resourceOp = operation().inNamespace(namespace).withName(name);
         DeploymentConfig resource = resourceOp.get();
         
         if (resource != null)   {

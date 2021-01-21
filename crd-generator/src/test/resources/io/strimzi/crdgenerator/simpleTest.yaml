@@ -432,6 +432,12 @@ spec:
           items:
             type: "object"
             properties: {}
+        spec:
+          type: "object"
+          properties: {}
+        status:
+          type: "object"
+          properties: {}
         stringProperty:
           type: "string"
           pattern: ".*"

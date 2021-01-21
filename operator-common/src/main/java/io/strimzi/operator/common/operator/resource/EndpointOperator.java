@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableEndpoints;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -15,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Endpoint}s.
  */
-public class EndpointOperator extends AbstractReadyResourceOperator<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> {
+public class EndpointOperator extends AbstractReadyResourceOperator<KubernetesClient, Endpoints, EndpointsList, Resource<Endpoints>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -26,7 +25,7 @@ public class EndpointOperator extends AbstractReadyResourceOperator<KubernetesCl
     }
 
     @Override
-    protected MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> operation() {
+    protected MixedOperation<Endpoints, EndpointsList, Resource<Endpoints>> operation() {
         return client.endpoints();
     }
 }

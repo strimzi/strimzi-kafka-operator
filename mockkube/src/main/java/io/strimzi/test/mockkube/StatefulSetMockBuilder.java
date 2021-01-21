@@ -5,8 +5,6 @@
 package io.strimzi.test.mockkube;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -14,7 +12,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
-import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
@@ -39,19 +36,18 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, DoneableStatefulSet,
-        RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetMockBuilder.class);
 
-    private final MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods;
-    private final MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs;
+    private final MixedOperation<Pod, PodList, PodResource<Pod>> mockPods;
+    private final MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> mockPvcs;
     private final Map<String, Pod> podDb;
 
-    public StatefulSetMockBuilder(MockBuilder<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> podMockBuilder, Map<String, StatefulSet> ssDb,
+    public StatefulSetMockBuilder(MockBuilder<Pod, PodList, PodResource<Pod>> podMockBuilder, Map<String, StatefulSet> ssDb,
                                   Map<String, Pod> podDb,
-                                  MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods, MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs) {
-        super(StatefulSet.class, StatefulSetList.class, DoneableStatefulSet.class, castClass(RollableScalableResource.class), ssDb);
+                                  MixedOperation<Pod, PodList, PodResource<Pod>> mockPods, MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> mockPvcs) {
+        super(StatefulSet.class, StatefulSetList.class, castClass(RollableScalableResource.class), ssDb);
         podMockBuilder.addObserver(new Observer<Pod>() {
             @Override
             public void beforeWatcherFire(Watcher.Action action, Pod resource) {
@@ -83,9 +79,9 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void nameScopedMocks(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
+    protected void nameScopedMocks(String resourceName, RollableScalableResource<StatefulSet> resource) {
         super.nameScopedMocks(resourceName, resource);
-        EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
+        EditReplacePatchDeletable<StatefulSet> c = mock(EditReplacePatchDeletable.class);
         when(c.withGracePeriod(anyLong())).thenReturn(resource);
         when(resource.withPropagationPolicy(DeletionPropagation.ORPHAN)).thenReturn(c);
         mockNoncascadingPatch(resourceName, c);
@@ -93,7 +89,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
         mockNoncascadingDelete(resourceName, c);
     }
 
-    private void mockNoncascadingDelete(String resourceName, EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c) {
+    private void mockNoncascadingDelete(String resourceName, EditReplacePatchDeletable<StatefulSet> c) {
         when(c.delete()).thenAnswer(i -> {
             LOGGER.info("delete {} {}", resourceType, resourceName);
             StatefulSet removed = db.remove(resourceName);
@@ -101,32 +97,34 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
         });
     }
 
-    private void mockNoncascadingPatch(String resourceName, EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c) {
+    private void mockNoncascadingPatch(String resourceName, EditReplacePatchDeletable<StatefulSet> c) {
         when(c.patch(any())).thenAnswer(patchInvocation -> {
             StatefulSet argument = patchInvocation.getArgument(0);
-            return doPatch(resourceName, argument);
+            return doPatch(resourceName, argument, argument.getSpec().getReplicas());
         });
     }
 
-    private void mockScale(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
+    private void mockScale(String resourceName, RollableScalableResource<StatefulSet> resource) {
         when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
             checkDoesExist(resourceName);
             StatefulSet sts = copyResource(db.get(resourceName));
             int newScale = invocation.getArgument(0);
+            int oldScale = sts.getSpec().getReplicas();
             sts.getSpec().setReplicas(newScale);
-            return doPatch(resourceName, sts);
+            return doPatch(resourceName, sts, oldScale);
         });
         when(resource.scale(anyInt())).thenAnswer(invocation -> {
             checkDoesExist(resourceName);
             StatefulSet sts = copyResource(db.get(resourceName));
             int newScale = invocation.getArgument(0);
+            int oldScale = sts.getSpec().getReplicas();
             sts.getSpec().setReplicas(newScale);
-            return doPatch(resourceName, sts);
+            return doPatch(resourceName, sts, oldScale);
         });
     }
 
     @Override
-    protected void mockCreate(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
+    protected void mockCreate(String resourceName, RollableScalableResource<StatefulSet> resource) {
         when(resource.create(any(StatefulSet.class))).thenAnswer(cinvocation -> {
             checkNotExists(resourceName);
             StatefulSet argument = cinvocation.getArgument(0);
@@ -193,7 +191,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
     }
 
     @Override
-    protected void mockDelete(String resourceName, RollableScalableResource<StatefulSet, DoneableStatefulSet> resource) {
+    protected void mockDelete(String resourceName, RollableScalableResource<StatefulSet> resource) {
         when(resource.withPropagationPolicy(DeletionPropagation.FOREGROUND).delete()).thenAnswer(i -> {
             LOGGER.debug("delete {} {}", resourceType, resourceName);
             StatefulSet removed = db.remove(resourceName);
@@ -209,8 +207,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, D
         });
     }
 
-    private StatefulSet doPatch(String resourceName, StatefulSet argument) {
-        int oldScale = db.get(resourceName).getSpec().getReplicas();
+    private StatefulSet doPatch(String resourceName, StatefulSet argument, int oldScale) {
         int newScale = argument.getSpec().getReplicas();
         if (newScale > oldScale) {
             LOGGER.debug("scaling up {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);

@@ -12,14 +12,15 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-import io.sundr.builder.annotations.Inline;
+import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
@@ -82,12 +83,14 @@ import static java.util.Collections.unmodifiableList;
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
+        refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaConnectS2I extends CustomResource implements HasSpecAndStatus<KafkaConnectS2ISpec, KafkaConnectS2IStatus>, UnknownPropertyPreserving {
+@Version(Constants.V1BETA1)
+@Group(Constants.STRIMZI_GROUP)
+public class KafkaConnectS2I extends CustomResource<KafkaConnectS2ISpec, KafkaConnectS2IStatus> implements UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
@@ -132,19 +135,21 @@ public class KafkaConnectS2I extends CustomResource implements HasSpecAndStatus<
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Override
     public ObjectMeta getMetadata() {
-        return super.getMetadata();
+        return metadata;
     }
 
     @Override
     public void setMetadata(ObjectMeta metadata) {
-        super.setMetadata(metadata);
+        this.metadata = metadata;
     }
 
+    @Override
     @Description("The specification of the Kafka Connect Source-to-Image (S2I) cluster.")
     public KafkaConnectS2ISpec getSpec() {
         return spec;
     }
 
+    @Override
     public void setSpec(KafkaConnectS2ISpec spec) {
         this.spec = spec;
     }
@@ -155,6 +160,7 @@ public class KafkaConnectS2I extends CustomResource implements HasSpecAndStatus<
         return status;
     }
 
+    @Override
     public void setStatus(KafkaConnectS2IStatus status) {
         this.status = status;
     }

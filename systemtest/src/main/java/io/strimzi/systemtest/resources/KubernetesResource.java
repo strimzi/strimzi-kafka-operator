@@ -18,8 +18,10 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.model.status.HasStatus;
+import io.strimzi.api.kafka.model.Spec;
+import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -357,7 +359,7 @@ public class KubernetesResource {
         return networkPolicy;
     }
 
-    public static <T extends HasMetadata & HasStatus> void deployNetworkPolicyForResource(T resource, String deploymentName) {
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> void deployNetworkPolicyForResource(T resource, String deploymentName) {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
             allowNetworkPolicySettingsForResource(resource, deploymentName);
         }

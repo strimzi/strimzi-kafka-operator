@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
-import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
@@ -46,7 +45,7 @@ import java.util.Map;
  *     <li>A Kafka Mirror Maker Deployment and related Services</li>
  * </ul>
  */
-public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>, KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> {
+public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>, KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> {
 
     private static final Logger log = LogManager.getLogger(KafkaMirrorMakerAssemblyOperator.class.getName());
 

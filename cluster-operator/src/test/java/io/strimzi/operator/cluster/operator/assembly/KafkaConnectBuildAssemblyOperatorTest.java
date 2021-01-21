@@ -17,7 +17,6 @@ import io.fabric8.openshift.api.model.BuildBuilder;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildRequest;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -134,7 +133,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -279,7 +278,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -426,7 +425,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -547,7 +546,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -682,7 +681,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -832,7 +831,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -962,7 +961,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -1128,7 +1127,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -1282,7 +1281,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -1407,7 +1406,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         BuildOperator mockBuildOps = supplier.buildOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList, DoneableKafkaConnector> mockConnectorOps = supplier.kafkaConnectorOperator;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));

@@ -5,14 +5,12 @@
 package io.strimzi.test.mockkube;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
@@ -28,20 +26,19 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment,
-                DoneableDeployment>> {
+class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, RollableScalableResource<Deployment>> {
     private static final Logger LOGGER = LogManager.getLogger(DeploymentMockBuilder.class);
 
-    private final MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods;
+    private final MixedOperation<Pod, PodList, PodResource<Pod>> mockPods;
     private Map<String, List<String>> podsForDeployments = new HashMap<>();
 
-    public DeploymentMockBuilder(Map<String, Deployment> depDb, MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
-        super(Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(RollableScalableResource.class), depDb);
+    public DeploymentMockBuilder(Map<String, Deployment> depDb, MixedOperation<Pod, PodList, PodResource<Pod>> mockPods) {
+        super(Deployment.class, DeploymentList.class, castClass(RollableScalableResource.class), depDb);
         this.mockPods = mockPods;
     }
 
     @Override
-    protected void mockCreate(String resourceName, RollableScalableResource<Deployment, DoneableDeployment> resource) {
+    protected void mockCreate(String resourceName, RollableScalableResource<Deployment> resource) {
         when(resource.create(any(Deployment.class))).thenAnswer(invocation -> {
             checkNotExists(resourceName);
             Deployment deployment = invocation.getArgument(0);
@@ -75,7 +72,7 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Done
     }
 
     @Override
-    protected void mockPatch(String resourceName, RollableScalableResource<Deployment, DoneableDeployment> resource) {
+    protected void mockPatch(String resourceName, RollableScalableResource<Deployment> resource) {
         when(resource.patch(any())).thenAnswer(invocation -> {
             Deployment deployment = invocation.getArgument(0);
             String deploymentName = deployment.getMetadata().getName();

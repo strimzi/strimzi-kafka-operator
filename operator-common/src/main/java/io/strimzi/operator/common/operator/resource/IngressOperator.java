@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.extensions.IngressList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -16,7 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Ingress}es.
  */
-public class IngressOperator extends AbstractResourceOperator<KubernetesClient, Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> {
+public class IngressOperator extends AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
 
     /**
      * Constructor
@@ -28,7 +27,7 @@ public class IngressOperator extends AbstractResourceOperator<KubernetesClient, 
     }
 
     @Override
-    protected MixedOperation<Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> operation() {
+    protected MixedOperation<Ingress, IngressList, Resource<Ingress>> operation() {
         return client.extensions().ingresses();
     }
 
@@ -53,7 +52,7 @@ public class IngressOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return Whether the Ingress already has assigned ingress address.
      */
     public boolean isIngressAddressReady(String namespace, String name) {
-        Resource<Ingress, DoneableIngress> resourceOp = operation().inNamespace(namespace).withName(name);
+        Resource<Ingress> resourceOp = operation().inNamespace(namespace).withName(name);
         Ingress resource = resourceOp.get();
 
         if (resource != null && resource.getStatus() != null && resource.getStatus().getLoadBalancer() != null && resource.getStatus().getLoadBalancer().getIngress() != null && resource.getStatus().getLoadBalancer().getIngress().size() > 0) {

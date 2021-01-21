@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.api.model.StatusBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import kafka.server.KafkaConfig$;
@@ -318,7 +319,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
                 .withCode(HttpURLConnection.HTTP_GONE)
                 .withNewMessage("pokazene")
                 .build();
-        KubernetesClientException e = new KubernetesClientException(status);
+        WatcherException e = new WatcherException(status.toString());
         LOGGER.info("stopping TW");
         session.topicWatch.close();
         session.topicsWatcher.stop();

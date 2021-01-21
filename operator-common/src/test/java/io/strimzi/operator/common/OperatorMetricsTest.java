@@ -8,9 +8,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
-import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
@@ -41,6 +42,8 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
+@Group("strimzi")
+@Version("v1")
 public class OperatorMetricsTest {
     private static Vertx vertx;
 
@@ -349,7 +352,7 @@ public class OperatorMetricsTest {
         return metrics;
     }
 
-    private abstract class MyResource extends CustomResource implements HasSpecAndStatus {
+    private abstract static class MyResource extends CustomResource {
     }
 
     private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
@@ -366,7 +369,9 @@ public class OperatorMetricsTest {
 
             @Override
             public CustomResource get(String namespace, String name) {
-                return new MyResource() {
+                @Group("strimzi")
+                @Version("v1")
+                class Foo extends MyResource {
                     @Override
                     public ObjectMeta getMetadata() {
                         return null;
@@ -398,8 +403,7 @@ public class OperatorMetricsTest {
                     }
 
                     @Override
-                    public void setSpec(Spec spec) {
-
+                    public void setSpec(Object spec) {
                     }
 
                     @Override
@@ -408,10 +412,11 @@ public class OperatorMetricsTest {
                     }
 
                     @Override
-                    public void setStatus(Status status) {
+                    public void setStatus(Object status) {
 
                     }
-                };
+                }
+                return new Foo();
             }
         };
     }

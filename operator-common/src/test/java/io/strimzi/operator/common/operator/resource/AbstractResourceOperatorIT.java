@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -45,8 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
-        D extends Doneable<T>,
-        R extends Resource<T, D>> {
+        R extends Resource<T>> {
     protected static final Logger log = LogManager.getLogger(AbstractResourceOperatorIT.class);
     public static final String RESOURCE_NAME = "my-test-resource";
     protected String resourceName;
@@ -91,7 +89,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
         }
     }
 
-    abstract AbstractResourceOperator<C, T, L, D, R> operator();
+    abstract AbstractResourceOperator<C, T, L, R> operator();
     abstract T getOriginal();
     abstract T getModified();
     abstract void assertResources(VertxTestContext context, T expected, T actual);
@@ -99,7 +97,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
     @Test
     public void testCreateModifyDelete(VertxTestContext context)    {
         Checkpoint async = context.checkpoint();
-        AbstractResourceOperator<C, T, L, D, R> op = operator();
+        AbstractResourceOperator<C, T, L, R> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();

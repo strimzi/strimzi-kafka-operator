@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
-import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -79,7 +78,7 @@ public class Main {
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
-        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class, Crds.kafkaUser());
+        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, Crds.kafkaUser());
         return createAdminClient(adminClientProvider, config, secretOperations)
                 .compose(adminClient -> {
                     SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, adminClient);

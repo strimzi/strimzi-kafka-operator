@@ -11,8 +11,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
@@ -57,7 +55,7 @@ import java.util.function.Function;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> {
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     
     private final DeploymentConfigOperator deploymentConfigOperations;
@@ -65,7 +63,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
     private final BuildConfigOperator buildConfigOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
-    private final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperations;
+    private final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -214,7 +212,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                         if (!ksDiff.isEmpty()) {
                             KafkaConnectS2I resourceWithNewStatus = new KafkaConnectS2IBuilder(connect).withStatus(desiredStatus).build();
 
-                            ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
+                            ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     log.debug("{}: Completed status update", reconciliation);
                                     updateStatusPromise.complete();

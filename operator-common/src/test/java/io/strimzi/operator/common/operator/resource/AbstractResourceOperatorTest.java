@@ -5,7 +5,6 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -39,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>> {
+        L extends KubernetesResourceList<T>, R extends Resource<T>> {
 
     public static final String RESOURCE_NAME = "my-resource";
     public static final String NAMESPACE = "test";
@@ -77,10 +76,10 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     protected abstract void mocker(C mockClient, MixedOperation op);
 
     /** Create the subclass of ResourceOperation to be tested */
-    protected abstract AbstractResourceOperator<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);
+    protected abstract AbstractResourceOperator<C, T, L, R> createResourceOperations(Vertx vertx, C mockClient);
 
     /** Create the subclass of ResourceOperation to be tested with mocked readiness checks*/
-    protected AbstractResourceOperator<C, T, L, D, R> createResourceOperationsWithMockedReadiness(Vertx vertx, C mockClient)    {
+    protected AbstractResourceOperator<C, T, L, R> createResourceOperationsWithMockedReadiness(Vertx vertx, C mockClient)    {
         return createResourceOperations(vertx, mockClient);
     }
 
@@ -105,14 +104,14 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
-            verify(mockResource, never()).createNew();
+            verify(mockResource, never()).create();
             verify(mockResource, never()).createOrReplace(any());
             verify(mockCms, never()).createOrReplace(any());
             async.flag();
@@ -136,7 +135,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).onComplete(context.failing(e -> context.verify(() -> {
@@ -161,7 +160,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).onComplete(context.succeeding(rr -> context.verify(() -> {
@@ -189,7 +188,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource).onComplete(context.failing(e -> {
@@ -212,7 +211,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -253,7 +252,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -293,7 +292,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -336,7 +335,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -377,7 +376,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -21,9 +20,8 @@ public abstract class AbstractWatchableResourceOperator<
         C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
-        D extends Doneable<T>,
-        R extends Resource<T, D>>
-        extends AbstractResourceOperator<C, T, L, D, R> {
+        R extends Resource<T>>
+        extends AbstractResourceOperator<C, T, L, R> {
 
     public final static String ANY_NAMESPACE = "*";
 
@@ -55,7 +53,7 @@ public abstract class AbstractWatchableResourceOperator<
     }
 
     public Watch watch(String namespace, Optional<LabelSelector> selector, Watcher<T> watcher) {
-        FilterWatchListDeletable<T, L, Boolean, Watch> operation
+        FilterWatchListDeletable<T, L> operation
                 = ANY_NAMESPACE.equals(namespace) ? operation().inAnyNamespace() : operation().inNamespace(namespace);
         if (selector.isPresent()) {
             operation = operation.withLabelSelector(selector.get());

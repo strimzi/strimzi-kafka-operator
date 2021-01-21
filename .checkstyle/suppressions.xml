@@ -54,6 +54,4 @@
 
     <suppress checks=".*"
               files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
-    <suppress checks=".*"
-              files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\](Doneable).*\.java"/>
 </suppressions>

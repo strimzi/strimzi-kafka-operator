@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -16,7 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code PersistentVolumeClaim}s.
  */
-public class PvcOperator extends AbstractResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> {
+public class PvcOperator extends AbstractResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -27,7 +26,7 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
     }
 
     @Override
-    protected MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> operation() {
+    protected MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> operation() {
         return client.persistentVolumeClaims();
     }
 

@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -19,7 +18,7 @@ import java.util.Objects;
 /**
  * Operations for {@code ConfigMap}s.
  */
-public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
+public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -30,7 +29,7 @@ public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient
     }
 
     @Override
-    protected MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> operation() {
+    protected MixedOperation<ConfigMap, ConfigMapList, Resource<ConfigMap>> operation() {
         return client.configMaps();
     }
 

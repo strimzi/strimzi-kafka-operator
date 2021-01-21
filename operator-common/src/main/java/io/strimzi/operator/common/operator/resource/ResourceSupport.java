@@ -6,9 +6,9 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.Gettable;
 import io.fabric8.kubernetes.client.dsl.Listable;
@@ -105,7 +105,7 @@ public class ResourceSupport {
      * @return A Futures which completes when the {@code watchFn} returns non-null
      * in response to some Kubenetes even on the watched resource(s).
      */
-    <T, U> Future<U> selfClosingWatch(Watchable<Watch, Watcher<T>> watchable,
+    <T, U> Future<U> selfClosingWatch(Watchable<Watcher<T>> watchable,
                                       long operationTimeoutMs,
                                       String watchFnDescription,
                                       BiFunction<Watcher.Action, T, U> watchFn) {
@@ -176,7 +176,7 @@ public class ResourceSupport {
             }
 
             @Override
-            public void onClose(KubernetesClientException cause) {
+            public void onClose(WatcherException cause) {
 
             }
 
@@ -192,7 +192,7 @@ public class ResourceSupport {
      * @param resource The resource(s) to delete.
      * @return A Future which completes on the context thread.
      */
-    Future<Void> deleteAsync(Deletable<Boolean> resource) {
+    Future<Void> deleteAsync(Deletable resource) {
         return executeBlocking(
             blockingFuture -> {
                 try {

@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaBridgeList;
-import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
@@ -42,7 +41,7 @@ import java.util.Collections;
  *     <li>A Kafka Bridge Deployment and related Services</li>
  * </ul>
  */
-public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>, KafkaBridgeSpec, KafkaBridgeStatus> {
+public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>, KafkaBridgeSpec, KafkaBridgeStatus> {
     private static final Logger log = LogManager.getLogger(KafkaBridgeAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;

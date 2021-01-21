@@ -7,7 +7,6 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -18,8 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DeploymentOperatorTest extends
-        ScalableResourceOperatorTest<KubernetesClient, Deployment, DeploymentList,
-                                DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>> {
+        ScalableResourceOperatorTest<KubernetesClient, Deployment, DeploymentList, RollableScalableResource<Deployment>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

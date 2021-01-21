@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_WHITELIST;
 
-import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 /**
  * Operations for {@code Service}s.
  */
-public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> {
+public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     private final EndpointOperator endpointOperations;
     /**
@@ -38,7 +37,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     }
 
     @Override
-    protected MixedOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> operation() {
+    protected MixedOperation<Service, ServiceList, ServiceResource<Service>> operation() {
         return client.services();
     }
 
@@ -189,7 +188,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return Whether the Service already has assigned ingress address.
      */
     public boolean isIngressAddressReady(String namespace, String name) {
-        ServiceResource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
+        ServiceResource<Service> resourceOp = operation().inNamespace(namespace).withName(name);
         Service resource = resourceOp.get();
 
         if (resource != null && resource.getStatus() != null && resource.getStatus().getLoadBalancer() != null && resource.getStatus().getLoadBalancer().getIngress() != null && resource.getStatus().getLoadBalancer().getIngress().size() > 0) {
@@ -222,7 +221,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return Whether the Service already has assigned node ports.
      */
     public boolean isNodePortReady(String namespace, String name) {
-        ServiceResource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
+        ServiceResource<Service> resourceOp = operation().inNamespace(namespace).withName(name);
         Service resource = resourceOp.get();
 
         if (resource != null && resource.getSpec() != null && resource.getSpec().getPorts() != null) {

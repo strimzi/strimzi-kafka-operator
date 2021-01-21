@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneablePod;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -20,7 +20,7 @@ import io.vertx.core.Vertx;
  * Operations for {@code Pod}s, which support {@link #isReady(String, String)} and
  * {@link #watch(String, String, Watcher)} in addition to the usual operations.
  */
-public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
+public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient, Pod, PodList, PodResource<Pod>> {
 
     private static final String NO_UID = "NULL";
 
@@ -34,7 +34,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
     }
 
     @Override
-    protected MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> operation() {
+    protected MixedOperation<Pod, PodList, PodResource<Pod>> operation() {
         return client.pods();
     }
 
@@ -92,7 +92,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
         return deleteFinished.future();
     }
 
-    private static String getPodUid(Pod resource) {
+    private static String getPodUid(HasMetadata resource) {
         if (resource == null || resource.getMetadata() == null) {
             return NO_UID;
         }

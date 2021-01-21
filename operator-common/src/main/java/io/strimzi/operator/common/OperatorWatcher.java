@@ -5,8 +5,8 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,11 +18,11 @@ import java.util.function.Consumer;
  */
 class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final String namespace;
-    private final Consumer<KubernetesClientException> onClose;
+    private final Consumer<WatcherException> onClose;
     private Operator operator;
     private static final Logger log = LogManager.getLogger(OperatorWatcher.class);
 
-    OperatorWatcher(Operator operator, String namespace, Consumer<KubernetesClientException> onClose) {
+    OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
         this.namespace = namespace;
         this.onClose = onClose;
         this.operator = operator;
@@ -51,7 +51,7 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     }
 
     @Override
-    public void onClose(KubernetesClientException e) {
+    public void onClose(WatcherException e) {
         onClose.accept(e);
     }
 }

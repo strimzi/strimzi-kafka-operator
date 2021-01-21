@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -19,15 +18,13 @@ import io.vertx.core.Vertx;
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
  * @param <L> The list variant of the Kubernetes resource type.
- * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
 public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
             T extends HasMetadata,
             L extends KubernetesResourceList<T>,
-            D extends Doneable<T>,
-            R extends Resource<T, D>>
-        extends AbstractResourceOperator<C, T, L, D, R> {
+            R extends Resource<T>>
+        extends AbstractResourceOperator<C, T, L, R> {
 
     /**
      * Constructor.

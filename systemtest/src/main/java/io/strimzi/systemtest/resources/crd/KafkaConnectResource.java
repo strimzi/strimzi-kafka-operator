@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -33,7 +32,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 public class KafkaConnectResource {
     public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect.yaml";
 
-    public static MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectClient() {
+    public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectClient() {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
@@ -131,7 +130,7 @@ public class KafkaConnectResource {
     }
 
     public static void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
-        ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, resourceName, editor);
+        ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, resourceName, editor);
     }
 
 }

@@ -16,8 +16,6 @@ import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -60,7 +58,7 @@ import java.util.function.Function;
  *     <li>A Kafka Connect Deployment and related Services</li>
  * </ul>
  */
-public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
+public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
@@ -68,7 +66,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final BuildConfigOperator buildConfigOperator;
     private final BuildOperator buildOperator;
     private final KafkaVersion.Lookup versions;
-    private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2IOperations;
+    private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> connectS2IOperations;
     private final ClusterOperatorConfig.RbacScope rbacScope;
     protected final long connectBuildTimeoutMs;
 

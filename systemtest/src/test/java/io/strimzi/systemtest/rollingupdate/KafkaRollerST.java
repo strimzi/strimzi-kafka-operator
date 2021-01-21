@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplateBuilder;
@@ -115,11 +116,11 @@ public class KafkaRollerST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
         // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).withPropagationPolicy(DeletionPropagation.ORPHAN).edit()
+        kubeClient().statefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()
-            .done();
+            .build());
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
     }
@@ -139,11 +140,11 @@ public class KafkaRollerST extends AbstractST {
         LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
         timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
         // set annotation to trigger Kafka rolling update
-        kubeClient().statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit()
+        kubeClient().statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()
-            .done();
+            .build());
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
         assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));

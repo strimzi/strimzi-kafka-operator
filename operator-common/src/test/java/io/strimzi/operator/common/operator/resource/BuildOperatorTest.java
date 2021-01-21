@@ -9,14 +9,13 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildBuilder;
 import io.fabric8.openshift.api.model.BuildList;
-import io.fabric8.openshift.api.model.DoneableBuild;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildResource;
 import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class BuildOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Build, BuildList, DoneableBuild, BuildResource<Build, DoneableBuild, String, LogWatch>> {
+public class BuildOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Build, BuildList, BuildResource<Build, LogWatch>> {
 
     @Override
     protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {

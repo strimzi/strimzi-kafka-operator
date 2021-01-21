@@ -337,15 +337,15 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
         assertEquals("someValue", kafkaSpec.getConfig().get("some.kafka.config"));
     }
 
-    private NonNamespaceOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> v1beta1Op() {
+    private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1beta1Op() {
         return Crds.kafkaV1Beta1Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
     }
 
-    private NonNamespaceOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> v1beta2Op() {
+    private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1beta2Op() {
         return Crds.kafkaV1Beta2Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
     }
 
-    private NonNamespaceOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> v1Op() {
+    private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1Op() {
         return Crds.kafkaV1Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
     }
 

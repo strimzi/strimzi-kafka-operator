@@ -100,6 +100,7 @@ class Property implements AnnotatedElement {
         }
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     static Map<String, Property> properties(ApiVersion crApiVersion, Class<?> crdClass) {
         TreeMap<String, Property> unordered = new TreeMap<>();
         for (Method method : crdClass.getMethods()) {
@@ -107,7 +108,7 @@ class Property implements AnnotatedElement {
             boolean isGetter = isGetterName(method)
                     && method.getParameterCount() == 0
                     && !returnType.equals(void.class);
-            boolean isNotInherited = !hasMethod(CustomResource.class, method)
+            boolean isNotInherited = !(hasMethod(CustomResource.class, method) && !method.getName().equals("getSpec") && !method.getName().equals("getStatus"))
                     && !hasMethod(HasMetadata.class, method)
                     && !method.isBridge();
             boolean isNotIgnored = !hasJsonIgnore(method)

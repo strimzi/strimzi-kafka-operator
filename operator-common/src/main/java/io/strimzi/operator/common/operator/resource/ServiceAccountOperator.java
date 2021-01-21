@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -13,7 +12,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
-public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> {
+public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
 
     /**
      * Constructor
@@ -25,7 +24,7 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
     }
 
     @Override
-    protected MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> operation() {
+    protected MixedOperation<ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> operation() {
         return client.serviceAccounts();
     }
 

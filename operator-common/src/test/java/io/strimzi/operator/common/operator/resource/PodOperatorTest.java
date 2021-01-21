@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
@@ -28,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
-        AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
+        AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, PodResource<Pod>> {
     @Test
     public void testCreateReadUpdate(VertxTestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);

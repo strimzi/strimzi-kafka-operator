@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -33,14 +32,14 @@ public class K8sImpl implements K8s {
     private final String namespace;
 
     private final KubernetesClient client;
-    private final CrdOperator<KubernetesClient, KafkaTopic, KafkaTopicList, DoneableKafkaTopic> crdOperator;
+    private final CrdOperator<KubernetesClient, KafkaTopic, KafkaTopicList> crdOperator;
 
     private final Vertx vertx;
 
     public K8sImpl(Vertx vertx, KubernetesClient client, Labels labels, String namespace) {
         this.vertx = vertx;
         this.client = client;
-        this.crdOperator = new CrdOperator<>(vertx, client, KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, Crds.kafkaTopic());
+        this.crdOperator = new CrdOperator<>(vertx, client, KafkaTopic.class, KafkaTopicList.class, Crds.kafkaTopic());
         this.labels = labels;
         this.namespace = namespace;
     }
@@ -110,8 +109,8 @@ public class K8sImpl implements K8s {
         return handler.future();
     }
 
-    private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+    private MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> operation() {
+        return client.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class);
     }
 
     @Override

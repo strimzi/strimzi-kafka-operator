@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
@@ -23,8 +22,7 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, RoleBinding, RoleBindingList,
-        DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> {
+public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
 
 
     @Override
@@ -70,8 +68,8 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, DoneableRoleBinding,
-            Resource<RoleBinding, DoneableRoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
+            Resource<RoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new RoleBindingOperator(vertx, mockClient);
     }
 }

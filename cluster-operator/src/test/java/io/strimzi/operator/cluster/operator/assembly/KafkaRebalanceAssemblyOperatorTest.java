@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaRebalanceList;
-import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalance;
@@ -78,8 +76,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private static ClientAndServer ccServer;
     private KubernetesClient kubernetesClient;
 
-    private CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance> mockRebalanceOps;
-    private CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> mockKafkaOps;
+    private CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> mockRebalanceOps;
+    private CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps;
     private KafkaRebalanceAssemblyOperator kcrao;
 
     private final int replicas = 1;
@@ -117,7 +115,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         ccServer.reset();
 
         kubernetesClient = new MockKube()
-                    .withCustomResourceDefinition(Crds.kafkaRebalance(), KafkaRebalance.class, KafkaRebalanceList.class, DoneableKafkaRebalance.class)
+                    .withCustomResourceDefinition(Crds.kafkaRebalance(), KafkaRebalance.class, KafkaRebalanceList.class)
                 .end()
                 .build();
 
@@ -959,12 +957,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .build();
     }
 
-    private void mockRebalanceOperator(CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance> mockRebalanceOps,
+    private void mockRebalanceOperator(CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> mockRebalanceOps,
                                        String namespace, String resource, KubernetesClient client) {
         mockRebalanceOperator(mockRebalanceOps, namespace, resource, client, null);
     }
 
-    private void mockRebalanceOperator(CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, DoneableKafkaRebalance> mockRebalanceOps,
+    private void mockRebalanceOperator(CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> mockRebalanceOps,
                                        String namespace, String resource, KubernetesClient client, Runnable getAsyncFunction) {
         when(mockRebalanceOps.getAsync(namespace, resource)).thenAnswer(invocation -> {
             try {

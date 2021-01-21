@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DoneableNode;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.NodeList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -13,7 +12,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
 public class NodeOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
-        Node, NodeList, DoneableNode, Resource<Node, DoneableNode>> {
+        Node, NodeList, Resource<Node>> {
 
     /**
      * Constructor.
@@ -25,7 +24,7 @@ public class NodeOperator extends AbstractNonNamespacedResourceOperator<Kubernet
     }
 
     @Override
-    protected NonNamespaceOperation<Node, NodeList, DoneableNode, Resource<Node, DoneableNode>> operation() {
+    protected NonNamespaceOperation<Node, NodeList, Resource<Node>> operation() {
         return client.nodes();
     }
 }

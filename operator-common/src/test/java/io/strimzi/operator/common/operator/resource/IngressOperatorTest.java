@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
 import io.fabric8.kubernetes.api.model.extensions.IngressList;
@@ -18,7 +17,7 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class IngressOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> {
+public class IngressOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
     @Override
     protected Class<KubernetesClient> clientType() {
         return KubernetesClient.class;
@@ -48,7 +47,7 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new IngressOperator(vertx, mockClient);
     }
 }

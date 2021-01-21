@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -13,12 +12,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
 
-public class RoleBindingOperator extends AbstractResourceOperator<
-        KubernetesClient,
-        RoleBinding,
+public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, RoleBinding,
         RoleBindingList,
-        DoneableRoleBinding,
-        Resource<RoleBinding, DoneableRoleBinding>> {
+        Resource<RoleBinding>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -29,8 +25,7 @@ public class RoleBindingOperator extends AbstractResourceOperator<
     }
 
     @Override
-    protected MixedOperation<RoleBinding, RoleBindingList, DoneableRoleBinding,
-            Resource<RoleBinding, DoneableRoleBinding>> operation() {
+    protected MixedOperation<RoleBinding, RoleBindingList, Resource<RoleBinding>> operation() {
         return client.rbac().roleBindings();
     }
 }

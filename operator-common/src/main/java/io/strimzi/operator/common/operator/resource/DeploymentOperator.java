@@ -7,7 +7,6 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
@@ -19,7 +18,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Deployment}s.
  */
-public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>> {
+public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, RollableScalableResource<Deployment>> {
 
     private final PodOperator podOperations;
 
@@ -38,7 +37,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     }
 
     @Override
-    protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, RollableScalableResource<Deployment, DoneableDeployment>> operation() {
+    protected MixedOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> operation() {
         return client.apps().deployments();
     }
 

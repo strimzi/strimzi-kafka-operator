@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
@@ -91,7 +90,7 @@ public class TopicOperatorMockTest {
     public void createMockKube(VertxTestContext context) throws Exception {
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
-                        KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, KafkaTopic::getStatus, KafkaTopic::setStatus);
+                        KafkaTopic.class, KafkaTopicList.class, KafkaTopic::getStatus, KafkaTopic::setStatus);
         kubeClient = mockKube.build();
 
         kafkaCluster = new KafkaCluster();

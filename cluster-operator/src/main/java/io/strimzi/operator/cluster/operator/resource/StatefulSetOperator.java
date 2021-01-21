@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -42,7 +41,7 @@ import java.util.function.Function;
  * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, Function)}
  * in addition to the usual operations.
  */
-public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> {
 
     private static final int NO_GENERATION = -1;
     private static final int INIT_GENERATION = 0;
@@ -80,7 +79,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     }
 
     @Override
-    protected MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> operation() {
+    protected MixedOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> operation() {
         return client.apps().statefulSets();
     }
 

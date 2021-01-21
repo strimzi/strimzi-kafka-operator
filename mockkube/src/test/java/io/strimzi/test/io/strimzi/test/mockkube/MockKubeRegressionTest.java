@@ -6,10 +6,12 @@ package io.strimzi.test.io.strimzi.test.mockkube;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.test.mockkube.MockKube;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +35,7 @@ public class MockKubeRegressionTest {
 
     @Test
     public void testStatefulSetCreationAndDeletion() {
-        client.apps().statefulSets().inNamespace("ns").withName("foo").createNew()
+        StatefulSet sts = new StatefulSetBuilder()
                 .withNewMetadata()
                     .withName("foo")
                     .withNamespace("ns")
@@ -44,8 +46,8 @@ public class MockKubeRegressionTest {
                         .withNewMetadata().endMetadata()
                         .withNewSpec().endSpec()
                     .endTemplate()
-                .endSpec()
-                .done();
+                .endSpec().build();
+        client.apps().statefulSets().inNamespace("ns").withName("foo").create(sts);
 
         List<Pod> ns = client.pods().inNamespace("ns").list().getItems();
         assertThat(ns, hasSize(3));
@@ -70,7 +72,7 @@ public class MockKubeRegressionTest {
             }
 
             @Override
-            public void onClose(KubernetesClientException cause) {
+            public void onClose(WatcherException cause) {
 
             }
         });

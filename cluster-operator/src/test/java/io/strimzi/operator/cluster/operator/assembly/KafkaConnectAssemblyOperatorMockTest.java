@@ -10,9 +10,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.DoneableKafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -89,12 +86,12 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private void setConnectResource(KafkaConnect connectResource) {
         mockKube = new MockKube();
         mockClient = mockKube
-                .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, KafkaConnect::getStatus, KafkaConnect::setStatus)
+                .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, KafkaConnect::getStatus, KafkaConnect::setStatus)
                     .withInitialInstances(Collections.singleton(connectResource))
                 .end()
-                .withCustomResourceDefinition(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class, KafkaConnectS2I::getStatus, KafkaConnectS2I::setStatus)
+                .withCustomResourceDefinition(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, KafkaConnectS2I::getStatus, KafkaConnectS2I::setStatus)
                 .end()
-                .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class, DoneableKafkaConnector.class, KafkaConnector::getStatus, KafkaConnector::setStatus)
+                .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class, KafkaConnector::getStatus, KafkaConnector::setStatus)
                 .end()
                 .build();
     }

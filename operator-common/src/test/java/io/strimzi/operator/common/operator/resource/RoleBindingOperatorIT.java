@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
@@ -24,12 +23,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static java.util.Collections.singletonMap;
 
 @ExtendWith(VertxExtension.class)
-public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList,
-        DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> {
+public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
-            DoneableRoleBinding, Resource<RoleBinding, DoneableRoleBinding>> operator() {
+    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> operator() {
         return new RoleBindingOperator(vertx, client);
     }
 

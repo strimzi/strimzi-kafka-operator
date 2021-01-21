@@ -57,9 +57,9 @@ public class K8sImplTest {
                 .build());
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
-        MixedOperation<KafkaTopic, KafkaTopicList, TopicOperator.DeleteKafkaTopic, Resource<KafkaTopic, TopicOperator.DeleteKafkaTopic>> mockResources = mock(MixedOperation.class);
-        when(mockClient.customResources(any(CustomResourceDefinitionContext.class), any(Class.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
-        when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
+        MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> mockResources = mock(MixedOperation.class);
+        when(mockClient.customResources(any(CustomResourceDefinitionContext.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
+        when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
         when(mockResources.withLabels(any())).thenReturn(mockResources);
         when(mockResources.inNamespace(any())).thenReturn(mockResources);
         when(mockResources.list()).thenAnswer(invocation -> {

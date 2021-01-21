@@ -9,15 +9,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
-import io.sundr.builder.annotations.Inline;
 import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
@@ -81,13 +81,14 @@ import static java.util.Collections.unmodifiableList;
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done"),
         refs = {@BuildableReference(ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-public class KafkaBridge extends CustomResource implements HasSpecAndStatus<KafkaBridgeSpec, KafkaBridgeStatus>, UnknownPropertyPreserving {
+@Version(Constants.V1ALPHA1)
+@Group(Constants.STRIMZI_GROUP)
+public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStatus> implements UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
@@ -124,19 +125,21 @@ public class KafkaBridge extends CustomResource implements HasSpecAndStatus<Kafk
 
     @Override
     public ObjectMeta getMetadata() {
-        return super.getMetadata();
+        return metadata;
     }
 
     @Override
     public void setMetadata(ObjectMeta metadata) {
-        super.setMetadata(metadata);
+        this.metadata = metadata;
     }
 
+    @Override
     @Description("The specification of the Kafka Bridge.")
     public KafkaBridgeSpec getSpec() {
         return spec;
     }
 
+    @Override
     public void setSpec(KafkaBridgeSpec spec) {
         this.spec = spec;
     }
@@ -147,6 +150,7 @@ public class KafkaBridge extends CustomResource implements HasSpecAndStatus<Kafk
         return status;
     }
 
+    @Override
     public void setStatus(KafkaBridgeStatus status) {
         this.status = status;
     }

@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaRebalanceList;
-import io.strimzi.api.kafka.model.DoneableKafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
@@ -165,8 +164,7 @@ public class KafkaRebalanceStateMachineTest {
 
         CrdOperator<KubernetesClient,
                 KafkaRebalance,
-                KafkaRebalanceList,
-                DoneableKafkaRebalance> mockRebalanceOps = supplier.kafkaRebalanceOperator;
+                KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
 
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);
         when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(kcRebalance));

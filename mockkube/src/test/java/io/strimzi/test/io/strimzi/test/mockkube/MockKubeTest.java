@@ -5,7 +5,6 @@
 package io.strimzi.test.io.strimzi.test.mockkube;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -14,11 +13,11 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.test.mockkube.MockKube;
@@ -40,8 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource & KubernetesResourceList,
-        DT extends Doneable<RT>> {
+public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource & KubernetesResourceList> {
 
     KubernetesClient client;
 
@@ -64,7 +62,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
                 },
                 new Object[]{KafkaTopic.class,
                     (Consumer<MockKube>) mockKube -> {
-                        mockKube.withCustomResourceDefinition(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+                        mockKube.withCustomResourceDefinition(Crds.kafkaTopic(), KafkaTopic.class, KafkaTopicList.class);
                     },
                     (Supplier<HasMetadata>) () ->
                         new KafkaTopicBuilder()
@@ -119,7 +117,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         }
 
         @Override
-        public void onClose(KubernetesClientException cause) {
+        public void onClose(WatcherException cause) {
             this.closed = true;
         }
     }
@@ -134,7 +132,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     public void testPodCreateDeleteUnscoped(Class<RT> cls,
                                         Consumer<MockKube> init,
                                         Supplier<RT> factory,
-                                        Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
+                                        Function<KubernetesClient, MixedOperation<RT, LT, Resource<RT>>> mixedOp) throws MalformedURLException {
         createClient(init);
         MyWatcher w = new MyWatcher();
         mixedOp.apply(client).watch(w);
@@ -168,7 +166,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     public void testPodNameScopedCreateListGetDelete(Class<RT> cls,
                                                  Consumer<MockKube> init,
                                                  Supplier<RT> factory,
-                                                 Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
+                                                 Function<KubernetesClient, MixedOperation<RT, LT, Resource<RT>>> mixedOp) throws MalformedURLException {
         createClient(init);
         MyWatcher w = new MyWatcher();
         mixedOp.apply(client).watch(w);
@@ -262,7 +260,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     public void testWatches(Class<RT> cls,
                         Consumer<MockKube> init,
                         Supplier<RT> factory,
-                        Function<KubernetesClient, MixedOperation<RT, LT, DT, Resource<RT, DT>>> mixedOp) throws MalformedURLException {
+                        Function<KubernetesClient, MixedOperation<RT, LT, Resource<RT>>> mixedOp) throws MalformedURLException {
         createClient(init);
         RT pod = factory.get();
 

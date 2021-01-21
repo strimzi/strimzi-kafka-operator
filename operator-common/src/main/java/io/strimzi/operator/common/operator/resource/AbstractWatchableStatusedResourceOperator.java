@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -19,16 +18,14 @@ import io.vertx.core.Vertx;
  * @param <C>   Kubernetes client
  * @param <T>   Kubernetes resource
  * @param <L>   Kubernetes resource list
- * @param <D>   Doneable Kubernetes resource
  * @param <R>   Kubernetes Reasource
  */
 public abstract class AbstractWatchableStatusedResourceOperator<
         C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
-        D extends Doneable<T>,
-        R extends Resource<T, D>>
-        extends AbstractWatchableResourceOperator<C, T, L, D, R> {
+        R extends Resource<T>>
+        extends AbstractWatchableResourceOperator<C, T, L, R> {
 
     public final static String ANY_NAMESPACE = "*";
 

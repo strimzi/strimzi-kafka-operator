@@ -7,14 +7,13 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Meter;
-import io.strimzi.api.kafka.model.HasSpecAndStatus;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -66,10 +65,10 @@ import static io.strimzi.operator.common.Util.async;
  *           {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
  */
 public abstract class AbstractOperator<
-        T extends CustomResource & HasSpecAndStatus<P, S>,
+        T extends CustomResource<P, S>,
         P extends Spec,
         S extends Status,
-        O extends AbstractWatchableStatusedResourceOperator<?, T, ?, ?, ?>>
+        O extends AbstractWatchableStatusedResourceOperator<?, T, ?, ?>>
             implements Operator {
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
@@ -427,14 +426,14 @@ public abstract class AbstractOperator<
      *
      * @return A future which completes when the watcher has been created.
      */
-    public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
+    public Future<Watch> createWatch(String namespace, Consumer<WatcherException> onClose) {
         return async(vertx, () -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
     }
 
-    public Consumer<KubernetesClientException> recreateWatch(String namespace) {
-        Consumer<KubernetesClientException> kubernetesClientExceptionConsumer = new Consumer<KubernetesClientException>() {
+    public Consumer<WatcherException> recreateWatch(String namespace) {
+        Consumer<WatcherException> kubernetesClientExceptionConsumer = new Consumer<WatcherException>() {
             @Override
-            public void accept(KubernetesClientException e) {
+            public void accept(WatcherException e) {
                 if (e != null) {
                     log.error("Watcher closed with exception in namespace {}", namespace, e);
                     createWatch(namespace, this);

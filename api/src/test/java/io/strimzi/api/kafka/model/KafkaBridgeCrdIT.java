@@ -43,7 +43,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaBridgeWithExtraProperty() {
-        createDelete(KafkaMirrorMaker.class, "KafkaBridge-with-extra-property.yaml");
+        createDelete(KafkaBridge.class, "KafkaBridge-with-extra-property.yaml");
     }
 
     @Test

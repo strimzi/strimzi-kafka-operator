@@ -5,12 +5,10 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
@@ -39,14 +37,12 @@ import java.util.function.BiPredicate;
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
  * @param <L> The list variant of the Kubernetes resource type.
- * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
 public abstract class AbstractResourceOperator<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
-        D extends Doneable<T>,
-        R extends Resource<T, D>> {
+        R extends Resource<T>> {
 
     protected final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
@@ -67,7 +63,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         this.resourceKind = resourceKind;
     }
 
-    protected abstract MixedOperation<T, L, D, R> operation();
+    protected abstract MixedOperation<T, L, R> operation();
 
     /**
      * Asynchronously create or update the given {@code resource} depending on whether it already exists,
@@ -264,11 +260,11 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     protected List<T> listInAnyNamespace(Labels selector) {
-        FilterWatchListMultiDeletable<T, L, Boolean, Watch> operation = operation().inAnyNamespace();
+        FilterWatchListMultiDeletable<T, L> operation = operation().inAnyNamespace();
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
-            FilterWatchListDeletable<T, L, Boolean, Watch> tlBooleanWatchWatcherFilterWatchListDeletable = operation.withLabels(labels);
+            FilterWatchListDeletable<T, L> tlBooleanWatchWatcherFilterWatchListDeletable = operation.withLabels(labels);
             return tlBooleanWatchWatcherFilterWatchListDeletable
                     .list()
                     .getItems();
@@ -280,11 +276,11 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     protected List<T> listInNamespace(String namespace, Labels selector) {
-        NonNamespaceOperation<T, L, D, R> tldrNonNamespaceOperation = operation().inNamespace(namespace);
+        NonNamespaceOperation<T, L, R> tldrNonNamespaceOperation = operation().inNamespace(namespace);
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
-            FilterWatchListDeletable<T, L, Boolean, Watch> tlBooleanWatchWatcherFilterWatchListDeletable = tldrNonNamespaceOperation.withLabels(labels);
+            FilterWatchListDeletable<T, L> tlBooleanWatchWatcherFilterWatchListDeletable = tldrNonNamespaceOperation.withLabels(labels);
             return tlBooleanWatchWatcherFilterWatchListDeletable
                     .list()
                     .getItems();
@@ -303,7 +299,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return A Future with a list of matching resources.
      */
     public Future<List<T>> listAsync(String namespace, Labels selector) {
-        FilterWatchListDeletable<T, L, Boolean, Watch> x;
+        FilterWatchListDeletable<T, L> x;
 
         if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
             x = operation().inAnyNamespace();
@@ -318,7 +314,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
-        FilterWatchListDeletable<T, L, Boolean, Watch> x;
+        FilterWatchListDeletable<T, L> x;
 
         if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
             x = operation().inAnyNamespace();
