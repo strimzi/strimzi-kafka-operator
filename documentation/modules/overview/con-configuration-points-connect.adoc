@@ -66,7 +66,6 @@ The `plugins` properties describe the type of artifact and the URL from which th
 
 .Example Kafka Connect configuration to create a new image automatically
 [source,shell,subs="+quotes,attributes"]
-
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
