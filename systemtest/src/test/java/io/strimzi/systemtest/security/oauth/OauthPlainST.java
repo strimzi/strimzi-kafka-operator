@@ -62,10 +62,10 @@ public class OauthPlainST extends OauthAbstractST {
             "As an oauth consumer, I should be able to consumer messages from the kafka broker.")
     @Test
     void testProducerConsumer() {
-        oauthInternalClientJob.create(oauthInternalClientJob.producerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientJob.create(oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -74,17 +74,17 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect() {
-        oauthInternalClientJob.create(oauthInternalClientJob.producerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
 
-        oauthInternalClientJob.create(oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(oauthClusterName, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(oauthClusterName, 1)
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
@@ -118,17 +118,17 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker() {
-        oauthInternalClientJob.create(oauthInternalClientJob.producerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
 
-        oauthInternalClientJob.create(oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
         String targetKafkaCluster = oauthClusterName + "-target";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(targetKafkaCluster, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -163,7 +163,7 @@ public class OauthPlainST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(oauthClusterName, oauthClusterName, targetKafkaCluster,
+        KafkaMirrorMakerResource.createAndWaitForReadiness(KafkaMirrorMakerResource.kafkaMirrorMaker(oauthClusterName, oauthClusterName, targetKafkaCluster,
                 ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editSpec()
                     .withNewConsumer()
@@ -214,7 +214,7 @@ public class OauthPlainST extends OauthAbstractST {
                     .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .build();
 
-                kafkaOauthClientJob.create(kafkaOauthClientJob.consumerStrimziOauthPlain().build());
+                kafkaOauthClientJob.createAndWaitForReadiness(kafkaOauthClientJob.consumerStrimziOauthPlain().build());
 
                 try {
                     ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
@@ -231,11 +231,11 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker2() {
-        oauthInternalClientJob.create(oauthInternalClientJob.producerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
 
-        oauthInternalClientJob.create(oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
@@ -244,7 +244,7 @@ public class OauthPlainST extends OauthAbstractST {
         // mirror maker 2 adding prefix to mirrored topic for in this case mirrotopic will be : my-cluster.my-topic
         String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + TOPIC_NAME;
     
-        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -306,7 +306,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .endKafkaClientAuthenticationOAuth()
                 .build();
         
-        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(oauthClusterName, kafkaTargetClusterName, kafkaSourceClusterName, 1, false)
+        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(oauthClusterName, kafkaTargetClusterName, kafkaSourceClusterName, 1, false)
                 .editSpec()
                     .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
                     .editFirstMirror()
@@ -334,7 +334,7 @@ public class OauthPlainST extends OauthAbstractST {
                     .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .build();
 
-                kafkaOauthClientJob.create(kafkaOauthClientJob.consumerStrimziOauthPlain().build());
+                kafkaOauthClientJob.createAndWaitForReadiness(kafkaOauthClientJob.consumerStrimziOauthPlain().build());
 
                 try {
                     ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
@@ -350,17 +350,17 @@ public class OauthPlainST extends OauthAbstractST {
     @Test
     @Tag(BRIDGE)
     void testProducerConsumerBridge() {
-        oauthInternalClientJob.create(oauthInternalClientJob.producerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
 
-        oauthInternalClientJob.create(oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
-        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
+        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridge(oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
                 .editSpec()
                     .withNewKafkaClientAuthenticationOAuth()
                         .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
@@ -385,7 +385,7 @@ public class OauthPlainST extends OauthAbstractST {
             .withPollInterval(1000)
             .build();
 
-        kafkaBridgeClientJob.create(kafkaBridgeClientJob.producerStrimziBridge().build());
+        kafkaBridgeClientJob.createAndWaitForReadiness(kafkaBridgeClientJob.producerStrimziBridge().build());
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, producerName);
     }
@@ -407,7 +407,7 @@ public class OauthPlainST extends OauthAbstractST {
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(oauthClusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(oauthClusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -429,6 +429,6 @@ public class OauthPlainST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(oauthClusterName, TOPIC_NAME).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(oauthClusterName, TOPIC_NAME).build());
     }
 }

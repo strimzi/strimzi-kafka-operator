@@ -57,7 +57,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @Test
     void testAutoCreationOfCruiseControlTopics() {
-        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
@@ -88,8 +88,8 @@ public class CruiseControlIsolatedST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testCruiseControlWithRebalanceResource() {
-        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
-        KafkaRebalanceResource.create(KafkaRebalanceResource.kafkaRebalance(clusterName).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        KafkaRebalanceResource.createAndWaitForReadiness(KafkaRebalanceResource.kafkaRebalance(clusterName).build());
 
         LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
@@ -142,12 +142,12 @@ public class CruiseControlIsolatedST extends AbstractST {
         String excludedTopic2 = "excluded-topic-2";
         String includedTopic = "included-topic";
 
-        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, excludedTopic1).build());
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, excludedTopic2).build());
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, includedTopic).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, excludedTopic1).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, excludedTopic2).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, includedTopic).build());
 
-        KafkaRebalanceResource.create(KafkaRebalanceResource.kafkaRebalance(clusterName)
+        KafkaRebalanceResource.createAndWaitForReadiness(KafkaRebalanceResource.kafkaRebalance(clusterName)
             .editOrNewSpec()
                 .withExcludedTopics("excluded-.*")
             .endSpec()
@@ -172,8 +172,8 @@ public class CruiseControlIsolatedST extends AbstractST {
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
 
-        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(kafkaClientsName).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(kafkaClientsName).build());
 
         String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
 
@@ -210,7 +210,7 @@ public class CruiseControlIsolatedST extends AbstractST {
             .withHostnames(aliasHostname)
             .build();
 
-        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editSpec()
                 .editCruiseControl()
                     .withNewTemplate()

@@ -109,9 +109,9 @@ class AllNamespaceST extends AbstractNamespaceST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -132,9 +132,9 @@ class AllNamespaceST extends AbstractNamespaceST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -152,7 +152,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
-        KafkaUserResource.create(KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
 
         cluster.setNamespace(previousNamespace);
     }
@@ -163,7 +163,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
+        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
 
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
@@ -183,7 +183,7 @@ class AllNamespaceST extends AbstractNamespaceST {
             }
         }
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -231,11 +231,11 @@ class AllNamespaceST extends AbstractNamespaceST {
         clusterRoleBindingList.forEach(clusterRoleBinding ->
                 KubernetesResource.clusterRoleBinding(clusterRoleBinding));
         // 060-Deployment
-        BundleResource.create(BundleResource.clusterOperator("*").build());
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator("*").build());
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -250,7 +250,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
-        KafkaResource.create(KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).build());
 
         cluster.setNamespace(previousNamespace);
     }

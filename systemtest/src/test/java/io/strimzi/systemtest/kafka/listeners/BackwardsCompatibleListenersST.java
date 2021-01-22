@@ -69,7 +69,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endTls()
                 .build();
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withListeners(new ArrayOrObjectKafkaListeners(listeners))
@@ -77,10 +77,10 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -120,7 +120,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .build();
 
         // Use a Kafka with plain listener disabled
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withListeners(new ArrayOrObjectKafkaListeners(listeners))
@@ -128,10 +128,10 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUser kafkaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, kafkaUsername).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUser kafkaUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, kafkaUsername).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
 
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -169,7 +169,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalNodePort()
                 .build();
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new ArrayOrObjectKafkaListeners(listeners))
@@ -177,8 +177,8 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -209,7 +209,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalLoadBalancer()
                 .build();
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new ArrayOrObjectKafkaListeners(listeners))
@@ -217,8 +217,8 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
         ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
@@ -251,7 +251,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalRoute()
                 .build();
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .withListeners(new ArrayOrObjectKafkaListeners(listeners))
@@ -259,8 +259,8 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(topicName)
@@ -302,7 +302,7 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalNodePort()
                 .build();
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new ArrayOrObjectKafkaListeners(listeners))
@@ -310,10 +310,10 @@ public class BackwardsCompatibleListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 1, 3, 2).build());
-        KafkaUser user = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName, 1, 3, 2).build());
+        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
         final String kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

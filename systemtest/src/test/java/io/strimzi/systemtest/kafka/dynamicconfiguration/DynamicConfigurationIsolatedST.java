@@ -64,7 +64,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     @Test
     void testSimpleDynamicConfiguration() {
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
@@ -99,7 +99,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Test
     void testUpdateToExternalListenerCausesRollingRestart() {
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -216,7 +216,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -234,11 +234,11 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
-        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, userName).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, userName).build());
 
         BasicExternalKafkaClient basicExternalKafkaClientTls = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)

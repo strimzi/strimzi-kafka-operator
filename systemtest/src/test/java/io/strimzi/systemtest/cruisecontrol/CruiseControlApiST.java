@@ -115,6 +115,6 @@ public class CruiseControlApiST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }

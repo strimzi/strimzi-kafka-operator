@@ -238,7 +238,7 @@ public class KafkaClientsResource {
             "password=\"" + password + "\";\n";
     }
 
-    public static Deployment create(Deployment deployment) {
+    public static Deployment createAndWaitForReadiness(Deployment deployment) {
         return KubernetesResource.deployNewDeployment(deployment);
     }
 }

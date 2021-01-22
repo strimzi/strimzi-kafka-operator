@@ -39,7 +39,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
         assumeTrue(Environment.isNamespaceRbacScope());
         prepareEnvironment();
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
                 .editMetadata()
                     .addToLabels("app", "strimzi")
                 .endMetadata()
@@ -63,6 +63,6 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
         prepareEnvForOperator(NAMESPACE);
         applyBindings(NAMESPACE);
         // 060-Deployment
-        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
     }
 }

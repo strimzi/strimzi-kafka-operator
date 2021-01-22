@@ -82,11 +82,11 @@ public class KafkaConnectResource {
             .endSpec();
     }
 
-    public static KafkaConnect create(KafkaConnect kafkaConnect) {
-        return create(kafkaConnect, true);
+    public static KafkaConnect createAndWaitForReadiness(KafkaConnect kafkaConnect) {
+        return createAndWaitForReadiness(kafkaConnect, true);
     }
 
-    public static KafkaConnect create(KafkaConnect kafkaConnect, boolean allowNP) {
+    public static KafkaConnect createAndWaitForReadiness(KafkaConnect kafkaConnect, boolean allowNP) {
         if (allowNP) {
             KubernetesResource.deployNetworkPolicyForResource(kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
         }

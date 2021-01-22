@@ -42,18 +42,18 @@ public class ClusterOperatorRbacST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
         applyRoleBindingsWithoutCRBs();
         // 060-Deployment
-        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
 
         String coPodName = kubeClient().getClusterOperatorPodName();
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
         String log = cmdKubeClient().execInCurrentNamespace(false, "logs", coPodName).out();
         assertTrue(log.contains("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1).build(), false);
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1).build(), false);
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
         log = cmdKubeClient().execInCurrentNamespace(false, "logs", coPodName, "--tail", "50").out();
@@ -66,7 +66,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
         applyRoleBindingsWithoutCRBs();
         // 060-Deployment
-        BundleResource.create(BundleResource.clusterOperator(NAMESPACE).build());
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
 
         String rackKey = "rack-key";
 

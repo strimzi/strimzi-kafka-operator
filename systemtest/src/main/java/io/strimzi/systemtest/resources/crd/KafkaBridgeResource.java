@@ -83,7 +83,7 @@ public class KafkaBridgeResource {
             .endSpec();
     }
 
-    public static KafkaBridge create(KafkaBridge kafkaBridge) {
+    public static KafkaBridge createAndWaitForReadiness(KafkaBridge kafkaBridge) {
         KubernetesResource.deployNetworkPolicyForResource(kafkaBridge, KafkaBridgeResources.deploymentName(kafkaBridge.getMetadata().getName()));
 
         TestUtils.waitFor("KafkaBridge creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,

@@ -140,7 +140,7 @@ public class MultipleListenersST extends AbstractST {
         LOGGER.info("This is listeners {}, which will verified.", listeners);
 
         // exercise phase
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -151,12 +151,12 @@ public class MultipleListenersST extends AbstractST {
             .build());
 
         String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser kafkaUserInstance = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        KafkaUser kafkaUserInstance = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
 
         for (GenericKafkaListener listener : listeners) {
 
             String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-            KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+            KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
 
             boolean isTlsEnabled = listener.isTls();
 
@@ -201,7 +201,7 @@ public class MultipleListenersST extends AbstractST {
             } else {
                 // using internal clients
                 if (isTlsEnabled) {
-                    KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-tls",
+                    KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-tls",
                         listener.getName(), kafkaUserInstance).build());
 
                     final String kafkaClientsTlsPodName =
@@ -225,7 +225,7 @@ public class MultipleListenersST extends AbstractST {
                         internalTlsKafkaClient.receiveMessagesTls()
                     );
                 } else {
-                    KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName + "-plain").build());
+                    KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName + "-plain").build());
 
                     final String kafkaClientsPlainPodName =
                         ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-plain").get(0).getMetadata().getName();

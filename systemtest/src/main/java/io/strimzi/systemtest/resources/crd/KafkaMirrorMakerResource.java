@@ -62,7 +62,7 @@ public class KafkaMirrorMakerResource {
             .endSpec();
     }
 
-    public static KafkaMirrorMaker create(KafkaMirrorMaker kafkaMirrorMaker) {
+    public static KafkaMirrorMaker createAndWaitForReadiness(KafkaMirrorMaker kafkaMirrorMaker) {
         TestUtils.waitFor("KafkaMirrorMaker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
             () -> {
                 try {

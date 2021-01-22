@@ -113,7 +113,7 @@ public class OpaIntegrationST extends AbstractST {
         // Install OPA
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", NAMESPACE));
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName,  3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName,  3, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()
@@ -133,14 +133,14 @@ public class OpaIntegrationST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
-        KafkaUser goodUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, OPA_GOOD_USER).build());
-        KafkaUser badUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, OPA_BAD_USER).build());
-        KafkaUser superuser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, OPA_SUPERUSER).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaUser goodUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, OPA_GOOD_USER).build());
+        KafkaUser badUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, OPA_BAD_USER).build());
+        KafkaUser superuser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, OPA_SUPERUSER).build());
 
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, kafkaClientsDeploymentName, false, goodUser, badUser, superuser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsDeploymentName, false, goodUser, badUser, superuser).build());
         clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsDeploymentName).get(0).getMetadata().getName();
     }
 

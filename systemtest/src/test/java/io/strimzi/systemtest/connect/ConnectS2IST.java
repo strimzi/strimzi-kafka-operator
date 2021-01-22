@@ -174,7 +174,7 @@ class ConnectS2IST extends AbstractST {
         // Make sure that Connect API is ready
         KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IName);
 
-        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(kafkaConnectS2IName)
             .withNewSpec()
                 .withClassName("org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector")
                 .withTasksMax(2)
@@ -219,7 +219,7 @@ class ConnectS2IST extends AbstractST {
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -239,12 +239,12 @@ class ConnectS2IST extends AbstractST {
         final String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-2";
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, CONNECT_S2I_TOPIC_NAME).build());
-        KafkaUser user = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, userName).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, CONNECT_S2I_TOPIC_NAME).build());
+        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, userName).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, user).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, user).build());
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
@@ -303,13 +303,13 @@ class ConnectS2IST extends AbstractST {
     @Test
     void testCustomAndUpdatedValues() {
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-3";
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewConnectContainer()
@@ -350,7 +350,7 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     void testJvmAndResources() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-4";
 
@@ -423,9 +423,9 @@ class ConnectS2IST extends AbstractST {
         String connectClusterName = "connect-cluster";
         String connectS2IClusterName = "connect-s2i-cluster";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
         // Create different connect cluster via S2I resources
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -452,7 +452,7 @@ class ConnectS2IST extends AbstractST {
 
         KafkaConnectUtils.waitForConnectNotReady(clusterName);
 
-        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(clusterName)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(clusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", topicName)
@@ -504,9 +504,9 @@ class ConnectS2IST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         String connectS2IClusterName = "connect-s2i-cluster";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
         // Crate connect cluster with default connect image
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 3)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 3)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -518,7 +518,7 @@ class ConnectS2IST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(clusterName)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(clusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", topicName)
@@ -559,12 +559,12 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     void testChangeConnectS2IConfig() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
-        KafkaResource.create(KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3, 1).build());
 
         String bootstrapAddress = KafkaResources.tlsBootstrapAddress(SECOND_CLUSTER_NAME);
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 1)
                 .editMetadata()
                     .addToAnnotations("strimzi.io/use-connector-resources", "true")
                 .endMetadata()
@@ -662,9 +662,9 @@ class ConnectS2IST extends AbstractST {
     @Test
     @Tag(SCALABILITY)
     void testScaleConnectS2IWithoutConnectorToZero() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 2).build());
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 2).build());
 
         String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
         List<String> connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
@@ -687,15 +687,15 @@ class ConnectS2IST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(SCALABILITY)
     void testScaleConnectS2IWithConnectorToZero() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 2)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 2)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
 
-        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(CONNECT_S2I_CLUSTER_NAME)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(CONNECT_S2I_CLUSTER_NAME)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
@@ -728,9 +728,9 @@ class ConnectS2IST extends AbstractST {
     @Test
     @Tag(SCALABILITY)
     void testScaleConnectS2ISubresource() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1).build());
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1).build());
 
         int scaleTo = 4;
         long connectS2IObsGen = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getObservedGeneration();
@@ -758,14 +758,14 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     void testHostAliases() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp(aliasIp)
             .withHostnames(aliasHostname)
             .build();
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewPod()
@@ -840,9 +840,9 @@ class ConnectS2IST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(dotedConfigMap);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
             .editSpec()
                 .withNewExternalConfiguration()
                     .addNewVolume()
@@ -938,9 +938,9 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     void testConfigureDeploymentStrategy() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(clusterName, clusterName, 1)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
@@ -981,9 +981,9 @@ class ConnectS2IST extends AbstractST {
     }
 
     private void deployConnectS2IWithCamelTimer(String kafkaConnectS2IName, boolean useConnectorOperator) throws IOException {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, Boolean.toString(useConnectorOperator))
             .endMetadata()
@@ -1028,7 +1028,7 @@ class ConnectS2IST extends AbstractST {
                 .withDelayMs(0)
                 .build();
 
-        kafkaBasicClientResource.create(kafkaBasicClientResource.consumerStrimzi().build());
+        kafkaBasicClientResource.createAndWaitForReadiness(kafkaBasicClientResource.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, 10);
     }
 
@@ -1037,7 +1037,7 @@ class ConnectS2IST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, connectS2iClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, connectS2iClientsName).build());
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(connectS2iClientsName).get(0).getMetadata().getName();
 
         if (SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {

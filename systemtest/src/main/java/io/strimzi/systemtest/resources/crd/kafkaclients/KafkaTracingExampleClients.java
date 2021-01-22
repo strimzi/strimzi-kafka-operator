@@ -333,7 +333,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
             .endSpec();
     }
 
-    public Deployment create(Deployment deployment) {
+    public Deployment createAndWaitForReadiness(Deployment deployment) {
         return KubernetesResource.deployNewDeployment(deployment);
     }
 }

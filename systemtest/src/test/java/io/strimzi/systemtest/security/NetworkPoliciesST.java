@@ -66,7 +66,7 @@ public class NetworkPoliciesST extends AbstractST {
         Map<String, String> matchLabelForPlain = new HashMap<>();
         matchLabelForPlain.put("app", allowedKafkaClientsName);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -95,12 +95,12 @@ public class NetworkPoliciesST extends AbstractST {
         String topic1 = "topic-example-1";
 
         String userName = "user-example";
-        KafkaUser kafkaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, userName).build());
+        KafkaUser kafkaUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, userName).build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topic0).build());
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topic1).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topic0).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topic1).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, allowedKafkaClientsName, kafkaUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, allowedKafkaClientsName, kafkaUser).build());
 
         String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
@@ -122,7 +122,7 @@ public class NetworkPoliciesST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, deniedKafkaClientsName, kafkaUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, deniedKafkaClientsName, kafkaUser).build());
 
         String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
@@ -160,7 +160,7 @@ public class NetworkPoliciesST extends AbstractST {
         Map<String, String> matchLabelsForTls = new HashMap<>();
         matchLabelsForTls.put("app", allowedKafkaClientsName);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -185,13 +185,13 @@ public class NetworkPoliciesST extends AbstractST {
 
         String topic0 = "topic-example-0";
         String topic1 = "topic-example-1";
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topic0).build());
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topic1).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topic0).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topic1).build());
 
         String userName = "user-example";
-        KafkaUser kafkaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, userName).build());
+        KafkaUser kafkaUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, userName).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, allowedKafkaClientsName, kafkaUser).build());
 
         String allowedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(allowedKafkaClientsName).get(0).getMetadata().getName();
 
@@ -212,7 +212,7 @@ public class NetworkPoliciesST extends AbstractST {
             internalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, deniedKafkaClientsName, kafkaUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, deniedKafkaClientsName, kafkaUser).build());
 
         String deniedKafkaClientsPodName = kubeClient().listPodsByPrefixInName(deniedKafkaClientsName).get(0).getMetadata().getName();
 
@@ -238,7 +238,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         checkNetworkPoliciesInNamespace(NAMESPACE);
 
@@ -271,7 +271,7 @@ public class NetworkPoliciesST extends AbstractST {
         clusterRoleBindingList.forEach(clusterRoleBinding ->
             KubernetesResource.clusterRoleBinding(clusterRoleBinding));
         // 060-Deployment
-        BundleResource.create(BundleResource.clusterOperator("*", Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator("*", Constants.CO_OPERATION_TIMEOUT_DEFAULT)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -291,7 +291,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         cluster.setNamespace(secondNamespace);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editMetadata()
                 .addToLabels(labels)
             .endMetadata()

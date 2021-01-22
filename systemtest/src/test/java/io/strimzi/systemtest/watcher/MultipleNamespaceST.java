@@ -88,11 +88,11 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         applyBindings(CO_NAMESPACE);
         applyBindings(CO_NAMESPACE, SECOND_NAMESPACE);
         // 060-Deployment
-        BundleResource.create(BundleResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).build());
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).build());
 
         cluster.setNamespace(SECOND_NAMESPACE);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()

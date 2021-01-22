@@ -143,7 +143,7 @@ public abstract class AbstractST implements TestSeparator {
                 applyBindings(namespace, bindingsNamespaces);
             }
             // 060-Deployment
-            BundleResource.create(BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).build());
+            BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).build());
         }
     }
 

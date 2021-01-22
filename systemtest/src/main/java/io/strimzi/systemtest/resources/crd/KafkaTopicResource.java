@@ -60,7 +60,7 @@ public class KafkaTopicResource {
             .endSpec();
     }
 
-    public static KafkaTopic create(KafkaTopic topic) {
+    public static KafkaTopic createAndWaitForReadiness(KafkaTopic topic) {
         kafkaTopicClient().inNamespace(topic.getMetadata().getNamespace()).createOrReplace(topic);
         LOGGER.info("Created KafkaTopic {}", topic.getMetadata().getName());
         return waitFor(deleteLater(topic));

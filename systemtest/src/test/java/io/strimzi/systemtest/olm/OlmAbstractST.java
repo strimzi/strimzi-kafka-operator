@@ -48,7 +48,7 @@ public class OlmAbstractST extends AbstractST {
     void doTestDeployExampleKafkaUser() {
         String userKafkaName = "user-kafka";
         // KafkaUser example needs Kafka with authorization
-        KafkaResource.create(KafkaResource.kafkaEphemeral(userKafkaName, 1, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(userKafkaName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -109,7 +109,7 @@ public class OlmAbstractST extends AbstractST {
 
     void doTestDeployExampleKafkaRebalance() {
         String cruiseControlClusterName = "cruise-control";
-        KafkaResource.create(KafkaResource.kafkaWithCruiseControl(cruiseControlClusterName, 3, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(cruiseControlClusterName, 3, 3).build());
         JsonObject kafkaRebalanceResource = OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND);
         kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
         cmdKubeClient().applyContent(kafkaRebalanceResource.toString());

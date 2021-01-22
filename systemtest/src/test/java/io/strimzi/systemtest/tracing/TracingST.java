@@ -121,7 +121,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -138,14 +138,14 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(1)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        kafkaTracingClient.create(kafkaTracingClient.producerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
@@ -161,7 +161,7 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -187,7 +187,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
                 .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
@@ -256,7 +256,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -274,25 +274,25 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_TARGET_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        kafkaTracingClient.create(kafkaTracingClient.producerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
-        kafkaTracingClient.create(kafkaTracingClient.kafkaStreamsWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.kafkaStreamsWithTracing().build());
 
         TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
@@ -315,7 +315,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -333,18 +333,18 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        kafkaTracingClient.create(kafkaTracingClient.producerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
-        kafkaTracingClient.create(kafkaTracingClient.consumerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.consumerWithTracing().build());
 
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
@@ -364,7 +364,7 @@ public class TracingST extends AbstractST {
         configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
         configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withConfig(configOfSourceKafka)
@@ -382,7 +382,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -390,22 +390,22 @@ public class TracingST extends AbstractST {
                 .build());
 
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_TARGET_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        kafkaTracingClient.create(kafkaTracingClient.producerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName);
 
-        kafkaTracingClient.create(kafkaTracingClient.consumerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.consumerWithTracing().build());
 
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName);
 
-        kafkaTracingClient.create(kafkaTracingClient.kafkaStreamsWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.kafkaStreamsWithTracing().build());
 
         TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName);
 
@@ -427,7 +427,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = clusterName + "-source";
         final String kafkaClusterTargetName = clusterName + "-target";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -444,7 +444,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -462,14 +462,14 @@ public class TracingST extends AbstractST {
                 .build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -482,7 +482,7 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
-        sourceKafkaTracingClient.create(sourceKafkaTracingClient.producerWithTracing().build());
+        sourceKafkaTracingClient.createAndWaitForReadiness(sourceKafkaTracingClient.producerWithTracing().build());
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
@@ -491,9 +491,9 @@ public class TracingST extends AbstractST {
             .withTopicName(kafkaClusterSourceName + "." + TOPIC_NAME)
             .build();
 
-        targetKafkaTracingClient.create(targetKafkaTracingClient.consumerWithTracing().build());
+        targetKafkaTracingClient.createAndWaitForReadiness(targetKafkaTracingClient.consumerWithTracing().build());
 
-        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker2")
                 .endMetadata()
@@ -538,7 +538,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = clusterName + "-source";
         final String kafkaClusterTargetName = clusterName + "-target";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -555,7 +555,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -573,14 +573,14 @@ public class TracingST extends AbstractST {
                 .build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_NAME + "-target")
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_NAME + "-target")
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -594,7 +594,7 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
-        sourceKafkaTracingClient.create(sourceKafkaTracingClient.producerWithTracing().build());
+        sourceKafkaTracingClient.createAndWaitForReadiness(sourceKafkaTracingClient.producerWithTracing().build());
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
@@ -602,9 +602,9 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .build();
 
-        targetKafkaTracingClient.create(targetKafkaTracingClient.consumerWithTracing().build());
+        targetKafkaTracingClient.createAndWaitForReadiness(targetKafkaTracingClient.consumerWithTracing().build());
 
-        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(clusterName, kafkaClusterSourceName, kafkaClusterTargetName,
+        KafkaMirrorMakerResource.createAndWaitForReadiness(KafkaMirrorMakerResource.kafkaMirrorMaker(clusterName, kafkaClusterSourceName, kafkaClusterTargetName,
             ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
@@ -653,25 +653,25 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = clusterName + "-source";
         final String kafkaClusterTargetName = clusterName + "-target";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
-        KafkaResource.create(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_TARGET_NAME)
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, TOPIC_TARGET_NAME)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_NAME + "-target")
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_NAME + "-target")
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -679,7 +679,7 @@ public class TracingST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_TARGET_NAME + "-target")
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterTargetName, TOPIC_TARGET_NAME + "-target")
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(12)
@@ -691,15 +691,15 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
-        sourceKafkaTracingClient.create(sourceKafkaTracingClient.producerWithTracing().build());
+        sourceKafkaTracingClient.createAndWaitForReadiness(sourceKafkaTracingClient.producerWithTracing().build());
 
         KafkaTracingExampleClients targetKafkaTracingClient = kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .build();
 
-        targetKafkaTracingClient.create(targetKafkaTracingClient.consumerWithTracing().build());
+        targetKafkaTracingClient.createAndWaitForReadiness(targetKafkaTracingClient.consumerWithTracing().build());
 
-        sourceKafkaTracingClient.create(sourceKafkaTracingClient.kafkaStreamsWithTracing().build());
+        sourceKafkaTracingClient.createAndWaitForReadiness(sourceKafkaTracingClient.kafkaStreamsWithTracing().build());
 
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
@@ -710,7 +710,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
                 .withNewSpec()
                     .withConfig(configOfKafkaConnect)
                     .withNewJaegerTracing()
@@ -749,7 +749,7 @@ public class TracingST extends AbstractST {
         cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(clusterName, kafkaClusterSourceName, kafkaClusterTargetName,
+        KafkaMirrorMakerResource.createAndWaitForReadiness(KafkaMirrorMakerResource.kafkaMirrorMaker(clusterName, kafkaClusterSourceName, kafkaClusterTargetName,
             ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .editMetadata()
                     .withName("my-mirror-maker")
@@ -813,14 +813,14 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
-        kafkaTracingClient.create(kafkaTracingClient.producerWithTracing().build());
-        kafkaTracingClient.create(kafkaTracingClient.consumerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.producerWithTracing().build());
+        kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.consumerWithTracing().build());
 
         final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
         Map<String, Object> configOfKafkaConnectS2I = new HashMap<>();
         configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
@@ -828,7 +828,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnectS2I.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         configOfKafkaConnectS2I.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(kafkaConnectS2IName, clusterName, 1)
                 .editSpec()
                     .withConfig(configOfKafkaConnectS2I)
                     .withNewJaegerTracing()
@@ -892,10 +892,10 @@ public class TracingST extends AbstractST {
     @Tag(BRIDGE)
     @Test
     void testKafkaBridgeService() {
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
 
         // Deploy http bridge
-        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1)
+        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1)
             .editSpec()
                 .withNewJaegerTracing()
                 .endJaegerTracing()
@@ -923,7 +923,7 @@ public class TracingST extends AbstractST {
             .build());
 
         String bridgeProducer = "bridge-producer";
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
 
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(bridgeProducer)
@@ -935,7 +935,7 @@ public class TracingST extends AbstractST {
             .withPollInterval(1000)
             .build();
 
-        kafkaBridgeClientJob.create(kafkaBridgeClientJob.producerStrimziBridge().build());
+        kafkaBridgeClientJob.createAndWaitForReadiness(kafkaBridgeClientJob.producerStrimziBridge().build());
         ClientUtils.waitForClientSuccess(bridgeProducer, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -1034,7 +1034,7 @@ public class TracingST extends AbstractST {
         // deployment of the jaeger
         deployJaeger();
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 

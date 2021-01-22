@@ -184,6 +184,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
         installClusterOperator(NAMESPACE);
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        KafkaResource.create(KafkaResource.kafkaPersistent(dynamicConfigurationSharedClusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(dynamicConfigurationSharedClusterName, 3).build());
     }
 }

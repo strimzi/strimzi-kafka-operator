@@ -296,8 +296,8 @@ class RecoveryST extends AbstractST {
         clusterName = generateRandomNameOfKafka("recovery-cluster");
         kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + clusterName;
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
-        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1).build());
     }
 }
