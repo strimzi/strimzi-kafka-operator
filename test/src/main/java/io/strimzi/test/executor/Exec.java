@@ -171,7 +171,7 @@ public class Exec {
                         LOGGER.info("{}", cutExecutorLog(executor.out()));
                         LOGGER.info("======STDOUT END======");
                     }
-                    if (!executor.err().isEmpty()) {
+                    if (!executor.err().isEmpty() && ret != 0) {
                         LOGGER.info("======STDERR START=======");
                         LOGGER.info("{}", cutExecutorLog(executor.err()));
                         LOGGER.info("======STDERR END======");
