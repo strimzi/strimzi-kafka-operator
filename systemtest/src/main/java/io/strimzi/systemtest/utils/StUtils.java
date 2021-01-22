@@ -248,7 +248,7 @@ public class StUtils {
                 isJSON = true;
             } catch (Exception e) {
                 LOGGER.info(log);
-                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName);
+                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName, e);
                 isJSON = false;
                 break;
             }

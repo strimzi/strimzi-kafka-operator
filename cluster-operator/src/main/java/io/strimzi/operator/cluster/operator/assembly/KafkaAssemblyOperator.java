@@ -2890,7 +2890,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (kafkaAssembly.getSpec().getTopicOperator() != null) {
                 kafkaStatus.addCondition(StatusUtils.buildWarningCondition("TopicOperator",
                         "Kafka.spec.topicOperator is not supported anymore. " +
-                                "Topic operator should be configured at path spec.entityOperator.topicOperator."));
+                                "Topic operator should be configured using spec.entityOperator.topicOperator."));
             }
 
             return Future.succeededFuture(this);

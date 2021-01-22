@@ -125,7 +125,7 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j.properties", loggersConfigKafka)
             .build();
 
-        ConfigMapKeySelector kafkaLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+        ConfigMapKeySelector kafkaLoggingCMselector = new ConfigMapKeySelectorBuilder()
                 .withName(configMapKafkaName)
                 .withKey("log4j.properties")
                 .build();
@@ -199,7 +199,7 @@ class LoggingChangeST extends AbstractST {
                     //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
                     .withLogging(new ExternalLoggingBuilder()
                             .withNewValueFrom()
-                                .withConfigMapKeyRef(kafkaLoggimgCMselector)
+                                .withConfigMapKeyRef(kafkaLoggingCMselector)
                             .endValueFrom()
                             .build())
                 .endKafka()

@@ -22,7 +22,7 @@
   ```
   logging:
     type: external
-      name: my-config-map
+    name: my-config-map
   ```
   * to
   ```
